@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <artifactId>lary</artifactId>
+        <groupId>com.pg</groupId>
+        <version>1.0-SNAPSHOT</version>
+    </parent>
+
+    <packaging>pom</packaging>
+    <artifactId>lary-common</artifactId>
+    <description>core components</description>
+
+    <!--在Spring Boot微服务项目的子模块中，通常不需要显式配置<version>1.0-SNAPSHOT</version>。Spring Boot会自动处理VCS，并使用适当的版本号。
+
+在Spring Boot项目中添加一个子模块时，Maven会自动使用父模块的版本号作为子模块的版本号。如果父模块没有显式定义版本号，Maven会使用默认的版本号（通常是1.0-SNAPSHOT）。
+
+如果希望为子模块指定一个特定的版本号，可以在子模块的pom.xml文件中显式定义<version>元素 -->
+    <modules>
+        <module>lary-common-core</module>
+        <module>lary-common-security</module>
+        <module>lary-common-cache</module>
+    </modules>
+
+</project>
