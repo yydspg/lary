@@ -1,25 +1,28 @@
 package com.lary.common.core.utils;
 
-import com.lary.common.core.test.Monkey;
+
 import lombok.extern.slf4j.Slf4j;
 
-import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author paul 2023/12/14
  */
 @Slf4j
 public class ObjectUtil {
-    public static void main(String[] args) {
-        Monkey monkey = new Monkey();
-        String s = JSONUtil.toString(monkey);
-        log.info(JSONUtil.toString(monkey));
-        System.out.println(JSONUtil.toObject(s));
-        System.out.println(JSONUtil.toObject(s, monkey.getClass()));
-        System.out.println(JSONUtil.toCollect(s));
-        System.out.println(JSONUtil.collectToString(JSONUtil.toCollect(s)));
-        System.out.println(JSONUtil.toBean(s, Monkey.class));
-
-
+    public static String mapToString(Map<String,String[]> paramMap){
+        if (paramMap == null) {
+            return "";
+        }
+        HashMap<String, Object> map = new HashMap<>();
+        for (Map.Entry<String, String[]> t : paramMap.entrySet()) {
+            String k = t.getKey();
+            String v = (t.getValue() != null && t.getValue().length > 0 ? t.getValue()[0] : "");
+            String obj = StringUtil.endWithIgnoreCase(k,"password") ? "******": v;
+            map.put(k,obj);
+        }
+        return JSONUtil.toString(map);
     }
 }
+

@@ -11,6 +11,8 @@
 
     <modules>
         <module>lary-common</module>
+        <module>lary-rocketmq</module>
+        <module>lary-payment</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -42,6 +44,7 @@
         <fastjson2.version>2.0.38</fastjson2.version>
         <spring-javaformat.version>0.0.22</spring-javaformat.version>
         <lombok.version>1.18.30</lombok.version>
+        <guava.version>31.1-jre</guava.version>
     </properties>
 
     <dependencyManagement>
@@ -189,6 +192,11 @@
                 <groupId>org.projectlombok</groupId>
                 <artifactId>lombok</artifactId>
                 <version>${lombok.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava</artifactId>
+                <version>${guava.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

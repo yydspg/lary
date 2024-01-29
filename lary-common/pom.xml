@@ -22,6 +22,7 @@
         <module>lary-common-core</module>
         <module>lary-common-security</module>
         <module>lary-common-cache</module>
+        <module>lary-common-database</module>
     </modules>
 
 </project>
