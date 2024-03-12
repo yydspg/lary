@@ -6,6 +6,7 @@
         <artifactId>lary-common</artifactId>
         <groupId>com.pg</groupId>
         <version>1.0-SNAPSHOT</version>
+        <relativePath>../lary-common/pom.xml</relativePath>
     </parent>
 
     <artifactId>lary-payment</artifactId>
