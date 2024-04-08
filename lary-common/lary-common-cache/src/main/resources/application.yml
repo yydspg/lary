@@ -1,3 +1,0 @@
-bloom-filter:
-  fpp: 0.3
-  expected-insertions: 1000000

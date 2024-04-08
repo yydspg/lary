@@ -10,9 +10,7 @@
     <version>1.0-SNAPSHOT</version>
 
     <modules>
-        <module>lary-common</module>
-        <module>lary-rocketmq</module>
-        <module>lary-payment</module>
+
     </modules>
 
     <packaging>pom</packaging>
