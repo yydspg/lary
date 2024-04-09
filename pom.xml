@@ -2,31 +2,42 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    <!--如果不配置<name>元素，那么默认的${project.name}将是Maven项目的根元素名称
-    通常是<groupId>元素的值加上<artifactId>元素的值。例如，如果<groupId>是"com.example"，<artifactId>是"my-app"，那么默认的${project.name}将是"com.example:my-app"。
-    请注意，这只是一个默认行为，在pom.xml文件中显式地设置<name>元素来覆盖默认行为 -->
-    <groupId>com.pg</groupId>
+
+    <groupId>cn.lary</groupId>
     <artifactId>lary</artifactId>
-    <version>1.0-SNAPSHOT</version>
+    <version>0.0.1</version>
 
     <modules>
-
+        <module>lary-auth</module>
+        <module>lary-core</module>
+        <module>lary-remark</module>
+        <module>lary-search</module>
+        <module>lary-product</module>
+        <module>lary-store</module>
+        <module>lary-logistics</module>
+        <module>lary-member</module>
     </modules>
 
     <packaging>pom</packaging>
 
     <properties>
         <project.encoding>UTF-8</project.encoding>
+        <java.version>17</java.version>
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
-        <java.version>17</java.version>
-        <!-- core dependency-->
+
+
+        <lary.core.version>0.0.1</lary.core.version>
+        <lary.search.version>0.0.1</lary.search.version>
+        <lary.remark.version>0.0.1</lary.remark.version>
+        <lary.product.version>0.0.1</lary.product.version>
+        <lary.store.version>0.0.1</lary.store.version>
+        <lary.auth.version>0.0.1</lary.auth.version>
+
         <spring-boot.version>3.2.0</spring-boot.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
         <spring-cloud-alibaba.version>2022.0.0.0</spring-cloud-alibaba.version>
-        <!--分离vcs-->
-        <seata.version>1.7.0</seata.version>
-        <nacos.version>2.2.4</nacos.version>
+
         <!--other dependency-->
         <hutool-version>5.8.23</hutool-version>
         <mybatis-spring-boot-starter.version>3.0.3</mybatis-spring-boot-starter.version>
