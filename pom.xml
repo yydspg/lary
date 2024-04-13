@@ -50,6 +50,7 @@
         <minio.version>8.2.2</minio.version>
         <rocketmq-springboot.version>2.2.3</rocketmq-springboot.version>
         <weixin.version>4.5.0</weixin.version>
+        <redisson.version>3.27.2</redisson.version>
         <fastjson2.version>2.0.38</fastjson2.version>
         <spring-javaformat.version>0.0.22</spring-javaformat.version>
         <lombok.version>1.18.30</lombok.version>
@@ -196,6 +197,11 @@
                 <groupId>org.springdoc</groupId>
                 <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
                 <version>${springdoc-webflux.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.redisson</groupId>
+                <artifactId>redisson-spring-boot-starter</artifactId>
+                <version>${redisson.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.projectlombok</groupId>

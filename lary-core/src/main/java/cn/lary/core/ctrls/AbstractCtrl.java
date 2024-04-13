@@ -9,12 +9,11 @@ import cn.lary.core.util.ReqKit;
 import cn.lary.core.util.StringKit;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
+import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.util.ObjectUtils;
 import org.apache.commons.lang3.tuple.MutablePair;
+import org.springframework.util.ObjectUtils;
 
 import java.math.BigDecimal;
 import java.util.Map;
@@ -25,22 +24,19 @@ import java.util.Map;
  */
 
 public abstract class AbstractCtrl {
-    protected static final Logger logger = LoggerFactory.getLogger(AbstractCtrl.class);
+
     private static final String PAGE_INDEX_PARAM_NAME = "pageNumber";
     private static final String PAGE_SIZE_PARAM_NAME = "pageSize";
     private static final int DEFAULT_PAGE_INDEX = 1;
     private static final int DEFAULT_PAGE_SIZE = 10;
     private static final String SORT_FIELD_PARAM_NAME = "sortField";
     private static final String SORT_ORDER_FLAG_PARAM_NAME = "sortOrder";
-    protected final HttpServletRequest request;
-    protected final HttpServletResponse response;
-    protected final ReqKit reqKit;
 
-    public AbstractCtrl(HttpServletRequest request,HttpServletResponse response,ReqKit reqKit) {
-        this.request = request;
-        this.response = response;
-        this.reqKit = reqKit;
-    }
+    @Resource
+    protected  HttpServletResponse response;
+    @Resource
+    protected  ReqKit reqKit;
+
     protected int getPageIndex() {
         Integer pageIndex = getReqParams().getInteger(PAGE_INDEX_PARAM_NAME);
         return pageIndex == null ? DEFAULT_PAGE_INDEX:pageIndex;

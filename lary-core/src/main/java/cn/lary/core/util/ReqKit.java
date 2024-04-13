@@ -3,10 +3,9 @@ package cn.lary.core.util;
 import cn.lary.core.constant.ApiCodeEnum;
 import cn.lary.core.exception.BizException;
 import com.alibaba.fastjson2.JSONObject;
-import jakarta.annotation.Resource;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.context.annotation.Lazy;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestAttributes;
 import org.springframework.web.context.request.RequestContextHolder;
@@ -22,9 +21,12 @@ import java.util.stream.Collectors;
 @Slf4j
 @Component
 public class ReqKit {
-    @Resource
-    @Lazy
+
     protected  HttpServletRequest request;
+    @Autowired
+    public ReqKit(HttpServletRequest request) {
+        this.request = request;
+    }
     private static final String REQ_CONTEXT_KEY_PARAM_JSON  = "REQ_CONTEXT_KEY_PARAM_JSON";
 
 

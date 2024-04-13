@@ -3872,8 +3872,8 @@ CREATE TABLE `xxl_job_group`  (
 -- ----------------------------
 -- Records of xxl_job_group
 -- ----------------------------
-INSERT INTO `xxl_job_group` VALUES (1, 'xxl-job-executor-sample', '示例执行器', 0, NULL, '2022-01-09 20:31:39');
-INSERT INTO `xxl_job_group` VALUES (2, 'xxl-job-executor-lilishop', 'lilishop', 0, NULL, '2022-01-09 20:31:39');
+INSERT INTO `xxl_job_group` VALUES (1, 'xxl-job-exec-sample', '示例执行器', 0, NULL, '2022-01-09 20:31:39');
+INSERT INTO `xxl_job_group` VALUES (2, 'xxl-job-exec-lilishop', 'lilishop', 0, NULL, '2022-01-09 20:31:39');
 
 -- ----------------------------
 -- Table structure for xxl_job_info

@@ -1,7 +1,6 @@
 package cn.lary.core.model.vo;
 
 import com.alibaba.fastjson2.JSONObject;
-import lombok.Getter;
 
 /**
  * @author paul 2024/4/9

@@ -24,9 +24,9 @@ public enum ApiCodeEnum {
     NO_OSS_VENDER_FAIl(200,"ossSelectError"),
     USER_AUTHORITY_ERROR(200,"userAuthorityError"),
     SYS_PERMISSION_ERROR(5004, "permissionDeny");
-    private int code;
+    private final int code;
 
-    private String msg;
+    private final String msg;
 
     ApiCodeEnum(int code, String msg) {
         this.code = code;
