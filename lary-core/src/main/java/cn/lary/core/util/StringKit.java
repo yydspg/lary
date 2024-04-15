@@ -8,6 +8,6 @@ import cn.hutool.core.util.StrUtil;
 
 public class StringKit extends StrUtil {
     public static boolean isEmpty(CharSequence str) {
-        return str == null || str.isEmpty();
+        return str == null || str.length() == 0;
     }
 }

@@ -1,7 +1,7 @@
 package cn.lary.core.ratelimiter.anno;
 
 
-import cn.lary.core.constant.FreqTarget;
+import cn.lary.core.constant.RateCS;
 
 import java.lang.annotation.*;
 import java.util.concurrent.TimeUnit;
@@ -9,20 +9,14 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author paul 2024/4/14
  */
-@Repeatable(Rate.List.class)
+
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Rate {
 
-    String ploy() default "";
+    String ploy() default RateCS.Ploy.SLIDING_WINDOW;
 
-    int windowSize() default 5;
-
-    int period() default 1;
-
-    String prefixKey() default "";
-
-    FreqTarget target() default FreqTarget.EL;
+    int size() default 10;
 
     String spEl() default "";
 
@@ -36,11 +30,4 @@ public @interface Rate {
 
     double refillRate() default 0.5;
 
-
-    @Inherited
-    @Target(value = {ElementType.METHOD})
-    @Retention(value = RetentionPolicy.RUNTIME)
-    @interface List {
-        Rate[] value();
-    }
 }

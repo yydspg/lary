@@ -1,29 +1,29 @@
-package cn.lary.core.ratelimiter.aop;
+package cn.lary.core.lock.aop;
 
 import cn.lary.core.aop.AnnoMethodPoint;
 import cn.lary.core.lock.anno.Lock;
-import cn.lary.core.lock.aop.LockMethodInterceptor;
-import cn.lary.core.ratelimiter.anno.Rate;
 import lombok.NonNull;
 import org.aopalliance.aop.Advice;
 import org.springframework.aop.Pointcut;
 import org.springframework.aop.support.AbstractPointcutAdvisor;
 import org.springframework.aop.support.ComposablePointcut;
-import org.springframework.aop.support.annotation.AnnotationMatchingPointcut;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
 
 /**
- * @author paul 2024/4/14
+ * @author paul 2024/4/13
  */
 
-public class RateAdvisor extends AbstractPointcutAdvisor implements BeanFactoryAware{
-    private final RateInterceptor advice;
-    private final Pointcut pointcut = new AnnotationMatchingPointcut(Rate.class);
+public class LockAdvisor extends AbstractPointcutAdvisor implements BeanFactoryAware {
 
-    public RateAdvisor(@NonNull RateInterceptor rateInterceptor) {
-        this.advice = rateInterceptor;
+    private final LockMethodInterceptor advice;
+    private final Pointcut pointcut = new ComposablePointcut(new AnnoMethodPoint(Lock.class))
+            .union(new AnnoMethodPoint(Lock.List.class));
+
+    public LockAdvisor(@NonNull LockMethodInterceptor lockInterceptor, int order) {
+        this.advice = lockInterceptor;
+        setOrder(order);
     }
     @Override
     public Pointcut getPointcut() {

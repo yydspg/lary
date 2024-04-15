@@ -1,18 +1,10 @@
-package cn.lary.core.lock.aop;
+package cn.lary.core.aop;
 
-import cn.lary.core.lock.anno.Lock;
-import lombok.NonNull;
-import org.aopalliance.aop.Advice;
 import org.springframework.aop.ClassFilter;
 import org.springframework.aop.MethodMatcher;
 import org.springframework.aop.Pointcut;
-import org.springframework.aop.support.AbstractPointcutAdvisor;
 import org.springframework.aop.support.AopUtils;
-import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.aop.support.StaticMethodMatcher;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.BeanFactory;
-import org.springframework.beans.factory.BeanFactoryAware;
 import org.springframework.core.annotation.AnnotatedElementUtils;
 import org.springframework.util.Assert;
 
@@ -21,40 +13,14 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 
 /**
- * @author paul 2024/4/13
+ * @author paul 2024/4/15
  */
 
-public class LockAnnotationAdvisor  extends AbstractPointcutAdvisor implements BeanFactoryAware {
+public class AnnoMethodPoint implements Pointcut{
 
-    private final LockMethodInterceptor advice;
-    private final Pointcut pointcut = new ComposablePointcut(new AnnotationMethodPoint(Lock.class))
-            .union(new AnnotationMethodPoint(Lock.List.class));
-
-    public LockAnnotationAdvisor(@NonNull LockMethodInterceptor lockInterceptor, int order) {
-        this.advice = lockInterceptor;
-        setOrder(order);
-    }
-    @Override
-    public Pointcut getPointcut() {
-        return this.pointcut;
-    }
-
-    @Override
-    public Advice getAdvice() {
-        return this.advice;
-    }
-
-    @Override
-    public void setBeanFactory(BeanFactory beanFactory) throws BeansException {
-        if (this.advice instanceof BeanFactoryAware) {
-            ((BeanFactoryAware) this.advice).setBeanFactory(beanFactory);
-        }
-    }
-
-    private static class AnnotationMethodPoint implements Pointcut {
         private final Class<? extends Annotation> annotationType;
 
-        public AnnotationMethodPoint(Class<? extends Annotation> annotationType) {
+        public AnnoMethodPoint(Class<? extends Annotation> annotationType) {
             Assert.notNull(annotationType, "Annotation type must not be null");
             this.annotationType = annotationType;
         }
@@ -66,7 +32,7 @@ public class LockAnnotationAdvisor  extends AbstractPointcutAdvisor implements B
 
         @Override
         public MethodMatcher getMethodMatcher() {
-            return new AnnotationMethodMatcher(annotationType);
+            return new AnnoMethodPoint.AnnotationMethodMatcher(annotationType);
         }
 
         private static class AnnotationMethodMatcher extends StaticMethodMatcher {
@@ -94,5 +60,4 @@ public class LockAnnotationAdvisor  extends AbstractPointcutAdvisor implements B
                 return AnnotatedElementUtils.hasAnnotation(method, this.annotationType);
             }
         }
-    }
 }
