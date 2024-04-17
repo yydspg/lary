@@ -2,13 +2,16 @@ package cn.lary.core.ratelimiter.model;
 
 import cn.lary.core.ratelimiter.anno.Rate;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.util.concurrent.TimeUnit;
 
 /**
  * @author paul 2024/4/15
  */
-@Getter @Setter
+@Getter
+@Setter
 public class Limit {
 
     private String key;

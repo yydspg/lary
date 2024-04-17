@@ -1,8 +1,6 @@
 package cn.lary.oss.standard.args.obj;
 
 import cn.lary.oss.standard.args.common.BucketArgs;
-import jakarta.validation.constraints.Max;
-import jakarta.validation.constraints.Min;
 import lombok.Getter;
 import lombok.Setter;
 

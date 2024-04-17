@@ -3,11 +3,14 @@ package cn.lary.core.lock;
 import cn.lary.core.lock.exec.LockExec;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.Getter;
+import lombok.Setter;
 
 /**
  * @author paul 2024/4/13
  */
-@Getter @Setter
+@Getter
+@Setter
 @AllArgsConstructor
 public class LockInfo {
 
