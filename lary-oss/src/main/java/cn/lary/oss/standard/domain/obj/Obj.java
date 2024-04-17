@@ -1,6 +1,6 @@
 package cn.lary.oss.standard.domain.obj;
 
-import lombok.Data;
+import cn.lary.oss.standard.domain.bucket.SysBucket;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,11 +11,11 @@ import java.util.Date;
  */
 @Getter
 @Setter
-public class Obj {
-    private String objKey;
+public class Obj extends SysBucket {
+    private String objectName;
     private String eTag;
     private long size;
     private Date lastModified;
-    private String storageClz;
+    private String storageClass;
     private boolean isDir;
 }

@@ -14,5 +14,5 @@ import java.util.List;
 public class ListObj extends ListObjArgs {
      private List<Obj> summaries;
     private String nextMarker;
-    private Boolean isTruncated;
+    private Boolean truncated;
 }

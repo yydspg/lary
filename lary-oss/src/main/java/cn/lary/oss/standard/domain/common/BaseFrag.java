@@ -9,6 +9,7 @@ import lombok.Setter;
 @Getter
 @Setter
 public abstract class BaseFrag {
+
     private int partNumber;
     private String etag;
 }

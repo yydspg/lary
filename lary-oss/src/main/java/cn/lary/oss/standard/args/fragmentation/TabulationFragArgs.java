@@ -11,7 +11,6 @@ import lombok.Setter;
 @Getter
 @Setter
 public class TabulationFragArgs extends BaseFragArgs {
-    private String maxParts;
-    private String partNumberMarker;
-
+    private Integer maxParts;
+    private Integer partNumberMarker;
 }

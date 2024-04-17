@@ -3,6 +3,7 @@ package cn.lary.oss.util;
 import org.springframework.core.convert.converter.Converter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -14,7 +15,7 @@ public class ConvertKit {
         if (items != null && !items.isEmpty()) {
             return items.stream().map(converter::convert).toList();
         }
-        return new ArrayList<>();
+        return Collections.emptyList();
     }
 
     public static <T, R> R convert(T object, Converter<T, R> converter) {

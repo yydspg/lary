@@ -14,6 +14,6 @@ import java.util.List;
 public class ListV2Obj extends ListV2ObjArgs {
     private List<Obj> summaries;
     private String nextContinuationToken;
-    private Boolean isTruncated;
+    private Boolean truncated;
     private int keyCount;
 }
