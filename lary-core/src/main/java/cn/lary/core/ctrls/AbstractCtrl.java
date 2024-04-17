@@ -2,7 +2,7 @@ package cn.lary.core.ctrls;
 
 
 import cn.hutool.core.text.CharSequenceUtil;
-import cn.lary.core.constant.ApiCodeEnum;
+import cn.lary.core.constant.ApiCode;
 import cn.lary.core.exception.BizException;
 import cn.lary.core.model.vo.BaseModel;
 import cn.lary.core.util.ReqKit;
@@ -10,7 +10,6 @@ import cn.lary.core.util.StringKit;
 import com.alibaba.fastjson2.JSON;
 import com.alibaba.fastjson2.JSONObject;
 import jakarta.annotation.Resource;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.apache.commons.lang3.tuple.MutablePair;
 import org.springframework.util.ObjectUtils;
@@ -60,7 +59,7 @@ public abstract class AbstractCtrl {
     protected <T> T getVRequired(String key, Class<T> cls) {
         T value = this.getV(key, cls);
         if(ObjectUtils.isEmpty(value)) {
-            throw new BizException(ApiCodeEnum.PARAMS_ERROR);
+            throw new BizException(ApiCode.PARAMS_ERROR);
         }
         return value;
     }

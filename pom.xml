@@ -33,6 +33,7 @@
         <lary.product.version>0.0.1</lary.product.version>
         <lary.store.version>0.0.1</lary.store.version>
         <lary.auth.version>0.0.1</lary.auth.version>
+        <lary.api.version>0.0.1</lary.api.version>
 
         <spring-boot.version>3.2.4</spring-boot.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
@@ -55,6 +56,8 @@
         <spring-javaformat.version>0.0.22</spring-javaformat.version>
         <lombok.version>1.18.30</lombok.version>
         <guava.version>31.1-jre</guava.version>
+        <commons.pool2.version>2.12.0</commons.pool2.version>
+        <aliyun.oss.version>3.17.4</aliyun.oss.version>
     </properties>
 
     <dependencyManagement>
@@ -212,6 +215,16 @@
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
                 <version>${guava.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-pool2</artifactId>
+                <version>${commons.pool2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.aliyun.oss</groupId>
+                <artifactId>aliyun-sdk-oss</artifactId>
+                <version>${aliyun.oss.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>

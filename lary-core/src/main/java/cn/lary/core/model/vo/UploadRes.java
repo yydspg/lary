@@ -7,7 +7,7 @@ import lombok.Data;
  * @author paul 2024/4/13
  */
 
-@Data
+@Getter @Setter
 @Builder
 public class UploadRes {
 

@@ -1,6 +1,6 @@
 package cn.lary.core.exception;
 
-import cn.lary.core.constant.ApiCodeEnum;
+import cn.lary.core.constant.ApiCode;
 import cn.lary.core.model.vo.ApiRes;
 import lombok.Getter;
 
@@ -15,6 +15,7 @@ public class BizException extends RuntimeException{
 
     @Serial
     private static final long serialVersionUID = 1L;
+
     private final ApiRes apiRes;
 
     public BizException(String msg) {
@@ -22,9 +23,9 @@ public class BizException extends RuntimeException{
         this.apiRes = ApiRes.customFail(msg);
     }
 
-    public BizException(ApiCodeEnum apiCodeEnum, String... params) {
+    public BizException(ApiCode apiCode, String... params) {
         super();
-        apiRes = ApiRes.fail(apiCodeEnum, params);
+        apiRes = ApiRes.fail(apiCode, params);
     }
 
     public BizException(ApiRes apiRes) {

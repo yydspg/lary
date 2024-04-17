@@ -1,12 +1,10 @@
 package cn.lary.core.model.vo;
 
-import cn.lary.core.constant.ApiCodeEnum;
+import cn.lary.core.constant.ApiCode;
 import cn.lary.core.util.DateKit;
 import cn.lary.core.util.JSONKit;
 import com.alibaba.fastjson2.JSON;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.NoArgsConstructor;
+import lombok.*;
 
 import java.io.Serializable;
 
@@ -14,7 +12,8 @@ import java.io.Serializable;
  * @author paul 2024/4/9
  */
 
-@Data
+@Getter
+@Setter
 @AllArgsConstructor
 @NoArgsConstructor
 public class ApiRes implements Serializable {
@@ -27,7 +26,7 @@ public class ApiRes implements Serializable {
     public String toJSONString() {return JSON.toJSONString(this);}
 
     public static <T> ApiRes success(T data) {
-        return new ApiRes(ApiCodeEnum.SUCCESS.getCode(),ApiCodeEnum.SUCCESS.getMsg(),data);
+        return new ApiRes(ApiCode.SUCCESS.getCode(), ApiCode.SUCCESS.getMsg(),data);
     }
     public static ApiRes success() {
         return success(null);
@@ -37,9 +36,9 @@ public class ApiRes implements Serializable {
     }
 
     public static ApiRes customFail(String customMsg) {
-        return new ApiRes(ApiCodeEnum.CUSTOM_FAIL.getCode(), ApiCodeEnum.CUSTOM_FAIL.getMsg(), null);
+        return new ApiRes(ApiCode.CUSTOM_FAIL.getCode(), ApiCode.CUSTOM_FAIL.getMsg(), null);
     }
-    public static ApiRes fail(ApiCodeEnum ace,String... params) {
+    public static ApiRes fail(ApiCode ace, String... params) {
         return new ApiRes(ace.getCode(),(params == null || params.length == 0) ? ace.getMsg():String.format(ace.getMsg(),params),null);
     }
 }

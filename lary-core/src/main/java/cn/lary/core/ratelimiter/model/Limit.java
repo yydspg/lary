@@ -8,7 +8,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * @author paul 2024/4/15
  */
-@Data
+@Getter @Setter
 public class Limit {
 
     private String key;

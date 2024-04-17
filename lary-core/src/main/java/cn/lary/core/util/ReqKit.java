@@ -1,6 +1,6 @@
 package cn.lary.core.util;
 
-import cn.lary.core.constant.ApiCodeEnum;
+import cn.lary.core.constant.ApiCode;
 import cn.lary.core.exception.BizException;
 import com.alibaba.fastjson2.JSONObject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -43,7 +43,7 @@ public class ReqKit {
                 return JSONObject.parseObject(body);
             } catch (Exception e) {
                 log.error("[{}]ConvertParamsError", body);
-                throw new BizException(ApiCodeEnum.PARAMS_ERROR, "ConvertError");
+                throw new BizException(ApiCode.PARAMS_ERROR, "ConvertError");
             }
         }
         //NON-JSON
