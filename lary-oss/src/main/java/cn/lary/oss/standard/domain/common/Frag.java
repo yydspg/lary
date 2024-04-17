@@ -10,7 +10,7 @@ import java.util.Date;
  */
 @Getter
 @Setter
-public class Frag extends Base{
+public class Frag extends BaseFrag{
     private long partSize;
     private Date lastModifiedDate;
     private String uploadId;
