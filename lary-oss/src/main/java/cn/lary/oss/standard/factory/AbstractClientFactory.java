@@ -15,7 +15,7 @@ public abstract class AbstractClientFactory<T> extends BasePooledObjectFactory<T
     private final AbstractProp abstractProp;
 
     public AbstractProp getProp() {return abstractProp;}
-    // TODO 2024/4/17 : 了解此方法的作用
+
     @Override
     public PooledObject<T> wrap(T obj) {return new DefaultPooledObject<>(obj);}
 

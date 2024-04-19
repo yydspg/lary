@@ -1,5 +1,6 @@
 package cn.lary.oss.standard.args.obj;
 
+import cn.lary.oss.standard.args.common.ObjArgs;
 import cn.lary.oss.standard.args.common.impl.ObjConditionRArgs;
 import lombok.Getter;
 import lombok.Setter;
@@ -9,7 +10,6 @@ import lombok.Setter;
  */
 @Getter
 @Setter
-public class GetObjArgs extends ObjConditionRArgs {
+public class GetObjArgs extends ObjArgs {
     private String filename;
-    private boolean overwrite = false;
 }

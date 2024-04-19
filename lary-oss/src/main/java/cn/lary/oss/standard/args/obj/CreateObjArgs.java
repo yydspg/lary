@@ -1,6 +1,6 @@
 package cn.lary.oss.standard.args.obj;
 
-import cn.lary.oss.standard.args.common.impl.PutObjBaseArgs;
+import cn.lary.oss.standard.args.common.impl.ObjWArgs;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +11,8 @@ import java.io.InputStream;
  */
 @Getter
 @Setter
-public class PutObjArgs extends PutObjBaseArgs {
+public class CreateObjArgs extends ObjWArgs {
     private InputStream inputStream;
+    private String rename;
     private String filename;
 }

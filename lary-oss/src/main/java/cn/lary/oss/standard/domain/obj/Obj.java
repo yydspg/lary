@@ -18,4 +18,5 @@ public class Obj extends SysBucket {
     private Date lastModified;
     private String storageClass;
     private boolean isDir;
+    private String versionId;
 }

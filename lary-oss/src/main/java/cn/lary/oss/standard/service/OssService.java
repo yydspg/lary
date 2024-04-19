@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
  */
 @RequiredArgsConstructor
 public abstract class OssService<T> {
+
     private final AbstractObjPool<T> objectPool;
     protected T getCli() {
         return objectPool.get();

@@ -11,4 +11,5 @@ import lombok.Setter;
 public abstract class ObjArgs extends BucketArgs{
 
     private String objectName;
+    private String versionId;
 }

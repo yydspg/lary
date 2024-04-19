@@ -30,7 +30,6 @@ public class ListObjectsV2ResultConvert implements Converter<ListObjectsV2Result
         target.setEncodingType(source.getEncodingType());
         target.setBucketName(source.getBucketName());
 
-
         return target;
     }
 }

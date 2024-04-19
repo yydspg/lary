@@ -16,6 +16,7 @@
         <module>lary-store</module>
         <module>lary-logistics</module>
         <module>lary-member</module>
+        <module>lary-stream</module>
     </modules>
 
     <packaging>pom</packaging>

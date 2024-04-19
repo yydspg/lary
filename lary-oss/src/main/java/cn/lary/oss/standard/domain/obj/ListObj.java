@@ -12,7 +12,7 @@ import java.util.List;
 @Getter
 @Setter
 public class ListObj extends ListObjArgs {
-     private List<Obj> summaries;
+    private List<Obj> summaries;
     private String nextMarker;
     private Boolean truncated;
 }

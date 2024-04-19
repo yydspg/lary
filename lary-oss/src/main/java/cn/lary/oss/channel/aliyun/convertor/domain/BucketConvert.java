@@ -2,6 +2,7 @@ package cn.lary.oss.channel.aliyun.convertor.domain;
 
 
 import cn.lary.oss.standard.domain.bucket.SysBucket;
+import cn.lary.oss.standard.domain.common.Owner;
 import com.aliyun.oss.model.Bucket;
 import org.springframework.core.convert.converter.Converter;
 
@@ -15,8 +16,10 @@ public class BucketConvert implements Converter<Bucket, SysBucket> {
         SysBucket sysBucket = new SysBucket();
         sysBucket.setBucketName(source.getName());
         sysBucket.setCreateTime(source.getCreationDate());
-        sysBucket.getOwner().setId(source.getOwner().getId());
-        sysBucket.getOwner().setDisplayName(source.getOwner().getDisplayName());
+        Owner owner = new Owner();
+        owner.setId(source.getOwner().getId());
+        owner.setDisplayName(source.getOwner().getDisplayName());
+        sysBucket.setOwner(owner);
         return sysBucket;
     }
 }

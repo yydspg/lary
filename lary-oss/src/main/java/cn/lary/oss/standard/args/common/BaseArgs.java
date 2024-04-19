@@ -1,6 +1,5 @@
 package cn.lary.oss.standard.args.common;
 
-import cn.lary.oss.standard.args.Args;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +10,7 @@ import java.util.Map;
  */
 @Getter
 @Setter
-public abstract class BaseArgs implements Args {
+public abstract class BaseArgs {
     private Map<String ,String> extraHeaders;
     private Map<String,String> extraQueryParams;
 }

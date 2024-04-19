@@ -1,5 +1,6 @@
 package cn.lary.oss.standard.args.common.impl;
 
+import cn.lary.oss.standard.args.common.ObjArgs;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -11,7 +12,7 @@ import java.util.List;
  */
 @Getter
 @Setter
-public abstract class ObjConditionRArgs extends ObjRArgs {
+public abstract class ObjConditionRArgs extends ObjArgs {
     private Long offset;
 
     private Long length;
