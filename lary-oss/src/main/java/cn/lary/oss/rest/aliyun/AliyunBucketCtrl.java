@@ -33,7 +33,7 @@ public class AliyunBucketCtrl {
     }
     @RequestMapping(value = "/del/{bucketName}",method = RequestMethod.GET)
     public ApiRes del(@PathVariable(value = "bucketName") String bucketName) {
-        // pre check bucket exists
+        // pre check bucket exists`
         service.del(bucketName);
         return ApiRes.success();
     }

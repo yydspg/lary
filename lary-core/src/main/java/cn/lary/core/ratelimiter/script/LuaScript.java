@@ -11,10 +11,10 @@ import org.springframework.scripting.support.ResourceScriptSource;
  */
 @Configuration
 public class LuaScript {
-    @Bean(name = "slidingWinLuaScript")
+    @Bean(name = "slidingWindowLuaScript")
     public DefaultRedisScript<Boolean> slidingWinLimitScript() {
         DefaultRedisScript<Boolean> redisScript = new DefaultRedisScript<>();
-        redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("redis/slidingWin.lua")));
+        redisScript.setScriptSource(new ResourceScriptSource(new ClassPathResource("redis/slidingWindow.lua")));
         redisScript.setResultType(Boolean.class);
         return redisScript;
     }

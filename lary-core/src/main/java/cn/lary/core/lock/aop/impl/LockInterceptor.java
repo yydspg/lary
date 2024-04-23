@@ -10,6 +10,7 @@ import cn.lary.core.lock.config.LockProp;
 import cn.lary.core.lock.lockFailPloy.LockFailPloy;
 import lombok.Builder;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.factory.InitializingBean;
@@ -27,6 +28,7 @@ import java.util.stream.Collectors;
  *  distributed lock aop handler
  * @author paul 2024/4/13
  */
+@Slf4j
 @RequiredArgsConstructor
 public class LockInterceptor implements InitializingBean, LockMethodInterceptor {
 

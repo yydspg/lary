@@ -11,7 +11,7 @@ import java.lang.annotation.*;
  * @author paul 2024/4/13
  */
 
-
+@Documented
 @Repeatable(Lock.List.class)
 @Target(value = {ElementType.METHOD})
 @Retention(value = RetentionPolicy.RUNTIME)
@@ -27,6 +27,7 @@ public @interface Lock {
     Class<? extends LockFailPloy> failStrategy() default LockFailPloy.class;
     Class<? extends LockKeyBuilder> keyBuilderStrategy() default LockKeyBuilder.class;
     @Inherited
+    @Documented
     @Target(value = {ElementType.METHOD})
     @Retention(value = RetentionPolicy.RUNTIME)
     @interface List {

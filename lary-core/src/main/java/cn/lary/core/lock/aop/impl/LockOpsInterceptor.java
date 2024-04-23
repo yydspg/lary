@@ -8,6 +8,7 @@ import cn.lary.core.lock.anno.Lock;
 import cn.lary.core.lock.builder.LockKeyBuilder;
 import cn.lary.core.lock.config.LockProp;
 import cn.lary.core.lock.lockFailPloy.LockFailPloy;
+import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.lang.NonNull;
@@ -18,7 +19,7 @@ import java.util.Collection;
 /**
  * @author paul 2024/4/13
  */
-
+@Slf4j
 public class LockOpsInterceptor extends AbstractConditionLockChainInterceptor {
     private final LockTemplate lockTemplate;
     protected final LockProp lockProp;
@@ -48,6 +49,7 @@ public class LockOpsInterceptor extends AbstractConditionLockChainInterceptor {
     }
     @Override
     protected Object doLock(LockOps lockOps, MethodInvocation invocation) throws Throwable {
+        log.info("加锁{}",lockOps.toString());
         Lock anno = lockOps.getAnno();
         LockInfo lockInfo = null;
         try {
@@ -62,6 +64,7 @@ public class LockOpsInterceptor extends AbstractConditionLockChainInterceptor {
         }
     }
     private void doUnlock(@Nullable LockInfo lockInfo, Lock lock) {
+        log.info("解锁{}",lockInfo.toString());
         if (lockInfo == null || lock.autoRelease()) {
             return ;
         }

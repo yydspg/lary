@@ -1,5 +1,6 @@
 package cn.lary.core.lock.exec.impl;
 
+import cn.lary.core.lock.exec.AbstractLockExec;
 import cn.lary.core.util.DateKit;
 import lombok.AllArgsConstructor;
 import lombok.NoArgsConstructor;
@@ -13,7 +14,7 @@ import java.util.concurrent.locks.ReentrantLock;
  */
 @NoArgsConstructor
 @AllArgsConstructor
-public class LocalLockExec extends AbstractLockExec<LocalLockExec.LocalLock>{
+public class LocalLockExec extends AbstractLockExec<LocalLockExec.LocalLock> {
 
     private boolean fair = true;
 

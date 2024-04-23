@@ -6,8 +6,8 @@ package cn.lary.oss.constant;
 
 public interface Oss {
     public interface Channel{
-        public String MINIO = "minio";
-        public String ALIYUN = "aliyun";
+        public String MINIO = "minioService";
+        public String ALIYUN = "aliyunService";
     }
     public interface Limit {
         long MAX_OBJECT_SIZE = 5L * 1024 * 1024 * 1024 * 1024;

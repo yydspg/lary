@@ -42,7 +42,6 @@ public class ReqKit {
                 }
                 return JSONObject.parseObject(body);
             } catch (Exception e) {
-                log.error("[{}]ConvertParamsError", body);
                 throw new BizException(ApiCode.PARAMS_ERROR, "ConvertError");
             }
         }

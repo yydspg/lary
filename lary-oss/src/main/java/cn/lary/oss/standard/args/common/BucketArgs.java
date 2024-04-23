@@ -14,4 +14,6 @@ public abstract class BucketArgs extends BaseArgs{
     private String bucketName;
 
     private String region;
+
+    private String channel;
 }

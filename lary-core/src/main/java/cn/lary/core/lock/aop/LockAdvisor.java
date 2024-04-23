@@ -10,6 +10,7 @@ import org.springframework.aop.support.ComposablePointcut;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.BeanFactory;
 import org.springframework.beans.factory.BeanFactoryAware;
+import org.springframework.stereotype.Component;
 
 /**
  * @author paul 2024/4/13

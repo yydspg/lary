@@ -1,4 +1,4 @@
-package cn.lary.core.lock.exec.impl;
+package cn.lary.core.lock.exec;
 
 import cn.lary.core.lock.exec.LockExec;
 

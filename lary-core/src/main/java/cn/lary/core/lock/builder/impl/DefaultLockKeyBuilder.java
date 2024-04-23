@@ -9,6 +9,8 @@ import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.util.StringUtils;
 
 import java.lang.reflect.Method;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 /**
  * @author paul 2024/4/13
@@ -16,6 +18,7 @@ import java.lang.reflect.Method;
 
 @RequiredArgsConstructor
 public class DefaultLockKeyBuilder implements LockKeyBuilder {
+
     private final MethodExpressEvaluator methodExpressEvaluator;
 
     private final LockProp lockProp;
@@ -29,10 +32,12 @@ public class DefaultLockKeyBuilder implements LockKeyBuilder {
         sb.append(this.getSpelKey(lock.keys(), invocation));
         return sb.toString();
     }
-    // TODO 2024/4/13 : 未实现
-    protected String getSpelKey(String[] definitionKeys,MethodInvocation invocation) {
+    private String getSpelKey(String[] definitionKeys,MethodInvocation invocation) {
         Method method = invocation.getMethod();
         Object[] arguments = invocation.getArguments();
-        return null;
+        return Stream.of(definitionKeys)
+                .filter(StringUtils::hasText)
+                .map(k -> methodExpressEvaluator.getV(method, arguments, k, String.class))
+                .collect(Collectors.joining("."));
     }
 }

@@ -10,8 +10,11 @@ import cn.lary.core.lock.builder.LockKeyBuilder;
 import cn.lary.core.lock.builder.impl.DefaultLockKeyBuilder;
 import cn.lary.core.lock.exec.LockExec;
 import cn.lary.core.lock.exec.impl.LocalLockExec;
+import cn.lary.core.lock.exec.impl.RedissonLockExec;
 import cn.lary.core.lock.lockFailPloy.DefaultLockFailPloy;
 import cn.lary.core.lock.lockFailPloy.LockFailPloy;
+import lombok.extern.slf4j.Slf4j;
+import org.redisson.api.RedissonClient;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.context.annotation.Bean;
@@ -26,7 +29,7 @@ import java.util.List;
  */
 @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
 @Configuration(proxyBeanMethods = false)
-public class LockAutoConfiguration {
+public class LockAutoConfig {
     @Bean
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @ConditionalOnMissingBean(MethodExpressEvaluator.class)
@@ -48,13 +51,13 @@ public class LockAutoConfiguration {
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @Bean
     @ConditionalOnMissingBean
-    public LockKeyBuilder lockKeyBuilder(MethodExpressEvaluator methodExpressEvaluator,LockProp lockProp) {
+    public DefaultLockKeyBuilder lockKeyBuilder(MethodExpressEvaluator methodExpressEvaluator,LockProp lockProp) {
         return new DefaultLockKeyBuilder(methodExpressEvaluator,lockProp);
     }
     @Bean
     @ConditionalOnMissingBean
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
-    public LockFailPloy lockFailPloy() {
+    public DefaultLockFailPloy lockFailPloy() {
         return new DefaultLockFailPloy();
     }
     @Bean
@@ -62,16 +65,19 @@ public class LockAutoConfiguration {
     public LocalLockExec localLockExecutor() {
         return new LocalLockExec();
     }
-    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @Bean
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
+    public RedissonLockExec redissonLockExec(RedissonClient redissonClient) {return new RedissonLockExec(redissonClient);}
+    @Bean
+    @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @ConditionalOnMissingBean
-    public LockAdvisor lockAnnotationAdvisor(LockMethodInterceptor lockInterceptor) {
+    public LockAdvisor lockAdvisor(LockMethodInterceptor lockInterceptor) {
         return new LockAdvisor(lockInterceptor, Ordered.HIGHEST_PRECEDENCE);
     }
     @Role(BeanDefinition.ROLE_INFRASTRUCTURE)
     @Bean
     @ConditionalOnMissingBean(LockMethodInterceptor.class)
-    public LockOpsInterceptor conditionalLockOpsInterceptor(
+    public LockOpsInterceptor lockOpsInterceptor(
             MethodExpressEvaluator methodExpressEvaluator,
             LockProp lockProp, LockTemplate lockTemplate) {
         return new LockOpsInterceptor(methodExpressEvaluator, lockTemplate, lockProp);

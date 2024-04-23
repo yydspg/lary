@@ -7,6 +7,7 @@ import cn.lary.core.lock.builder.LockKeyBuilder;
 import cn.lary.core.lock.lockFailPloy.LockFailPloy;
 import lombok.*;
 import lombok.experimental.Accessors;
+import lombok.extern.slf4j.Slf4j;
 import org.aopalliance.intercept.MethodInvocation;
 import org.springframework.aop.framework.AopProxyUtils;
 import org.springframework.beans.BeansException;
@@ -30,6 +31,7 @@ import java.util.Optional;
 /**
  * @author paul 2024/4/13
  */
+@Slf4j
 @RequiredArgsConstructor(access = AccessLevel.PROTECTED)
 public abstract class AbstractLockInterceptor implements InitializingBean, ApplicationContextAware, LockMethodInterceptor {
 
@@ -60,8 +62,8 @@ public abstract class AbstractLockInterceptor implements InitializingBean, Appli
                 invocation.getMethod(),
                 method -> Optional.ofNullable(resolveLockOps(invocation)).orElse(NULL)
         );
-        MethodInvocation invocationWithLock = lockOps.attach(invocation);
-        return invocationWithLock.proceed();
+        MethodInvocation decorator = lockOps.attach(invocation);
+        return decorator.proceed();
     }
 
     @Override
@@ -82,6 +84,7 @@ public abstract class AbstractLockInterceptor implements InitializingBean, Appli
     }
 
     protected LockOps createLockOps(Lock lock) {
+
         // Obtain an instance based on the keyBuilder configured in the annotation
         LockKeyBuilder resK = Optional.ofNullable(lock.keyBuilderStrategy())
                 .filter(t -> !Objects.equals(t, LockKeyBuilder.class))
@@ -90,6 +93,7 @@ public abstract class AbstractLockInterceptor implements InitializingBean, Appli
                 .flatMap(t -> t.stream().min(AnnotationAwareOrderComparator.INSTANCE))
                 .map(LockKeyBuilder.class::cast)
                 .orElse(defaultLockOps.getLockKeyBuilder());
+
         // Obtain an instance based on the LockFailPloy configured in the annotation
         LockFailPloy resF = Optional.ofNullable(lock.failStrategy())
                 .filter(t -> !Objects.equals(t, LockFailPloy.class))
@@ -119,6 +123,8 @@ public abstract class AbstractLockInterceptor implements InitializingBean, Appli
             return invocation;
         }
     }
+
+
     // null  placeholder
     private static class NullLockOps implements LockOps {
         @Override
@@ -134,6 +140,8 @@ public abstract class AbstractLockInterceptor implements InitializingBean, Appli
             return null;
         }
     }
+
+
     // default lockOps impl
     @Accessors(chain = true)
     @Getter
@@ -149,7 +157,11 @@ public abstract class AbstractLockInterceptor implements InitializingBean, Appli
         private LockFailPloy lockFailPloy;
 
         private int order = Ordered.LOWEST_PRECEDENCE;
-
+        //Decorator mode
+        @Override
+        public MethodInvocation attach(MethodInvocation invocation) {
+            return new DelegatedMethodInvocation(invocation, inv -> doLock(this, inv));
+        }
     }
     // lock ops delegate
     @RequiredArgsConstructor
@@ -174,10 +186,12 @@ public abstract class AbstractLockInterceptor implements InitializingBean, Appli
     }
     @RequiredArgsConstructor
     private static class DelegatedMethodInvocation implements MethodInvocation {
+
         private final MethodInvocation delegate;
         private final ThrowableFunction<MethodInvocation, Object> invoker;
         @Override
         public Object proceed() throws Throwable {
+            // interceptor
             return invoker.apply(delegate);
         }
         @Override

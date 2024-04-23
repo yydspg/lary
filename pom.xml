@@ -17,6 +17,8 @@
         <module>lary-logistics</module>
         <module>lary-member</module>
         <module>lary-stream</module>
+        <module>lary-test</module>
+        <module>lary-oss</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -226,6 +228,11 @@
                 <groupId>com.aliyun.oss</groupId>
                 <artifactId>aliyun-sdk-oss</artifactId>
                 <version>${aliyun.oss.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>cn.lary</groupId>
+                <artifactId>lary-core</artifactId>
+                <version>${lary.core.version}</version>
             </dependency>
         </dependencies>
     </dependencyManagement>
