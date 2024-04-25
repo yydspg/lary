@@ -7,6 +7,7 @@ import cn.lary.core.ratelimiter.ploy.RatePloy;
 import jakarta.annotation.Resource;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.RedisTemplate;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
@@ -25,6 +26,8 @@ import java.util.Map;
 public class SlidingWindowPloy extends RatePloy<SlidingWindow> {
 
     private final StringRedisTemplate srt;
+
+    @Qualifier(value = "slidingWindowLuaScript")
     private final DefaultRedisScript<Boolean> slidingWinLimitScript;
     @Override
     public String getName() {
@@ -33,7 +36,8 @@ public class SlidingWindowPloy extends RatePloy<SlidingWindow> {
 
     @Override
     public Boolean isLimit(SlidingWindow limit) {
-        return srt.execute(slidingWinLimitScript, Collections.singletonList(limit.getKey()), limit.getCount(), limit.getSize(), "132");
+        log.info("执行限流:[{}]",limit.getKey());
+        return srt.execute(slidingWinLimitScript, Collections.singletonList(limit.getKey()), limit.getCount(), limit.getSize(), "scscs");
     }
 
 }

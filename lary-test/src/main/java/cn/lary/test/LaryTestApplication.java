@@ -13,7 +13,7 @@ import org.springframework.core.env.Environment;
 import java.net.InetAddress;
 import java.util.Map;
 @Slf4j
-@SpringBootApplication(scanBasePackages = {"cn.lary.test","cn.lary.core.lock"})
+@SpringBootApplication(scanBasePackages = {"cn.lary.test","cn.lary.core.lock","cn.lary.core.ratelimiter"})
 public class LaryTestApplication {
 
     public static ConfigurableApplicationContext applicationContext;

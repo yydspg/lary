@@ -19,6 +19,7 @@
         <module>lary-stream</module>
         <module>lary-test</module>
         <module>lary-oss</module>
+        <module>lary-id</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -36,7 +37,11 @@
         <lary.product.version>0.0.1</lary.product.version>
         <lary.store.version>0.0.1</lary.store.version>
         <lary.auth.version>0.0.1</lary.auth.version>
-        <lary.api.version>0.0.1</lary.api.version>
+        <lary.oss.version>0.0.1</lary.oss.version>
+        <lary.id.version>0.0.1</lary.id.version>
+        <lary.stream.version>0.0.1</lary.stream.version>
+        <lary.member.version>0.0.1</lary.member.version>
+        <lary.logistics.version>0.0.1</lary.logistics.version>
 
         <spring-boot.version>3.2.4</spring-boot.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>

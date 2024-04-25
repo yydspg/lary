@@ -10,14 +10,10 @@ import cn.lary.core.ratelimiter.model.Limit;
 public class SlidingWindow extends Limit {
     public SlidingWindow(String K,Rate rate) {
         super(K,rate);
-        this.size = rate.size();
+        this.size = String.valueOf(rate.size());
     }
-
-
-    private int  size;
-
-
-    public int getSize() {
+    private String  size;
+    public String  getSize() {
         return size;
     }
 }

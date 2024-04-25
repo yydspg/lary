@@ -6,6 +6,7 @@ import cn.lary.core.ratelimiter.anno.Rate;
 import cn.lary.core.ratelimiter.model.impl.TokenBucket;
 import cn.lary.core.ratelimiter.ploy.RatePloy;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.script.DefaultRedisScript;
 import org.springframework.stereotype.Component;
@@ -21,6 +22,7 @@ import java.util.Map;
 public class TokenBucketPloy extends RatePloy<TokenBucket> {
 
     private final StringRedisTemplate str;
+    @Qualifier(value = "tokenBucketLuaScript")
     private final DefaultRedisScript<Boolean> tokenBucKtLimitLuaScript;
     @Override
     public String getName() {

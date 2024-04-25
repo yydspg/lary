@@ -18,11 +18,11 @@ public class Limit {
 
     private TimeUnit unit;
 
-    private Integer count;
+    private String count;
 
     public Limit(String K,Rate rate) {
         this.key = K;
         this.unit = rate.unit();
-        this.count = rate.count();
+        this.count = String.valueOf(rate.count());
     }
 }

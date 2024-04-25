@@ -1,13 +1,14 @@
 ## mall project
 ### modules
-- 评论
-- 存储
-- 消息`openIm`
-- 安全`spring-cloud-security`
-- 搜索
-- 视频
-- 支付`los`
-- 直播
-- 日志收集
-- 缓存`redis批量导入`
-- 鉴权`pbac`
+- 评论`remark`[undo]
+- 存储[undo]
+- 消息`openIm`[undo]
+- 搜索[undo]
+- 视频[undo]
+- 支付`los`[80%]
+- 直播[undo]
+- 日志收集[undo]
+- 缓存`redis批量导入`[undo]
+- 鉴权`rbac`[undo]
+- 会员`member`[undo]
+- 对象存储`oss`[50%]

@@ -15,7 +15,7 @@ public class LimitFactory {
     private LimitFactory(){}
 
     public static  Limit get(String key, Rate rate) {
-         return switch (key) {
+         return switch (rate.ploy()) {
             case RateCS.Ploy.FIXED_WINDOW -> new FixedWindow(key,rate);
             case RateCS.Ploy.SLIDING_WINDOW -> new SlidingWindow(key,rate);
             default -> new TokenBucket(key,rate);

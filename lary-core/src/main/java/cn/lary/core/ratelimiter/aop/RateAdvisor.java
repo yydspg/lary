@@ -20,7 +20,7 @@ import org.springframework.beans.factory.BeanFactoryAware;
 
 public class RateAdvisor extends AbstractPointcutAdvisor implements BeanFactoryAware{
     private final RateInterceptor advice;
-    private final Pointcut pointcut = new AnnotationMatchingPointcut(Rate.class);
+    private final Pointcut pointcut = new ComposablePointcut(new AnnoMethodPoint(Rate.class));
 
     public RateAdvisor(@NonNull RateInterceptor rateInterceptor) {
         this.advice = rateInterceptor;

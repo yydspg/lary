@@ -31,13 +31,7 @@ public abstract class RatePloy <K extends Limit> {
         T get() throws Throwable;
     }
 
-    @FunctionalInterface
-    public interface Executor {
-        void execute() throws Throwable;
-    }
-
     public <T> T execute(K limit, Supplier<T> supplier) throws Throwable {
-
         if (isLimit(limit)) {throw new RateException("reachLimit");}
         return supplier.get();
     }

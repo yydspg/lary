@@ -49,7 +49,6 @@ public class LockTemplate implements InitializingBean {
         try {
             do {
                 acquireCount++;
-                log.info(lockK);
                 Object lockInstance = lockExec.lock(lockK, lockV, expire, acquireTimeout);
                 if (lockInstance != null) {
                     return new LockInfo(lockK,lockV,expire,acquireTimeout,acquireCount,lockInstance,lockExec);

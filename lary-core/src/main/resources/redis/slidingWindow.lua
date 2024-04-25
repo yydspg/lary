@@ -1,10 +1,11 @@
+-- redis key
 local key = KEYS[1]
+-- number od windows
 local count = tonumber(ARGV[1])
--- milliseconds
+-- real time size (milliseconds)
 local size = tonumber(ARGV[2])
+--redis value
 local v = ARGV[3]
-
-redis.replicate_commands()
 
 local date = redis.call("time")
 local now = tonumber(date[1])*1000 + tonumber(date[2])
@@ -19,4 +20,5 @@ else
     redis.call('zadd',key,now,v)
     redis.call('zremrangebyscore',key,0,start -1000000)
     redis.call('expire',key,expire)
+    return true
 end

@@ -13,18 +13,17 @@ import java.util.concurrent.TimeUnit;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface Rate {
+    String name() default "";
 
     String ploy() default RateCS.Ploy.SLIDING_WINDOW;
 
     int size() default 10;
 
-    String spEl() default "";
-
     int time() default 10;
     
     TimeUnit unit() default TimeUnit.SECONDS;
 
-    int count() default 1;
+    int count() default 10;
 
     long capacity() default 3;
 

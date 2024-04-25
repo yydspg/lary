@@ -11,6 +11,9 @@ import org.springframework.stereotype.Service;
 @Service
 public class TestService {
     public void test1(){
-        log.info("service-->test");
+        log.info("service-->lockTest");
+    }
+    public void test2(){
+        log.info("service-->rateTest");
     }
 }
