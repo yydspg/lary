@@ -2,6 +2,7 @@ package cn.lary.id.core.segment;
 
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
@@ -95,15 +96,26 @@ public class Buffer {
         this.updateTimestamp = updateTimestamp;
     }
 
-    public AtomicBoolean getIsRunning() {
+    public AtomicBoolean isRunning() {
         return isRunning;
     }
 
-    public ReadWriteLock getLock() {
-        return lock;
+
+    public Lock rLock() {
+        return lock.readLock();
     }
 
-    public Segment getCurrent() {return segments[nowIndex];}
+    public Lock wLock() {
+        return lock.writeLock();
+    }
+    public int nextIndex() {
+        return (nowIndex + 1) % 2;
+    }
+
+    public void switchIndex() {
+        nowIndex = nextIndex();
+    }
+    public Segment getNow() {return segments[nowIndex];}
     @Override
     public String toString() {
         final StringBuilder sb = new StringBuilder("Buffer{");

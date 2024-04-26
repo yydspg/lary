@@ -5,17 +5,17 @@ package cn.lary.id.core.segment;
  */
 
 public class LaryCore {
-    private String k;
+    private String tag;
     private long maxId;
     private int step;
     private String updateTime;
 
-    public String getK() {
-        return k;
+    public String getTag() {
+        return tag;
     }
 
-    public void setK(String k) {
-        this.k = k;
+    public void setTag(String tag) {
+        this.tag = tag;
     }
 
     public long getMaxId() {

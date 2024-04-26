@@ -5,6 +5,6 @@ package cn.lary.id.core;
  */
 
 public interface IdProd {
-    String get(String tag);
+    Res get(String tag);
     void init();
 }

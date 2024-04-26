@@ -14,7 +14,7 @@ public class SegConnPool {
     static {
         dataSource = new BasicDataSource();
         dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://localhost:3306/mydatabase");
+        dataSource.setUrl("jdbc:mysql://localhost:3306/lary_id");
         dataSource.setUsername("username");
         dataSource.setPassword("password");
         dataSource.setMaxTotal(20);

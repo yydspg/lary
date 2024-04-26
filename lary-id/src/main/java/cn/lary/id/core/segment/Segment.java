@@ -49,6 +49,9 @@ public class Segment {
     public void setBuffer(Buffer buffer) {
         this.buffer = buffer;
     }
+    public long getIdle() {
+        return this.getMax() - getV().get();
+    }
     @Override
     public String toString() {
          final StringBuilder sb = new StringBuilder("Segment(");
