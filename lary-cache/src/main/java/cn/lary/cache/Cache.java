@@ -1,4 +1,4 @@
-package cn.lary.core.cache;
+package cn.lary.cache;
 
 import java.util.Collection;
 import java.util.List;

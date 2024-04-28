@@ -1,25 +1,35 @@
 package cn.lary.id.service.segment;
 
-import org.apache.commons.dbcp2.BasicDataSource;
 
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
+
+import javax.sql.DataSource;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 /**
+ *  database connection pool
  * @author paul 2024/4/25
  */
 
 public class SegConnPool {
-    private static BasicDataSource dataSource;
+
+    private static final DataSource dataSource;
+
     static {
-        dataSource = new BasicDataSource();
-        dataSource.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        dataSource.setUrl("jdbc:mysql://localhost:3306/lary_id");
-        dataSource.setUsername("username");
-        dataSource.setPassword("password");
-        dataSource.setMaxTotal(20);
-        dataSource.setMinIdle(5);
+        HikariConfig config = new HikariConfig();
+        config.setJdbcUrl("jdbc:mysql://192.168.142.6:3306/lary_id");
+        config.setUsername("root");
+        config.setPassword("123456");
+        config.setDriverClassName("com.mysql.cj.jdbc.Driver");
+        config.setConnectionTimeout(30000);
+        config.setAutoCommit(true);
+        config.setMaximumPoolSize(15);
+        config.setMinimumIdle(5);
+        dataSource= new HikariDataSource(config);
     }
+
     public static Connection get()  {
         try {
             return dataSource.getConnection();

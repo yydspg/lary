@@ -5,9 +5,13 @@ package cn.lary.id.core.segment;
  */
 
 public class LaryCore {
+    // Unique identification of different businesses
     private String tag;
+    // max id
     private long maxId;
+    // base step
     private int step;
+    //update time
     private String updateTime;
 
     public String getTag() {

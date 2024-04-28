@@ -1,6 +1,6 @@
-package cn.lary.core.cache.impl;
+package cn.lary.cache.impl;
 
-import cn.lary.core.cache.Cache;
+import cn.lary.cache.Cache;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Component;

@@ -1,7 +1,6 @@
 package cn.lary.id.service.segment;
 
 import cn.lary.id.core.segment.LaryCore;
-import org.springframework.stereotype.Component;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -14,8 +13,10 @@ import java.util.List;
 /**
  * @author paul 2024/4/25
  */
-@Component
+
+
 public class SegSql {
+    
     private final String[] sql = {
             "select tag,max_id,step,update_time from lary_core",
             "select tag,max_id,step from lary_core where tag = ",
@@ -35,7 +36,7 @@ public class SegSql {
             }
             while(tem.next()){
                 LaryCore t = new LaryCore();
-                t.setK(tem.getString(0));
+                t.setTag(tem.getString(0));
                 t.setMaxId(tem.getLong(1));
                 t.setStep(tem.getInt(2));
                 t.setUpdateTime(tem.getString(3));
@@ -113,7 +114,7 @@ public class SegSql {
         }
         LaryCore res = new LaryCore();
         try {
-            res.setK(tem.getString(0));
+            res.setTag(tem.getString(0));
             res.setMaxId(tem.getLong(1));
             res.setStep(tem.getInt(tem.getInt(2)));
         } catch (SQLException e) {

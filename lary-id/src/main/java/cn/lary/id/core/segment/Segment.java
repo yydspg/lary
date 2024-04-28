@@ -1,17 +1,20 @@
 package cn.lary.id.core.segment;
 
-import cn.lary.id.core.segment.Buffer;
-
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
+ *
  * @author paul 2024/4/25
  */
 
 public class Segment {
+    // current consumer distributed id
     private AtomicLong v = new AtomicLong(0);
+    // current segment max id
     private volatile long max;
+    // step
     private volatile int step;
+    // cache
     private Buffer buffer;
 
     public Segment(Buffer buffer) {
@@ -46,9 +49,6 @@ public class Segment {
         return buffer;
     }
 
-    public void setBuffer(Buffer buffer) {
-        this.buffer = buffer;
-    }
     public long getIdle() {
         return this.getMax() - getV().get();
     }

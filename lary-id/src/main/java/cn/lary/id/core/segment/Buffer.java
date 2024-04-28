@@ -7,22 +7,33 @@ import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 
 /**
- * Double layer cache
+ * Double layer cache , contains two segment ,which means now ,other is next
  * @author paul 2024/4/25
  */
 
 public class Buffer {
+    // Unique identification of different businesses
     private String tag;
+    // double segments cache
     private Segment[] segments;
+    // current step (self-adaption)
     private volatile int step;
+    // database step
     private volatile int minStep;
+    // it indicates which segment is using
     private volatile int nowIndex;
+    // next segment status
     private volatile boolean isNextOk;
+    // buffer init status
     private volatile boolean isInitOk;
+    // update time mills
     private volatile long updateTimestamp;
+    // thread running status
     private final AtomicBoolean isRunning;
+    // control lock
     private final ReadWriteLock lock;
 
+    // init segments
     public Buffer() {
         segments = new Segment[]{new Segment(this),new Segment(this)};
         nowIndex = 0;
@@ -44,10 +55,6 @@ public class Buffer {
         return segments;
     }
 
-    public void setSegments(Segment[] segments) {
-        this.segments = segments;
-    }
-
     public int getStep() {
         return step;
     }
@@ -64,13 +71,6 @@ public class Buffer {
         this.minStep = minStep;
     }
 
-    public int getNowIndex() {
-        return nowIndex;
-    }
-
-    public void setNowIndex(int nowIndex) {
-        this.nowIndex = nowIndex;
-    }
 
     public boolean isNextOk() {
         return isNextOk;
@@ -109,9 +109,8 @@ public class Buffer {
         return lock.writeLock();
     }
     public int nextIndex() {
-        return (nowIndex + 1) % 2;
+        return (nowIndex ^ 1) & 1;
     }
-
     public void switchIndex() {
         nowIndex = nextIndex();
     }

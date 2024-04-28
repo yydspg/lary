@@ -1,14 +1,16 @@
 package cn.lary.id.service.segment;
 
+import cn.lary.api.id.Res;
 import cn.lary.id.core.IdProd;
-import cn.lary.id.core.Res;
 import cn.lary.id.core.segment.Buffer;
 import cn.lary.id.core.segment.LaryCore;
 import cn.lary.id.core.segment.Segment;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -23,13 +25,11 @@ public class SegService implements IdProd {
     private static final long SEGMENT_DURATION = 15 * 60 * 1000L;
     private static final byte ok = 1;
     private static final byte fail = 0;
-    private final SegSql segSql;
+
+    private final SegSql exec = new SegSql();
     private ExecutorService service = new ThreadPoolExecutor(5, Integer.MAX_VALUE, 60L, TimeUnit.SECONDS, new SynchronousQueue<Runnable>(), new UpdateThreadFactory());
     private Map<String, Buffer> cache = new ConcurrentHashMap<String, Buffer>();
-    @Autowired
-    public SegService(SegSql segSql){
-        this.segSql = segSql;
-    }
+
     @Override
     public void init() {
         loadCacheTags();
@@ -62,7 +62,7 @@ public class SegService implements IdProd {
         service.scheduleWithFixedDelay(this::loadCacheTags, 60, 60, TimeUnit.SECONDS);
     }
     private void loadCacheTags(){
-        List<String> queryTags = segSql.getAllTag();
+        List<String> queryTags = exec.getAllTag();
         if(queryTags == null || queryTags.isEmpty()) return ;
         List<String> cacheTags = cache.keySet().stream().toList();
         Set<String> addCacheTags = new HashSet<>();
@@ -151,7 +151,7 @@ public class SegService implements IdProd {
         Buffer buffer = segment.getBuffer();
         LaryCore laryCore;
         if(!buffer.isInitOk() || buffer.getUpdateTimestamp() == 0) {
-            laryCore = segSql.update(tag);
+            laryCore = exec.update(tag);
             buffer.setStep(laryCore.getStep());
             buffer.setMinStep(laryCore.getStep());
             buffer.setUpdateTimestamp(System.currentTimeMillis());
@@ -168,7 +168,7 @@ public class SegService implements IdProd {
                 nextStep = (nextStep >> 1 >= buffer.getMinStep()) ? nextStep >> 1:nextStep;
             }
             // update custom step
-            laryCore = segSql.updateCustom(tag,nextStep);
+            laryCore = exec.updateCustom(tag,nextStep);
             buffer.setUpdateTimestamp(System.currentTimeMillis());
             buffer.setStep(nextStep);
             buffer.setMinStep(laryCore.getStep());

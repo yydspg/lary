@@ -1,34 +1,18 @@
-package cn.lary.id.core;
+package cn.lary.api.id;
 
 /**
+ *  distribute id result
  * @author paul 2024/4/25
  */
 
 public class Res {
+    // distributed id
     private long id;
+    // 0 means fail,1 means success
     private byte status;
-
-    public Res(){}
-
     public Res(long id,byte status){
         this.id = id;
         this.status = status;
-    }
-
-    public byte getStatus() {
-        return status;
-    }
-
-    public void setStatus(byte status) {
-        this.status = status;
-    }
-
-    public long getId() {
-        return id;
-    }
-
-    public void setId(long id) {
-        this.id = id;
     }
     @Override
     public String toString() {
