@@ -11,5 +11,4 @@ public class LaryIdApplication {
     public static void main(String[] args) {
         SpringApplication.run(LaryIdApplication.class, args);
     }
-
 }

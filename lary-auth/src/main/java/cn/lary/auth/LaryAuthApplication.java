@@ -9,5 +9,4 @@ public class LaryAuthApplication {
     public static void main(String[] args) {
         SpringApplication.run(LaryAuthApplication.class, args);
     }
-
 }

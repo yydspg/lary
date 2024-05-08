@@ -22,6 +22,7 @@
         <module>lary-id</module>
         <module>lary-cache</module>
         <module>lary-api</module>
+        <module>lary-rpc</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -45,7 +46,9 @@
         <lary.member.version>0.0.1</lary.member.version>
         <lary.logistics.version>0.0.1</lary.logistics.version>
         <lary.api.version>0.0.1</lary.api.version>
+        <lary.rpc.version>0.0.1</lary.rpc.version>
 
+        <!--core-->
         <spring-boot.version>3.2.4</spring-boot.version>
         <dubbo.version>3.3.0-beta.2</dubbo.version>
         <spring-cloud.version>2023.0.0</spring-cloud.version>
@@ -71,6 +74,8 @@
         <commons.pool2.version>2.12.0</commons.pool2.version>
         <aliyun.oss.version>3.17.4</aliyun.oss.version>
         <mysql.connect.version>8.0.30</mysql.connect.version>
+        <netty.version>4.1.19.Final</netty.version>
+        <nacos.version>2.2.1</nacos.version>
     </properties>
 
     <dependencyManagement>
@@ -92,12 +97,11 @@
                 <version>${lary.cache.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
+                <groupId>cn.lary</groupId>
+                <artifactId>lary-rpc</artifactId>
+                <version>${lary.rpc.version}</version>
             </dependency>
+            <!-- core -->
             <dependency>
                 <groupId>org.springframework.cloud</groupId>
                 <artifactId>spring-cloud-dependencies</artifactId>
@@ -116,6 +120,13 @@
                 <groupId>org.apache.dubbo</groupId>
                 <artifactId>dubbo-bom</artifactId>
                 <version>${dubbo.version}</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-dependencies</artifactId>
+                <version>${spring-boot.version}</version>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -147,6 +158,11 @@
                 <version>${hutool-version}</version>
             </dependency>
             <dependency>
+                <groupId>io.netty</groupId>
+                <artifactId>netty-all</artifactId>
+                <version>${netty.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.mybatis.spring.boot</groupId>
                 <artifactId>mybatis-spring-boot-starter</artifactId>
                 <version>${mybatis-spring-boot-starter.version}</version>
@@ -161,7 +177,24 @@
                 <artifactId>captcha</artifactId>
                 <version>${captcha.version}</version>
             </dependency>
-
+            <dependency>
+                <groupId>com.alibaba.nacos</groupId>
+                <artifactId>nacos-client</artifactId>
+                <version>${nacos.version}</version>
+                <!-- 指定纯净版SDK -->
+                <classifier>pure</classifier>
+            </dependency>
+            <!-- 使用纯净版时必须要引入同版本nacos-api和nacos-common，否则可能出现运行时找不到类的问题 -->
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-common</artifactId>
+                <version>${nacos.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>${project.groupId}</groupId>
+                <artifactId>nacos-api</artifactId>
+                <version>${nacos.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.github.xiaoymin</groupId>
                 <artifactId>knife4j-openapi3-jakarta-spring-boot-starter</artifactId>
