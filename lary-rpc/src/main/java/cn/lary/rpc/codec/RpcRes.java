@@ -36,4 +36,7 @@ public  class RpcRes implements Serializable {
     public void setReqId(String reqId) {
         this.reqId = reqId;
     }
+    public boolean isError() {
+        return errorMsg != null;
+    }
 }
