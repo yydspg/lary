@@ -1,0 +1,10 @@
+cn/lary/id/core/IdProd.class
+cn/lary/id/service/segment/SegSql.class
+cn/lary/id/core/segment/Segment.class
+cn/lary/id/service/segment/SegConnPool.class
+cn/lary/id/service/segment/SegService$UpdateThreadFactory.class
+cn/lary/id/core/segment/Buffer.class
+cn/lary/id/core/segment/LaryCore.class
+cn/lary/id/rpc/SegmentIdServiceImpl.class
+cn/lary/id/service/segment/SegService.class
+cn/lary/id/LaryIdApplication.class

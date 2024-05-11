@@ -1,0 +1,51 @@
+{
+  "groups": [
+    {
+      "name": "lock",
+      "type": "cn.lary.core.lock.config.LockProp",
+      "sourceType": "cn.lary.core.lock.config.LockProp"
+    }
+  ],
+  "properties": [
+    {
+      "name": "lock.acquire-timeout",
+      "type": "java.lang.Long",
+      "sourceType": "cn.lary.core.lock.config.LockProp",
+      "defaultValue": 3000
+    },
+    {
+      "name": "lock.expire",
+      "type": "java.lang.Long",
+      "sourceType": "cn.lary.core.lock.config.LockProp",
+      "defaultValue": 30000
+    },
+    {
+      "name": "lock.lock-key-prefix",
+      "type": "java.lang.String",
+      "sourceType": "cn.lary.core.lock.config.LockProp",
+      "defaultValue": "lock"
+    },
+    {
+      "name": "lock.primary-executor",
+      "type": "java.lang.Class<? extends cn.lary.core.lock.exec.LockExec>",
+      "sourceType": "cn.lary.core.lock.config.LockProp"
+    },
+    {
+      "name": "lock.primary-failure-strategy",
+      "type": "java.lang.Class<? extends cn.lary.core.lock.lockFailPloy.LockFailPloy>",
+      "sourceType": "cn.lary.core.lock.config.LockProp"
+    },
+    {
+      "name": "lock.primary-key-builder",
+      "type": "java.lang.Class<? extends cn.lary.core.lock.builder.LockKeyBuilder>",
+      "sourceType": "cn.lary.core.lock.config.LockProp"
+    },
+    {
+      "name": "lock.retry-interval",
+      "type": "java.lang.Long",
+      "sourceType": "cn.lary.core.lock.config.LockProp",
+      "defaultValue": 100
+    }
+  ],
+  "hints": []
+}

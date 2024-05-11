@@ -92,7 +92,7 @@ public class RpcFuture implements Future<Object> {
             @Override
             public void run() {
                 if(!rpcRes.isError()) callback.success(rpcRes.getAppRes());
-                else callback.fail(new RuntimeException("RpcResponse error",new Throwable(rpcRes.getErrorMsg()));
+                else callback.fail(new RuntimeException("RpcResponse error",new Throwable(rpcRes.getErrorMsg())));
             }
         });
     }
