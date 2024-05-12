@@ -1,6 +1,5 @@
 package cn.lary.rpc.registry;
 
-import cn.lary.rpc.config.SystemProperties;
 import cn.lary.rpc.protocol.RpcProtocol;
 import cn.lary.rpc.protocol.RpcServiceInfo;
 import org.slf4j.Logger;

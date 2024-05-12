@@ -45,7 +45,7 @@ public class RpcClientHandler extends SimpleChannelInboundHandler<RpcRes> {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        ConnectManager.getInstance().removeRpcClientHandler(rpcProtocol);
+        ConnectManager.getInstance().removeHandler(rpcProtocol);
     }
 
     @Override

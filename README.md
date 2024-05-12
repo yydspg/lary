@@ -12,3 +12,5 @@
 - 鉴权`rbac`[undo]
 - 会员`member`[undo]
 - 对象存储`oss`[50%]
+- 分布式id `id`[done]
+- rpc [80%]

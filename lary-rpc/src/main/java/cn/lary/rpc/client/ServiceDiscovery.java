@@ -9,5 +9,7 @@ public class ServiceDiscovery {
     public ServiceDiscovery(String serverAddress) {
         // TODO  :  implement nacos service discovery func
     }
+    public void stop() {
 
+    }
 }

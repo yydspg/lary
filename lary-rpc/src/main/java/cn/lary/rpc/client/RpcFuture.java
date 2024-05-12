@@ -23,7 +23,7 @@ public class RpcFuture implements Future<Object> {
     private RpcReq rpcReq;
     private RpcRes rpcRes;
     private long startTime;
-    private long responseTimeThreshold;
+    private long responseTimeThreshold = 500;
     private final List<AsyncRpcCallback> pendingCallbacks = new ArrayList<>();
     private final ReentrantLock lock = new ReentrantLock();
 
