@@ -5,6 +5,7 @@ import cn.lary.rpc.protocol.RpcServiceInfo;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,8 @@ public class ServiceRegistry {
                 rpcProtocol.setRpcServiceInfos(serviceInfoList);
                 // batch register service
                 for (RpcServiceInfo t : serviceInfoList) {
-                        registryClient.login(SystemProperties.getHost(),SystemProperties.getPort(),t.getServiceName(),t.getVersion());
+                        // TODO :  here some thing error
+                        registryClient.login(System.getProperty("host"),Integer.parseInt(System.getProperty("port")),t.getServiceName(),t.getVersion());
                         log.info("Register new service: [{}] ", t.getServiceName());
                 }
         }

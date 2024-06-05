@@ -127,6 +127,12 @@
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <groupId>org.springframework.boot</groupId>
+                        <artifactId>spring-boot-starter-logging</artifactId>
+                    </exclusion>
+                </exclusions>
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
@@ -241,21 +247,21 @@
                 <artifactId>fastjson2</artifactId>
                 <version>${fastjson2.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-starter-common</artifactId>
-                <version>${springdoc.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.springdoc</groupId>
-                <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>
-                <version>${springdoc-webflux.version}</version>
-            </dependency>
+<!--            <dependency>-->
+<!--                <groupId>org.springdoc</groupId>-->
+<!--                <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>-->
+<!--                <version>${springdoc.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>org.springdoc</groupId>-->
+<!--                <artifactId>springdoc-openapi-starter-common</artifactId>-->
+<!--                <version>${springdoc.version}</version>-->
+<!--            </dependency>-->
+<!--            <dependency>-->
+<!--                <groupId>org.springdoc</groupId>-->
+<!--                <artifactId>springdoc-openapi-starter-webflux-ui</artifactId>-->
+<!--                <version>${springdoc-webflux.version}</version>-->
+<!--            </dependency>-->
             <dependency>
                 <groupId>org.redisson</groupId>
                 <artifactId>redisson-spring-boot-starter</artifactId>
@@ -290,11 +296,7 @@
     </dependencyManagement>
 
     <dependencies>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-configuration-processor</artifactId>
-            <optional>true</optional>
-        </dependency>
+
     </dependencies>
     <build>
         <finalName>${project.name}</finalName>

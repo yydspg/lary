@@ -9,6 +9,7 @@
         <outputRelativeToContentRoot value="true" />
         <module name="lary-auth" />
         <module name="lary-test" />
+        <module name="test" />
         <module name="lary-store" />
         <module name="lary-id" />
         <module name="lary-core" />

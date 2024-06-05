@@ -69,7 +69,7 @@ public class NettyServer {
                 } catch (InterruptedException e) {
                     log.info("Rpc server remoting server stop");
                 }finally {
-                        serviceRegistry.deregisterService();
+//                        serviceRegistry.deregisterService();
                         bossGroup.shutdownGracefully();
                         workerGroup.shutdownGracefully();
                 }
