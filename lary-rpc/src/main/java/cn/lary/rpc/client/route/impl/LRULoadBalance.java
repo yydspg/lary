@@ -15,7 +15,7 @@ public class LRULoadBalance extends RpcLoadBalance {
     // TODO  :  try to figure out this segment
     private ConcurrentHashMap<String, LinkedHashMap<RpcProtocol,RpcProtocol>> LRUMap = new ConcurrentHashMap<>();
     @Override
-    public RpcProtocol route(String serviceKey, Map<RpcProtocol, RpcClientHandler> serverNodes) throws Exception {
+    public RpcProtocol route(String serviceKey, Map<String, RpcClientHandler> serverNodes) throws Exception {
         List<RpcProtocol> rpcProtocols = getRpcProtocols(serviceKey, serverNodes);
         // cache clear
         if(System.currentTimeMillis() > cache_time){

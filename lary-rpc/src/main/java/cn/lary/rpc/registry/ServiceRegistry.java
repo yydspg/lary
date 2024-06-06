@@ -1,5 +1,6 @@
 package cn.lary.rpc.registry;
 
+import cn.lary.rpc.core.SystemConfig;
 import cn.lary.rpc.protocol.RpcProtocol;
 import cn.lary.rpc.protocol.RpcServiceInfo;
 import org.slf4j.Logger;
@@ -16,11 +17,14 @@ public class ServiceRegistry {
 
         private RpcProtocol rpcProtocol;
         private final RegistryClient registryClient;
-        public final String registerAddress;
 
-        public ServiceRegistry(String registryServerAddress) {
-                registryClient = new NacosRegistryClient(registryServerAddress);
-                registerAddress  =registryServerAddress;
+        private String localIp;
+        private int localPort;
+        public ServiceRegistry(String serverAddress) {
+                registryClient = NacosRegistryClient.getInstance();
+                String[] args = serverAddress.split(":");
+                localIp = args[0];
+                localPort = Integer.parseInt(args[1]);
         }
 
         public void registerService(Map<String,Object> serviceMap){
@@ -41,15 +45,15 @@ public class ServiceRegistry {
                                 log.warn("Can not get service name and version: [{}] ", key);
                         }
                 }
+                // build server
                 rpcProtocol = new RpcProtocol();
-                String[] args = registerAddress.split(":");
-                rpcProtocol.setHost(args[0]);
-                rpcProtocol.setPort(Integer.parseInt(args[1]));
+                rpcProtocol.setHost(localIp);
+                rpcProtocol.setPort(localPort);
                 rpcProtocol.setRpcServiceInfos(serviceInfoList);
                 // batch register service
                 for (RpcServiceInfo t : serviceInfoList) {
                         // TODO :  here some thing error
-                        registryClient.login(System.getProperty("host"),Integer.parseInt(System.getProperty("port")),t.getServiceName(),t.getVersion());
+                        registryClient.login(localIp,localPort,t.getServiceName(),t.getVersion());
                         log.info("Register new service: [{}] ", t.getServiceName());
                 }
         }

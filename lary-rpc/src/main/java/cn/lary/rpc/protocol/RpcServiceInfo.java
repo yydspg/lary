@@ -5,6 +5,7 @@ import java.util.Map;
 public class RpcServiceInfo {
     private String serviceName;
     private String version;
+
     public String getVersion() {
         return version;
     }

@@ -12,7 +12,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class RoundRobinLoadBalance extends RpcLoadBalance {
     private final ConcurrentHashMap<String, AtomicInteger>  roundRobins =  new ConcurrentHashMap<>();
     @Override
-    public RpcProtocol route(String serviceKey, Map<RpcProtocol, RpcClientHandler> serverNodes) throws Exception {
+    public RpcProtocol route(String serviceKey, Map<String, RpcClientHandler> serverNodes) throws Exception {
         List<RpcProtocol> rpcProtocols = getRpcProtocols(serviceKey, serverNodes);
         roundRobins.putIfAbsent(serviceKey, new AtomicInteger(0));
         AtomicInteger t = roundRobins.get(serviceKey);

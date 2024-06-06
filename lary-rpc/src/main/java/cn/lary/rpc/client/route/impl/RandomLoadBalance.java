@@ -12,7 +12,7 @@ public class RandomLoadBalance extends RpcLoadBalance {
     private final Random random = new Random();
 
     @Override
-    public RpcProtocol route(String serviceKey, Map<RpcProtocol, RpcClientHandler> serverNodes) throws Exception {
+    public RpcProtocol route(String serviceKey, Map<String, RpcClientHandler> serverNodes) throws Exception {
         List<RpcProtocol> rpcProtocols = getRpcProtocols(serviceKey, serverNodes);
         return rpcProtocols.get(random.nextInt(rpcProtocols.size()));
     }

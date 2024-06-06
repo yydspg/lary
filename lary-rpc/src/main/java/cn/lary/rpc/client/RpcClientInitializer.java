@@ -20,8 +20,10 @@ public class RpcClientInitializer extends ChannelInitializer<SocketChannel> {
         KryoSerializer serializer = KryoSerializer.getInstance();
         ChannelPipeline cp = ch.pipeline();
         cp.addLast(new IdleStateHandler(0, 0, Beat.BEAT_INTERVAL, TimeUnit.SECONDS));
+        // encoder RpcReq
         cp.addLast(new RpcEncoder(RpcReq.class, serializer));
         cp.addLast(new LengthFieldBasedFrameDecoder(65536, 0, 4, 0, 0));
+        // decoder RpcRes
         cp.addLast(new RpcDecoder(RpcRes.class, serializer));
         cp.addLast(new RpcClientHandler());
     }

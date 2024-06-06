@@ -16,8 +16,10 @@ public class RpcClientHandler extends SimpleChannelInboundHandler<RpcRes> {
 
     private static final Logger log = LoggerFactory.getLogger(RpcClientHandler.class);
     private final ConcurrentHashMap<String ,RpcFuture> pendingRpc = new ConcurrentHashMap<>();
+    // true data channel
     private volatile Channel channel;
-    private RpcProtocol rpcProtocol;
+
+    public RpcProtocol rpcProtocol;
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
@@ -45,7 +47,7 @@ public class RpcClientHandler extends SimpleChannelInboundHandler<RpcRes> {
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
         super.channelInactive(ctx);
-        ConnectManager.getInstance().removeHandler(rpcProtocol);
+        ServiceDiscovery.getInstance().removeHandler(rpcProtocol.getHost()+":"+rpcProtocol.getPort());
     }
 
     @Override
@@ -70,8 +72,5 @@ public class RpcClientHandler extends SimpleChannelInboundHandler<RpcRes> {
     }
     public void close () {
         channel.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
-    }
-    public void setRpcProtocol(RpcProtocol rpcProtocol) {
-        this.rpcProtocol = rpcProtocol;
     }
 }

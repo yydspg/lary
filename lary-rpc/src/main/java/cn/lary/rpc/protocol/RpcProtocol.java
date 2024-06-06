@@ -1,5 +1,6 @@
 package cn.lary.rpc.protocol;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class RpcProtocol {
@@ -29,5 +30,13 @@ public class RpcProtocol {
 
     public void setRpcServiceInfos(List<RpcServiceInfo> rpcServiceInfos) {
         this.rpcServiceInfos = rpcServiceInfos;
+    }
+    public void addRpcServiceInfo(RpcServiceInfo rpcServiceInfo) {
+        if (rpcServiceInfos == null) {
+            rpcServiceInfos = new ArrayList<>();
+        }
+        if(!rpcServiceInfos.contains(rpcServiceInfo)){
+            rpcServiceInfos.add(rpcServiceInfo);
+        }
     }
 }

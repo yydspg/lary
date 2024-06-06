@@ -1,7 +1,4 @@
 package cn.lary.rpc.client.proxy;
-
-
-
 import cn.lary.rpc.client.*;
 import cn.lary.rpc.codec.RpcReq;
 import cn.lary.rpc.kit.ServiceKit;
@@ -25,7 +22,8 @@ public class ObjectProxy<T,P> implements InvocationHandler , Service<T,P, Serial
     @Override
     public RpcFuture call(String fucName, Object... args) throws Exception {
         String serviceKey = ServiceKit.buildServiceKey(this.clazz.getName(), version);
-        RpcClientHandler rpcClientHandler = ConnectManager.getInstance().getRpcClientHandler(serviceKey);
+        // get process handler
+        RpcClientHandler rpcClientHandler = ServiceDiscovery.getInstance().getRpcClientHandler(serviceKey);
         RpcReq rpcReq = createRpcReq(this.clazz.getName(), fucName, args);
         return rpcClientHandler.sendRpcReq(rpcReq);
     }
@@ -33,7 +31,7 @@ public class ObjectProxy<T,P> implements InvocationHandler , Service<T,P, Serial
     @Override
     public RpcFuture call(SerializableFunction<T> tSerializableFunction, Object... args) throws Exception {
         String serviceKey = ServiceKit.buildServiceKey(this.clazz.getName(), version);
-        RpcClientHandler rpcClientHandler = ConnectManager.getInstance().getRpcClientHandler(serviceKey);
+        RpcClientHandler rpcClientHandler = ServiceDiscovery.getInstance().getRpcClientHandler(serviceKey);
         RpcReq rpcReq = createRpcReq(this.clazz.getName(), tSerializableFunction.getName(), args);
         return rpcClientHandler.sendRpcReq(rpcReq);
     }
@@ -55,7 +53,7 @@ public class ObjectProxy<T,P> implements InvocationHandler , Service<T,P, Serial
             }
         }
         RpcReq rpcReq = createRpcReq(method.getDeclaringClass().getName(), method.getName(), args);
-        RpcClientHandler rpcClientHandler = ConnectManager.getInstance().getRpcClientHandler(ServiceKit.buildServiceKey(method.getDeclaringClass().getName(), version));
+        RpcClientHandler rpcClientHandler = ServiceDiscovery.getInstance().getRpcClientHandler(ServiceKit.buildServiceKey(method.getDeclaringClass().getName(), version));
         return rpcClientHandler.sendRpcReq(rpcReq).get();
     }
     public RpcReq createRpcReq(String className,String methodName,Object[] args){

@@ -29,9 +29,9 @@ public class NettyServer {
 
     Map<String ,Object> services= new HashMap<>();
 
-    public NettyServer(String serverAddress, String registerAddress) {
+    public NettyServer( String serverAddress) {
         this.serverAddress = serverAddress;
-        this.serviceRegistry = new ServiceRegistry(registerAddress);
+        this.serviceRegistry = new ServiceRegistry(serverAddress);
     }
     public void addService(String serviceName,String version,Object serviceBean) {
         log.info("add service {},version {}",serviceName,version);

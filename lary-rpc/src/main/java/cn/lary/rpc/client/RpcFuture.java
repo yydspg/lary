@@ -6,7 +6,7 @@ import cn.lary.rpc.codec.RpcRes;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.Serial;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
@@ -109,7 +109,6 @@ public class RpcFuture implements Future<Object> {
 
     // aqs operation
     static class Sync extends AbstractQueuedSynchronizer {
-        @Serial
         private static final long serialVersionUID = 1L;
         private final int done = 1;
         private final int pending = 0;

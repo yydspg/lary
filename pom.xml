@@ -22,7 +22,6 @@
         <module>lary-id</module>
         <module>lary-cache</module>
         <module>lary-api</module>
-        <module>lary-rpc</module>
     </modules>
 
     <packaging>pom</packaging>
@@ -46,7 +45,6 @@
         <lary.member.version>0.0.1</lary.member.version>
         <lary.logistics.version>0.0.1</lary.logistics.version>
         <lary.api.version>0.0.1</lary.api.version>
-        <lary.rpc.version>0.0.1</lary.rpc.version>
 
         <!--core-->
         <spring-boot.version>3.2.4</spring-boot.version>
@@ -99,7 +97,7 @@
             <dependency>
                 <groupId>cn.lary</groupId>
                 <artifactId>lary-rpc</artifactId>
-                <version>${lary.rpc.version}</version>
+                <version>0.0.1</version>
             </dependency>
             <!-- core -->
             <dependency>
