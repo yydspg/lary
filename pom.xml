@@ -18,7 +18,6 @@
         <module>lary-member</module>
         <module>lary-stream</module>
         <module>lary-test</module>
-        <module>lary-oss</module>
         <module>lary-id</module>
         <module>lary-cache</module>
         <module>lary-api</module>

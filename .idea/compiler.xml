@@ -22,9 +22,11 @@
         <module name="lary-rpc" />
         <module name="lary-member" />
         <module name="lary-cache" />
-        <module name="lary-oss" />
       </profile>
     </annotationProcessing>
+    <bytecodeTargetLevel>
+      <module name="lary-oss" target="17" />
+    </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
