@@ -59,7 +59,7 @@ public class NacosRegistryClient implements RegistryClient {
     }
     public List<Instance> getAllInstances(String serviceName, String group, String version) {
         try {
-            return namingService.getAllInstances(serviceName+version,group);
+            return namingService.getAllInstances(serviceName+":"+version,group);
         } catch (NacosException e) {
             throw new RuntimeException(e);
         }

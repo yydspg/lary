@@ -13,7 +13,7 @@ import java.util.Map;
 
 public abstract class RpcLoadBalance {
 
-    public Map<String,List<RpcProtocol>> serviceMap;
+    public Map<String,List<RpcProtocol>> serviceMap = new HashMap<>();
 
     private void updateServiceMap(Map<String, RpcClientHandler> serverNodes) {
         // serverNodes ,based on instance to collect data

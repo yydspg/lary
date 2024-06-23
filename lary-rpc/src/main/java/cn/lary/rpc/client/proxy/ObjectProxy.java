@@ -8,7 +8,7 @@ import org.slf4j.LoggerFactory;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
 import java.util.UUID;
-
+// means interface proxy implement
 public class ObjectProxy<T,P> implements InvocationHandler , Service<T,P, SerializableFunction<T>> {
     private static final Logger log = LoggerFactory.getLogger(ObjectProxy.class);
     private  Class<T> clazz;

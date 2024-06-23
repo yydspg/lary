@@ -33,7 +33,7 @@ public class ServiceDiscovery {
     private static final Logger log = LoggerFactory.getLogger(ServiceDiscovery.class);
     private final EventLoopGroup eventLoopGroup = new NioEventLoopGroup(4);
     private static final ThreadPoolExecutor threadPoolExecutor = new ThreadPoolExecutor(4,8,600L, TimeUnit.SECONDS,new LinkedBlockingQueue<Runnable>(100));
-    private final Map<String,RpcClientHandler> serverNodes = new ConcurrentHashMap<>();
+    private final Map<String,RpcClientHandler> serverNodes;
     private final CopyOnWriteArraySet<String> rpcProtocolSet = new CopyOnWriteArraySet<>();
     private final ReentrantLock lock = new ReentrantLock();
     private final Condition connected = lock.newCondition();
@@ -41,16 +41,22 @@ public class ServiceDiscovery {
     private final RpcLoadBalance loadBalance ;
     private volatile boolean isRunning = true;
     public static AtomicBoolean updated = new AtomicBoolean(false);
+    public static ServiceDiscovery instance;
     private ServiceDiscovery() {
         loadBalance = new RoundRobinLoadBalance();
-    }
-
-    private static class SingletonHolder {
-        private static final ServiceDiscovery INSTANCE = new ServiceDiscovery();
+        serverNodes= new ConcurrentHashMap<>();
     }
     public static ServiceDiscovery getInstance() {
-        return SingletonHolder.INSTANCE;
+        if (instance == null) {
+            synchronized (ServiceDiscovery.class) {
+                if (instance == null) {
+                    instance = new ServiceDiscovery();
+                }
+            }
+        }
+        return instance;
     }
+
     public RpcClientHandler getRpcClientHandler(String serviceKey) throws Exception {
         int size = serverNodes.size();
         while ( isRunning && size == 0) {
@@ -169,6 +175,7 @@ public class ServiceDiscovery {
     }
     // load all server data in memory
     public void loadData(){
+        log.info("start load data");
         Set<Field> fields = ReflectKit.get().getFields(RpcInject.class);
         fields.forEach(f -> {
             RpcInject r = f.getAnnotation(RpcInject.class);
@@ -180,6 +187,10 @@ public class ServiceDiscovery {
         List<RpcProtocol> servers = new ArrayList<>(serverNodes.values()).stream().map(t -> t.rpcProtocol).collect(Collectors.toList());
         updateConnectServer(servers);
         // subscribe
+        if (loadBalance.serviceMap == null) {
+            log.debug("no loadBalance service map");
+            return;
+        }
         loadBalance.serviceMap.keySet().forEach(s->{
             String[] args = s.split(":");
             NacosRegistryClient.getInstance().subscribe(args[0],SystemConfig.group,args[1],event->{

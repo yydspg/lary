@@ -1,10 +1,7 @@
 package cn.lary.rpc.kit;
 
-import cn.lary.rpc.anno.RpcInject;
-import cn.lary.rpc.anno.RpcService;
+import cn.lary.rpc.core.SystemConfig;
 import org.reflections.Reflections;
-import org.reflections.scanners.FieldAnnotationsScanner;
-import org.reflections.scanners.MethodAnnotationsScanner;
 import org.reflections.scanners.Scanners;
 import org.reflections.util.ClasspathHelper;
 import org.reflections.util.ConfigurationBuilder;
@@ -18,7 +15,7 @@ public class ReflectKit {
     private Reflections reflections;
     private static ReflectKit reflectKit;
     static {
-        reflectKit = new ReflectKit("cn.lary.rpc");
+        reflectKit = new ReflectKit(SystemConfig.packageAddress);
     }
     public ReflectKit(String packageAddress) {
         ConfigurationBuilder configurationBuilder = new ConfigurationBuilder();

@@ -15,10 +15,11 @@ import java.util.concurrent.ThreadPoolExecutor;
 @Slf4j
 public class RpcClient implements ApplicationContextAware{
 
-
+    private ServiceDiscovery serviceDiscovery;
     private static ThreadPoolExecutor threadPoolExecutor = ThreadPoolKit.createThreadPoolExecutor(RpcClient.class.getSimpleName(),8,16);
-    public RpcClient(String serverAddress) {
-
+    public RpcClient() {
+        serviceDiscovery = ServiceDiscovery.getInstance();
+        serviceDiscovery.loadData();
     }
 
     public static <T, P> Service createAsyncService(Class<T> interfaceClass, String version) {
@@ -30,7 +31,7 @@ public class RpcClient implements ApplicationContextAware{
     // shutdown client server
     public void stop (){
         threadPoolExecutor.shutdown();
-        ServiceDiscovery.getInstance().stop();
+        serviceDiscovery.stop();
     }
     // create proxy obj
     public static <T,P> T createService(Class<T> interfaceClass,String version) {
