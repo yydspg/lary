@@ -8,14 +8,7 @@
     <version>0.0.1</version>
 
     <modules>
-        <module>lary-auth</module>
         <module>lary-core</module>
-        <module>lary-remark</module>
-        <module>lary-search</module>
-        <module>lary-product</module>
-        <module>lary-store</module>
-        <module>lary-logistics</module>
-        <module>lary-member</module>
         <module>lary-stream</module>
         <module>lary-test</module>
         <module>lary-id</module>
@@ -100,27 +93,6 @@
             </dependency>
             <!-- core -->
             <dependency>
-                <groupId>org.springframework.cloud</groupId>
-                <artifactId>spring-cloud-dependencies</artifactId>
-                <version>${spring-cloud.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>com.alibaba.cloud</groupId>
-                <artifactId>spring-cloud-alibaba-dependencies</artifactId>
-                <version>${spring-cloud-alibaba.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.dubbo</groupId>
-                <artifactId>dubbo-bom</artifactId>
-                <version>${dubbo.version}</version>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-dependencies</artifactId>
                 <version>${spring-boot.version}</version>
@@ -132,17 +104,6 @@
                 </exclusions>
                 <type>pom</type>
                 <scope>import</scope>
-            </dependency>
-            <dependency>
-                <groupId>io.seata</groupId>
-                <artifactId>seata-spring-boot-starter</artifactId>
-                <version>${seata.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>com.alibaba</groupId>
-                        <artifactId>druid</artifactId>
-                    </exclusion>
-                </exclusions>
             </dependency>
             <!-- other dependency -->
             <dependency>
