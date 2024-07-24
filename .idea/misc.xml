@@ -11,8 +11,10 @@
     </option>
     <option name="ignoredFiles">
       <set>
+        <option value="$PROJECT_DIR$/lary-api/pom.xml" />
         <option value="$PROJECT_DIR$/lary-auth/pom.xml" />
         <option value="$PROJECT_DIR$/lary-cache/pom.xml" />
+        <option value="$PROJECT_DIR$/lary-core/pom.xml" />
         <option value="$PROJECT_DIR$/lary-id/pom.xml" />
         <option value="$PROJECT_DIR$/lary-logistics/pom.xml" />
         <option value="$PROJECT_DIR$/lary-member/pom.xml" />
@@ -22,6 +24,7 @@
         <option value="$PROJECT_DIR$/lary-rpc/pom.xml" />
         <option value="$PROJECT_DIR$/lary-search/pom.xml" />
         <option value="$PROJECT_DIR$/lary-store/pom.xml" />
+        <option value="$PROJECT_DIR$/lary-stream/pom.xml" />
         <option value="$PROJECT_DIR$/lary-test/pom.xml" />
         <option value="$PROJECT_DIR$/test/pom.xml" />
       </set>

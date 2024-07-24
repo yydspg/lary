@@ -7,11 +7,6 @@
     <artifactId>lary</artifactId>
     <version>0.0.1</version>
 
-    <modules>
-        <module>lary-core</module>
-        <module>lary-stream</module>
-        <module>lary-api</module>
-    </modules>
 
     <packaging>pom</packaging>
 
@@ -22,46 +17,31 @@
         <maven-compiler-plugin.version>3.11.0</maven-compiler-plugin.version>
         <maven-resources-plugin.version>3.3.0</maven-resources-plugin.version>
 
-        <lary.core.version>0.0.1</lary.core.version>
-        <lary.stream.version>0.0.1</lary.stream.version>
-        <lary.api.version>0.0.1</lary.api.version>
-
         <!--core-->
-        <spring-boot.version>3.2.4</spring-boot.version>
     </properties>
 
-    <dependencyManagement>
-        <dependencies>
-            <!--system module version-->
-            <dependency>
-                <groupId>cn.lary</groupId>
-                <artifactId>lary-core</artifactId>
-                <version>${lary.core.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>cn.lary</groupId>
-                <artifactId>lary-id</artifactId>
-                <version>${lary.id.version}</version>
-            </dependency>
-            <!-- core -->
-            <dependency>
-                <groupId>org.springframework.boot</groupId>
-                <artifactId>spring-boot-dependencies</artifactId>
-                <version>${spring-boot.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-starter-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-                <type>pom</type>
-                <scope>import</scope>
-            </dependency>
-        </dependencies>
-    </dependencyManagement>
 
     <dependencies>
-
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot</artifactId>
+            <version>3.3.0</version>
+        </dependency>
+        <dependency>
+            <groupId>mysql</groupId>
+            <artifactId>mysql-connector-java</artifactId>
+            <version>8.0.33</version>
+        </dependency>
+        <dependency>
+            <groupId>com.baomidou</groupId>
+            <artifactId>mybatis-plus-spring-boot3-starter</artifactId>
+            <version>3.5.5</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>3.3.0</version>
+        </dependency>
     </dependencies>
     <build>
         <finalName>${project.name}</finalName>
