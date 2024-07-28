@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="SqlDialectMappings">
+    <file url="file://$PROJECT_DIR$/docs/sql/danmaku/danmaku.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/gift/gift.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/goods/goods.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/member/member.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/order/order.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/order/order_adjust.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/store/store.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/store/store_adjust.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/stream/stream_init.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/user/user.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/video/video.sql" dialect="MySQL" />
+  </component>
+</project>
