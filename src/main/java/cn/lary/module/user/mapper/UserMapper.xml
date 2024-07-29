@@ -4,14 +4,20 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.lary.module.user.entity.User">
-        <id column="uid" property="uid" />
+        <id column="id" property="id" />
+        <result column="uid" property="uid" />
         <result column="name" property="name" />
+        <result column="short_no" property="shortNo" />
         <result column="sex" property="sex" />
+        <result column="username" property="username" />
+        <result column="password" property="password" />
+        <result column="is_upload_avatar" property="isUploadAvatar" />
         <result column="birthday" property="birthday" />
         <result column="regin" property="regin" />
+        <result column="is_robot" property="isRobot" />
         <result column="bio" property="bio" />
         <result column="level" property="level" />
-        <result column="avatar_file_name" property="avatarFileName" />
+        <result column="email" property="email" />
         <result column="avatar_url" property="avatarUrl" />
         <result column="deleted" property="deleted" />
         <result column="is_anchor" property="isAnchor" />
@@ -19,10 +25,5 @@
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
-
-    <!-- 通用查询结果列 -->
-    <sql id="Base_Column_List">
-        uid, name, sex, birthday, regin, bio, level, avatar_file_name, avatar_url, deleted, is_anchor, anchor_announce, create_at, update_at
-    </sql>
 
 </mapper>

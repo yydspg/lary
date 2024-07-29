@@ -1,18 +1,18 @@
 package cn.lary.core.dto;
 
-public class SingleResponse<T> extends Response {
+public class SingleResponse extends Response {
 
-    private T data;
+    private Object data;
 
-    public T getData() {
+    public Object getData() {
         return data;
     }
 
-    public void setData(T data) {
+    public void setData(Object data) {
         this.data = data;
     }
 
-    public static SingleResponse buildSuccess() {
+    public static <T> SingleResponse buildSuccess(T data) {
         SingleResponse response = new SingleResponse();
         response.setSuccess(true);
         return response;
@@ -26,8 +26,8 @@ public class SingleResponse<T> extends Response {
         return response;
     }
 
-    public static <T> SingleResponse<T> of(T data) {
-        SingleResponse<T> response = new SingleResponse<>();
+    public static <T> SingleResponse of(T data) {
+        SingleResponse response = new SingleResponse();
         response.setSuccess(true);
         response.setData(data);
         return response;

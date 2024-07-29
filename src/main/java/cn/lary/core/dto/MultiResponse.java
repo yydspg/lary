@@ -12,21 +12,21 @@ import java.util.List;
  * <p/>
  * Created by Danny.Lee on 2017/11/1.
  */
-public class MultiResponse<T> extends Response {
+public class MultiResponse extends Response {
 
-    private Collection<T> data;
+    private Collection<?> data;
 
-    public List<T> getData() {
+    public List<Object> getData() {
         if (null == data) {
             return Collections.emptyList();
         }
         if (data instanceof List) {
-            return (List<T>) data;
+            return (List<Object>) data;
         }
         return new ArrayList<>(data);
     }
 
-    public void setData(Collection<T> data) {
+    public void setData(Collection<?> data) {
         this.data = data;
     }
 
@@ -38,12 +38,17 @@ public class MultiResponse<T> extends Response {
         return !isEmpty();
     }
 
+    public static MultiResponse buildSuccess(Collection<?> data) {
+        MultiResponse response = new MultiResponse();
+        response.setSuccess(true);
+        response.setData(data);
+        return response;
+    }
     public static MultiResponse buildSuccess() {
         MultiResponse response = new MultiResponse();
         response.setSuccess(true);
         return response;
     }
-
     public static MultiResponse buildFailure(String errCode, String errMessage) {
         MultiResponse response = new MultiResponse();
         response.setSuccess(false);
@@ -52,12 +57,6 @@ public class MultiResponse<T> extends Response {
         return response;
     }
 
-    public static <T> MultiResponse<T> of(Collection<T> data) {
-        MultiResponse<T> response = new MultiResponse<>();
-        response.setSuccess(true);
-        response.setData(data);
-        return response;
-    }
 
 }
 

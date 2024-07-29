@@ -1,8 +1,7 @@
 package cn.lary.module.stream.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -24,8 +23,8 @@ import lombok.experimental.Accessors;
 public class StreamRecord implements Serializable {
 
     private static final long serialVersionUID = 1L;
-
-    private Long streamId;
+    @TableId(value = "id",type = IdType.AUTO)
+    private Long id;
 
     private Long uid;
 

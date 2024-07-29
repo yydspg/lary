@@ -49,13 +49,4 @@ public  class Response extends DTO{
         response.setErrMessage(errMessage);
         return response;
     }
-
-    public static void main(String[] args) {
-        int a = 1;
-        int b = 1;
-        int c = a & b;
-        boolean d = true;
-        boolean f =false;
-        System.out.println(d && f);
-    }
 }

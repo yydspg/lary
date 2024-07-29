@@ -29,7 +29,7 @@ create table `stream_type` (
 );
 drop table if exists `stream_record`;
 create table `stream_record` (
-    stream_id bigint not null primary key ,
+    stream_id bigint not null primary key auto_increment,
     uid bigint not null ,
     channel_id bigint not null,
     start_at timestamp,

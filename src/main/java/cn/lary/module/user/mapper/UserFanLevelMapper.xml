@@ -4,6 +4,7 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.lary.module.user.entity.UserFanLevel">
+        <id column="id" property="id" />
         <result column="uid" property="uid" />
         <result column="anchor_id" property="anchorId" />
         <result column="fan_level" property="fanLevel" />
@@ -15,10 +16,5 @@
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
-
-    <!-- 通用查询结果列 -->
-    <sql id="Base_Column_List">
-        uid, anchor_id, fan_level, cost, fan_level_url, is_delete, create_by, update_by, create_at, update_at
-    </sql>
 
 </mapper>

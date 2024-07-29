@@ -5,7 +5,6 @@
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.lary.module.gift.entity.Gift">
         <id column="id" property="id" />
-        <result column="type" property="type" />
         <result column="type_name" property="typeName" />
         <result column="price" property="price" />
         <result column="real_price" property="realPrice" />
@@ -19,9 +18,5 @@
         <result column="update_at" property="updateAt" />
     </resultMap>
 
-    <!-- 通用查询结果列 -->
-    <sql id="Base_Column_List">
-        id, type, type_name, price, real_price, name, purchase_num, picture_url, is_delete, create_by, update_by, create_at, update_at
-    </sql>
 
 </mapper>

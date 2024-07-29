@@ -17,7 +17,7 @@ import java.util.Arrays;
  */
 
 public class Codec{
-    private static final String SERVICE_NAME = "group";
+    private static final String SERVICE_NAME = "user";
 
     //dataSource config
     private static final String DATA_SOURCE_USER_NAME  = "root";
@@ -29,11 +29,18 @@ public class Codec{
     private static final String ENTITY_PACK_NAME = "entity";
     private static final String DATA_SOURCE_URL = "jdbc:mysql://192.168.1.101:3306/lary";
     private static final String[] TABLE_NAMES = new String[]{
-            "group",
-            "group_invite",
-            "group_member",
-            "group_setting",
-            "invite_item"
+            "user",
+            "user_detail",
+            "user_fan_level",
+            "user_online",
+            "user_red_dot",
+            "user_setting",
+            "friend",
+            "friend_setting",
+            "friend_apply_record",
+            "device",
+            "device_flag",
+            "login_log "
     };
     public static void main(String[] args) {
         /* 配置数据源 **/
@@ -118,7 +125,7 @@ public class Codec{
                             .mapperBuilder()
                             .enableFileOverride()
                             /* 启用基础列列表,意味着在生成SQL查询时包括所有列的基础信息 **/
-                            .enableBaseColumnList()
+//                            .enableBaseColumnList()
                             /* 启用基础结果映射，即自动为查询结果创建默认的映射关系，将数据库表的字段映射到对象的属性上 **/
                             .enableBaseResultMap()
                             .build();

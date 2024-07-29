@@ -1,7 +1,9 @@
 package cn.lary.module.user.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -23,24 +25,43 @@ public class User implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
     private String uid;
 
     private String name;
 
     /**
+     * 短编码
+     */
+    private String shortNo;
+
+    /**
      * 0 is man,1 is woman
      */
-    private Byte sex;
+    private Short sex;
+
+    private String username;
+
+    private String password;
+
+    /**
+     * 是否上传密码
+     */
+    private Boolean isUploadAvatar;
 
     private String birthday;
 
     private String regin;
 
+    private Boolean isRobot;
+
     private String bio;
 
     private Integer level;
 
-    private String avatarFileName;
+    private String email;
 
     private String avatarUrl;
 

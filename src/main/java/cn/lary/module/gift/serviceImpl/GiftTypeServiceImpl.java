@@ -3,6 +3,8 @@ package cn.lary.module.gift.serviceImpl;
 import cn.lary.module.gift.entity.GiftType;
 import cn.lary.module.gift.mapper.GiftTypeMapper;
 import cn.lary.module.gift.service.GiftTypeService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 
@@ -16,5 +18,6 @@ import org.springframework.stereotype.Service;
  */
 @Service
 public class GiftTypeServiceImpl extends ServiceImpl<GiftTypeMapper, GiftType> implements GiftTypeService {
+
 
 }

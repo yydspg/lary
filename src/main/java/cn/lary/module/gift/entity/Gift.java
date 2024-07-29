@@ -6,6 +6,10 @@ import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 import java.time.LocalDateTime;
+
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
+import jakarta.validation.constraints.Pattern;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -25,25 +29,25 @@ public class Gift implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * gift type
-     */
-    private Integer type;
+
+    // type name
 
     private String typeName;
 
     /**
      * virtual currency price
      */
+
     private Integer price;
 
     /**
      * real pay price CNY
      */
+
     private Integer realPrice;
+
 
     private String name;
 
