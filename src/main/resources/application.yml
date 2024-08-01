@@ -76,4 +76,4 @@ retrofit:
   auto-set-prototype-scope-for-path-math-interceptor: true
 wk:
   base:
-    url: http://127.0.0.1:9002
+    url: http://127.0.0.1:5001

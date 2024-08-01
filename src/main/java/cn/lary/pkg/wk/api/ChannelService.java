@@ -13,7 +13,7 @@ public interface ChannelService {
     Response<Status> clearOrUpdate(@Body ChannelCreate channelCreate);
     @POST("channel/info")
     Response<Status> updateOrAddInfo(@Body ChannelInfo channelInfo);
-    @POST("channel/del")
+    @POST("channel/delete")
     Response<Status> delete(@Body ChannelDelete channelDelete);
     @POST("channel/subscribers/add")
     Response<Status> addSubscribers(@Body SubscribersAdd subscribersAdd);

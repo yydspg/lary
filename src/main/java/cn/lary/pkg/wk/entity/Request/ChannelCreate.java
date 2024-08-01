@@ -12,6 +12,5 @@ public  class ChannelCreate {
     private byte channelType;
     private int large;
     private int ban;
-    private int disband;
     private List<String> subscribers;
  }
