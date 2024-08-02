@@ -8,6 +8,9 @@ spring:
     url: jdbc:mysql://192.168.1.101:3306/lary
   profiles:
     active: dev
+
+
+# retrofit spring boot starter config list
 retrofit:
   # 全局转换器工厂
   global-converter-factories:

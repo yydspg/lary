@@ -1,16 +1,12 @@
-package cn.lary.pkg.wk.entity.Request;
+package cn.lary.pkg.wk.entity.core;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.util.List;
 @Data
-public  class ChannelCreate {
+public class Channel {
     @JsonProperty("channel_id")
     private String chanelID;
     @JsonProperty("channel_type")
     private byte channelType;
-    private int large;
-    private int ban;
-    private List<String> subscribers;
- }
+}
