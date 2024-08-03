@@ -80,3 +80,16 @@ retrofit:
 wk:
   base:
     url: http://127.0.0.1:5001
+
+aliyun:
+  sms:
+    access-key-id: test
+    sign-name: test
+    template-code: test
+    access-key-secret: test
+
+register:
+  only-china: true
+  username-on: true
+  sticker-add-off: true
+  offe: true # 这里使用 offe 是因为 off会注入不成功

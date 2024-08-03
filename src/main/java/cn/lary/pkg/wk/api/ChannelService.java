@@ -20,9 +20,9 @@ public interface ChannelService {
     Response<Void> updateOrAddInfo(@Body ChannelInfoReq channelInfoReq);
     @POST("delete")
     Response<Void> delete(@Body ChannelDeleteReq channelDeleteReq);
-    @POST("subscribers/add")
+    @POST("subscribers_add")
     Response<Void> addSubscribers(@Body SubscribersAddReq subscribersAddReq);
-    @POST("subscribers/del")
+    @POST("subscribers_remove")
     Response<Void> removeSubscribers(@Body SubscribersRemoveReq subscribersDel);
     @POST("blacklist_add")
     Response<Void> addBlacklist(@Body BlacklistAddReq blacklistAddReq);
