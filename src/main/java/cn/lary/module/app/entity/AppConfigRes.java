@@ -58,6 +58,9 @@ public class AppConfigRes {
 
     public static AppConfigRes build(AppConfig appConfig) {
         AppConfigRes appConfigRes = new AppConfigRes();
+        if (appConfig == null) {
+            return appConfigRes;
+        }
         appConfigRes.setRsaPublicKey(appConfig.getRsaPublicKey());
         appConfigRes.setVersion(appConfig.getVersion());
         appConfigRes.setSuperToken(appConfig.getSuperToken());

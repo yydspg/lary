@@ -12,5 +12,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2024-07-29
  */
 public interface DeviceService extends IService<Device> {
-
+    Device queryDevice(String deviceId,String uid);
+    void updateDeviceLogin(Device device);
 }

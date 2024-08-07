@@ -13,6 +13,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2024-08-03
  */
 public interface AppConfigService extends IService<AppConfig> {
-
+    // this method will never return null
     public AppConfigRes getAppConfig();
 }

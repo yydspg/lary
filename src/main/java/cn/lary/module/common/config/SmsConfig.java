@@ -40,12 +40,5 @@ public class SmsConfig {
     public String getTemplateCode() {
         return templateCode;
     }
-    @PostConstruct
-    public void init(){
-        System.out.println("test");
-        System.out.println(accessKeyId);
-        System.out.println(accessKeySecret);
-        System.out.println(signName);
-        System.out.println(templateCode);
-    }
+
 }

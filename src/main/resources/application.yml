@@ -87,9 +87,27 @@ aliyun:
     sign-name: test
     template-code: test
     access-key-secret: test
-
-register:
-  only-china: true
-  username-on: true
-  sticker-add-off: true
-  offe: true # 这里使用 offe 是因为 off会注入不成功
+lary:
+  register:
+    only-china: true
+    username-on: true
+    sticker-add-off: true
+    offe: false # 这里使用 offe 是因为 off会注入不成功
+  shortno:
+    num-on: true
+    num-len: 5
+    edit-off: true
+  account:
+    admin-uid: 1234
+    file-helper-uid: 122
+    system-group-name: man
+    system-group-uid: 1234
+    system-uid: 23423
+  redis:
+    friend-apply-expire: 1234
+    friend-apply-token-cache-prefix: 1234
+    login-device-cache-expire: 1234
+    login-device-cache-prefix: 1234
+    token-cache-prefix: 123
+    token-expire: 123
+    uid-token-cache-prefix: 21334

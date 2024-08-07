@@ -12,5 +12,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2024-07-29
  */
 public interface FriendService extends IService<Friend> {
-
+    public boolean isFriend(String uid,String toUid);
+    public void addSystemFriend(String uid);
+    public void addFileHelper(String uid);
 }

@@ -10,9 +10,13 @@ create table `user` (
                         password varchar(40) not null default '',
                         is_upload_avatar bool not null default false comment '是否上传密码',
                         birthday varchar(80)  not null ,
+                        zone       VARCHAR(40)  not null default '',                             -- 手机区号
+                        phone      VARCHAR(20)  not null default '',                             -- 手机号
                         regin varchar(40) not null default '' ,
                         is_robot bool not null default false,
                         bio varchar(256) ,
+                        vercode    VARCHAR(100) not null default '',                             -- 验证码 加好友来源
+                        qr_vercode VARCHAR(100) not null default '',                             -- 二维码验证码 加好友来源
                         level int not null default 1,
                         email varchar(100) not null default '',
                         avatar_url varchar(256) not null,

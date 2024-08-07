@@ -12,6 +12,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2024-07-29
  */
 public interface UserService extends IService<User> {
-    // 存在时return true
-    public boolean queryByUsername(String username);
+    // 存在时
+    User queryByUsername(String username);
 }
