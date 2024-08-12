@@ -55,32 +55,32 @@ public class AppConfig implements Serializable {
     /**
      * 注册用户是否默认加入系统群
      */
-    private Short newUserJoinSystemGroup;
+    private boolean newUserJoinSystemGroup;
 
     /**
      * 是否可通过手机号搜索
      */
-    private Short searchByPhone;
+    private boolean searchByPhone;
 
     /**
      * 是否开启注册邀请
      */
-    private Short registerInviteOn;
+    private boolean registerInviteOn;
 
     /**
      * 是否开启登录欢迎语
      */
-    private Short sendWelcomeMessageOn;
+    private boolean sendWelcomeMessageOn;
 
     /**
      * 是否开启系统账号进入群聊
      */
-    private Short inviteSystemAccountJoinGroupOn;
+    private boolean inviteSystemAccountJoinGroupOn;
 
     /**
      * 注册用户是否必须完善信息
      */
-    private Short registerUserMustCompleteInfoOn;
+    private boolean registerUserMustCompleteInfoOn;
 
     /**
      * 频道最多置顶消息数量
@@ -90,5 +90,5 @@ public class AppConfig implements Serializable {
     /**
      * 是否能修改服务器地址
      */
-    private Short canModifyApiUrl;
+    private boolean canModifyApiUrl;
 }

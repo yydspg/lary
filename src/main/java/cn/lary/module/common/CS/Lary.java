@@ -2,10 +2,7 @@ package cn.lary.module.common.CS;
 
 public interface Lary {
 
-    interface RegisterMode {
-        short ON = 1;
-        short OFF = 0;
-    }
+
     interface RedisPrefix {
         String sms = "sms:";
         String token = "token:";
@@ -31,6 +28,10 @@ public interface Lary {
     }
     interface Event {
         String register = "register";
+        String groupCreate = "groupCreate";
+        String groupMemberAdd = "groupMemberAdd";
+        String groupAvatarUpdate = "groupAvatarUpdate";
+        String groupUnableAddDestroyAccount = "groupUnableAddDestroyAccount";
     }
     interface EventType {
         short none = 0;
@@ -40,5 +41,16 @@ public interface Lary {
     interface UserStatus {
         short ban = 1;
         short ok = 0;
+    }
+    interface Group {
+        interface Role {
+            short common = 0;
+            short creator = 1;
+            short manager = 2;
+        }
+        interface UserStatus {
+            int common = 1;
+            int block = 2;
+        }
     }
 }

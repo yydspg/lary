@@ -12,7 +12,7 @@ import retrofit2.http.POST;
 import java.util.List;
 
 @RetrofitClient(baseUrl = "${wk.base.url}/message")
-public interface MessageService {
+public interface WKMessageService {
     @POST("send")
     Response<String> send(@Body MessageSendSeq message);
     @POST("sync")

@@ -13,9 +13,9 @@ import retrofit2.http.Query;
 //当请求发生异常或者收到无效响应结果的时候，将HTTP相关信息解码到异常中，无效响应由业务自己判断
 // 接口不可以直接返回 Response<Void> 类型，这个是 retrofit 框架的要求
 @RetrofitClient(baseUrl = "${wk.base.url}/channel")
-public interface ChannelService {
+public interface WKChannelService {
     @POST
-    Response<Void> clearOrUpdate(@Body ChannelCreateReq channelCreateReq);
+    Response<Void> createOrUpdate(@Body ChannelCreateReq channelCreateReq);
     @POST("info")
     Response<Void> updateOrAddInfo(@Body ChannelInfoReq channelInfoReq);
     @POST("delete")

@@ -14,7 +14,7 @@ import retrofit2.http.POST;
 import java.util.List;
 
 @RetrofitClient(baseUrl = "${wk.base.url}/conversations")
-public interface ConversationService {
+public interface WKConversationService {
     @POST("clearUnread")
     Response<Void> clearUnread(@Body ConversationUnreadClearReq conversationUnreadClearReq);
     @POST("delete")

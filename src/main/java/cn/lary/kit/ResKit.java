@@ -16,6 +16,9 @@ public class ResKit {
     public static SingleResponse ok(Object data) {
         return SingleResponse.buildSuccess(data);
     }
+    public static SingleResponse ok() {
+        return ok(null);
+    }
     public static MultiResponse multiOk() {
         return MultiResponse.buildSuccess();
     }

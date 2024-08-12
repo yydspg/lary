@@ -13,8 +13,8 @@ public class LoginReq {
     private String username;
     @NotNull(message = "password is null")
     private String password;
-    @Min(0)
-    @Max(1)
+    @Min(value = 0,message = "flag can not less than 0 ")
+    @Max(value = 1,message = "flag can not bigger than 1")
     private byte flag;
     @JsonProperty("device")
     private DeviceReq device;

@@ -23,6 +23,7 @@ public class AppConfigServiceImpl extends ServiceImpl<AppConfigMapper, AppConfig
     public AppConfigRes getAppConfig() {
         LambdaQueryWrapper<AppConfig> lw = new LambdaQueryWrapper<>();
         lw.orderByDesc(AppConfig::getCreateAt);
+        lw.last("limit 1");
         AppConfig app = baseMapper.selectOne(lw);
         return AppConfigRes.build(app);
     }

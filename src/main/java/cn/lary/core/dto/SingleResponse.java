@@ -15,6 +15,7 @@ public class SingleResponse extends Response {
     public static <T> SingleResponse buildSuccess(T data) {
         SingleResponse response = new SingleResponse();
         response.setSuccess(true);
+        response.setData(data);
         return response;
     }
 

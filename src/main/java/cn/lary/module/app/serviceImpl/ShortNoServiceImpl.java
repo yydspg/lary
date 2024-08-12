@@ -38,7 +38,7 @@ public class ShortNoServiceImpl extends ServiceImpl<ShortNoMapper, ShortNo> impl
             lw.eq(ShortNo::getUsed,0).eq(ShortNo::getHold,0).eq(ShortNo::getLocked,0);
             ShortNo shortNo = shortNoMapper.selectOne(lw);
             if (shortNo == null) {
-                throw new BizException("无可用的短编号");
+                throw new BizException("no available short no");
             }
             lw.clear();
             // update short locked num

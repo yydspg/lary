@@ -14,12 +14,6 @@ public class StringKit {
     public static boolean isNotEmpty(String str) {
         return str != null && str.length() > 0;
     }
-    public static boolean isEmpty(Collection collection) {
-        return collection == null || collection.size() == 0;
-    }
-    public static boolean isNotEmpty(Collection collection) {
-        return collection != null && collection.size() > 0;
-    }
     public static boolean same(String str1, String str2) {return str1 == null ? str2 == null : str1.equals(str2);}
     public static boolean diff(String str1, String str2) {return str1 == null ? str2 != null : !str1.equals(str2);}
     public static String random(int length) {
@@ -33,6 +27,9 @@ public class StringKit {
     }
     public static String MD5(String str) {
         MessageDigest md = null;
+        if (str == null) {
+            return null;
+        }
         try {
             md = MessageDigest.getInstance("MD5");
         } catch (NoSuchAlgorithmException e) {

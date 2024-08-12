@@ -24,32 +24,32 @@ public class AppConfigRes {
     /**
      * 注册用户是否默认加入系统群
      */
-    private Short newUserJoinSystemGroup;
+    private boolean newUserJoinSystemGroup;
 
     /**
      * 是否可通过手机号搜索
      */
-    private Short searchByPhone;
+    private boolean searchByPhone;
 
     /**
      * 是否开启注册邀请
      */
-    private Short registerInviteOn;
+    private boolean registerInviteOn;
 
     /**
      * 是否开启登录欢迎语
      */
-    private Short sendWelcomeMessageOn;
+    private boolean sendWelcomeMessageOn;
 
     /**
      * 是否开启系统账号进入群聊
      */
-    private Short inviteSystemAccountJoinGroupOn;
+    private boolean inviteSystemAccountJoinGroupOn;
 
     /**
      * 注册用户是否必须完善信息
      */
-    private Short registerUserMustCompleteInfoOn;
+    private boolean registerUserMustCompleteInfoOn;
 
     /**
      * 频道最多置顶消息数量
@@ -66,12 +66,12 @@ public class AppConfigRes {
         appConfigRes.setSuperToken(appConfig.getSuperToken());
         appConfigRes.setSuperTokenOn(appConfig.getSuperTokenOn());
         appConfigRes.setWelcomeMessage(appConfig.getWelcomeMessage());
-        appConfigRes.setNewUserJoinSystemGroup(appConfig.getNewUserJoinSystemGroup());
-        appConfigRes.setSearchByPhone(appConfig.getSearchByPhone());
-        appConfigRes.setRegisterInviteOn(appConfig.getRegisterInviteOn());
-        appConfigRes.setSendWelcomeMessageOn(appConfig.getSendWelcomeMessageOn());
-        appConfigRes.setInviteSystemAccountJoinGroupOn(appConfig.getInviteSystemAccountJoinGroupOn());
-        appConfigRes.setRegisterUserMustCompleteInfoOn(appConfig.getRegisterUserMustCompleteInfoOn());
+        appConfigRes.setNewUserJoinSystemGroup(appConfig.isNewUserJoinSystemGroup());
+        appConfigRes.setSearchByPhone(appConfig.isSearchByPhone());
+        appConfigRes.setRegisterInviteOn(appConfig.isRegisterInviteOn());
+        appConfigRes.setSendWelcomeMessageOn(appConfig.isSendWelcomeMessageOn());
+        appConfigRes.setInviteSystemAccountJoinGroupOn(appConfig.isInviteSystemAccountJoinGroupOn());
+        appConfigRes.setRegisterUserMustCompleteInfoOn(appConfig.isRegisterUserMustCompleteInfoOn());
         appConfigRes.setChannelPinnedMessageMaxCount(appConfig.getChannelPinnedMessageMaxCount());
         return appConfigRes;
     }

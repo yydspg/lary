@@ -25,5 +25,8 @@
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
-
+    <select id="queryBaseByIDs" resultType="cn.lary.module.user.dto.res.UserBaseRes">
+        select uid,name,deleted,is_robot from `user`
+        where uid in #{uids}
+    </select>
 </mapper>

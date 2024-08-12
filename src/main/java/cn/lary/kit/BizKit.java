@@ -13,6 +13,8 @@ public class BizKit {
     public static String buildUserToken(String uid,String username,String role) {
         return uid+"@"+username+"@"+role;
     }
-
+    public static String buildGroupMemberVerCode() {
+        return UUIDKit.getUUID()+"@" + Lary.VerifyCode.groupMember;
+    }
 
 }

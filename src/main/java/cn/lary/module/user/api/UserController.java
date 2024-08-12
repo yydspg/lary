@@ -23,13 +23,14 @@ import cn.lary.module.user.entity.User;
 import cn.lary.module.user.service.DeviceService;
 import cn.lary.module.user.service.FriendService;
 import cn.lary.module.user.service.UserService;
+import cn.lary.pkg.wk.api.WKUserService;
 import cn.lary.pkg.wk.entity.Request.user.UpdateTokenReq;
 import cn.lary.pkg.wk.entity.Response.user.UpdateTokenRes;
-import cn.lary.pkg.wk.entity.core.WkCS;
-import com.github.lianjiatech.retrofit.spring.boot.core.ErrorDecoder;
+import cn.lary.pkg.wk.entity.core.WK;
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import net.sf.jsqlparser.expression.StringValue;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 import retrofit2.Response;
 
@@ -40,6 +41,7 @@ import java.util.HashMap;
 @RequestMapping("/user")
 @RequiredArgsConstructor
 public class UserController {
+
     private final RegisterConfig registerConfig;
     private final AppConfigService appConfigService;
     private final UserService userService;
@@ -51,8 +53,7 @@ public class UserController {
     private final EventService eventService;
     private final RedisCache redisCache;
     private final RedisBizConfig redisBizConfig;
-    private final cn.lary.pkg.wk.api.UserService wkUserService;
-    private final ErrorDecoder.DefaultErrorDecoder retrofitDefaultErrorDecoder;
+    private final WKUserService wkUserService;
 
     @GetMapping
     public SingleResponse get(@RequestParam(value = "uid", required = true) String uid) {
@@ -60,7 +61,7 @@ public class UserController {
         return null;
     }
     @PostMapping("/login")
-    public SingleResponse login(@RequestBody LoginReq req) {
+    public SingleResponse login(@Valid @RequestBody LoginReq req) {
         User user = userService.queryByUsername(req.getUsername());
         if (user == null || user.getDeleted()) {
             return ResKit.fail("user not exist");
@@ -75,7 +76,7 @@ public class UserController {
         return checkUserLoginInfo(user,req);
     }
     @PostMapping("/register")
-    public SingleResponse register(@RequestBody RegisterReq req) {
+    public SingleResponse register(@Validated @RequestBody RegisterReq req) {
         if(registerConfig.isOffe()) {
             return ResKit.fail("注册通道暂不开放");
         }
@@ -85,9 +86,8 @@ public class UserController {
         if (appConfig == null) {
             return ResKit.fail("查询应用设置错误");
         }
-        int registerInviteOn =  appConfig.getRegisterInviteOn();
         // 是否开启业务入口模式
-        if (registerInviteOn == Lary.RegisterMode.ON) {
+        if (appConfig.isRegisterInviteOn()) {
             if(StringKit.isEmpty(req.getInviteCode())) {
                 return ResKit.fail("邀请码不能为空");
             }
@@ -101,7 +101,8 @@ public class UserController {
             return ResKit.fail("用户已存在");
         }
         // 短信验证
-        if (!smsService.verify(req.getCode(),req.getZone(), req.getPhone(), Lary.CodeType.Register)) {
+        // test module
+        if (false &&!smsService.verify(req.getCode(),req.getZone(), req.getPhone(), Lary.CodeType.Register)) {
             return ResKit.fail("验证码错误");
         }
         // build user id --> uid
@@ -122,12 +123,12 @@ public class UserController {
         if(user.getStatus() == Lary.UserStatus.ban) {
             return ResKit.fail("use baned");
         }
-        byte deviceLevel = WkCS.DeviceLevel.slave;
-        if (WkCS.DeviceFlag.app == deviceFlag) {
-            deviceLevel = WkCS.DeviceLevel.master;
+        byte deviceLevel = WK.DeviceLevel.slave;
+        if (WK.DeviceFlag.app == deviceFlag) {
+            deviceLevel = WK.DeviceLevel.master;
         }
         // app login check
-        if (deviceFlag == WkCS.DeviceFlag.app) {
+        if (deviceFlag == WK.DeviceFlag.app) {
             if (deviceReq == null) {
                 return ResKit.fail("login service info is null");
             }
@@ -148,7 +149,7 @@ public class UserController {
         String token = null;
         String K = redisBizConfig.getUidTokenCachePrefix()+"@"+deviceFlag+"@"+user.getUid();
         String oldToken = redisCache.get(K);
-        if (deviceFlag == WkCS.DeviceFlag.app) {
+        if (deviceFlag == WK.DeviceFlag.app) {
             if(StringKit.isNotEmpty(oldToken)) {
                 // remove old token
                 redisCache.del(K);
@@ -165,7 +166,7 @@ public class UserController {
         // sync to wk IM
         UpdateTokenReq tokenReq = new UpdateTokenReq().setUid(user.getUid()).setToken(token).setDeviceLevel(deviceLevel).setDeviceFlag(deviceFlag);
         Response<UpdateTokenRes> res = wkUserService.updateToken(tokenReq);
-        if (res.body() != null &&res.body().getStatus() == WkCS.UpdateTokenStatus.ban) {
+        if (res.body() != null &&res.body().getStatus() == WK.UpdateTokenStatus.ban) {
             return ResKit.fail("user banned");
         }
         return LoginUserDetailRes.build(user);
@@ -193,7 +194,7 @@ public class UserController {
         }else {
             // no name set condition
             AppConfigRes appConfig = appConfigService.getAppConfig();
-            if(appConfig.getRegisterUserMustCompleteInfoOn() == 1) {
+            if(appConfig.isRegisterUserMustCompleteInfoOn()) {
                 user.setName("");
             }else {
                 // random name
@@ -243,7 +244,7 @@ public class UserController {
         // set user register token
         redisCache.set(K,V, redisBizConfig.getTokenExpire());
         // user register to wuKongIm
-        UpdateTokenReq tokenReq = new UpdateTokenReq().setUid(uid).setToken(K).setDeviceFlag(req.getFlag()).setDeviceLevel(WkCS.DeviceLevel.slave);
+        UpdateTokenReq tokenReq = new UpdateTokenReq().setUid(uid).setToken(K).setDeviceFlag(req.getFlag()).setDeviceLevel(WK.DeviceLevel.slave);
         wkUserService.updateToken(tokenReq);
         // set shortNo was used
         if (shortNoConfig.isNumOn()) {

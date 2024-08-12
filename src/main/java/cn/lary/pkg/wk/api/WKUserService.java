@@ -13,7 +13,7 @@ import retrofit2.http.POST;
 import java.util.List;
 
 @RetrofitClient(baseUrl = "${wk.base.url}/user")
-public interface UserService {
+public interface WKUserService {
     @POST
     Response<UpdateTokenRes> updateToken(@Body UpdateTokenReq updateTokenReq);
     @POST("device/quit")

@@ -1,9 +1,7 @@
 package cn.lary.module.group.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
-import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -21,6 +19,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
+@TableName(value = "lary_groups")
 public class Group implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -39,7 +38,7 @@ public class Group implements Serializable {
     /**
      * 群禁言
      */
-    private Short forbidden;
+    private boolean forbidden;
 
     /**
      * 群头像路径
@@ -64,11 +63,11 @@ public class Group implements Serializable {
     /**
      * 群邀请开关
      */
-    private Short invite;
+    private boolean invite;
 
-    private Short forbiddenAddFriend;
+    private boolean forbiddenAddFriend;
 
-    private Short allowViewHistoryMsg;
+    private boolean allowViewHistoryMsg;
 
     private Long version;
 

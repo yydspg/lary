@@ -3,6 +3,8 @@ package cn.lary.module.group.mapper;
 import cn.lary.module.group.entity.GroupMember;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
+import java.util.List;
+
 /**
  * <p>
  *  Mapper 接口
@@ -12,5 +14,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @since 2024-07-29
  */
 public interface GroupMemberMapper extends BaseMapper<GroupMember> {
+
 
 }

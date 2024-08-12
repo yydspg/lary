@@ -1,6 +1,6 @@
 package cn.lary.pkg.wk.entity.core;
 
-public interface WkCS {
+public interface WK {
     public interface ChannelType {
         byte person = 1; // 个人
         byte group = 2; // 群组
