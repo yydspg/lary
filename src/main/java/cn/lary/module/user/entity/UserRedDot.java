@@ -1,8 +1,7 @@
 package cn.lary.module.user.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -30,13 +29,15 @@ public class UserRedDot implements Serializable {
 
     private String uid;
 
-    private Short count;
+    private Integer count;
 
     private String category;
 
-    private Short isDot;
+    private Boolean isDot;
 
-    private LocalDateTime createdAt;
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createAt;
 
-    private LocalDateTime updatedAt;
+    @TableField(fill = FieldFill.UPDATE)
+    private LocalDateTime updateAt;
 }

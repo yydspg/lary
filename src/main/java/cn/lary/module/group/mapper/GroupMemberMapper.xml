@@ -20,9 +20,8 @@
         <result column="update_at" property="updateAt" />
     </resultMap>
 
-    <!-- 通用查询结果列 -->
-    <sql id="Base_Column_List">
-        id, group_no, uid, remark, role, version, is_deleted, status, vercode, robot, invite_uid, forbidden_expire_time, create_at, update_at
-    </sql>
+    <select id="checkWithCode" resultType="cn.lary.module.user.dto.res.FriendCodeCheck">
+        select uid,vercode  from group_member where vercode = #{code}
+    </select>
 
 </mapper>

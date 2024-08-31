@@ -1,6 +1,8 @@
 package cn.lary.module.user.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -34,9 +36,12 @@ public class Device implements Serializable {
 
     private String deviceModel;
 
-    private Integer lastLogin;
+    private Long lastLogin;
 
-    private LocalDateTime createdAt;
+    private Boolean isDelete;
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createAt;
 
-    private LocalDateTime updatedAt;
+    @TableField(fill = FieldFill.UPDATE)
+    private LocalDateTime updateAt;
 }

@@ -1,6 +1,8 @@
 package cn.lary.module.user.entity;
 
+import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 import java.time.LocalDateTime;
@@ -59,25 +61,27 @@ public class Friend implements Serializable {
     /**
      * 是否已删除
      */
-    private Short isDeleted;
+    private Boolean isDeleted;
 
     /**
      * 单项好友
      */
-    private Short isAlone;
+    private Boolean isAlone;
 
     /**
      * 加好友发起方
      */
-    private Short initiator;
+    private Boolean isInitiator;
 
     /**
      * 创建时间
      */
-    private LocalDateTime createdAt;
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createAt;
 
     /**
      * 更新时间
      */
-    private LocalDateTime updatedAt;
+    @TableField(fill = FieldFill.UPDATE)
+    private LocalDateTime updateAt;
 }

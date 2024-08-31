@@ -8,6 +8,18 @@ spring:
     url: jdbc:mysql://192.168.1.101:3306/lary
   profiles:
     active: dev
+  data:
+    redis:
+      database: 0
+      host: 127.0.0.1
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+logging:
+  level:
+    sql: debug
+    web: debug
+# retrofit spring boot starter config list
 retrofit:
   # 全局转换器工厂
   global-converter-factories:
@@ -21,7 +33,7 @@ retrofit:
     # 启用日志打印
     enable: true
     # 全局日志打印级别
-    log-level: info
+    log-level: debug
     # 全局日志打印策略
     log-strategy: basic
     # 是否聚合打印请求日志
@@ -77,3 +89,37 @@ retrofit:
 wk:
   base:
     url: http://127.0.0.1:5001
+
+aliyun:
+  sms:
+    access-key-id: test
+    sign-name: test
+    template-code: test
+    access-key-secret: test
+lary:
+  register:
+    only-china: true
+    username-on: true
+    sticker-add-off: true
+    offe: false # 这里使用 offe 是因为 off会注入不成功
+  shortno:
+    num-on: true
+    num-len: 5
+    edit-off: true
+  account:
+    admin-uid: lary_admin_uid
+    file-helper-uid: lary_file_helper_uid
+    system-group-name: lary_system_group_name
+    system-group-uid: lary_system_group_uid
+    system-uid: lary_system_uid
+  redis:
+    friend-apply-expire: 200
+    friend-apply-token-cache-prefix: "apply:"
+    login-device-cache-expire: 200
+    login-device-cache-prefix: "device:"
+    token-cache-prefix: "lary:"
+    token-expire: 200
+    uid-token-cache-prefix: "uid:"
+  group:
+    same-day-create-max-count: 5
+    allow-view-history-msg-status: true

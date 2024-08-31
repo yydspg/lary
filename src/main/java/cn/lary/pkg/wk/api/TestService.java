@@ -7,5 +7,5 @@ import retrofit2.http.GET;
 @RetrofitClient(baseUrl = "http://127.0.0.1:9009")
 public interface TestService {
     @GET("test")
-    Response<String> test();
+    Response<Void> test();
 }

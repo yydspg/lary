@@ -10,8 +10,9 @@
         <result column="device_name" property="deviceName" />
         <result column="device_model" property="deviceModel" />
         <result column="last_login" property="lastLogin" />
-        <result column="created_at" property="createdAt" />
-        <result column="updated_at" property="updatedAt" />
+        <result column="is_delete" property="isDelete" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
     </resultMap>
 
 </mapper>

@@ -1,8 +1,7 @@
 package cn.lary.module.user.entity;
 
-import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableId;
-import com.baomidou.mybatisplus.annotation.TableName;
+import com.baomidou.mybatisplus.annotation.*;
+
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -38,7 +37,11 @@ public class FriendApplyRecord implements Serializable {
 
     private String token;
 
-    private LocalDateTime createdAt;
+    private Boolean isDeleted;
 
-    private LocalDateTime updatedAt;
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createAt;
+
+    @TableField(fill = FieldFill.UPDATE)
+    private LocalDateTime updateAt;
 }

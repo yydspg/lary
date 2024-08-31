@@ -22,10 +22,9 @@
         <result column="update_at" property="updateAt" />
         <result column="notice" property="notice" />
     </resultMap>
-
-    <!-- 通用查询结果列 -->
-    <sql id="Base_Column_List">
-        id, group_no, name, creator, status, forbidden, group_avatar_url, is_upload_avatar, group_type, category, invite, forbidden_add_friend, allow_view_history_msg, version, create_at, update_at, notice
-    </sql>
+    <select id="queryMySavedGroups" resultType="cn.lary.module.group.entity.GroupDetail">
+        select l.*, s.* from  lary_groups l left join group_setting  s on l.group_no = s.group_no
+        where s.uid = #{uid}
+    </select>
 
 </mapper>

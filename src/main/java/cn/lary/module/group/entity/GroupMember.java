@@ -40,13 +40,13 @@ public class GroupMember implements Serializable {
 
     private Long version;
 
-    private Short isDeleted;
+    private Boolean isDeleted;
 
     private Short status;
 
     private String vercode;
 
-    private Short robot;
+    private Boolean robot;
 
     private String inviteUid;
 

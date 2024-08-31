@@ -16,7 +16,7 @@ import lombok.experimental.Accessors;
  * </p>
  *
  * @author paul
- * @since 2024-07-29
+ * @since 2024-08-07
  */
 @Getter
 @Setter
@@ -46,12 +46,14 @@ public class User implements Serializable {
 
     private String password;
 
-    /**
-     * 是否上传密码
-     */
+
     private Boolean isUploadAvatar;
 
     private String birthday;
+
+    private String zone;
+
+    private String phone;
 
     private String regin;
 
@@ -59,12 +61,17 @@ public class User implements Serializable {
 
     private String bio;
 
+    private String vercode;
+
+    private String qrVercode;
+
     private Integer level;
 
     private String email;
 
     private String avatarUrl;
-
+    private String role;
+    private Short status;
     private Boolean deleted;
 
     private Boolean isAnchor;

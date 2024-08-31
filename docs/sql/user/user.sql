@@ -10,9 +10,13 @@ create table `user` (
                         password varchar(40) not null default '',
                         is_upload_avatar bool not null default false comment '是否上传密码',
                         birthday varchar(80)  not null ,
+                        zone       VARCHAR(40)  not null default '',                             -- 手机区号
+                        phone      VARCHAR(20)  not null default '',                             -- 手机号
                         regin varchar(40) not null default '' ,
                         is_robot bool not null default false,
                         bio varchar(256) ,
+                        vercode    VARCHAR(100) not null default '',                             -- 验证码 加好友来源
+                        qr_vercode VARCHAR(100) not null default '',                             -- 二维码验证码 加好友来源
                         level int not null default 1,
                         email varchar(100) not null default '',
                         avatar_url varchar(256) not null,
@@ -85,8 +89,8 @@ create table `friend`
     is_deleted        smallint              not null default 0 comment '是否已删除',
     is_alone          smallint              not null default 0 comment  '单项好友',
     initiator         smallint              not null default 0 comment '加好友发起方',
-    created_at        timeStamp             not null DEFAULT CURRENT_TIMESTAMP comment '创建时间',
-    updated_at        timeStamp             not null DEFAULT CURRENT_TIMESTAMP comment '更新时间'
+    create_at        timeStamp             not null DEFAULT CURRENT_TIMESTAMP comment '创建时间',
+    update_at        timeStamp             not null DEFAULT CURRENT_TIMESTAMP comment '更新时间'
 );
 drop table if exists `login_log`;
 CREATE TABLE IF NOT EXISTS login_log(
@@ -142,6 +146,7 @@ CREATE table `user_red_dot`(
 
 CREATE UNIQUE INDEX `user_red_dot_uid_categoryx` on `user_red_dot` (`uid`,`category`);
 drop table if exists `user_online`;
+
 -- 用户在线表，理解为登陆日志
 create table `user_online`
 (
