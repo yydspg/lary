@@ -1,7 +1,0 @@
-/home/paul/javaPro/lary-test/src/main/java/cn/lary/test/LaryTestApplication.java
-/home/paul/javaPro/lary-test/src/main/java/cn/lary/test/rate/rateTest.java
-/home/paul/javaPro/lary-test/src/main/java/cn/lary/test/lock/test.java
-/home/paul/javaPro/lary-test/src/main/java/cn/lary/test/config/LockConfig.java
-/home/paul/javaPro/lary-test/src/main/java/cn/lary/test/lock/service/TestService.java
-/home/paul/javaPro/lary-test/src/main/java/cn/lary/test/config/RedissonLockAutoConfig.java
-/home/paul/javaPro/lary-test/src/main/java/cn/lary/test/config/swaggerConfig.java

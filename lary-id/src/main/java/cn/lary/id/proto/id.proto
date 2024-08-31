@@ -1,6 +1,0 @@
-syntax = "proto3";
-
-message Res {
-    int64 id = 1;
-    bool status ;
-}

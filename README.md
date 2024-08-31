@@ -1,16 +1,2 @@
-## mall project
-### modules
-- 评论`remark`[undo]
-- 存储[undo]
-- 消息`openIm`[undo]
-- 搜索[undo]
-- 视频[undo]
-- 支付`los`[80%]
-- 直播[undo]
-- 日志收集[undo]
-- 缓存`redis批量导入`[undo]
-- 鉴权`rbac`[undo]
-- 会员`member`[undo]
-- 对象存储`oss`[50%]
-- 分布式id `id`[done]
-- rpc [80%]
+## stream project
+

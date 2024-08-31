@@ -7,25 +7,26 @@
         <sourceOutputDir name="target/generated-sources/annotations" />
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
-        <module name="lary-auth" />
-        <module name="lary-test" />
-        <module name="test" />
-        <module name="lary-store" />
-        <module name="lary-id" />
-        <module name="lary-core" />
-        <module name="lary-api" />
-        <module name="lary-remark" />
-        <module name="lary-logistics" />
-        <module name="lary-search" />
-        <module name="lary-stream" />
-        <module name="lary-product" />
-        <module name="lary-rpc" />
-        <module name="lary-member" />
-        <module name="lary-cache" />
+        <module name="lary" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
+      <module name="lary-api" target="17" />
+      <module name="lary-auth" target="17" />
+      <module name="lary-cache" target="17" />
+      <module name="lary-core" target="17" />
+      <module name="lary-id" target="17" />
+      <module name="lary-logistics" target="17" />
+      <module name="lary-member" target="17" />
       <module name="lary-oss" target="17" />
+      <module name="lary-product" target="17" />
+      <module name="lary-remark" target="17" />
+      <module name="lary-rpc" target="14" />
+      <module name="lary-search" target="17" />
+      <module name="lary-store" target="17" />
+      <module name="lary-stream" target="17" />
+      <module name="lary-test" target="17" />
+      <module name="test" target="17" />
     </bytecodeTargetLevel>
   </component>
   <component name="JavacSettings">

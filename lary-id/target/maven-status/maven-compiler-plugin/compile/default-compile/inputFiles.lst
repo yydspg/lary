@@ -1,9 +1,0 @@
-/home/paul/javaPro/lary-id/src/main/java/cn/lary/id/core/segment/LaryCore.java
-/home/paul/javaPro/lary-id/src/main/java/cn/lary/id/core/segment/Segment.java
-/home/paul/javaPro/lary-id/src/main/java/cn/lary/id/core/segment/Buffer.java
-/home/paul/javaPro/lary-id/src/main/java/cn/lary/id/rpc/SegmentIdServiceImpl.java
-/home/paul/javaPro/lary-id/src/main/java/cn/lary/id/LaryIdApplication.java
-/home/paul/javaPro/lary-id/src/main/java/cn/lary/id/service/segment/SegConnPool.java
-/home/paul/javaPro/lary-id/src/main/java/cn/lary/id/service/segment/SegService.java
-/home/paul/javaPro/lary-id/src/main/java/cn/lary/id/service/segment/SegSql.java
-/home/paul/javaPro/lary-id/src/main/java/cn/lary/id/core/IdProd.java
