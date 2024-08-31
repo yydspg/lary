@@ -6,6 +6,7 @@ import cn.lary.module.common.CS.Lary;
 import cn.lary.module.group.entity.GroupMember;
 import cn.lary.module.group.mapper.GroupMemberMapper;
 import cn.lary.module.group.service.GroupMemberService;
+import cn.lary.module.user.dto.res.FriendCodeCheck;
 import cn.lary.module.user.entity.UserBase;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -63,7 +64,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<>();
         qw.eq(GroupMember::getGroupNo,groupNo);
         qw.eq(GroupMember::getUid,uid);
-        qw.eq(GroupMember::isDeleted,true);
+        qw.eq(GroupMember::getIsDeleted,true);
         return baseMapper.selectCount(qw) > 0;
     }
 
@@ -72,7 +73,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         LambdaUpdateWrapper<GroupMember> qw = new LambdaUpdateWrapper<>();
         qw.eq(GroupMember::getGroupNo,groupNo);
         qw.eq(GroupMember::getUid,uid);
-        qw.set(GroupMember::isDeleted,true);
+        qw.set(GroupMember::getIsDeleted,true);
         baseMapper.update(qw);
     }
 
@@ -86,5 +87,16 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     public List<String> queryMemberWithLimit(String groupNo, long limit) {
         LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<GroupMember>().select(GroupMember::getUid).eq(GroupMember::getGroupNo, groupNo).last("limit " + limit);
         return baseMapper.selectObjs(qw);
+    }
+
+    @Override
+    public FriendCodeCheck checkByCode(String code) {
+        return baseMapper.checkWithCode(code);
+    }
+
+    @Override
+    public GroupMember getMemberByVerCode(String vercode) {
+        LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<GroupMember>().eq(GroupMember::getVercode,vercode);
+        return baseMapper.selectOne(qw,false);
     }
 }

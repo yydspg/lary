@@ -37,6 +37,8 @@ public class FriendApplyRecord implements Serializable {
 
     private String token;
 
+    private Boolean isDeleted;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;
 

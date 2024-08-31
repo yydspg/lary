@@ -8,6 +8,7 @@ import cn.lary.module.app.service.AppConfigService;
 import cn.lary.module.app.service.EventService;
 import cn.lary.module.app.service.ShortNoService;
 import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.server.LaryServer;
 import cn.lary.module.common.server.RedisBizConfig;
@@ -28,6 +29,7 @@ import cn.lary.pkg.wk.entity.Request.user.UpdateTokenReq;
 import cn.lary.pkg.wk.entity.Response.user.UpdateTokenRes;
 import cn.lary.pkg.wk.entity.core.WK;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
@@ -38,7 +40,7 @@ import java.util.HashMap;
 
 @Slf4j
 @RestController
-@RequestMapping("/user")
+@RequestMapping("/v1/user")
 @RequiredArgsConstructor
 public class UserController {
 
@@ -54,9 +56,10 @@ public class UserController {
     private final RedisCache redisCache;
     private final RedisBizConfig redisBizConfig;
     private final WKUserService wkUserService;
+    private final KVBuilder kvBuilder;
 
     @GetMapping
-    public SingleResponse get(@RequestParam(value = "uid", required = true) String uid) {
+    public SingleResponse get(@RequestParam(value = "uid", required = true) @NotBlank String uid) {
 
         return null;
     }
@@ -70,6 +73,7 @@ public class UserController {
             return ResKit.fail("user can not login");
         }
         String reqPWD = StringKit.MD5(StringKit.MD5(req.getPassword()));
+        // ???
         if(StringKit.diff(reqPWD, user.getPassword())){
             return ResKit.fail("pwd error");
         }
@@ -78,27 +82,27 @@ public class UserController {
     @PostMapping("/register")
     public SingleResponse register(@Validated @RequestBody RegisterReq req) {
         if(registerConfig.isOffe()) {
-            return ResKit.fail("注册通道暂不开放");
+            return ResKit.fail("register channel is off");
         }
         // query app config
-        //   :  按理来说这里是缓存在内存或者写死，但是这里直接数据库查询，很不错
+
         AppConfigRes appConfig = appConfigService.getAppConfig();
         if (appConfig == null) {
-            return ResKit.fail("查询应用设置错误");
+            return ResKit.fail("query app config error");
         }
         // 是否开启业务入口模式
         if (appConfig.isRegisterInviteOn()) {
             if(StringKit.isEmpty(req.getInviteCode())) {
-                return ResKit.fail("邀请码不能为空");
+                return ResKit.fail("invite code is null");
             }
             // hashMap
             if (!LaryServer.checkBusinessCode(req.getCode())) {
-                return ResKit.fail("邀请码不存在");
+                return ResKit.fail("invite code not exists");
             }
         }
         // 存在链路追踪
         if (userService.queryByUsername(req.getName()) != null) {
-            return ResKit.fail("用户已存在");
+            return ResKit.fail("user already exist");
         }
         // 短信验证
         // test module
@@ -136,16 +140,18 @@ public class UserController {
             if (device == null) {
                 // device not exists
                 // try to store device in redis
-                String K = redisBizConfig.getLoginDeviceCachePrefix()+user.getUid();
+                String K = kvBuilder.buildDeviceLoginTokenKey(user.getUid());
                 String V = JSONKit.toJSON(device);
                 // set to redis
-                redisCache.set(redisBizConfig.getLoginDeviceCachePrefix(),V,redisBizConfig.getLoginDeviceCacheExpire());
+                redisCache.set(K,V,redisBizConfig.getLoginDeviceCacheExpire());
 
             }else {
                 // update device
                 deviceService.updateDeviceLogin(device);
             }
+
         }
+
         String token = null;
         String K = redisBizConfig.getUidTokenCachePrefix()+"@"+deviceFlag+"@"+user.getUid();
         String oldToken = redisCache.get(K);
@@ -158,9 +164,9 @@ public class UserController {
             // pc or web,do not need del token
             token = oldToken;
         }
-        String userTokenInfo = BizKit.buildUserToken(user.getUid(),user.getUsername(),user.getRole());
-        String userTokenKey = redisBizConfig.getUidTokenCachePrefix()+token;
-        // todo 这里是否需要redis事务呢,这里用了token的两个维度
+        String userTokenInfo = kvBuilder.buildUserLoginTokenValue(user.getUid(),user.getUsername(),user.getRole());
+        String userTokenKey = kvBuilder.buildUserLoginKey(redisBizConfig.getTokenCachePrefix(), user.getUid());
+        // no need redis transaction
         redisCache.set(userTokenKey,userTokenInfo,redisBizConfig.getTokenExpire());
         redisCache.set(K,token,redisBizConfig.getTokenExpire());
         // sync to wk IM
@@ -211,7 +217,7 @@ public class UserController {
         user.setShortNo(shortNo);
         user.setIsRobot(false);
         user.setIsUploadAvatar(isUploadAvatar);
-        user.setPassword(StringKit.MD5(req.getPassword()));
+        user.setPassword(StringKit.MD5(StringKit.MD5(req.getPassword())));
         user.setUsername(req.getName());
         // insert user
         userService.save(user);

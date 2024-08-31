@@ -89,8 +89,8 @@ create table `friend`
     is_deleted        smallint              not null default 0 comment '是否已删除',
     is_alone          smallint              not null default 0 comment  '单项好友',
     initiator         smallint              not null default 0 comment '加好友发起方',
-    created_at        timeStamp             not null DEFAULT CURRENT_TIMESTAMP comment '创建时间',
-    updated_at        timeStamp             not null DEFAULT CURRENT_TIMESTAMP comment '更新时间'
+    create_at        timeStamp             not null DEFAULT CURRENT_TIMESTAMP comment '创建时间',
+    update_at        timeStamp             not null DEFAULT CURRENT_TIMESTAMP comment '更新时间'
 );
 drop table if exists `login_log`;
 CREATE TABLE IF NOT EXISTS login_log(
@@ -146,6 +146,7 @@ CREATE table `user_red_dot`(
 
 CREATE UNIQUE INDEX `user_red_dot_uid_categoryx` on `user_red_dot` (`uid`,`category`);
 drop table if exists `user_online`;
+
 -- 用户在线表，理解为登陆日志
 create table `user_online`
 (

@@ -40,7 +40,7 @@ public class GroupMember implements Serializable {
 
     private Long version;
 
-    private boolean isDeleted;
+    private Boolean isDeleted;
 
     private Short status;
 

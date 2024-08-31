@@ -1,6 +1,6 @@
 package cn.lary.pkg.wk.api;
 
-import cn.lary.pkg.wk.entity.Request.message.MessageSendSeq;
+import cn.lary.pkg.wk.entity.Request.message.MessageSendReq;
 import cn.lary.pkg.wk.entity.Request.message.SyncReq;
 import cn.lary.pkg.wk.entity.Request.message.SyncAckReq;
 import cn.lary.pkg.wk.entity.Response.message.Message;
@@ -14,7 +14,7 @@ import java.util.List;
 @RetrofitClient(baseUrl = "${wk.base.url}/message")
 public interface WKMessageService {
     @POST("send")
-    Response<String> send(@Body MessageSendSeq message);
+    Response<Void> send(@Body MessageSendReq message);
     @POST("sync")
     Response<List<Message>> sync(@Body SyncReq syncReq);
     @POST("syncack")

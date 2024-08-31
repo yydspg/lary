@@ -19,14 +19,28 @@
         <result column="level" property="level" />
         <result column="email" property="email" />
         <result column="avatar_url" property="avatarUrl" />
+        <result column="vercode" property="vercode" />
+        <result column="qr_vercode" property="qrVercode"/>
         <result column="deleted" property="deleted" />
         <result column="is_anchor" property="isAnchor" />
         <result column="anchor_announce" property="anchorAnnounce" />
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
-    <select id="queryBaseByIDs" resultType="cn.lary.module.user.dto.res.UserBaseRes">
+    <select id="selectBaseByIDs" resultType="cn.lary.module.user.dto.res.UserBaseRes">
         select uid,name,deleted,is_robot from `user`
         where uid in #{uids}
+    </select>
+    <select id="selectBase" resultType="cn.lary.module.user.dto.res.UserBaseRes">
+        select uid,name,deleted,is_robot from `user` where uid = #{uid}
+    </select>
+    <select id="selectBasicInfo" resultType="cn.lary.module.user.dto.res.UserBasicInfo">
+        select uid,name,deleted,is_robot,vercode from `user` where uid = #{uid}
+    </select>
+    <select id="checkWithCode" resultType="cn.lary.module.user.dto.res.FriendCodeCheck">
+        select uid,vercode from user where vercode = #{code}
+    </select>
+    <select id="checkWithQRCode" resultType="cn.lary.module.user.dto.res.FriendCodeCheck">
+        select uid,qr_vercode as vercode from user where qr_vercode = #{code}
     </select>
 </mapper>

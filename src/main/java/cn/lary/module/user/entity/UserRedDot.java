@@ -29,11 +29,11 @@ public class UserRedDot implements Serializable {
 
     private String uid;
 
-    private Short count;
+    private Integer count;
 
     private String category;
 
-    private Short isDot;
+    private Boolean isDot;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

@@ -38,7 +38,8 @@ public class ShortNoServiceImpl extends ServiceImpl<ShortNoMapper, ShortNo> impl
             lw.eq(ShortNo::getUsed,0).eq(ShortNo::getHold,0).eq(ShortNo::getLocked,0);
             ShortNo shortNo = shortNoMapper.selectOne(lw);
             if (shortNo == null) {
-                throw new BizException("no available short no");
+                log.error("no available short no");
+                return null;
             }
             lw.clear();
             // update short locked num
@@ -47,12 +48,9 @@ public class ShortNoServiceImpl extends ServiceImpl<ShortNoMapper, ShortNo> impl
             uw.eq(ShortNo::getShortNo,shortNo.getShortNo());
             shortNoMapper.update(shortNo,uw);
             return shortNo.getShortNo();
-        }catch (Exception e) {
-            log.error(e.getMessage());
         }finally {
             lock.unlock();
         }
-        return null;
     }
 
     @Override

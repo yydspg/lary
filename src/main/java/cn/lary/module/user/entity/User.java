@@ -46,9 +46,7 @@ public class User implements Serializable {
 
     private String password;
 
-    /**
-     * 是否上传密码
-     */
+
     private Boolean isUploadAvatar;
 
     private String birthday;

@@ -1,6 +1,8 @@
 package cn.lary.module.user.mapper;
 
+import cn.lary.module.user.dto.res.FriendCodeCheck;
 import cn.lary.module.user.dto.res.UserBaseRes;
+import cn.lary.module.user.dto.res.UserBasicInfo;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.entity.UserBase;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
@@ -17,5 +19,11 @@ import java.util.List;
  * @since 2024-07-29
  */
 public interface UserMapper extends BaseMapper<User> {
-    List<UserBaseRes> queryBaseByIDs(@Param("uids") List<String> uids);
+    List<UserBaseRes> selectBaseByIDs(@Param("uids") List<String> uids);
+
+    UserBaseRes selectBase(@Param("uid")String uid);
+    UserBasicInfo selectBasicInfo(@Param("uid")String uid);
+    FriendCodeCheck checkWithCode(@Param("code") String code);
+
+    FriendCodeCheck checkWithQRCode(@Param("code") String code);
 }

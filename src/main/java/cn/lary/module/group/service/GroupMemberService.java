@@ -1,6 +1,7 @@
 package cn.lary.module.group.service;
 
 import cn.lary.module.group.entity.GroupMember;
+import cn.lary.module.user.dto.res.FriendCodeCheck;
 import cn.lary.module.user.entity.UserBase;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -62,5 +63,8 @@ public interface GroupMemberService extends IService<GroupMember> {
     long queryMemberCount(String groupNo);
 
     List<String> queryMemberWithLimit(String groupNo,long limit);
+
+    FriendCodeCheck checkByCode(String code);
+    GroupMember getMemberByVerCode(String vercode);
 
 }

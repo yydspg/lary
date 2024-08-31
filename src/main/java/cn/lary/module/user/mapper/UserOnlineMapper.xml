@@ -11,8 +11,8 @@
         <result column="last_offline" property="lastOffline" />
         <result column="online" property="online" />
         <result column="version" property="version" />
-        <result column="created_at" property="createdAt" />
-        <result column="updated_at" property="updatedAt" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
     </resultMap>
 
 </mapper>

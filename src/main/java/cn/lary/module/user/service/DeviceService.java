@@ -3,6 +3,8 @@ package cn.lary.module.user.service;
 import cn.lary.module.user.entity.Device;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.util.List;
+
 /**
  * <p>
  *  服务类
@@ -14,4 +16,6 @@ import com.baomidou.mybatisplus.extension.service.IService;
 public interface DeviceService extends IService<Device> {
     Device queryDevice(String deviceId,String uid);
     void updateDeviceLogin(Device device);
+    List<Device> queryDevicesWithUid(String uid);
+    void deleteDevice(String deviceId,String uid);
 }

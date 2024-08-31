@@ -25,9 +25,11 @@ public interface Lary {
         int friend = 4; // 好友
         int mailList = 5; //手机联系人
         int invitation = 6; // 邀请码
+        int unknown = 7; // unknown
     }
     interface Event {
         String register = "register";
+        String friendApplyAck = "friendApplyAck";
         String groupCreate = "groupCreate";
         String groupMemberAdd = "groupMemberAdd";
         String groupAvatarUpdate = "groupAvatarUpdate";
@@ -53,4 +55,29 @@ public interface Lary {
             int block = 2;
         }
     }
+    interface SeqKey {
+        String groupMember = "groupMember";
+        String group = "group";
+        String user = "user";
+        String friend = "friend";
+        String robot = "robot";
+        String userSetting = "userSetting";
+
+    }
+    interface RedDot {
+        String friendApply = "friendApply";
+    }
+    interface ApplyStatus {
+        short notProcess = 0;
+        short ok = 1;
+        short refused = 2;
+    }
+    interface ContentType {
+        int CMD = 99;
+    }
+    interface CMD {
+        String friendRequest = "friendRequest";
+        String friendApplyAck = "friendApplyAck";
+    }
+
 }

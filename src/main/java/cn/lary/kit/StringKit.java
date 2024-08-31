@@ -43,4 +43,10 @@ public class StringKit {
         }
         return sb.toString();
     }
+    public static String[] split(String str, String regex) {
+        if (isEmpty(str)) {
+            return null;
+        }
+        return str.split(regex);
+    }
 }

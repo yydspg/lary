@@ -25,7 +25,7 @@ public interface GroupService extends IService<Group> {
     int querySameDayCreateGroupCount(String uid, LocalDateTime createTime);
 
     Group queryByNo(String groupNo);
-
+    boolean exists(String groupNo);
     /**
      * 查询 我保存的群聊
      * @param uid user id

@@ -66,12 +66,12 @@ public class Friend implements Serializable {
     /**
      * 单项好友
      */
-    private Short isAlone;
+    private Boolean isAlone;
 
     /**
      * 加好友发起方
      */
-    private Short initiator;
+    private Boolean isInitiator;
 
     /**
      * 创建时间

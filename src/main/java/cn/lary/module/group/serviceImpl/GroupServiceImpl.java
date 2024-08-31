@@ -42,8 +42,15 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     @Override
     public Group queryByNo(String groupNo) {
         LambdaQueryWrapper<Group> qw = new LambdaQueryWrapper<Group>().eq(Group::getGroupNo, groupNo);
-        return baseMapper.selectOne(qw);
+        return baseMapper.selectOne(qw,false);
     }
+
+    @Override
+    public boolean exists(String groupNo) {
+        LambdaQueryWrapper<Group> qw = new LambdaQueryWrapper<Group>().eq(Group::getGroupNo, groupNo);
+        return groupMapper.selectCount(qw) > 0;
+    }
+
 
     @Override
     public List<GroupDetail> querySavedGroups(String uid) {

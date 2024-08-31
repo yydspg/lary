@@ -1,5 +1,7 @@
 package cn.lary.core.dto;
 
+import org.springframework.data.domain.Page;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -15,7 +17,6 @@ public class PageResponse<T> extends Response {
 
 
     private int totalCount = 0;
-
     private int pageSize = 1;
 
     private int pageIndex = 1;
@@ -83,9 +84,6 @@ public class PageResponse<T> extends Response {
         return data == null || data.isEmpty();
     }
 
-    public boolean isNotEmpty() {
-        return !isEmpty();
-    }
 
     public static PageResponse buildSuccess() {
         PageResponse response = new PageResponse();

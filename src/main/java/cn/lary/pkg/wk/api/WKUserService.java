@@ -14,9 +14,9 @@ import java.util.List;
 
 @RetrofitClient(baseUrl = "${wk.base.url}/user")
 public interface WKUserService {
-    @POST
+    @POST("token")
     Response<UpdateTokenRes> updateToken(@Body UpdateTokenReq updateTokenReq);
-    @POST("device/quit")
+    @POST("device_quit")
     Response<Void> deviceQuit(@Body DeviceQuitReq deviceQuitReq);
     @POST("systemuids_add")
     Response<Void> addSystemUIDS(@Body Uids uids);

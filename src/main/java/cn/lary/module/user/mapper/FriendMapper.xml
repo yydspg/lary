@@ -13,9 +13,11 @@
         <result column="source_vercode" property="sourceVercode" />
         <result column="is_deleted" property="isDeleted" />
         <result column="is_alone" property="isAlone" />
-        <result column="initiator" property="initiator" />
-        <result column="created_at" property="createdAt" />
-        <result column="updated_at" property="updatedAt" />
+        <result column="is_initiator" property="isInitiator" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
     </resultMap>
-
+    <select id="checkWithCode" resultType="cn.lary.module.user.dto.res.FriendCodeCheck">
+        select uid,vercode from friend where vercode = #{code}
+    </select>
 </mapper>

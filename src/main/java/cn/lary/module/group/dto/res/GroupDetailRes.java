@@ -88,9 +88,9 @@ public class GroupDetailRes extends DTO {
         g.setChatPwdOn(group.getGroupSetting().getChatPwdOn());
         g.setGroupType(group.getGroup().getGroupType());
         g.setCategory(group.getGroup().getCategory());
-        g.setInvite(group.getGroup().isInvite());
-        g.setForbiddenAddFriend(group.getGroup().isForbiddenAddFriend());
-        g.setAllowViewHistoryMsg(group.getGroup().isAllowViewHistoryMsg());
+        g.setInvite(group.getGroup().getInvite());
+        g.setForbiddenAddFriend(group.getGroup().getForbiddenAddFriend());
+        g.setAllowViewHistoryMsg(group.getGroup().getAllowViewHistoryMsg());
         g.setGroupType(group.getGroup().getGroupType());
         g.setCreateAt(group.getGroup().getCreateAt());
         g.setUpdateAt(group.getGroup().getUpdateAt());

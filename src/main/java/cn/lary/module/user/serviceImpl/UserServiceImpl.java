@@ -1,6 +1,8 @@
 package cn.lary.module.user.serviceImpl;
 
+import cn.lary.module.user.dto.res.FriendCodeCheck;
 import cn.lary.module.user.dto.res.UserBaseRes;
+import cn.lary.module.user.dto.res.UserBasicInfo;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.mapper.UserMapper;
 import cn.lary.module.user.service.UserService;
@@ -23,7 +25,7 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
-    private final UserMapper userMapper;
+
 
     @Override
     public User queryByUsername(String username) {
@@ -40,13 +42,34 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
+    public UserBaseRes queryBase(String uid) {
+        return baseMapper.selectBase(uid);
+    }
+
+    @Override
+    public UserBasicInfo queryUserBasicInfo(String uid) {
+        return baseMapper.selectBasicInfo(uid);
+    }
+
+
+    @Override
     public List<User> queryByUIDs(List<String> uids) {
         LambdaQueryWrapper<User> qw = new LambdaQueryWrapper<User>().in(User::getUid, uids);
         return baseMapper.selectList(qw);
     }
 
     @Override
-    public List<UserBaseRes> queryUserBaseInfoByUIDs(List<String> uids) {
-        return userMapper.queryBaseByIDs(uids);
+    public List<UserBaseRes> queryUserBaseByUIDs(List<String> uids) {
+        return baseMapper.selectBaseByIDs(uids);
+    }
+
+    @Override
+    public FriendCodeCheck checkByCode(String code) {
+        return baseMapper.checkWithCode(code);
+    }
+
+    @Override
+    public FriendCodeCheck checkByQRCode(String code) {
+        return baseMapper.checkWithQRCode(code);
     }
 }

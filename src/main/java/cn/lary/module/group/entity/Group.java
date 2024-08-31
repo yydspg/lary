@@ -63,11 +63,11 @@ public class Group implements Serializable {
     /**
      * 群邀请开关
      */
-    private boolean invite;
+    private Boolean invite;
 
-    private boolean forbiddenAddFriend;
+    private Boolean forbiddenAddFriend;
 
-    private boolean allowViewHistoryMsg;
+    private Boolean allowViewHistoryMsg;
 
     private Long version;
 

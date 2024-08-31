@@ -8,7 +8,9 @@ import cn.lary.module.app.entity.AppConfigRes;
 import cn.lary.module.app.entity.EventData;
 import cn.lary.module.app.service.AppConfigService;
 import cn.lary.module.app.service.EventService;
+import cn.lary.module.app.service.SeqService;
 import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.server.AccountConfig;
 import cn.lary.module.common.server.GroupConfig;
 import cn.lary.module.group.dto.req.*;
@@ -53,6 +55,8 @@ public class GroupController {
     private final EventService eventService;
     private final GroupSettingService groupSettingService;
     private final WKChannelService wkChannelService;
+    private final SeqService seqService;
+    private final KVBuilder kvBuilder;
 
     @PostMapping("/create")
     public SingleResponse createGroup(@Valid @RequestBody GroupCreate req) {
@@ -87,7 +91,7 @@ public class GroupController {
         }
         // add create user
         uids.add(req.getUid());
-        List<UserBaseRes> users = userService.queryUserBaseInfoByUIDs(uids);
+        List<UserBaseRes> users = userService.queryUserBaseByUIDs(uids);
         //check user
         if (CollectionKit.isEmpty(users)) {
             return ResKit.fail("no valid  user id");
@@ -162,6 +166,7 @@ public class GroupController {
         Group res = groupService.queryByNo(groupNo);
         return ResKit.ok(res);
     }
+
     @GetMapping("/list")
     public MultiResponse list(@NotNull(message = "uid is null") @RequestParam(value = "uid") String uid) {
         List<GroupDetail> groupDetails = groupService.querySavedGroups(uid);
@@ -174,6 +179,7 @@ public class GroupController {
         }
         return ResKit.multiOk(list);
     }
+
     @PostMapping("/{groupNo}/add")
     public SingleResponse addMember(@PathVariable(value = "groupNo") String groupNo, @Valid @RequestBody MemberAdd req) {
         // check Group if exists
@@ -203,14 +209,15 @@ public class GroupController {
             }
         }
         // invite pattern
-        if(group.isInvite()) {
+        if(group.getInvite()) {
             if (!groupMemberService.isCreatorOrManager(inviter,groupNo,creator)) {
                 return ResKit.fail(ResultCode.NO_CREATOR_OR_MANAGER);
             }
         }
         // insert member
-
+        return addGroupMember(members,inviter,groupNo);
     }
+
     private SingleResponse addGroupMember(List<String> members,String creator,String groupNo) {
         // query if creator in group
         if (!groupMemberService.isMember(creator,groupNo)) {
@@ -218,7 +225,7 @@ public class GroupController {
         }
         // get real uids
         List<String> uids = CollectionKit.removeRepeat(members);
-        List<UserBaseRes> userBaseList = userService.queryUserBaseInfoByUIDs(uids);
+        List<UserBaseRes> userBaseList = userService.queryUserBaseByUIDs(uids);
         List<UserBaseRes> newUserList = new ArrayList<>();
         List<UserBaseRes> unableAddUserList = new ArrayList<>();
         userBaseList.forEach(user -> {
@@ -255,7 +262,8 @@ public class GroupController {
                 groupMemberService.recoveryMember(groupNo, user.getUid());
             }else {
                 GroupMember groupMember = new GroupMember().setUid(user.getUid()).setGroupNo(groupNo).setRobot(user.getIsRobot());
-                groupMember.setInviteUid(creator).setVercode(BizKit.buildGroupMemberVerCode()).setVersion(null);
+                long version = seqService.build(Lary.SeqKey.groupMember);
+                groupMember.setInviteUid(creator).setVercode(kvBuilder.buildGroupMemberVerCode()).setVersion(version);
                 groupMemberService.save(groupMember);
             }
         });

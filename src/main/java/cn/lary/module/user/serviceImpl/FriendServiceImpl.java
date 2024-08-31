@@ -2,6 +2,7 @@ package cn.lary.module.user.serviceImpl;
 
 import cn.lary.kit.StringKit;
 import cn.lary.module.common.server.AccountConfig;
+import cn.lary.module.user.dto.res.FriendCodeCheck;
 import cn.lary.module.user.entity.Friend;
 import cn.lary.module.user.mapper.FriendMapper;
 import cn.lary.module.user.service.FriendService;
@@ -34,7 +35,6 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     }
 
     @Override
-    @Transactional
     public void  addSystemFriend(String uid) {
         if(StringKit.isEmpty(uid)){
             return ;
@@ -50,7 +50,6 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
     }
 
     @Override
-    @Transactional
     public void addFileHelper(String uid) {
         if(StringKit.isEmpty(uid)){
             return ;
@@ -63,5 +62,18 @@ public class FriendServiceImpl extends ServiceImpl<FriendMapper, Friend> impleme
         Friend friend = new Friend().setUid(uid).setIsDeleted(false).setToUid(accountConfig.getFileHelperUid());
         // TODO  :  这里缺少了 version 字段的设置
         baseMapper.insert(friend);
+    }
+
+    @Override
+    public Friend get(String uid, String toUid) {
+        LambdaQueryWrapper<Friend> qw = new LambdaQueryWrapper<>();
+        qw.eq(Friend::getUid, uid);
+        qw.eq(Friend::getToUid, toUid);
+        return  baseMapper.selectOne(qw);
+    }
+
+    @Override
+    public FriendCodeCheck checkByCode(String code) {
+        return baseMapper.checkWithCode(code);
     }
 }
