@@ -12,10 +12,11 @@ public class RedisBizConfig {
     private String loginDeviceCachePrefix;
     private String uidTokenCachePrefix;
     private String friendApplyTokenCachePrefix;
+    private String danmakuTokenCachePrefix;
     // 单位为 s
     private long loginDeviceCacheExpire;
     private long tokenExpire;
     private long friendApplyExpire;
     private long nameCacheExpire;
-
+    private long danmakuChannelExistsExpire; //days
 }

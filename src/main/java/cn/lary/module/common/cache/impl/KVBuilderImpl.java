@@ -35,6 +35,16 @@ public class KVBuilderImpl implements KVBuilder {
         return redisBizConfig.getLoginDeviceCachePrefix() + uid;
     }
 
+    @Override
+    public String buildDanmakuChannelTokenKey(String uid) {
+        return redisBizConfig.getDanmakuTokenCachePrefix()+uid;
+    }
+
+    @Override
+    public String buildDanmakuChannelTokenValue(String channelId) {
+        return channelId;
+    }
+
     public String buildFriendApplyKey(String token,String uid) {
         return redisBizConfig.getFriendApplyTokenCachePrefix() + token + "@" + uid;
     }

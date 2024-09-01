@@ -123,3 +123,10 @@ lary:
   group:
     same-day-create-max-count: 5
     allow-view-history-msg-status: true
+  srs:
+    origin:
+      - gansu:127.0.0.1:8080
+      - shanghai:127.0.0.1:9001
+    edge:
+      - sichuan:192.168.0.1:8001
+      - sichuan:127.0.0.1:8001

@@ -31,7 +31,7 @@ public class Room implements Serializable {
     /**
      * uid 等同于 room id
      */
-    private Long uid;
+    private String uid;
 
     private String streamTypeId;
 

@@ -9,4 +9,6 @@ public interface KVBuilder {
     public  String buildUserLoginKey(String tokenPrefix,String token) ;
     public  String buildUserLoginKey(String token) ;
     String buildDeviceLoginTokenKey(String uid);
+    String buildDanmakuChannelTokenKey(String uid);
+    String buildDanmakuChannelTokenValue(String channelId);
 }
