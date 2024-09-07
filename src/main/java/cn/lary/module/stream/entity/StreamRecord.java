@@ -36,6 +36,8 @@ public class StreamRecord implements Serializable {
 
     private String channelId;
 
+    private String giftBuyRecordId;
+
     private LocalDateTime startAt;
 
     private LocalDateTime endAt;
@@ -43,19 +45,26 @@ public class StreamRecord implements Serializable {
     /**
      * 直播简介
      */
-    private String lastRemark;
+    private String remark;
+    /**
+     * 直播地址
+     */
+    private String streamUrl;
+    /**
+     * 唯一辨识符
+     */
+    private String identify;
 
     /**
      * 观看人数
      */
-    private Integer lastWatchNum;
+    private Integer watchNum;
 
     /**
      * 开播时长以s为单位
      */
     private Integer duration;
 
-    private Long watchNum;
 
     private Long newFansNum;
 

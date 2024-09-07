@@ -30,11 +30,22 @@ create table `gift_type` (
     create_at timestamp,
     update_at timestamp
 );
+drop table if exists    `gift_buy_channel`;
+create table `gift_buy_channel` (
+    id bigint not null primary key auto_increment,
+    channel_id varchar(40) not null default '' comment 'gift buy channel',
+    is_alive bool not null default true comment '是否存活',
+    is_delete bool ,
+    create_by varchar(40) ,
+    update_by varchar(40) ,
+    create_at timestamp,
+    update_at timestamp
+);
 drop table if exists `gift_buy_record`;
 create table `gift_buy_record` (
     id bigint primary key auto_increment ,
-    uid varchar(40)  comment 'user_id',
-    app_id varchar(40) comment 'app_Id',
+    uid varchar(40) not null  comment 'user_id',
+    channel_id varchar(40) not null comment 'channel_Id',
     notify_url varchar(40) comment '异步通知地址',
     is_sync bool comment '是否同步用户数据成功',
     fail_reason varchar(255) comment '上游异常原因',

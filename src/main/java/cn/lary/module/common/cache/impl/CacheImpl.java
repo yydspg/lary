@@ -55,7 +55,12 @@ public class CacheImpl implements RedisCache {
     }
 
     @Override
-    public void setHash(String k, Map<String, Object> map) {
+    public void incrHash(String k, String f) {
+        str.opsForHash().increment(k, f, 1);
+    }
+
+    @Override
+    public void setHash(String k, Map map) {
         str.opsForHash().putAll(k, map);
     }
 

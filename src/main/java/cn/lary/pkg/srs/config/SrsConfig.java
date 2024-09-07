@@ -11,6 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Random;
 
 
 @Getter
@@ -18,8 +19,11 @@ import java.util.List;
 @Configuration
 @ConfigurationProperties(prefix = "lary.srs")
 public class SrsConfig {
+    // sort by province
     private final HashMap<String,List<String>> origins = new HashMap<>();
     private final HashMap<String,List<String>> edges = new HashMap<>();
+
+    // property di
     @JsonProperty("origin")
     private List<String> originServers;
     @JsonProperty("edge")
@@ -54,5 +58,13 @@ public class SrsConfig {
             }
         });
     }
-
+    public List<String> getEdgeServerProvinces(){
+        return edges.keySet().stream().toList();
+    }
+    public String getEdgeServerRandom(String province){
+        List<String> servers = edges.get(province);
+        Random r = new Random();
+        int i = r.nextInt(servers.size());
+        return servers.get(i);
+    }
 }

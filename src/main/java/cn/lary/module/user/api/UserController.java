@@ -243,6 +243,7 @@ public class UserController {
         }
         EventData data = new EventData().setEvent(Lary.Event.register).setType(Lary.EventType.message).setData(JSONKit.toJSON(map));
         int eventId = eventService.begin(data);
+        // TODO  :  what ????
         eventService.commit(eventId);
         String token = UUIDKit.getUUID();
         String K = Lary.RedisPrefix.token + token;

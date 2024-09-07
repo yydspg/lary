@@ -1,7 +1,6 @@
 package cn.lary.pkg.wk.api;
 
 import cn.lary.pkg.wk.entity.Request.user.DeviceQuitReq;
-import cn.lary.pkg.wk.entity.Request.user.Uids;
 import cn.lary.pkg.wk.entity.Request.user.UpdateTokenReq;
 import cn.lary.pkg.wk.entity.Response.user.OnlineStatus;
 import cn.lary.pkg.wk.entity.Response.user.UpdateTokenRes;
@@ -19,9 +18,9 @@ public interface WKUserService {
     @POST("device_quit")
     Response<Void> deviceQuit(@Body DeviceQuitReq deviceQuitReq);
     @POST("systemuids_add")
-    Response<Void> addSystemUIDS(@Body Uids uids);
+    Response<Void> addSystemUIDS(@Body List<String> uids);
     @POST("systemuids_remove")
-    Response<Void> removeSystemUIDS(@Body Uids uids);
+    Response<Void> removeSystemUIDS(@Body List<String> uids);
     @POST("onlinestatus")
-    Response<List<OnlineStatus>> onlineStatus(@Body Uids uids);
+    Response<List<OnlineStatus>> onlineStatus(@Body List<String> uids);
 }

@@ -6,7 +6,7 @@
     <resultMap id="BaseResultMap" type="cn.lary.module.gift.entity.GiftBuyRecord">
         <id column="id" property="id" />
         <result column="uid" property="uid" />
-        <result column="app_id" property="appId" />
+        <result column="channel_id" property="channelId" />
         <result column="notify_url" property="notifyUrl" />
         <result column="is_sync" property="isSync" />
         <result column="fail_reason" property="failReason" />
@@ -27,5 +27,8 @@
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
+    <select id="getGiftBuyRecordCountByGiftId" resultType="java.lang.Integer">
+        select count(cost) from gift_buy_record where channel_id = #{giftChannelId} and is_delete = false
+    </select>
 
 </mapper>

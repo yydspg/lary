@@ -2,8 +2,10 @@ package cn.lary.pkg.wk.entity.Request.message;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 @Data
+@Accessors(chain = true)
 public class MessageHeader {
     @JsonProperty("red_dot")
     private int redDot;

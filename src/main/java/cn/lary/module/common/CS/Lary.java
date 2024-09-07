@@ -34,6 +34,7 @@ public interface Lary {
         String groupMemberAdd = "groupMemberAdd";
         String groupAvatarUpdate = "groupAvatarUpdate";
         String groupUnableAddDestroyAccount = "groupUnableAddDestroyAccount";
+        String streamStart = "streamStart";
     }
     interface EventType {
         short none = 0;

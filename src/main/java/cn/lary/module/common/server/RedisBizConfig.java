@@ -13,6 +13,8 @@ public class RedisBizConfig {
     private String uidTokenCachePrefix;
     private String friendApplyTokenCachePrefix;
     private String danmakuTokenCachePrefix;
+    private String goLiveTokenPrefix;
+    private String streamRecordCachePrefix;
     // 单位为 s
     private long loginDeviceCacheExpire;
     private long tokenExpire;

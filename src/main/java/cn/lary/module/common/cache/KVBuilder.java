@@ -1,5 +1,7 @@
 package cn.lary.module.common.cache;
 
+import java.util.Map;
+
 public interface KVBuilder {
     String buildFriendApplyKey(String token,String uid) ;
     String buildFriendApplyValue(String fromUid,String vercode,String remark) ;
@@ -11,4 +13,8 @@ public interface KVBuilder {
     String buildDeviceLoginTokenKey(String uid);
     String buildDanmakuChannelTokenKey(String uid);
     String buildDanmakuChannelTokenValue(String channelId);
+    String buildGoLiveKey(String uid);
+    String buildStreamRecordKey(String uid,String streamId);
+    Map<Object,Object> buildStreamRecordValue();
+    Map<String,String> buildGoLiveValue(String streamId,String giftBuyChannelId,String wkChannelId);
 }

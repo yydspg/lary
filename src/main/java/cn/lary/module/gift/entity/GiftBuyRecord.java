@@ -38,7 +38,7 @@ public class GiftBuyRecord implements Serializable {
     /**
      * app_Id
      */
-    private String appId;
+    private String channelId;
 
     /**
      * 异步通知地址

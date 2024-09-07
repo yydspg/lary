@@ -9,10 +9,10 @@ import lombok.Data;
 public class StartStreamReq extends DTO {
     @NotNull
     private String zone;
+
     @NotNull
-    private String latitude;
-    @NotNull
-    private String  longitude;
+    private String province;
+
     @JsonProperty("device_id")
     private String deviceId;
     @NotNull(message = "device_flag is null")

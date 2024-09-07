@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -16,69 +17,30 @@ import lombok.experimental.Accessors;
  * </p>
  *
  * @author paul
- * @since 2024-08-16
+ * @since 2024-09-04
  */
 @Getter
 @Setter
 @Accessors(chain = true)
-public class Room implements Serializable {
+@TableName("follow_apply")
+public class FollowApply implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    /**
-     * uid 等同于 room id
-     */
     private String uid;
 
-    private String streamTypeId;
-
+    /**
+     * 被关注id
+     */
+    private String toUid;
 
     /**
-     * 是否在直播
+     * 业务来源
      */
-    private Boolean isAlive;
-
-
-    /**
-     * 是否是著名主播
-     */
-    private Boolean isHot;
-
-    /**
-     * 是否上传封面
-     */
-    private Boolean isUploadCover;
-
-    /**
-     * 封面地址
-     */
-    private String coverUrl;
-
-    /**
-     * 评分
-     */
-    private Long score;
-
-    /**
-     * 是否被封禁
-     */
-    private Boolean isBlock;
-
-    /**
-     * 封禁类型
-     */
-    private String blockTypeId;
-
-    /**
-     * 封禁详情
-     */
-    private String blockDescription;
-    private Integer blockNum;
-    private Integer followNum;
-    private String remark;
+    private Integer source;
 
     private Boolean isDelete;
 

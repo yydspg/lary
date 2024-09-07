@@ -1,4 +1,4 @@
-package cn.lary.module.stream.api;
+package cn.lary.module.stream.controller;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -9,10 +9,10 @@ import org.springframework.web.bind.annotation.RestController;
  * </p>
  *
  * @author paul
- * @since 2024-08-16
+ * @since 2024-09-07
  */
 @RestController
-@RequestMapping("/stream/stream-block-type")
-public class StreamBlockTypeController {
+@RequestMapping("/stream/gift-buy-channel")
+public class GiftBuyChannelController {
 
 }

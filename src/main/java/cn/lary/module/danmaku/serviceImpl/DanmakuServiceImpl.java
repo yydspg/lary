@@ -7,7 +7,9 @@ import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.config.WkConfig;
 import cn.lary.module.danmaku.service.DanmakuService;
 import cn.lary.module.stream.entity.Room;
+import cn.lary.module.stream.entity.StreamRecord;
 import cn.lary.module.stream.service.RoomService;
+import cn.lary.module.stream.service.StreamRecordService;
 import cn.lary.pkg.wk.api.WKChannelService;
 import cn.lary.pkg.wk.api.WKMessageService;
 import cn.lary.pkg.wk.entity.Request.channel.ChannelCreateReq;
@@ -29,23 +31,25 @@ public class DanmakuServiceImpl implements DanmakuService {
     private final RedisCache redisCache;
     private final KVBuilder kvBuilder;
     private final RoomService roomService;
+    private final StreamRecordService streamRecordService;
     @Override
     public Channel getDanmakuChannel(String uid) {
+
         if (StringKit.isEmpty(uid)) {
             return null;
         }
         // build data channel
-        Room room = roomService.getOne(new LambdaQueryWrapper<Room>().eq(Room::getUid, uid).select(Room::getChannelId), false);
-        if (room == null) {
+        StreamRecord streamRecord = streamRecordService.getOne(new LambdaQueryWrapper<StreamRecord>().eq(StreamRecord::getUid, uid).select(StreamRecord::getStreamId), false);
+        if (streamRecord == null) {
             // please
             log.error("please add room first");
             return null;
         }
-        boolean exist = exist(room.getChannelId(), uid);
+        boolean exist = exist(streamRecord.getChannelId(), uid);
         Channel channel = null;
         // already exists
         if (exist) {
-            channel = new Channel().setChanelID(room.getChannelId()).setChannelType(WK.ChannelType.data);
+            channel = new Channel().setChanelID(streamRecord.getChannelId()).setChannelType(WK.ChannelType.data);
             return channel;
         }else {
             // create wk channel
@@ -55,6 +59,7 @@ public class DanmakuServiceImpl implements DanmakuService {
             req.setChanelID(channelId).setChannelType(WK.ChannelType.data);
             wkChannelService.createOrUpdate(req);
             // add in redis
+            // TODO  :  这里可以考虑下以后和 stream url的聚合 ，用 redis的hash存
             addCache(channelId, uid);
         }
         return channel;
