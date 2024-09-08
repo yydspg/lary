@@ -27,8 +27,8 @@ public class FriendApplyRecordServiceImpl extends ServiceImpl<FriendApplyRecordM
     }
 
     @Override
-    public Page<FriendApplyRecord> queryRecords(String uid, long pageSize, long page) {
-        LambdaQueryWrapper<FriendApplyRecord> eq = new LambdaQueryWrapper<FriendApplyRecord>().eq(FriendApplyRecord::getUid, uid).eq(FriendApplyRecord::getIsDeleted,false);
+    public Page<FriendApplyRecord> queryRecords(String toUid, long pageSize, long page) {
+        LambdaQueryWrapper<FriendApplyRecord> eq = new LambdaQueryWrapper<FriendApplyRecord>().eq(FriendApplyRecord::getToUid, toUid).eq(FriendApplyRecord::getIsDeleted,false);
         return baseMapper.selectPage(new Page<>(page, pageSize), eq);
     }
 

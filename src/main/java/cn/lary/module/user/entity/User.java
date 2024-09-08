@@ -42,7 +42,7 @@ public class User implements Serializable {
      */
     private Short sex;
 
-    private String username;
+//    private String username;
 
     private String password;
 

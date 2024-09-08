@@ -23,7 +23,7 @@ public class GiftBuyRecordServiceImpl extends ServiceImpl<GiftBuyRecordMapper, G
 
     private final GiftBuyRecordMapper giftBuyRecordMapper;
     @Override
-    public int collectCostMoneyByGiftChannelId(String giftChannelId) {
-
+    public long collectCostMoneyByGiftChannelId(String giftChannelId) {
+        return giftBuyRecordMapper.getGiftBuyRecordCountByGiftId(giftChannelId);
     }
 }

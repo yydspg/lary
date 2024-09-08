@@ -20,7 +20,5 @@ import org.springframework.web.bind.annotation.RestController;
 public class StreamRecordController {
     private final StreamRecordService streamRecordService;
 
-    public void endStream(String streamId,String giftBuyRecordId,String wkChannelId) {
 
-    }
 }

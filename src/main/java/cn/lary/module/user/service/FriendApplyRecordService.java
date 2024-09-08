@@ -17,7 +17,7 @@ import java.util.List;
 public interface FriendApplyRecordService extends IService<FriendApplyRecord> {
 
     FriendApplyRecord queryByUidAndToUid(String uid,String toUid);
-    Page<FriendApplyRecord> queryRecords(String uid,long pageSize,long page);
+    Page<FriendApplyRecord> queryRecords(String toUid,long pageSize,long page);
     void deleteRecordByUidAndToUid(String uid,String toUid);
     boolean exists(String uid,String toUid);
 }

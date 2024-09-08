@@ -65,7 +65,7 @@ public class UserController {
     }
     @PostMapping("/login")
     public SingleResponse login(@Valid @RequestBody LoginReq req) {
-        User user = userService.queryByUsername(req.getUsername());
+        User user = userService.queryByName(req.getName());
         if (user == null || user.getDeleted()) {
             return ResKit.fail("user not exist");
         }

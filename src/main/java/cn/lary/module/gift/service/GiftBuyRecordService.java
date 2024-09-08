@@ -13,5 +13,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface GiftBuyRecordService extends IService<GiftBuyRecord> {
 
-    int collectCostMoneyByGiftChannelId(String giftChannelId);
+    long collectCostMoneyByGiftChannelId(String giftChannelId);
 }

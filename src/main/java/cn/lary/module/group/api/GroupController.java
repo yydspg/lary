@@ -1,5 +1,6 @@
 package cn.lary.module.group.api;
 
+import cn.lary.core.context.ReqContext;
 import cn.lary.core.cs.ResultCode;
 import cn.lary.core.dto.MultiResponse;
 import cn.lary.core.dto.SingleResponse;
@@ -61,12 +62,12 @@ public class GroupController {
     @PostMapping("/create")
     public SingleResponse createGroup(@Valid @RequestBody GroupCreate req) {
 
-        int count = groupService.querySameDayCreateGroupCount(req.getUid(), LocalDateTime.now());
+        String creator = ReqContext.getLoginUID();
+        String createName = ReqContext.getLoginName();
+        int count = groupService.querySameDayCreateGroupCount(creator, LocalDateTime.now());
         if (groupConfig.getSameDayCreateMaxCount() <= count) {
             return ResKit.fail("reach max group create count");
         }
-        String creator = req.getUid();
-        String createName = req.getCreateName();
         // remove repeat
         List<String> uids = CollectionKit.removeRepeat(req.getMembers());
         // check friendship
@@ -85,12 +86,12 @@ public class GroupController {
                 return ResKit.fail(ResultCode.APP_CONFIG_NO_EXIST);
             }
         }
-        User user = userService.queryByUID(req.getUid());
+        User user = userService.queryByUID(creator);
         if (user == null) {
             return ResKit.fail("user not exist");
         }
         // add create user
-        uids.add(req.getUid());
+        uids.add(creator);
         List<UserBaseRes> users = userService.queryUserBaseByUIDs(uids);
         //check user
         if (CollectionKit.isEmpty(users)) {

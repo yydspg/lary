@@ -9,8 +9,8 @@ import lombok.Data;
 
 @Data
 public class LoginReq {
-    @NotNull(message = "username is null")
-    private String username;
+    @NotNull(message = "name is null")
+    private String name;
     @NotNull(message = "password is null")
     private String password;
     @Min(value = 0,message = "flag can not less than 0 ")

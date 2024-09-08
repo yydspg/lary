@@ -31,6 +31,7 @@ public interface RedisCache {
     //hset k f v
     void setHash(String k,String f,String v);
     void incrHash(String k,String f);
+    void decrHash(String k,String f);
     //mhset f v [f v ...]
     void setHash(String k,Map map);
     //hget k f

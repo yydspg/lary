@@ -199,7 +199,7 @@ public class RoomController {
      * @param province 加入省份
      * @return {@link JoinStreamRes}
      */
-    @GetMapping("/join")
+    @GetMapping("/join{toUid}{province}")
     public SingleResponse join(@PathVariable @NotNull String toUid,@PathVariable @NotNull String province) {
         String uid  = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
@@ -270,7 +270,7 @@ public class RoomController {
      * @param streamId 直播流
      * @return ok
      */
-    @GetMapping("/end")
+    @GetMapping("/end{streamId}")
     public SingleResponse end(@PathVariable @NotNull String streamId) {
         String uid = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
@@ -298,18 +298,17 @@ public class RoomController {
         Integer watchFanNum = (Integer) map.get("watchFanNum");
         Long newFansNum = (Long) map.get("newFansNum");
         // collect gift cost
-        int cost = giftBuyRecordService.collectCostMoneyByGiftChannelId(giftBuyChannelId);
-        StreamRecord updateRecord = new StreamRecord().setStreamId(streamId);
+        long cost = giftBuyRecordService.collectCostMoneyByGiftChannelId(giftBuyChannelId);
+        StreamRecord updateRecord = new StreamRecord().setStreamId(streamId).setGiftCost(cost);
         updateRecord.setNewFansNum(newFansNum).setWatchNum(watchFanNum).setStarNum(starNum).setWatchNum(watchNum).setUpdateBy(uid);
         streamRecordService.updateById(updateRecord);
         // send close live info to wk channel
         MessageSendReq sendReq = new MessageSendReq().setHeader(new MessageHeader().setNoPersist(1));
-        String content = uidName + "已经离开了，稍后再来哦";
+        String content = uidName + "已经离开，稍后再来哦";
         sendReq.setFromUID(uid).setPayload(content.getBytes(StandardCharsets.UTF_8));
         sendReq.setChanelID(danmakuId).setChannelType(WK.ChannelType.data);
         wkMessageService.send(sendReq);
         // TODO  :  send mq to close resource
-        start(null);
-        return null;
+        return ResKit.ok();
     }
 }

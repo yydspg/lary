@@ -14,7 +14,8 @@ public interface KVBuilder {
     String buildDanmakuChannelTokenKey(String uid);
     String buildDanmakuChannelTokenValue(String channelId);
     String buildGoLiveKey(String uid);
+    Map<String,String> buildGoLiveValue(String streamId,String giftBuyChannelId,String wkChannelId);
     String buildStreamRecordKey(String uid,String streamId);
     Map<Object,Object> buildStreamRecordValue();
-    Map<String,String> buildGoLiveValue(String streamId,String giftBuyChannelId,String wkChannelId);
+
 }

@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2024-08-16
  */
 @RestController
-@RequestMapping("/gift/gift")
+@RequestMapping("/v1/gift/")
 @RequiredArgsConstructor
 public class GiftController {
     private final GiftService giftService;

@@ -13,5 +13,5 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface GiftBuyRecordMapper extends BaseMapper<GiftBuyRecord> {
 
-    int getGiftBuyRecordCountByGiftId(String giftChannelId);
+    long getGiftBuyRecordCountByGiftId(String giftChannelId);
 }

@@ -4,6 +4,7 @@ import cn.lary.module.user.dto.res.FriendCodeCheck;
 import cn.lary.module.user.dto.res.UserBaseRes;
 import cn.lary.module.user.dto.res.UserBasicInfo;
 import cn.lary.module.user.entity.User;
+import cn.lary.module.user.entity.UserShowInfo;
 import com.alipay.api.domain.UserBaseInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -19,10 +20,11 @@ import java.util.List;
  */
 public interface UserService extends IService<User> {
 
-    User queryByUsername(String username);
+    User queryByName(String username);
     User queryByUID(String uid);
     UserBaseRes queryBase(String uid);
     UserBasicInfo queryUserBasicInfo(String uid);
+    List<UserShowInfo> queryUserShowInfo(List<String> uids);
     /**
      * use this api carefully
      * @param uids user id list

@@ -4,6 +4,7 @@ import cn.lary.module.user.dto.res.FriendCodeCheck;
 import cn.lary.module.user.dto.res.UserBaseRes;
 import cn.lary.module.user.dto.res.UserBasicInfo;
 import cn.lary.module.user.entity.User;
+import cn.lary.module.user.entity.UserShowInfo;
 import cn.lary.module.user.mapper.UserMapper;
 import cn.lary.module.user.service.UserService;
 import com.alipay.api.domain.UserBaseInfo;
@@ -26,11 +27,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
-
+    private final UserMapper userMapper;
     @Override
-    public User queryByUsername(String username) {
+    public User queryByName(String name) {
         LambdaQueryWrapper<User> lw = new LambdaQueryWrapper<>();
-        lw.eq(User::getUsername, username);
+        lw.eq(User::getName, name);
         return baseMapper.selectOne(lw);
     }
 
@@ -51,10 +52,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return baseMapper.selectBasicInfo(uid);
     }
 
+    @Override
+    public List<UserShowInfo> queryUserShowInfo(List<String> uids) {
+        return userMapper.selectUserShowInfo(uids);
+    }
+
 
     @Override
     public List<User> queryByUIDs(List<String> uids) {
-        LambdaQueryWrapper<User> qw = new LambdaQueryWrapper<User>().in(User::getUid, uids);
+        LambdaQueryWrapper<User> qw = new LambdaQueryWrapper<User>().eq(User::getDeleted,false).in(User::getUid, uids);
         return baseMapper.selectList(qw);
     }
 

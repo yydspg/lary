@@ -130,3 +130,21 @@ lary:
     edge:
       - sichuan:192.168.0.1:8001
       - sichuan:127.0.0.1:8001
+
+#支付宝-沙箱
+alipay:
+  appId: 2021002121608816
+  #协议(固定)
+  protocol: https
+  #域名
+  gatewayHost: openapi.alipaydev.com
+  #签名类型(固定)
+  signType: RSA2
+  #应用私钥(不能有空格)
+  merchantPrivateKey: 填入自己应用私钥
+  #支付宝公钥(不能有空格)
+  alipayPublicKey: 填入自己支付宝公钥
+  #异步通知地址
+  notifyUrl: http://localhost:8080/alipay/notifyUrl
+  #同步通知地址
+  returnUrl: http://localhost:8080/alipay/returnUrl

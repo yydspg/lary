@@ -27,7 +27,7 @@
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
-    <select id="getGiftBuyRecordCountByGiftId" resultType="java.lang.Integer">
+    <select id="getGiftBuyRecordCountByGiftId" resultType="java.lang.Long">
         select count(cost) from gift_buy_record where channel_id = #{giftChannelId} and is_delete = false
     </select>
 

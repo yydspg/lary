@@ -79,6 +79,7 @@ public interface Lary {
     interface CMD {
         String friendRequest = "friendRequest";
         String friendApplyAck = "friendApplyAck";
+        String typing = "typing";
     }
 
 }

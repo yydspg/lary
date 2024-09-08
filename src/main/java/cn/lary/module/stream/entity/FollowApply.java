@@ -41,6 +41,7 @@ public class FollowApply implements Serializable {
      * 业务来源
      */
     private Integer source;
+
     private Boolean isBlock;
 
     private Boolean isDelete;

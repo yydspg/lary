@@ -3,6 +3,8 @@ package cn.lary.module.user.api;
 import cn.lary.core.context.ReqContext;
 import cn.lary.core.cs.ResultCode;
 import cn.lary.core.dto.BasePageQuery;
+import cn.lary.core.dto.PageQuery;
+import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.core.dto.req.MsgCMDReq;
 import cn.lary.kit.JSONKit;
@@ -73,20 +75,28 @@ public class FriendController {
     private final SeqService seqService;
     private final LaryContentService laryContentService;
 
+    /**
+     *  查询用户申请列表
+     * @param req {@link BasePageQuery}
+     * @return {@link FriendApplyRecord}
+     */
     @PostMapping("/apply/list")
-    public SingleResponse friendApplyList(@RequestBody @Valid BasePageQuery req) {
+    public PageResponse<FriendApplyRecord> friendApplyList(@RequestBody @Valid PageQuery req) {
         String uid = ReqContext.getLoginUID();
-        long page = req.getPage();
+        long page = req.getPageIndex();
         long pageSize = req.getPageSize();
-        if (StringKit.isEmpty(uid)) {
-            return ResKit.fail(ResultCode.LOGIN_FIRST);
-        }
         Page<FriendApplyRecord> records = friendApplyRecordService.queryRecords(uid, page, pageSize);
         if(records == null) {
-            return ResKit.fail("no valid records");
+            return ResKit.pageFail("no valid records");
         }
-        return ResKit.ok(records);
+        return ResKit.pageOk(records);
     }
+
+    /**
+     * 同意用户申请
+     * @param token token
+     * @return ok
+     */
     @GetMapping("/apply/ack")
     public SingleResponse ackApply(@RequestParam(value = "token") @NotBlank String token) {
         String uid = ReqContext.getLoginUID();
@@ -184,14 +194,20 @@ public class FriendController {
         redisCache.del(K);
         return ResKit.ok();
     }
+
+    /**
+     * 拒绝申请
+     * @param toUid 请求加好友uid
+     * @return ok
+     */
     @GetMapping("/apply/refuse")
     public SingleResponse refuseApply(@RequestParam(value = "to_uid") @NotBlank String toUid) {
         String uid = ReqContext.getLoginUID();
-        FriendApplyRecord record = friendApplyRecordService.queryByUidAndToUid(uid, toUid);
+        FriendApplyRecord record = friendApplyRecordService.queryByUidAndToUid(toUid, uid);
         if (record == null) {
             return ResKit.fail("no valid record");
         }
-        FriendApplyRecord updateRecord = new FriendApplyRecord().setUid(record.getUid()).setToUid(toUid).setId(record.getId())
+        FriendApplyRecord updateRecord = new FriendApplyRecord().setUid(toUid).setToUid(uid).setId(record.getId())
                 .setRemark(record.getRemark()).setToken(record.getToken());
         updateRecord.setStatus(Lary.ApplyStatus.refused);
         friendApplyRecordService.updateById(updateRecord);
@@ -204,6 +220,11 @@ public class FriendController {
         return ResKit.ok();
     }
 
+    /**
+     * 申请加好友
+     * @param req {@link FriendApplyReq}
+     * @return ok
+     */
     @PostMapping("/apply")
     public SingleResponse friendApply(@RequestBody @Valid FriendApplyReq req) {
         String uid = ReqContext.getLoginUID();
