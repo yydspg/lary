@@ -130,7 +130,8 @@ lary:
     edge:
       - sichuan:192.168.0.1:8001
       - sichuan:127.0.0.1:8001
-
+  gift:
+    table-num : 10
 #支付宝-沙箱
 alipay:
   appId: 2021002121608816

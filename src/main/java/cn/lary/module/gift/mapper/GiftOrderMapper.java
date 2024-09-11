@@ -1,6 +1,6 @@
 package cn.lary.module.gift.mapper;
 
-import cn.lary.module.gift.entity.GiftType;
+import cn.lary.module.gift.entity.GiftOrder;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author paul
  * @since 2024-08-16
  */
-public interface GiftTypeMapper extends BaseMapper<GiftType> {
+public interface GiftOrderMapper extends BaseMapper<GiftOrder> {
 
+    long getGiftBuyRecordCountByGiftId(String giftChannelId);
 }

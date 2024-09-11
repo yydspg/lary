@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2024-08-16
  */
 @RestController
-@RequestMapping("/gift/gift-buy-record")
-public class GiftBuyRecordController {
+@RequestMapping("/v1/gift/manager")
+public class GiftManagerController {
 
 }

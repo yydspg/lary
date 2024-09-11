@@ -23,7 +23,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 @TableName("gift_buy_record")
-public class GiftBuyRecord implements Serializable {
+public class GiftOrder implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
@@ -38,7 +38,7 @@ public class GiftBuyRecord implements Serializable {
     /**
      * app_Id
      */
-    private String appId;
+    private String channelId;
 
     /**
      * 异步通知地址

@@ -1,6 +1,6 @@
 package cn.lary.module.gift.service;
 
-import cn.lary.module.gift.entity.GiftType;
+import cn.lary.module.gift.entity.GiftOrder;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -11,6 +11,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @author paul
  * @since 2024-08-16
  */
-public interface GiftTypeService extends IService<GiftType> {
+public interface GiftOrderService extends IService<GiftOrder> {
 
+    long collectCostMoneyByGiftChannelId(String giftChannelId);
 }

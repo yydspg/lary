@@ -9,7 +9,7 @@ import cn.lary.module.common.CS.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.danmaku.service.DanmakuService;
-import cn.lary.module.gift.service.GiftBuyRecordService;
+import cn.lary.module.gift.service.GiftOrderService;
 import cn.lary.module.stream.dto.req.StartStreamReq;
 import cn.lary.module.stream.dto.res.JoinStreamRes;
 import cn.lary.module.stream.entity.GiftBuyChannel;
@@ -21,7 +21,6 @@ import cn.lary.module.stream.service.RoomService;
 import cn.lary.module.stream.service.StreamRecordService;
 import cn.lary.module.user.entity.Device;
 import cn.lary.module.user.service.DeviceService;
-import cn.lary.module.user.service.UserService;
 import cn.lary.pkg.srs.config.SrsConfig;
 import cn.lary.pkg.srs.service.ProvinceService;
 import cn.lary.pkg.wk.api.WKChannelService;
@@ -70,7 +69,7 @@ public class RoomController {
     private final FollowApplyService followApplyService;
     private final GiftBuyChannelService giftBuyChannelService;
     private final StreamRecordService streamRecordService;
-    private final GiftBuyRecordService giftBuyRecordService;
+    private final GiftOrderService giftOrderService;
     private final KVBuilder kvBuilder;
 
     private final WKChannelService wkChannelService;
@@ -298,7 +297,7 @@ public class RoomController {
         Integer watchFanNum = (Integer) map.get("watchFanNum");
         Long newFansNum = (Long) map.get("newFansNum");
         // collect gift cost
-        long cost = giftBuyRecordService.collectCostMoneyByGiftChannelId(giftBuyChannelId);
+        long cost = giftOrderService.collectCostMoneyByGiftChannelId(giftBuyChannelId);
         StreamRecord updateRecord = new StreamRecord().setStreamId(streamId).setGiftCost(cost);
         updateRecord.setNewFansNum(newFansNum).setWatchNum(watchFanNum).setStarNum(starNum).setWatchNum(watchNum).setUpdateBy(uid);
         streamRecordService.updateById(updateRecord);
