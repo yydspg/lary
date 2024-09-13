@@ -50,7 +50,7 @@ public class Gift implements Serializable {
     /**
      * 购买数量
      */
-    private Integer purchaseNum;
+    private Long purchaseNum;
 
     /**
      * gift logo

@@ -12,6 +12,9 @@ import org.springframework.context.annotation.Configuration;
         "cn.lary.module.user.mapper",
         "cn.lary.module.group.mapper",
         "cn.lary.module.stream.mapper",
+        "cn.lary.module.pay.mapper",
+        "cn.lary.module.wallet.mapper",
+        "cn.lary.module.gift.mapper",
         "cn.lary.module.app.mapper"})
 public class MybatisPlusConfig {
 

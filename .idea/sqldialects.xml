@@ -14,6 +14,7 @@
     <file url="file://$PROJECT_DIR$/docs/sql/member/member.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/order/order.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/order/order_adjust.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/recharge/recharge.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/store/store.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/store/store_adjust.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/stream/stream_init.sql" dialect="MySQL" />
@@ -21,5 +22,6 @@
     <file url="file://$PROJECT_DIR$/docs/sql/user/20240814.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/user/user.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/video/video.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/wallet/wallet.sql" dialect="MySQL" />
   </component>
 </project>

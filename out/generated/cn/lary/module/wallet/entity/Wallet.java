@@ -1,0 +1,87 @@
+package cn.lary.module.wallet.entity;
+
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import java.io.Serializable;
+import java.time.LocalDateTime;
+import lombok.Getter;
+import lombok.Setter;
+import lombok.experimental.Accessors;
+
+/**
+ * <p>
+ * 
+ * </p>
+ *
+ * @author paul
+ * @since 2024-09-13
+ */
+@Getter
+@Setter
+@Accessors(chain = true)
+public class Wallet implements Serializable {
+
+    private static final long serialVersionUID = 1L;
+
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
+    /**
+     * 用户id
+     */
+    private String uid;
+
+    /**
+     * vc 收入总数量
+     */
+    private Long vcIncome;
+
+    /**
+     * vc 使用总数量
+     */
+    private Long vcOutcome;
+
+    /**
+     * vc 剩余总数量
+     */
+    private Long vcFee;
+
+    /**
+     * 被锁定的vc
+     */
+    private Long vcLocked;
+
+    /**
+     * 是否为主播
+     */
+    private Boolean isAnchor;
+
+    /**
+     * 是否被锁定
+     */
+    private Boolean isBlock;
+
+    /**
+     * 安全问题，用于解锁钱包
+     */
+    private String secQuestion;
+
+    /**
+     * 安全问题答案
+     */
+    private String secAnswer;
+
+    private Boolean isDelete;
+
+    private String createBy;
+
+    private String updateBy;
+
+    @TableField(fill = FieldFill.INSERT)
+    private LocalDateTime createAt;
+
+    @TableField(fill = FieldFill.UPDATE)
+    private LocalDateTime updateAt;
+}

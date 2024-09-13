@@ -17,12 +17,12 @@ import lombok.experimental.Accessors;
  * </p>
  *
  * @author paul
- * @since 2024-08-16
+ * @since 2024-09-13
  */
 @Getter
 @Setter
 @Accessors(chain = true)
-@TableName("gift_buy_record")
+@TableName("gift_order")
 public class GiftOrder implements Serializable {
 
     private static final long serialVersionUID = 1L;
@@ -31,14 +31,29 @@ public class GiftOrder implements Serializable {
     private Long id;
 
     /**
-     * user_id
+     * 记录id
+     */
+    private String orderId;
+
+    /**
+     * 用户id
      */
     private String uid;
 
     /**
-     * app_Id
+     * 主播uid
      */
-    private String channelId;
+    private String anchorUid;
+
+    /**
+     * 购买通道id
+     */
+    private String buyChannelId;
+
+    /**
+     * wk 弹幕流id
+     */
+    private String danmakuId;
 
     /**
      * 异步通知地址
@@ -61,14 +76,9 @@ public class GiftOrder implements Serializable {
     private String streamId;
 
     /**
-     * 是否直接向主播支付
+     * 是否直接向主播支付,不通过wallet或者余额不足
      */
     private Boolean isToAnchor;
-
-    /**
-     * 主播uid
-     */
-    private String anchorUid;
 
     /**
      * 购买状态 0 未支付，1 已支付 2 取消支付 3 支付失败
@@ -86,11 +96,6 @@ public class GiftOrder implements Serializable {
     private LocalDateTime completeAt;
 
     /**
-     * 结束时间
-     */
-    private LocalDateTime endAt;
-
-    /**
      * 花费
      */
     private Integer cost;
@@ -98,7 +103,7 @@ public class GiftOrder implements Serializable {
     /**
      * 支付来源
      */
-    private Short originType;
+    private Integer clientType;
 
     /**
      * 礼物uid

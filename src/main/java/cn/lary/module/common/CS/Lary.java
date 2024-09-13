@@ -81,5 +81,30 @@ public interface Lary {
         String friendApplyAck = "friendApplyAck";
         String typing = "typing";
     }
-
+    interface ClientType {
+        int web = 0;
+        int app = 1;
+    }
+    interface RechargeStatus {
+        short noPay = 0;
+        short paid = 1;
+        short cancel = 2;
+        short failed = 3;
+    }
+    interface OrderType {
+        int recharge = 1;
+        int gift = 2;
+    }
+    interface PayWay {
+        int alipay = 1;
+        int wechat = 2;
+    }
+    interface PayStatus {
+        int success = 1;
+        int fail = 2;
+    }
+    interface PostStatus {
+        int success = 1;
+        int fail = 2;
+    }
 }

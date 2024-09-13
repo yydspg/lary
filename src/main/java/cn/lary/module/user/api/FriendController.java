@@ -118,7 +118,7 @@ public class FriendController {
         }
 
         UserBaseRes userBaseRes = userService.queryBase(fromUid);
-        if (userBaseRes == null || userBaseRes.getDeleted()) {
+        if (userBaseRes == null ) {
             return ResKit.fail("apply user not exist");
         }
         if (StringKit.isEmpty(remark)) {

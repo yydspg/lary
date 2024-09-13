@@ -54,7 +54,7 @@ public class FollowController {
         String uidName = ReqContext.getLoginName();
         // check toUid whether exists
         UserBaseRes userBaseRes = userService.queryBase(uid);
-        if (userBaseRes == null || userBaseRes.getDeleted()) {
+        if (userBaseRes == null ) {
             return ResKit.fail(ResultCode.USER_NO_EXIST);
         }
         Room room = roomService.getOne(new LambdaQueryWrapper<Room>().eq(Room::getUid, uid));
@@ -102,7 +102,7 @@ public class FollowController {
         String uid = ReqContext.getLoginUID();
         // check whether toUid exists
         UserBaseRes userBaseRes = userService.queryBase(uid);
-        if (userBaseRes == null || userBaseRes.getDeleted()) {
+        if (userBaseRes == null ) {
             return ResKit.fail("user not exists");
         }
         // check whether if this one is an anchor

@@ -10,7 +10,6 @@ import lombok.experimental.Accessors;
 public class UserBasicInfo {
     private String uid;
     private String name;
-    private Boolean deleted;
     private Boolean isRobot;
     private String vercode;
 }

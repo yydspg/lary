@@ -1,10 +1,12 @@
 package cn.lary.pkg.srs.config;
 
+import cn.lary.kit.CollectionKit;
 import cn.lary.kit.StringKit;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.annotation.PostConstruct;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
 
@@ -13,7 +15,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 
-
+@Slf4j
 @Getter
 @Setter
 @Configuration
@@ -31,6 +33,10 @@ public class SrsConfig {
 
     @PostConstruct
     public void init() {
+        if (CollectionKit.isEmpty(originServers) || CollectionKit.isEmpty(edgeServers)) {
+            log.error("srs server config error,please check your config");
+            return;
+        }
         originServers.forEach(s -> {
             String[] url = StringKit.split(s, "@");
             if (url == null || url.length < 2) {

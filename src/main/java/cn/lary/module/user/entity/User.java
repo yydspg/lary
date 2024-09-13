@@ -70,8 +70,11 @@ public class User implements Serializable {
     private String email;
 
     private String avatarUrl;
+
     private String role;
+
     private Short status;
+
     private Boolean deleted;
 
     private Boolean isAnchor;

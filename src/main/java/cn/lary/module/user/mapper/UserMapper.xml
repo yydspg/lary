@@ -28,14 +28,18 @@
         <result column="update_at" property="updateAt" />
     </resultMap>
     <select id="selectBaseByIDs" resultType="cn.lary.module.user.dto.res.UserBaseRes">
-        select uid,name,deleted,is_robot from `user`
-        where uid in #{uids}
+        select uid, name, is_robot
+        from `user`
+        where uid in
+        <foreach item="item" index="index" collection="uids" open="(" separator=", " close=")">
+            #{item}
+        </foreach>
     </select>
     <select id="selectBase" resultType="cn.lary.module.user.dto.res.UserBaseRes">
-        select uid,name,deleted,is_robot from `user` where uid = #{uid}
+        select uid,name,is_robot from `user` where uid = #{uid} and deleted = false
     </select>
     <select id="selectBasicInfo" resultType="cn.lary.module.user.dto.res.UserBasicInfo">
-        select uid,name,deleted,is_robot,vercode from `user` where uid = #{uid}
+        select uid,name,is_robot,vercode from `user` where uid = #{uid} and deleted = false
     </select>
     <select id="checkWithCode" resultType="cn.lary.module.user.dto.res.FriendCodeCheck">
         select uid,vercode from user where vercode = #{code}
@@ -44,7 +48,13 @@
         select uid,qr_vercode as vercode from user where qr_vercode = #{code}
     </select>
     <select id="selectUserShowInfo" resultType="cn.lary.module.user.entity.UserShowInfo">
-        select uid,name,bio,is_upload_avatar,avatar_url,update_at from user where is_anchor = 1
-                and deleted = false in #{uids}
+        select uid, name, bio, is_upload_avatar, avatar_url, update_at
+        from user
+        where is_anchor = 1
+        and deleted = false
+        and uid in
+        <foreach item="item" index="index" collection="uids" open="(" separator="," close=")">
+            #{item}
+        </foreach>
     </select>
 </mapper>

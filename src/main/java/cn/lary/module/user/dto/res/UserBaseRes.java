@@ -10,6 +10,5 @@ import lombok.experimental.Accessors;
 public class UserBaseRes {
     private String uid;
     private String name;
-    private Boolean deleted;
     private Boolean isRobot;
 }

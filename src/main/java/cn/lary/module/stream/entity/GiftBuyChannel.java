@@ -35,6 +35,7 @@ public class GiftBuyChannel implements Serializable {
      */
     private String channelId;
 
+    private String anchorId;
     /**
      * 是否存活
      */

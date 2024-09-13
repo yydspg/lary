@@ -71,7 +71,7 @@ public class GroupController {
         // remove repeat
         List<String> uids = CollectionKit.removeRepeat(req.getMembers());
         // check friendship
-
+        // TODO  :  这里我修改了 UserBaseRes 和 UserBase 的deleted字段，所以这个create 接口逻辑出现了变动，需要更改
         // check system count
         AppConfigRes appConfig = appConfigService.getAppConfig();
         if (appConfig != null && appConfig.isInviteSystemAccountJoinGroupOn() ) {
@@ -98,7 +98,7 @@ public class GroupController {
             return ResKit.fail("no valid  user id");
         }
         // remove user
-        List<UserBaseRes> realUsers = users.stream().filter(t -> !t.getDeleted()).toList();
+        List<UserBaseRes> realUsers = users.stream().toList();
         ArrayList<UserBase> realUserList = new ArrayList<>();
         realUsers.forEach(u -> {
             UserBase userBase = new UserBase().setName(u.getName()).setUid(u.getUid());
@@ -110,7 +110,7 @@ public class GroupController {
             return ResKit.fail("no real user");
         }
         // build destroy user
-        List<UserBaseRes> deletedUsers = users.stream().filter(UserBaseRes::getDeleted).toList();
+        List<UserBaseRes> deletedUsers = users.stream().toList();
         List<UserBase> deletedUserList = new ArrayList<UserBase>();
         deletedUsers.forEach(t->{
             UserBase userBase = new UserBase().setUid(t.getUid()).setName(t.getName());
@@ -230,12 +230,9 @@ public class GroupController {
         List<UserBaseRes> newUserList = new ArrayList<>();
         List<UserBaseRes> unableAddUserList = new ArrayList<>();
         userBaseList.forEach(user -> {
-            UserBaseRes userBase = new UserBaseRes().setName(user.getName()).setUid(user.getUid()).setDeleted(user.getDeleted()).setIsRobot(user.getIsRobot());
-            if (user.getDeleted()) {
-                unableAddUserList.add(userBase);
-            }else {
-                newUserList.add(userBase);
-            }
+            UserBaseRes userBase = new UserBaseRes().setName(user.getName()).setUid(user.getUid()).setIsRobot(user.getIsRobot());
+            unableAddUserList.add(userBase);
+            newUserList.add(userBase);
         });
         if (userBaseList.size() == unableAddUserList.size()) {
             return ResKit.fail("user all deleted");

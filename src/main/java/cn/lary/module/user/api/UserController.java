@@ -101,7 +101,7 @@ public class UserController {
             }
         }
         // 存在链路追踪
-        if (userService.queryByUsername(req.getName()) != null) {
+        if (userService.queryByName(req.getName()) != null) {
             return ResKit.fail("user already exist");
         }
         // 短信验证
@@ -164,7 +164,7 @@ public class UserController {
             // pc or web,do not need del token
             token = oldToken;
         }
-        String userTokenInfo = kvBuilder.buildUserLoginTokenValue(user.getUid(),user.getUsername(),user.getRole());
+        String userTokenInfo = kvBuilder.buildUserLoginTokenValue(user.getUid(),user.getName(),user.getRole());
         String userTokenKey = kvBuilder.buildUserLoginKey(redisBizConfig.getTokenCachePrefix(), user.getUid());
         // no need redis transaction
         redisCache.set(userTokenKey,userTokenInfo,redisBizConfig.getTokenExpire());
@@ -218,7 +218,7 @@ public class UserController {
         user.setIsRobot(false);
         user.setIsUploadAvatar(isUploadAvatar);
         user.setPassword(StringKit.MD5(StringKit.MD5(req.getPassword())));
-        user.setUsername(req.getName());
+        user.setName(req.getName());
         // insert user
         userService.save(user);
         // insert user device
