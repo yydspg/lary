@@ -28,13 +28,15 @@ public class Event implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
+    private String eventId;
+
     private String event;
 
-    private Short type;
+    private Integer type;
 
     private String data;
 
-    private Short status;
+    private Integer status;
 
     private String reason;
 

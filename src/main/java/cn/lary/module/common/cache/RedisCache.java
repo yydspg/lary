@@ -34,6 +34,8 @@ public interface RedisCache {
     void decrHash(String k,String f);
     //mhset f v [f v ...]
     void setHash(String k,Map map);
+    void setHash(String k,Map map,Long exp);
+    void setHash(String k,Map map,Long exp,TimeUnit timeUnit);
     //hget k f
     String getHash(String k,String f);
     //mhget k f [ f ...]

@@ -6,9 +6,9 @@ import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResKit;
 import cn.lary.module.message.dto.req.ClearConversationUnreadReq;
 import cn.lary.pkg.wk.api.WKConversationService;
-import cn.lary.pkg.wk.entity.Request.conversation.ConversationDeleteReq;
-import cn.lary.pkg.wk.entity.Request.conversation.ConversationUnreadClearReq;
-import cn.lary.pkg.wk.entity.Response.conversation.ConversationRes;
+import cn.lary.pkg.wk.dto.conversation.ConversationDeleteReq;
+import cn.lary.pkg.wk.dto.conversation.ConversationUnreadClearReq;
+import cn.lary.pkg.wk.vo.conversation.ConversationRes;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -23,6 +23,7 @@ import java.util.List;
 @RequestMapping("/v1/conversation/")
 @RequiredArgsConstructor
 public class ConversationController {
+
     private final WKConversationService wkConversationService;
 
     /**
@@ -48,7 +49,7 @@ public class ConversationController {
     public SingleResponse clearUnread(@Valid @RequestBody ClearConversationUnreadReq req) {
         String uid = ReqContext.getLoginUID();
         ConversationUnreadClearReq wkReq = new ConversationUnreadClearReq().setUid(uid).setMessageSeq(req.getMessageSeq());
-        wkReq.setChanelID(req.getChanelID()).setChannelType(req.getChannelType());
+//        wkReq.setChanelID(req.getChanelID()).setChannelType(req.getChannelType());
         Response<Void> res = wkConversationService.clearUnread(wkReq);
         if (!res.isSuccessful()) {
             log.error("wk clear unread error:{}",res.errorBody());
@@ -67,7 +68,7 @@ public class ConversationController {
     public SingleResponse del(@NotNull @PathVariable(value = "channel_id") String channelId, @NotNull @PathVariable(value = "channel_type") byte channelType) {
         String uid = ReqContext.getLoginUID();
         ConversationDeleteReq wkReq = new ConversationDeleteReq();
-        wkReq.setChanelID(channelId).setChannelType(channelType);
+//        wkReq.setChanelID(channelId).setChannelType(channelType);
         wkReq.setUid(uid);
         Response<Void> res = wkConversationService.delete(wkReq);
         if (!res.isSuccessful()) {

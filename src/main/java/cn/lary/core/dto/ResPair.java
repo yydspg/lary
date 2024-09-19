@@ -5,7 +5,9 @@ import lombok.experimental.Accessors;
 
 @Data
 @Accessors(chain = true)
-public class ResPair {
+public class ResPair<T> {
     private boolean ok;
     private String msg;
+    private Integer code;
+    private T data;
 }

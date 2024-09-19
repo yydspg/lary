@@ -76,9 +76,22 @@ public class Room implements Serializable {
      * 封禁详情
      */
     private String blockDescription;
+    /**
+     * 被拉黑数目
+     */
     private Integer blockNum;
+    /**
+     * 被关注数目
+     */
     private Integer followNum;
+    /**
+     * 介绍
+     */
     private String remark;
+    /**
+     * 上次直播时间
+     */
+    private Long lastLogin;
 
     private Boolean isDelete;
 

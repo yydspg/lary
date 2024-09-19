@@ -33,12 +33,12 @@ public class StreamType implements Serializable {
     private String typeId;
 
     private String name;
+    /**
+     * 描述
+     */
+    private String description;
 
     private Boolean isDelete;
-
-    private String createBy;
-
-    private String updateBy;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

@@ -15,8 +15,8 @@ public interface Lary {
         int DestroyCount = 4;
     }
     interface Sex {
-        short man = 1;
-        short woman = 0;
+        Integer man = 1;
+        Integer woman = 0;
     }
     interface VerifyCode {
         int user = 1; //用户搜素
@@ -34,16 +34,17 @@ public interface Lary {
         String groupMemberAdd = "groupMemberAdd";
         String groupAvatarUpdate = "groupAvatarUpdate";
         String groupUnableAddDestroyAccount = "groupUnableAddDestroyAccount";
-        String streamStart = "streamStart";
+        String goLive = "goLive";
+        String downLive = "downLive";
     }
     interface EventType {
-        short none = 0;
-        short message = 1;
-        short cmd = 2;
+        int  none = 0;
+         int message = 1;
+        int  cmd = 2;
     }
     interface UserStatus {
-        short ban = 1;
-        short ok = 0;
+        int ban = 1;
+        int ok = 0;
     }
     interface Group {
         interface Role {
@@ -106,5 +107,20 @@ public interface Lary {
     interface PostStatus {
         int success = 1;
         int fail = 2;
+    }
+    interface UserRole{
+        int normal = 1;
+        int admin = 2;
+    }
+    interface FollowCode {
+        int stream = 1;
+    }
+    interface Stream {
+        interface Status {
+            int preUp = 1;
+            int up = 2;
+            int preDown = 3;
+            int down = 4;
+        }
     }
 }

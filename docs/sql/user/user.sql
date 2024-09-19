@@ -69,6 +69,8 @@ create table `device`
     device_id         VARCHAR(40)         not null default '',                      -- 设备唯一ID
     device_name       VARCHAR(100)        not null default '',                      -- 设备名称
     device_model      VARCHAR(100)        not null default '',                      -- 设备型号
+    device_flag        tinyint  not null default 0 comment '设备类型 pc .web ,app',
+    level     tinyint not null default 0 comment  '设备等级 ,master,slave',
     last_login        integer             not null DEFAULT 0,                       -- 最后一次登录时间(时间戳 10位)
     created_at        timeStamp           not null DEFAULT CURRENT_TIMESTAMP,       -- 创建时间
     updated_at        timeStamp           not null DEFAULT CURRENT_TIMESTAMP        -- 更新时间
@@ -82,9 +84,11 @@ create table `friend`
     id                integer               not null primary key AUTO_INCREMENT,
     uid               VARCHAR(40)           not null default '' comment '用户UID',
     to_uid            VARCHAR(40)           not null default '' comment '好友uid',
-    flag              smallint              not null default 0 comment '好友标示',
-    version           bigint                not null default 0 comment '版本号',
-    vercode           VARCHAR(100)          not null default '' comment '验证码 加好友来源',
+    username    varchar(256) not null default '' comment '好友名称',
+    is_super           bool not null default false comment '是否设置密友',
+    avatar_url varchar(256) not null default '' comment '头像地址',
+    remark      varchar(256) not null default '' comment '备注',
+    bio varchar(256) not null default '' comment '个人介绍',
     source_vercode    varchar(100)          not null default '' comment '好友来源',
     is_deleted        smallint              not null default 0 comment '是否已删除',
     is_alone          smallint              not null default 0 comment  '单项好友',

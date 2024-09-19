@@ -1,13 +1,12 @@
 package cn.lary.pkg.wk.api;
 
-import cn.lary.pkg.wk.entity.Request.channel.ChannelDeleteReq;
-import cn.lary.pkg.wk.entity.Request.conversation.ConversationDeleteReq;
-import cn.lary.pkg.wk.entity.Request.conversation.ConversationUnreadClearReq;
-import cn.lary.pkg.wk.entity.Request.conversation.SyncUserConversationReq;
-import cn.lary.pkg.wk.entity.Request.message.SyncRecentMessagesReq;
-import cn.lary.pkg.wk.entity.Response.conversation.ConversationRes;
-import cn.lary.pkg.wk.entity.Response.message.RecentMessage;
-import cn.lary.pkg.wk.entity.Response.conversation.SyncUserConversationRes;
+import cn.lary.pkg.wk.dto.conversation.ConversationDeleteReq;
+import cn.lary.pkg.wk.dto.conversation.ConversationUnreadClearReq;
+import cn.lary.pkg.wk.dto.conversation.SyncUserConversationReq;
+import cn.lary.pkg.wk.dto.message.SyncRecentMessagesReq;
+import cn.lary.pkg.wk.vo.conversation.ConversationRes;
+import cn.lary.pkg.wk.vo.message.RecentMessage;
+import cn.lary.pkg.wk.vo.conversation.SyncUserConversationRes;
 import com.github.lianjiatech.retrofit.spring.boot.core.RetrofitClient;
 import retrofit2.Response;
 import retrofit2.http.Body;

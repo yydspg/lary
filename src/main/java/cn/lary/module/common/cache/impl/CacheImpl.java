@@ -13,7 +13,9 @@ import java.util.concurrent.TimeUnit;
 @Service
 @RequiredArgsConstructor
 public class CacheImpl implements RedisCache {
+
     private final StringRedisTemplate str;
+
     @Override
     public String get(String k) {
         return str.opsForValue().get(k);
@@ -67,6 +69,18 @@ public class CacheImpl implements RedisCache {
     @Override
     public void setHash(String k, Map map) {
         str.opsForHash().putAll(k, map);
+    }
+
+    @Override
+    public void setHash(String k, Map map, Long exp) {
+        str.opsForHash().putAll(k, map);
+        str.expire(k, exp, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void setHash(String k, Map map, Long exp, TimeUnit timeUnit) {
+        str.opsForHash().putAll(k, map);
+        str.expire(k, exp, timeUnit);
     }
 
     @Override

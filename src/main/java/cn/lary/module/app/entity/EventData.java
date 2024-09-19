@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 public class EventData {
     private String event;
 
-    private Short type;
+    private Integer type;
 
     private String data;
 }

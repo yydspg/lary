@@ -1,56 +1,34 @@
 package cn.lary.core.dto;
 
 
+import lombok.Getter;
+import lombok.Setter;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 
-/**
- * Response with batch record to return,
- * usually use in conditional query
- * <p/>
- * Created by Danny.Lee on 2017/11/1.
- */
-public class MultiResponse extends Response {
+@Getter
+@Setter
+public class MultiResponse<T> extends Response<T> {
 
-    private Collection<?> data;
+    private Collection<T> data;
 
-    public List<Object> getData() {
-        if (null == data) {
-            return Collections.emptyList();
-        }
-        if (data instanceof List) {
-            return (List<Object>) data;
-        }
-        return new ArrayList<>(data);
-    }
 
-    public void setData(Collection<?> data) {
-        this.data = data;
-    }
-
-    public boolean isEmpty() {
-        return data == null || data.isEmpty();
-    }
-
-    public boolean isNotEmpty() {
-        return !isEmpty();
-    }
-
-    public static MultiResponse buildSuccess(Collection<?> data) {
-        MultiResponse response = new MultiResponse();
+    public static <T> MultiResponse<T> buildSuccess(Collection<T> data) {
+        MultiResponse<T> response = new MultiResponse<T>();
         response.setSuccess(true);
         response.setData(data);
         return response;
     }
-    public static MultiResponse buildSuccess() {
-        MultiResponse response = new MultiResponse();
+    public static <T> MultiResponse<T> buildSuccess() {
+        MultiResponse<T> response = new MultiResponse<T>();
         response.setSuccess(true);
         return response;
     }
-    public static MultiResponse buildFailure(String errCode, String errMessage) {
-        MultiResponse response = new MultiResponse();
+    public static <T> MultiResponse<T> buildFailure(Integer errCode, String errMessage) {
+        MultiResponse<T> response = new MultiResponse<T>();
         response.setSuccess(false);
         response.setErrCode(errCode);
         response.setErrMessage(errMessage);

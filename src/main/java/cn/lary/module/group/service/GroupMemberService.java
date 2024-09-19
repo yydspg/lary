@@ -1,8 +1,7 @@
 package cn.lary.module.group.service;
 
 import cn.lary.module.group.entity.GroupMember;
-import cn.lary.module.user.dto.res.FriendCodeCheck;
-import cn.lary.module.user.entity.UserBase;
+import cn.lary.module.user.vo.FriendCodeCheck;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

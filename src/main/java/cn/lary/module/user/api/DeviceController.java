@@ -2,18 +2,22 @@ package cn.lary.module.user.api;
 
 import cn.lary.core.context.ReqContext;
 import cn.lary.core.dto.MultiResponse;
+import cn.lary.core.dto.ResPair;
 import cn.lary.core.dto.SingleResponse;
+import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.JSONKit;
 import cn.lary.kit.ResKit;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
-import cn.lary.module.user.dto.req.DeviceRegisterTokenReq;
+import cn.lary.module.user.core.DeviceBizExecute;
+import cn.lary.module.user.dto.DeviceRegisterTokenReq;
 import cn.lary.module.user.entity.Device;
 import cn.lary.module.user.service.DeviceService;
+import cn.lary.module.user.vo.DeviceVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
-import lombok.Getter;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
@@ -26,55 +30,46 @@ import java.util.List;
 @RequestMapping("/v1/device")
 @RequiredArgsConstructor
 public class DeviceController {
-    private final DeviceService deviceService;
-    private final KVBuilder kvBuilder;
-    private final RedisCache redisCache;
+
+    private final DeviceBizExecute deviceBizExecute;
+
+    @GetMapping("/ack{code}")
+    public SingleResponse<Void> ackAddDevice(@PathVariable @NotNull String code) {
+        String uid = ReqContext.getLoginUID();
+        ResPair<Void> res = deviceBizExecute.ackAddDeviceCMD(uid, code);
+        if (!res.isOk()) {
+            return ResKit.fail(res.getMsg());
+        }
+        return ResKit.ok();
+    }
 
     @GetMapping("/list")
-    public MultiResponse getAllDevices() {
+    public SingleResponse<List<DeviceVO>> list() {
         String uid = ReqContext.getLoginUID();
-        List<Device> devices = deviceService.queryDevicesWithUid(uid);
-        if (CollectionKit.isNotEmpty(devices)) {
-            return ResKit.multiFail("no device found");
+        ResPair<List<DeviceVO>> res = deviceBizExecute.list(uid);
+        if (!res.isOk()) {
+            return ResKit.fail(res.getMsg());
         }
-        Device currentDevice = devices.get(0);
-        currentDevice.setDeviceName("current device" + currentDevice.getDeviceName());
-        return ResKit.multiOk(devices);
+        return ResKit.ok(res.getData());
     }
-    @GetMapping("/del")
-    public SingleResponse delDevice(@RequestParam(value = "device_id" ) @NotBlank String deviceId) {
+
+    @GetMapping("/del/token{deviceId}")
+    public SingleResponse<Void> delToken(@PathVariable @NotNull String deviceId) {
         String uid = ReqContext.getLoginUID();
-        deviceService.deleteDevice(uid, deviceId);
+        ResPair<Void> res = deviceBizExecute.delDeviceToken(uid, deviceId);
+        if (!res.isOk()) {
+            return ResKit.fail(res.getMsg());
+        }
         return ResKit.ok();
     }
 
-    /**
-     * register device to redis
-     * @param req {@link DeviceRegisterTokenReq}
-     * @return ok
-     */
-    @PostMapping("/token")
-    public SingleResponse registerDeviceToken(@RequestBody @Valid DeviceRegisterTokenReq req) {
+    @GetMapping("/del/device{deviceId}")
+    public SingleResponse<DeviceVO> delDevice(@PathVariable @NotNull String deviceId) {
         String uid = ReqContext.getLoginUID();
-        String K = kvBuilder.buildDeviceLoginTokenKey(uid);
-        HashMap<String, String> map = new HashMap<>();
-        map.put("device_token", req.getDeviceToken());
-        map.put("device_type", req.getDeviceType());
-        map.put("bundle_id", req.getBundleId());
-        String V = JSONKit.toJSON(map);
-        redisCache.set(K,V);
-        return ResKit.ok();
-    }
-
-    /**
-     * del redis cache about device
-     * @return ok
-     */
-    @GetMapping("/del/token")
-    public SingleResponse delRegisterDeviceToken() {
-        String uid = ReqContext.getLoginUID();
-        String K = kvBuilder.buildDeviceLoginTokenKey(uid);
-        redisCache.del(K);
+        ResPair<Void> res = deviceBizExecute.removeAuthedDevice(uid, deviceId);
+        if (!res.isOk()) {
+            return ResKit.fail(res.getMsg());
+        }
         return ResKit.ok();
     }
 }

@@ -19,7 +19,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-@TableName("friend_setting")
+@TableName("follow_setting")
 public class FriendSetting implements Serializable {
 
     private static final long serialVersionUID = 1L;

@@ -14,5 +14,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface EventService extends IService<Event> {
     int begin(EventData eventData);
-    void commit(long eventID);
+    void commit(int eventID);
 }

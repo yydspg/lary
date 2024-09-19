@@ -40,7 +40,7 @@ public class User implements Serializable {
     /**
      * 0 is man,1 is woman
      */
-    private Short sex;
+    private Integer sex;
 
 //    private String username;
 
@@ -71,9 +71,9 @@ public class User implements Serializable {
 
     private String avatarUrl;
 
-    private String role;
+    private Integer role;
 
-    private Short status;
+    private Integer status;
 
     private Boolean deleted;
 

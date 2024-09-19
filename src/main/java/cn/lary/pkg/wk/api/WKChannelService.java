@@ -1,8 +1,8 @@
 package cn.lary.pkg.wk.api;
 
-import cn.lary.pkg.wk.entity.Request.channel.*;
-import cn.lary.pkg.wk.entity.Response.channel.ChannelMaxMessageSeq;
-import cn.lary.pkg.wk.entity.Response.channel.SyncMessageRes;
+import cn.lary.pkg.wk.dto.channel.*;
+import cn.lary.pkg.wk.vo.channel.ChannelMaxMessageSeq;
+import cn.lary.pkg.wk.vo.channel.SyncMessageRes;
 import com.github.lianjiatech.retrofit.spring.boot.core.RetrofitClient;
 import retrofit2.Response;
 import retrofit2.http.Body;
@@ -15,13 +15,13 @@ import retrofit2.http.Query;
 @RetrofitClient(baseUrl = "${wk.base.url}/channel")
 public interface WKChannelService {
     @POST
-    Response<Void> createOrUpdate(@Body ChannelCreateReq channelCreateReq);
+    Response<Void> createOrUpdate(@Body ChannelCreateDTO channelCreateDTO);
     @POST("info")
-    Response<Void> updateOrAddInfo(@Body ChannelInfoReq channelInfoReq);
+    Response<Void> updateOrAddInfo(@Body WKChannelInfoReq channelInfoReq);
     @POST("delete")
-    Response<Void> delete(@Body ChannelDeleteReq channelDeleteReq);
+    Response<Void> delete(@Body WKChannelDeleteReq channelDeleteReq);
     @POST("subscribers_add")
-    Response<Void> addSubscribers(@Body SubscribersAddReq subscribersAddReq);
+    Response<Void> addSubscribers(@Body SubscribersAddDTO subscribersAddDTO);
     @POST("subscribers_remove")
     Response<Void> removeSubscribers(@Body SubscribersRemoveReq subscribersDel);
     @POST("blacklist_add")

@@ -36,9 +36,14 @@ public class Device implements Serializable {
 
     private String deviceModel;
 
+    private Integer deviceLevel;
+
+    private Integer deviceFlag;
+
     private Long lastLogin;
 
     private Boolean isDelete;
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;
 

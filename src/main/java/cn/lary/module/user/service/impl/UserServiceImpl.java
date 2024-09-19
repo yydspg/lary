@@ -1,0 +1,77 @@
+package cn.lary.module.user.service.impl;
+
+import cn.lary.module.user.vo.FriendCodeCheck;
+import cn.lary.module.user.vo.UserBaseVO;
+import cn.lary.module.user.vo.UserBasicInfo;
+import cn.lary.module.user.entity.User;
+import cn.lary.module.user.entity.UserShowInfo;
+import cn.lary.module.user.mapper.UserMapper;
+import cn.lary.module.user.service.UserService;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+/**
+ * <p>
+ *  服务实现类
+ * </p>
+ *
+ * @author paul
+ * @since 2024-07-29
+ */
+@Service
+@RequiredArgsConstructor
+public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
+
+    private final UserMapper userMapper;
+
+    @Override
+    public User queryByName(String name) {
+        return baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getName,name).eq(User::getDeleted,false),false);
+    }
+
+    @Override
+    public User queryByUID(String uid) {
+        return baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUid,uid).eq(User::getDeleted,false),false);
+    }
+
+    @Override
+    public UserBaseVO queryBase(String uid) {
+        return baseMapper.selectBase(uid);
+    }
+
+    @Override
+    public UserBasicInfo queryUserBasicInfo(String uid) {
+        return baseMapper.selectBasicInfo(uid);
+    }
+
+    @Override
+    public List<UserShowInfo> queryUserShowInfo(List<String> uids) {
+        return userMapper.selectUserShowInfo(uids);
+    }
+
+
+    @Override
+    public List<User> queryByUIDs(List<String> uids) {
+        LambdaQueryWrapper<User> qw = new LambdaQueryWrapper<User>().eq(User::getDeleted,false).in(User::getUid, uids);
+        return baseMapper.selectList(qw);
+    }
+
+    @Override
+    public List<UserBaseVO> queryUserBaseByUIDs(List<String> uids) {
+        return baseMapper.selectBaseByIDs(uids);
+    }
+
+    @Override
+    public FriendCodeCheck checkByCode(String code) {
+        return baseMapper.checkWithCode(code);
+    }
+
+    @Override
+    public FriendCodeCheck checkByQRCode(String code) {
+        return baseMapper.checkWithQRCode(code);
+    }
+}

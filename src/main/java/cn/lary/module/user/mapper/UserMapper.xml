@@ -27,7 +27,7 @@
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
-    <select id="selectBaseByIDs" resultType="cn.lary.module.user.dto.res.UserBaseRes">
+    <select id="selectBaseByIDs" resultType="cn.lary.module.user.vo.UserBaseVO">
         select uid, name, is_robot
         from `user`
         where uid in
@@ -35,18 +35,23 @@
             #{item}
         </foreach>
     </select>
-    <select id="selectBase" resultType="cn.lary.module.user.dto.res.UserBaseRes">
+
+    <select id="selectBase" resultType="cn.lary.module.user.vo.UserBaseVO">
         select uid,name,is_robot from `user` where uid = #{uid} and deleted = false
     </select>
-    <select id="selectBasicInfo" resultType="cn.lary.module.user.dto.res.UserBasicInfo">
+
+    <select id="selectBasicInfo" resultType="cn.lary.module.user.vo.UserBasicInfo">
         select uid,name,is_robot,vercode from `user` where uid = #{uid} and deleted = false
     </select>
-    <select id="checkWithCode" resultType="cn.lary.module.user.dto.res.FriendCodeCheck">
+
+    <select id="checkWithCode" resultType="cn.lary.module.user.vo.FriendCodeCheck">
         select uid,vercode from user where vercode = #{code}
     </select>
-    <select id="checkWithQRCode" resultType="cn.lary.module.user.dto.res.FriendCodeCheck">
+
+    <select id="checkWithQRCode" resultType="cn.lary.module.user.vo.FriendCodeCheck">
         select uid,qr_vercode as vercode from user where qr_vercode = #{code}
     </select>
+
     <select id="selectUserShowInfo" resultType="cn.lary.module.user.entity.UserShowInfo">
         select uid, name, bio, is_upload_avatar, avatar_url, update_at
         from user

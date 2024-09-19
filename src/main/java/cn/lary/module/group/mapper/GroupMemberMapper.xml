@@ -20,7 +20,7 @@
         <result column="update_at" property="updateAt" />
     </resultMap>
 
-    <select id="checkWithCode" resultType="cn.lary.module.user.dto.res.FriendCodeCheck">
+    <select id="checkWithCode" resultType="cn.lary.module.user.vo.FriendCodeCheck">
         select uid,vercode  from group_member where vercode = #{code}
     </select>
 

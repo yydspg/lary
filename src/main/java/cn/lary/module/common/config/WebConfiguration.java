@@ -19,7 +19,6 @@ public class WebConfiguration implements WebMvcConfigurer {
 
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        log.info("add user interceptor");
         registry.addInterceptor(userInterceptor)
 //                .addPathPatterns("/**")
                 .addPathPatterns("/v1/group/**","/v1/friend/**","/v1/friend/**")

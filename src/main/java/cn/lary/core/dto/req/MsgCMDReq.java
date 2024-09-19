@@ -3,8 +3,8 @@ package cn.lary.core.dto.req;
 
 import cn.lary.kit.JSONKit;
 import cn.lary.module.common.CS.Lary;
-import cn.lary.pkg.wk.entity.Request.message.MessageHeader;
-import cn.lary.pkg.wk.entity.Request.message.MessageSendReq;
+import cn.lary.pkg.wk.dto.message.MessageHeader;
+import cn.lary.pkg.wk.dto.message.MessageSendDTO;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -16,14 +16,14 @@ import java.util.List;
 public class MsgCMDReq {
     private String fromUID;
     private String chanelID;
-    private byte channelType;
+    private int channelType;
     // 订阅者
     private List<String> subscribers;
     private HashMap<String,String> param;
     private String cmd;
     private boolean isPersist;
 
-    public  MessageSendReq convertCMD() {
+    public MessageSendDTO convertCMD() {
         HashMap<String, Object> map = new HashMap<>();
         map.put("cmd",cmd);
         map.put("type", Lary.ContentType.CMD);
@@ -35,7 +35,7 @@ public class MsgCMDReq {
             noPersist = 1;
         }
         byte[] payload = JSONKit.toJSON(map).getBytes();
-        MessageSendReq r = new MessageSendReq();
+        MessageSendDTO r = new MessageSendDTO();
         r.setPayload(payload);
         r.setFromUID(fromUID);
         r.setChanelID(chanelID);

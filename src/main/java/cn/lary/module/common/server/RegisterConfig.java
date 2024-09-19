@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 @ConfigurationProperties(prefix = "lary.register")
 public class RegisterConfig {
+    // TODO  : 把这个给放到appConfig里
     public boolean offe; //是否关闭注册
     public boolean onlyChina; // 是否仅中国手机号可注册
     public boolean stickerAddOff;

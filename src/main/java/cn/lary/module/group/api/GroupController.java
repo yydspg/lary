@@ -14,21 +14,20 @@ import cn.lary.module.common.CS.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.server.AccountConfig;
 import cn.lary.module.common.server.GroupConfig;
-import cn.lary.module.group.dto.req.*;
-import cn.lary.module.group.dto.res.GroupDetailRes;
+import cn.lary.module.group.dto.*;
+import cn.lary.module.group.vo.GroupDetailRes;
 import cn.lary.module.group.entity.Group;
 import cn.lary.module.group.entity.GroupDetail;
 import cn.lary.module.group.entity.GroupMember;
 import cn.lary.module.group.service.GroupMemberService;
 import cn.lary.module.group.service.GroupService;
 import cn.lary.module.group.service.GroupSettingService;
-import cn.lary.module.user.dto.res.UserBaseRes;
+import cn.lary.module.user.vo.UserBaseVO;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.entity.UserBase;
 import cn.lary.module.user.service.UserService;
 import cn.lary.pkg.wk.api.WKChannelService;
-import cn.lary.pkg.wk.entity.Request.channel.ChannelCreateReq;
-import cn.lary.pkg.wk.entity.Request.channel.SubscribersAddReq;
+import cn.lary.pkg.wk.dto.channel.ChannelCreateDTO;
 import cn.lary.pkg.wk.entity.core.WK;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -60,7 +59,7 @@ public class GroupController {
     private final KVBuilder kvBuilder;
 
     @PostMapping("/create")
-    public SingleResponse createGroup(@Valid @RequestBody GroupCreate req) {
+    public SingleResponse createGroup(@Valid @RequestBody CreateGroupDTO req) {
 
         String creator = ReqContext.getLoginUID();
         String createName = ReqContext.getLoginName();
@@ -71,7 +70,7 @@ public class GroupController {
         // remove repeat
         List<String> uids = CollectionKit.removeRepeat(req.getMembers());
         // check friendship
-        // TODO  :  这里我修改了 UserBaseRes 和 UserBase 的deleted字段，所以这个create 接口逻辑出现了变动，需要更改
+        // TODO  :  这里我修改了 UserBaseVO 和 UserBase 的deleted字段，所以这个create 接口逻辑出现了变动，需要更改
         // check system count
         AppConfigRes appConfig = appConfigService.getAppConfig();
         if (appConfig != null && appConfig.isInviteSystemAccountJoinGroupOn() ) {
@@ -92,13 +91,13 @@ public class GroupController {
         }
         // add create user
         uids.add(creator);
-        List<UserBaseRes> users = userService.queryUserBaseByUIDs(uids);
+        List<UserBaseVO> users = userService.queryUserBaseByUIDs(uids);
         //check user
         if (CollectionKit.isEmpty(users)) {
             return ResKit.fail("no valid  user id");
         }
         // remove user
-        List<UserBaseRes> realUsers = users.stream().toList();
+        List<UserBaseVO> realUsers = users.stream().toList();
         ArrayList<UserBase> realUserList = new ArrayList<>();
         realUsers.forEach(u -> {
             UserBase userBase = new UserBase().setName(u.getName()).setUid(u.getUid());
@@ -110,7 +109,7 @@ public class GroupController {
             return ResKit.fail("no real user");
         }
         // build destroy user
-        List<UserBaseRes> deletedUsers = users.stream().toList();
+        List<UserBaseVO> deletedUsers = users.stream().toList();
         List<UserBase> deletedUserList = new ArrayList<UserBase>();
         deletedUsers.forEach(t->{
             UserBase userBase = new UserBase().setUid(t.getUid()).setName(t.getName());
@@ -160,10 +159,10 @@ public class GroupController {
         eventService.begin(groupAvatarUpdate);
 
         // create IM channel
-        ChannelCreateReq channelCreateReq = new ChannelCreateReq().setSubscribers(realUids);
-        channelCreateReq.setChanelID(groupNo);
-        channelCreateReq.setChannelType(WK.ChannelType.group);
-        wkChannelService.createOrUpdate(channelCreateReq);
+//        ChannelCreateDTO channelCreateDTO = new ChannelCreateDTO().setSubscribers(realUids);
+////        channelCreateDTO.setChanelID(groupNo);
+//        channelCreateDTO.setChannelType(WK.ChannelType.group);
+//        wkChannelService.createOrUpdate(channelCreateDTO);
         Group res = groupService.queryByNo(groupNo);
         return ResKit.ok(res);
     }
@@ -182,7 +181,7 @@ public class GroupController {
     }
 
     @PostMapping("/{groupNo}/add")
-    public SingleResponse addMember(@PathVariable(value = "groupNo") String groupNo, @Valid @RequestBody MemberAdd req) {
+    public SingleResponse addMember(@PathVariable(value = "groupNo") String groupNo, @Valid @RequestBody AddMemberDTO req) {
         // check Group if exists
         Group group = groupService.queryByNo(groupNo);
         if (group == null ) {
@@ -226,11 +225,11 @@ public class GroupController {
         }
         // get real uids
         List<String> uids = CollectionKit.removeRepeat(members);
-        List<UserBaseRes> userBaseList = userService.queryUserBaseByUIDs(uids);
-        List<UserBaseRes> newUserList = new ArrayList<>();
-        List<UserBaseRes> unableAddUserList = new ArrayList<>();
+        List<UserBaseVO> userBaseList = userService.queryUserBaseByUIDs(uids);
+        List<UserBaseVO> newUserList = new ArrayList<>();
+        List<UserBaseVO> unableAddUserList = new ArrayList<>();
         userBaseList.forEach(user -> {
-            UserBaseRes userBase = new UserBaseRes().setName(user.getName()).setUid(user.getUid()).setIsRobot(user.getIsRobot());
+            UserBaseVO userBase = new UserBaseVO().setName(user.getName()).setUid(user.getUid()).setIsRobot(user.getIsRobot());
             unableAddUserList.add(userBase);
             newUserList.add(userBase);
         });
@@ -241,9 +240,9 @@ public class GroupController {
         List<String> blockList = groupMemberService.queryMemberWithStatus(groupNo, Lary.Group.UserStatus.block);
         List<String> existsList = groupMemberService.queryMemberWithStatus(groupNo, Lary.Group.UserStatus.common);
         //build real add user
-        List<UserBaseRes> realList = new ArrayList<>();
+        List<UserBaseVO> realList = new ArrayList<>();
         List<String> realUIds = new ArrayList<>();
-        for (UserBaseRes userBase : newUserList) {
+        for (UserBaseVO userBase : newUserList) {
             if (!blockList.contains(userBase.getUid()) && !existsList.contains(userBase.getUid())) {
                 realList.add(userBase);
                 realUIds.add(userBase.getUid());
@@ -299,10 +298,10 @@ public class GroupController {
         EventData data = new EventData().setEvent(Lary.Event.groupAvatarUpdate).setType(Lary.EventType.cmd).setData(JSONKit.toJSON(msgGroupAvatarUpdate));
         eventService.begin(data);
         // wk im subscribers add
-        SubscribersAddReq subscribersAddReq = new SubscribersAddReq();
-        subscribersAddReq.setChanelID(groupNo).setChannelType(WK.ChannelType.group);
-        subscribersAddReq.setSubscribers(realUIds);
-        wkChannelService.addSubscribers(subscribersAddReq);
+//        SubscribersAddReq subscribersAddReq = new SubscribersAddReq();
+//        subscribersAddReq.setChanelID(groupNo).setChannelType(WK.ChannelType.group);
+//        subscribersAddReq.setSubscribers(realUIds);
+//        wkChannelService.addSubscribers(subscribersAddReq);
         return ResKit.ok();
     }
 }

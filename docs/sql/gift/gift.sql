@@ -34,7 +34,7 @@ create table `gift_type` (
 drop table if exists    `gift_buy_channel`;
 create table `gift_buy_channel` (
     id bigint not null primary key auto_increment,
-    channel_id varchar(40) not null default '' comment 'gift buy channel',
+    channel_id varchar(40) not null default '' comment 'gift buy WKChannel',
     is_alive bool not null default true comment '是否存活',
     is_delete bool ,
     create_by varchar(40) ,

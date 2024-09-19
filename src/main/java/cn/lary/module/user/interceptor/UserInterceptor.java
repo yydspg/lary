@@ -29,7 +29,7 @@ public class UserInterceptor  implements HandlerInterceptor {
             ResKit.responseFail(response, ResultCode.LOGIN_FIRST);
             return false;
         }
-        String value = getLoginTokenValue(token);
+        String value = getLoginTokenV(token);
         if(StringKit.isEmpty(value)) {
             ResKit.responseFail(response, "token empty");
             return false;
@@ -55,8 +55,12 @@ public class UserInterceptor  implements HandlerInterceptor {
         ReqContext.removeCurrent();
         HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
     }
-    private String getLoginTokenValue(String token) {
-        return redisCache.get(kvBuilder.buildUserLoginKey(token));
+    private String getLoginTokenV(String token) {
+        String[] args = StringKit.split(token, "@");
+        if(args == null || args.length < 2) {
+            return null;
+        }
+        return redisCache.get(kvBuilder.userLoginK(args[0],Integer.parseInt(args[1])));
     }
 
 }

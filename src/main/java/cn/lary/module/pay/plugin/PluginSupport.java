@@ -1,9 +1,8 @@
 package cn.lary.module.pay.plugin;
 
-import cn.lary.module.pay.dto.PayBuildRes;
+import cn.lary.module.pay.dto.PayBuildDTO;
 import cn.lary.module.pay.dto.PayParam;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -32,14 +31,13 @@ public class PluginSupport {
      * @param payClient 客户端
      * @param payParam {@link PayParam}
      * @param method 支付方法
-     * @param response {@link HttpServletResponse}
      * @return 支付结果
      */
-    public PayBuildRes pay(Integer payClient, String method, PayParam payParam, HttpServletResponse response) {
+    public PayBuildDTO pay(Integer payClient, String method, PayParam payParam) {
         Payment payment = plugins.get(method);
         // according pay client decide which method to use
         return switch (payClient) {
-            case 1 -> payment.pcPay(response,payParam);
+            case 1 -> payment.pcPay(payParam);
             case 2 -> payment.appPay(payParam);
             default -> null;
         };

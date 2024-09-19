@@ -1,7 +1,7 @@
 package cn.lary.module.pay.plugin.alipay;
 
 import cn.lary.module.common.CS.Lary;
-import cn.lary.module.pay.dto.PayBuildRes;
+import cn.lary.module.pay.dto.PayBuildDTO;
 import cn.lary.module.pay.dto.PayParam;
 import cn.lary.module.pay.entity.PaymentLog;
 import cn.lary.module.pay.plugin.Payment;
@@ -14,7 +14,6 @@ import com.alipay.api.request.AlipayTradePagePayRequest;
 import com.alipay.api.response.AlipayTradePagePayResponse;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -28,7 +27,7 @@ public class AliPayPayment implements Payment {
     private final AlipayClient alipayClient;
 
     @Override
-    public PayBuildRes pcPay( HttpServletResponse response, PayParam payParam) {
+    public PayBuildDTO pcPay(PayParam payParam) {
 
         AlipayTradePagePayRequest alipayRequest = new AlipayTradePagePayRequest();
         AlipayTradePagePayModel model = new AlipayTradePagePayModel();
@@ -55,7 +54,7 @@ public class AliPayPayment implements Payment {
         try {
             AlipayTradePagePayResponse res = alipayClient.pageExecute(alipayRequest);
             String form = res.getBody();
-            PayBuildRes buildRes = new PayBuildRes().setOk(true).setOutTradeNo(res.getOutTradeNo());
+            PayBuildDTO buildRes = new PayBuildDTO().setOk(true).setOutTradeNo(res.getOutTradeNo());
             buildRes.setContentType("text/html;charset=utf-8").setBody(form);
             // update payment log
             paymentLogService.update(new LambdaUpdateWrapper<PaymentLog>().set(PaymentLog::getPostStatus, Lary.PostStatus.success).set(PaymentLog::getPostJson,postJson)
@@ -65,7 +64,7 @@ public class AliPayPayment implements Payment {
             log.error("alipay pay error{}",e.getMessage());
             paymentLogService.update(new LambdaUpdateWrapper<PaymentLog>().set(PaymentLog::getPostStatus, Lary.PostStatus.fail).set(PaymentLog::getPostJson,postJson)
                     .eq(PaymentLog::getOrderId, payParam.getSn()));
-            return new PayBuildRes().setOk(false).setErrMsg(e.getMessage()).setErrCode(e.getErrCode());
+            return new PayBuildDTO().setOk(false).setErrMsg(e.getMessage()).setErrCode(e.getErrCode());
         }
     }
 

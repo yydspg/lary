@@ -16,7 +16,7 @@ public class UUIDKit {
 
     // 将UUID转换为5个字符的字符串
 
-    public static String uuidToShortString(String uuid) {
+    public static String uuidToShort(String uuid) {
         // 将UUID转换为BigInteger
         BigInteger least = new BigInteger(1, uuid.getBytes());
         StringBuilder shortUuid = new StringBuilder();
@@ -29,12 +29,5 @@ public class UUIDKit {
         return shortUuid.toString();
     }
 
-    public static void main(String[] args) {
 
-        for (int i = 0; i < 10; i++) {
-            String uuid = getUUID();
-            System.out.println(uuid);
-            System.out.println(uuidToShortString(uuid));
-        }
-    }
 }

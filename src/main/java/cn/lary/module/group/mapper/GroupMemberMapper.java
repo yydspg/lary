@@ -1,10 +1,8 @@
 package cn.lary.module.group.mapper;
 
 import cn.lary.module.group.entity.GroupMember;
-import cn.lary.module.user.dto.res.FriendCodeCheck;
+import cn.lary.module.user.vo.FriendCodeCheck;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-
-import java.util.List;
 
 /**
  * <p>

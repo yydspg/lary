@@ -1,37 +1,34 @@
 package cn.lary.core.dto;
 
-public class SingleResponse extends Response {
+import lombok.Getter;
+import lombok.Setter;
 
-    private Object data;
+@Getter
+@Setter
+public class SingleResponse<T> extends Response<T> {
 
-    public Object getData() {
-        return data;
-    }
+    private T data;
 
-    public void setData(Object data) {
-        this.data = data;
-    }
 
-    public static <T> SingleResponse buildSuccess(T data) {
-        SingleResponse response = new SingleResponse();
+
+    public static <T> SingleResponse<T> buildSuccess(T data) {
+        SingleResponse<T> response = new SingleResponse<T>();
         response.setSuccess(true);
         response.setData(data);
         return response;
     }
-
-    public static SingleResponse buildFailure(String errCode, String errMessage) {
-        SingleResponse response = new SingleResponse();
+    public static <T> SingleResponse<T> buildFail(int errorCode,String errMessage) {
+        SingleResponse<T> response = new SingleResponse<T>();
         response.setSuccess(false);
-        response.setErrCode(errCode);
+        response.setErrCode(errorCode);
         response.setErrMessage(errMessage);
         return response;
     }
-
-    public static <T> SingleResponse of(T data) {
-        SingleResponse response = new SingleResponse();
-        response.setSuccess(true);
-        response.setData(data);
+    public static <T> SingleResponse<T> buildFail(String errorMsg) {
+        SingleResponse<T> response = new SingleResponse<T>();
+        response.setSuccess(false);
+        response.setErrCode(9001);
+        response.setErrMessage(errorMsg);
         return response;
     }
-
 }

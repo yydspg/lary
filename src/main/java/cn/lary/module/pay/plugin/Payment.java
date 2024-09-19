@@ -1,10 +1,9 @@
 package cn.lary.module.pay.plugin;
 
 import cn.lary.core.exception.SysException;
-import cn.lary.module.pay.dto.PayBuildRes;
+import cn.lary.module.pay.dto.PayBuildDTO;
 import cn.lary.module.pay.dto.PayParam;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
 
 /**
  * 不同 支付服务商 支付需提供的支付逻辑
@@ -12,11 +11,10 @@ import jakarta.servlet.http.HttpServletResponse;
 public interface Payment {
     /**
      * pc 支付，需要重定向,返回 form表单
-     * @param response {@link HttpServletResponse}
      * @param payParam {@link PayParam} 核心支付参数
      * @return 返回 VO
      */
-    default PayBuildRes pcPay( HttpServletResponse response, PayParam payParam) {
+    default PayBuildDTO pcPay(PayParam payParam) {
         throw new SysException("no support pc pay");
     }
 
@@ -25,7 +23,7 @@ public interface Payment {
      * @param payParam {@link PayParam} 核心支付参数
      * @return VO
      */
-    default PayBuildRes appPay( PayParam payParam) {
+    default PayBuildDTO appPay(PayParam payParam) {
         throw new SysException("no support app pay");
     }
 
