@@ -4,6 +4,7 @@ import cn.lary.module.app.entity.Event;
 import cn.lary.module.app.entity.EventData;
 import cn.lary.module.app.mapper.EventMapper;
 import cn.lary.module.app.service.EventService;
+import cn.lary.module.common.CS.Lary;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -23,17 +24,14 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
     @Override
     public int begin(EventData eventData) {
         Event e = new Event().setEvent(eventData.getEvent()).setData(eventData.getData()).setType(eventData.getType());
-        return baseMapper.insert(e);
+        baseMapper.insert(e);
+        return e.getId();
     }
 
     @Override
     public void commit(int eventID) {
         // post handler
-        Event e = baseMapper.selectById(eventID);
-        if (e == null) {
-            log.error("query event error, eventID:{}", eventID);
-            return;
-        }
-
+        Event event = new Event().setId(eventID).setStatus(Lary.EventStatus.commit);
+        baseMapper.updateById(event);
     }
 }

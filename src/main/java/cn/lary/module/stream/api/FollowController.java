@@ -7,7 +7,7 @@ import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResKit;
 import cn.lary.module.stream.core.FollowBizExecute;
 import cn.lary.module.stream.dto.FollowDTO;
-import cn.lary.module.stream.dto.req.FollowListReq;
+import cn.lary.module.stream.dto.FollowListDTO;
 import cn.lary.module.stream.entity.Follow;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -35,7 +35,7 @@ public class FollowController {
     }
 
     @GetMapping("/unfollow{toUid}")
-    public SingleResponse<Void> unfollow(@PathVariable @NotNull String toUid) {
+    public SingleResponse<Void> unfollow(@RequestParam @NotNull String toUid) {
         String uid = ReqContext.getLoginUID();
         ResPair<Void> res = followBizExecute.unfollow(uid, toUid);
         if (!res.isOk()) {
@@ -45,7 +45,7 @@ public class FollowController {
     }
 
     @PostMapping("/follows")
-    public PageResponse<Follow> page(@RequestBody @Valid FollowListReq req) {
+    public PageResponse<Follow> page(@RequestBody @Valid FollowListDTO req) {
         String uid = ReqContext.getLoginUID();
         ResPair<List<Follow>> res = followBizExecute.follows(uid, req);
         if (!res.isOk()) {
@@ -54,7 +54,7 @@ public class FollowController {
         return ResKit.pageOk(res.getData(),req.getPageIndex(), req.getPageSize(), 0);
     }
     @GetMapping("/block{toUid}")
-    public SingleResponse<Void> block(@PathVariable @NotNull String toUid) {
+    public SingleResponse<Void> block(@RequestParam @NotNull String toUid) {
         String uid = ReqContext.getLoginUID();
         ResPair<Void> res = followBizExecute.block(uid, toUid);
         if (!res.isOk()) {
@@ -63,7 +63,7 @@ public class FollowController {
         return ResKit.ok();
     }
     @GetMapping("/unblock{toUid}")
-    public SingleResponse<Void> unblock(@PathVariable @NotNull String toUid) {
+    public SingleResponse<Void> unblock(@RequestParam @NotNull String toUid) {
         String uid = ReqContext.getLoginUID();
         ResPair<Void> res = followBizExecute.unblock(uid, toUid);
         if (!res.isOk()) {

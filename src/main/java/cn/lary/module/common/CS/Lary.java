@@ -1,7 +1,7 @@
 package cn.lary.module.common.CS;
 
 public interface Lary {
-
+    boolean R = false;
 
     interface RedisPrefix {
         String sms = "sms:";
@@ -15,8 +15,8 @@ public interface Lary {
         int DestroyCount = 4;
     }
     interface Sex {
-        Integer man = 1;
-        Integer woman = 0;
+        int man = 1;
+        int woman = 2;
     }
     interface VerifyCode {
         int user = 1; //用户搜素
@@ -36,6 +36,10 @@ public interface Lary {
         String groupUnableAddDestroyAccount = "groupUnableAddDestroyAccount";
         String goLive = "goLive";
         String downLive = "downLive";
+    }
+    interface EventStatus {
+        int init = 0;
+        int commit = 1;
     }
     interface EventType {
         int  none = 0;
@@ -122,5 +126,15 @@ public interface Lary {
             int preDown = 3;
             int down = 4;
         }
+    }
+    interface OrderStatus {
+        int init = 0;
+        int commit = 1;
+        int stop = 2;
+        int fail = 3;
+    }
+    interface PayBiz {
+        int recharge = 1;
+        int gift = 2;
     }
 }

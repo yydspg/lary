@@ -27,13 +27,12 @@ public class GiftOrder implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
 
     /**
      * 记录id
      */
-    private String orderId;
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long orderId;
 
     /**
      * 用户id
@@ -83,10 +82,10 @@ public class GiftOrder implements Serializable {
     /**
      * 购买状态 0 未支付，1 已支付 2 取消支付 3 支付失败
      */
-    private Short status;
+    private Integer status;
 
     /**
-     * 订单编号
+     * 外部订单编号
      */
     private String sn;
 

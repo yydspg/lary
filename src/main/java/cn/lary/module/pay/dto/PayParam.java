@@ -3,30 +3,29 @@ package cn.lary.module.pay.dto;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.ToString;
-import lombok.experimental.Accessors;
 
 import java.util.Map;
 
 @Data
 @ToString
-@Accessors(chain = true)
-public class PayParam {
+public abstract class PayParam {
     @NotNull
     private Integer biz;
 
     @NotNull
-    private String sn;
+    private Long payId;
 
     @NotNull
-    private Double price;
+    private Long price;
 
     @NotNull
     private String subject;
 
     @NotNull
-    private String clientType;
+    private Integer clientType;
 
     @NotNull
     private Map<String,String> args;
 
+    public  abstract PayParam of(Long payId,Long price,int clientType, Map<String,String> args);
 }

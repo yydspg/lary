@@ -60,7 +60,7 @@ public interface KVBuilder {
      * @param phone
      * @return
      */
-    String userRegisterK(String uid, String phone);
+    String userRegisterK( String phone);
 
     String userRegisterV(String token);
 

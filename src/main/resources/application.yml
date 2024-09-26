@@ -112,14 +112,6 @@ lary:
     system-group-name: lary_system_group_name
     system-group-uid: lary_system_group_uid
     system-uid: lary_system_uid
-  redis:
-    friend-apply-expire: 200
-    friend-apply-token-cache-prefix: "apply:"
-    login-device-cache-expire: 200
-    login-device-cache-prefix: "device:"
-    token-cache-prefix: "lary:"
-    token-expire: 200
-    uid-token-cache-prefix: "uid:"
   group:
     same-day-create-max-count: 5
     allow-view-history-msg-status: true

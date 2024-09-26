@@ -27,13 +27,12 @@ public class RechargeLog implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
 
     /**
      * 充值id，充值编号
      */
-    private String rechargeId;
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long rechargeId;
 
     /**
      * 用户uid
@@ -58,12 +57,12 @@ public class RechargeLog implements Serializable {
     /**
      * 花费
      */
-    private Integer cost;
+    private Long cost;
 
     /**
      * 获得的虚拟货币数目
      */
-    private Integer starNum;
+    private Long starNum;
 
     /**
      * 异步通知地址

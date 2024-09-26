@@ -28,18 +28,11 @@ public class PaymentLog implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
-
-    /**
-     * 用户uid
-     */
-    private String uid;
-
     /**
      * 业务订单编号，id
      */
-    private String orderId;
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long payId;
 
     /**
      * 订单类型 1 充值钱包 2 购买礼物,根据业务类型变更
@@ -64,7 +57,7 @@ public class PaymentLog implements Serializable {
     /**
      * 支付金额
      */
-    private BigDecimal payCost;
+    private Long payCost;
 
     /**
      * 请求支付状态，1：成功，2：失败

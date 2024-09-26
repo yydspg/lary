@@ -8,13 +8,25 @@ import lombok.Data;
 
 @Data
 public class LoginDTO {
-    @NotNull(message = "name is null")
-    private String name;
+    @NotNull(message = "uid is null")
+    private String uid;
+
     @NotNull(message = "password is null")
     private String password;
-    @Min(value = 0,message = "flag can not less than 0 ")
-    @Max(value = 1,message = "flag can not bigger than 1")
-    private int flag;
-    @JsonProperty("device")
-    private DeviceLoginDTO deviceLoginDTO;
+
+    @JsonProperty("id")
+    private String id;
+
+    @NotNull(message = "device_name is null")
+    @JsonProperty("name")
+    private String name;
+
+    @JsonProperty("model")
+    private String model;
+
+    @JsonProperty("flag")
+    @NotNull(message = "device flag is null")
+    private Integer flag;
+
+    private Integer level;
 }

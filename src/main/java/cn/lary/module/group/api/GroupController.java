@@ -181,7 +181,7 @@ public class GroupController {
     }
 
     @PostMapping("/{groupNo}/add")
-    public SingleResponse addMember(@PathVariable(value = "groupNo") String groupNo, @Valid @RequestBody AddMemberDTO req) {
+    public SingleResponse addMember(@RequestParam(value = "groupNo") String groupNo, @Valid @RequestBody AddMemberDTO req) {
         // check Group if exists
         Group group = groupService.queryByNo(groupNo);
         if (group == null ) {

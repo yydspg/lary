@@ -65,7 +65,7 @@ public class ConversationController {
      * @return ok
      */
     @GetMapping("/del{channel_id}{channel_type}")
-    public SingleResponse del(@NotNull @PathVariable(value = "channel_id") String channelId, @NotNull @PathVariable(value = "channel_type") byte channelType) {
+    public SingleResponse del(@NotNull @RequestParam(value = "channel_id") String channelId, @NotNull @RequestParam(value = "channel_type") byte channelType) {
         String uid = ReqContext.getLoginUID();
         ConversationDeleteReq wkReq = new ConversationDeleteReq();
 //        wkReq.setChanelID(channelId).setChannelType(channelType);

@@ -73,8 +73,8 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String userRegisterK(String uid, String phone) {
-        return redisBizConfig.getRegisterPrefix() + uid+"@"+phone;
+    public String userRegisterK( String phone) {
+        return redisBizConfig.getRegisterPrefix()+phone;
     }
 
     @Override

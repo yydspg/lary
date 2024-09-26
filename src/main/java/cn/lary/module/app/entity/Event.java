@@ -28,8 +28,6 @@ public class Event implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    private String eventId;
-
     private String event;
 
     private Integer type;

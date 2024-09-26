@@ -13,3 +13,7 @@ Execute,所以execute不适合引用别的execute,相同的简单逻辑直接使
 3. 目前mysql上的事务一点都没写，甚至@Transactional都未使用，打算使用编程式事务框架
 4. 引入了两个框架，一个是敏感词检测的，基于dfa[sensitive-word](https://github.com/houbb/sensitive-word)
 另一个是动态线程池，主要是为了处理直播结束的 收入统计
+- 2024926
+1. 打算抽象出一个id服务,实现采用mysql的自增id,当然是针对一些面向用户的id先改造，主要是uuid太长了
+2. 目前纠结的一个问题是，要不要区分业务主键id和表id,感觉还是用这个mysql的自增表id了，一个是数据不会变化，第二是
+回表问题目前了解到的是：建议做一个比较通用的联合索引，但是我感觉还是直接mysql自增id,最方便

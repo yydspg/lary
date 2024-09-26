@@ -4,9 +4,9 @@ import cn.lary.core.context.ReqContext;
 import cn.lary.core.dto.ResPair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResKit;
-import cn.lary.module.pay.dto.PayBuildDTO;
+import cn.lary.module.pay.vo.PayBuildVO;
 import cn.lary.module.wallet.core.WalletBizExecute;
-import cn.lary.module.wallet.dto.RechargeReq;
+import cn.lary.module.wallet.dto.RechargeDTO;
 import cn.lary.module.wallet.entity.Wallet;
 import cn.lary.module.wallet.vo.BalanceVO;
 import jakarta.servlet.http.HttpServletResponse;
@@ -33,14 +33,14 @@ public class WalletController {
 
     @PostMapping("/recharge")
     @ResponseBody
-    public String recharge(@Valid @RequestBody RechargeReq req,HttpServletResponse response) {
+    public String recharge(@Valid @RequestBody RechargeDTO req, HttpServletResponse response) {
         String uid = ReqContext.getLoginUID();
-        ResPair<PayBuildDTO> res = walletBizExecute.recharge(req, uid);
+        ResPair<PayBuildVO> res = walletBizExecute.recharge(req, uid);
         if (!res.isOk()) {
             return res.getMsg();
         }
         response.setContentType("text/html;charset=utf-8");
-        PayBuildDTO data =  res.getData();
+        PayBuildVO data =  res.getData();
         return data.getBody();
     }
 

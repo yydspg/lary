@@ -6,28 +6,27 @@ import org.springframework.context.annotation.Configuration;
 
 @Data
 @Configuration
-@ConfigurationProperties(prefix = "lary.redis")
 public class RedisBizConfig {
-
-    private String tokenCachePrefix;
-    private String loginDeviceCachePrefix;
-    private String loginUserPrefix;
-    private String loginUserTokenPrefix;
-    private String registerPrefix;
-    private String friendApplyTokenCachePrefix;
-    private String danmakuTokenCachePrefix;
-    private String goLivePrefix;
-    private String joinLivePrefix;
-    private String streamRecordPrefix;
-    private String smsAddDevicePrefix;
+    private final String friendApplyTokenCachePrefix = "lary:";
+    private final String tokenCachePrefix = "lary:";
+    private final String loginDeviceCachePrefix = "lary:";
+    private final String loginUserPrefix = "lary:";
+    private final String loginUserTokenPrefix = "lary:";
+    private final String registerPrefix = "lary:register";
+    private final String danmakuTokenCachePrefix = "lary:danmaku";
+    private final String goLivePrefix  = "lary:goLive";
+    private final String joinLivePrefix = "lary:joinLive";
+    private final String streamRecordPrefix = "lary:streamRecord";
+    private final String smsAddDevicePrefix = "lary:smsAddDevice";
     // 单位为 s
-    private long smsAddDeviceExpire;
-    private long loginDeviceCacheExpire;
-    private long loginUserExpire;
-    private long loginUserTokenExpire;
-    private long registerExpire;
-    private long tokenExpire;
-    private long friendApplyExpire;
-    private long nameCacheExpire;
-    private long danmakuChannelExistsExpire; //days
+    private final long danmakuChannelExistsExpire = 100;
+    private final long smsAddDeviceExpire = 100;
+    private final long loginDeviceCacheExpire = 100;
+    private final long loginUserExpire = 100;
+    private final long loginUserTokenExpire = 100;
+    private final long registerExpire = 100;
+    private final long tokenExpire = 100;
+    private final long friendApplyExpire = 100;
+    private final long nameCacheExpire = 100;
+
 }

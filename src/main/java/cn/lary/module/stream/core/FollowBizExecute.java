@@ -50,10 +50,10 @@ public class FollowBizExecute {
      */
     public ResPair<Void> follow(String uid,String uidName,FollowDTO req) {
 
-        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, uid).eq(User::getDeleted, false));
-        if (user == null) {
-            return BizKit.fail("user not exist");
-        }
+//        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, uid).eq(User::getDeleted, false));
+//        if (user == null) {
+//            return BizKit.fail("user not exist");
+//        }
         Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, req.getToUid()).eq(Follow::getIsDelete, false));
         // once follow
         if (relation != null ) {
@@ -75,7 +75,6 @@ public class FollowBizExecute {
             return BizKit.fail(req.getToUid()+":not exist");
         }
         String toUid = toUidInfo.getUid();
-        String toUidName = toUidInfo.getName();
         if (toUidInfo.getStatus() == Lary.UserStatus.ban) {
             return BizKit.fail(req.getToUid()+":banned");
         }
@@ -132,10 +131,10 @@ public class FollowBizExecute {
      * @return ok
      */
     public ResPair<Void> unfollow(String uid,String toUid) {
-        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, uid).eq(User::getDeleted, false).eq(User::getStatus, Lary.UserStatus.ok));
-        if (user == null) {
-            return BizKit.fail("user status error");
-        }
+//        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, uid).eq(User::getDeleted, false).eq(User::getStatus, Lary.UserStatus.ok));
+//        if (user == null) {
+//            return BizKit.fail("user status error");
+//        }
         Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, toUid).eq(Follow::getIsDelete, false));
         if (relation == null) {
             return BizKit.fail("request error");
@@ -174,10 +173,10 @@ public class FollowBizExecute {
      * @return {@link Follow}
      */
     public ResPair<List<Follow>> follows(String uid, PageQuery req) {
-        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, uid).eq(User::getDeleted, false).eq(User::getStatus, Lary.UserStatus.ok));
-        if (user == null) {
-            return BizKit.fail("user status error");
-        }
+//        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, uid).eq(User::getDeleted, false).eq(User::getStatus, Lary.UserStatus.ok));
+//        if (user == null) {
+//            return BizKit.fail("user status error");
+//        }
         Page<Follow> page = new Page<>(req.getPageIndex(), req.getPageSize());
         Page<Follow> res = followService.page(page, new LambdaQueryWrapper<Follow>()
                 .eq(Follow::getUid, uid).eq(Follow::getIsUnfollow,false).eq(Follow::getIsBlock, false).eq(Follow::getIsDelete, false)
@@ -194,13 +193,13 @@ public class FollowBizExecute {
     public ResPair<Void> block(String uid, String toUid) {
 
         Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, toUid).eq(Follow::getIsDelete, false));
-        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, uid).eq(User::getDeleted, false).eq(User::getStatus, Lary.UserStatus.ok));
-        if (user == null) {
+        User toUser = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, toUid).eq(User::getDeleted, false).eq(User::getStatus, Lary.UserStatus.ok));
+        if ( toUser == null) {
             return BizKit.fail("user status error");
         }
         if (relation == null) {
-            followService.save(new Follow().setUid(uid).setToUid(toUid).setIsBlock(true).setAvatarUrl(user.getAvatarUrl())
-                    .setBio(user.getBio()).setUsername(user.getName()));
+            followService.save(new Follow().setUid(uid).setToUid(toUid).setIsBlock(true).setAvatarUrl(toUser.getAvatarUrl())
+                    .setBio(toUser.getBio()).setUsername(toUser.getName()));
         }
         followService.update(new LambdaUpdateWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid,toUid).set(Follow::getIsBlock, true));
         return BizKit.ok();

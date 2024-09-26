@@ -21,7 +21,14 @@ public class RegisterDTO extends DTO {
     // 邀请码
     @JsonProperty("invite_code")
     private String inviteCode;
+
+    private String bio;
+
+    private String email;
+
+    private String birthday;
     @JsonProperty("device")
+    @NotNull(message = "device info is null")
     private DeviceLoginDTO device;
 
 }

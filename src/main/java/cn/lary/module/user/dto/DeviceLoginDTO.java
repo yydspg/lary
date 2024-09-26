@@ -9,15 +9,19 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 public class DeviceLoginDTO  extends DTO {
-    @JsonProperty("device_id")
-    private String deviceId;
-    @JsonProperty("device_name")
-    private String deviceName;
-    @JsonProperty("device_model")
-    private String deviceModel;
-    @JsonProperty("device_flag")
-    @NotNull(message = "device flag not be null")
-    private Integer deviceFlag;
+    @JsonProperty("id")
+    private String id;
 
-    private Integer deviceLevel;
+    @NotNull(message = "device_name is null")
+    @JsonProperty("name")
+    private String name;
+
+    @JsonProperty("model")
+    private String model;
+
+    @JsonProperty("flag")
+    @NotNull(message = "device flag is null")
+    private Integer flag;
+
+    private Integer level;
 }

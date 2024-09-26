@@ -232,3 +232,8 @@ create table `short_no`
 );
 
 CREATE UNIQUE INDEX `udx_short_no` on `short_no` (`short_no`);
+drop table if exists 'user_uid' ;
+create table  `user_uid` (
+                             id bigint primary key auto_increment not null,
+                             create_at timestamp
+) auto_increment = 1000000000;

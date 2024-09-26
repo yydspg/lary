@@ -28,6 +28,8 @@ public class Gift implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
+    private String giftId;
+
     /**
      * gift type
      */
@@ -38,12 +40,12 @@ public class Gift implements Serializable {
     /**
      * virtual currency price
      */
-    private Integer price;
+    private Long price;
 
     /**
      * real pay price CNY
      */
-    private Integer realPrice;
+    private Long realPrice;
 
     private String name;
 

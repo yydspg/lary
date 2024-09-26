@@ -1,10 +1,8 @@
 package cn.lary.module.stream.dto;
 
-import cn.lary.kit.StringKit;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import java.util.HashMap;
 import java.util.Map;
 
 @Data

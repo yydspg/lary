@@ -8,26 +8,33 @@ import lombok.Data;
 
 @Data
 public class GiftOrderDTO {
-
+    /**
+     * gift id
+     */
     @NotNull
-    @JsonProperty("gift_id")
-    private String giftId;
+    @JsonProperty("id")
+    private String id;
 
+    /**
+     * gift buy num
+     */
     @Min(value = 0,message = "gift num can not less than 0")
     @Max(value = Integer.MAX_VALUE,message = "gift num can not bigger than integer.Max")
-    @JsonProperty("gift_num")
-    private Integer giftNum;
+    @JsonProperty("num")
+    private Integer num;
+
+    /**
+     * anchor uid
+     */
+    @NotNull
+    @JsonProperty("to_uid")
+    private String toUid;
 
     @NotNull
-    @JsonProperty("anchor_uid")
-    private String anchorUid;
+    @JsonProperty("type")
+    private Integer type;
 
     @NotNull
-    @JsonProperty("gift_buy_channel_id")
-    private String giftBuyChannelId;
-    @NotNull
-    @JsonProperty("client_type")
-    @Min(value = 0,message = "client type error")
-    @Max(value = 1,message = "client type error")
-    private Integer clientType;
+    @JsonProperty("pay_way")
+    private Integer payWay;
 }

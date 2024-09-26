@@ -32,9 +32,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         LocalDateTime startOfDay = DateKit.getStartOfDay(now);
         LocalDateTime endOfDay = DateKit.getEndOfDay(now);
         LambdaQueryWrapper<Group> qw = new LambdaQueryWrapper<>();
-        qw.eq(Group::getCreator,uid);
-        qw.ge(Group::getCreateAt,startOfDay);
-        qw.le(Group::getCreateAt,endOfDay);
+        qw.eq(Group::getCreator,uid).ge(Group::getCreateAt,startOfDay).le(Group::getCreateAt,endOfDay);
         return Math.toIntExact(groupMapper.selectCount(qw));
     }
 

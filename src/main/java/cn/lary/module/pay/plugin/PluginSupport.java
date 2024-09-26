@@ -1,7 +1,9 @@
 package cn.lary.module.pay.plugin;
 
-import cn.lary.module.pay.dto.PayBuildDTO;
+import cn.lary.module.pay.vo.PayBuildVO;
 import cn.lary.module.pay.dto.PayParam;
+import cn.lary.module.pay.entity.PaymentLog;
+import cn.lary.module.pay.service.PaymentLogService;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,24 +19,29 @@ import java.util.List;
 @Component
 public class PluginSupport {
 
-    private final HashMap<String, Payment> plugins = new HashMap<>();
+    private final HashMap<Integer, Payment> plugins = new HashMap<>();
+    private final PaymentLogService paymentLogService;
 
     @Autowired
-    public PluginSupport(List<Payment> payments) {
+    public PluginSupport(List<Payment> payments,PaymentLogService paymentLogService) {
         for (Payment payment : payments) {
-            plugins.putIfAbsent(payment.getPluginName(),payment);
+            plugins.putIfAbsent(payment.getPayWay(),payment);
         }
+        this.paymentLogService = paymentLogService;
     }
 
     /**
      * 通过 支付方式和对应的支付类型，进行支付
      * @param payClient 客户端
      * @param payParam {@link PayParam}
-     * @param method 支付方法
+     * @param payWay 支付方法
      * @return 支付结果
      */
-    public PayBuildDTO pay(Integer payClient, String method, PayParam payParam) {
-        Payment payment = plugins.get(method);
+    public PayBuildVO pay(Integer payClient, Integer payWay, PayParam payParam) {
+        // build payment log
+        PaymentLog log = new PaymentLog().setPayCost(payParam.getPrice()).setPayWay(payWay);
+        paymentLogService.save(log);
+        Payment payment = plugins.get(payWay);
         // according pay client decide which method to use
         return switch (payClient) {
             case 1 -> payment.pcPay(payParam);
@@ -47,8 +54,8 @@ public class PluginSupport {
      * @param req {@link HttpServletRequest}
      * @param method 支付方法
      */
-    public void callback(HttpServletRequest req,String method){
-        plugins.get(method).callBack(req);
+    public void callback(HttpServletRequest req,int method,int biz){
+        plugins.get(method).callBack(req,biz);
     }
 
     /**
@@ -56,7 +63,8 @@ public class PluginSupport {
      * @param req {@link HttpServletRequest}
      * @param method 支付方式
      */
-    public void notify(HttpServletRequest req, String method){
+    public void notify(HttpServletRequest req, int method){
         plugins.get(method).notify(req);
     }
+
 }

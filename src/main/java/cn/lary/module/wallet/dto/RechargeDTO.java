@@ -7,12 +7,12 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class RechargeReq {
+public class RechargeDTO {
 
     @NotNull
     @Min(value = 0,message = "recharge amount not less than 0")
     @Max(value = Integer.MAX_VALUE,message = "recharge amount over limit")
-    private Integer sum;
+    private Long sum;
 
     @NotNull
     private Integer clientType;

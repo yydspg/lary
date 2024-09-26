@@ -10,10 +10,7 @@ import cn.lary.pkg.wk.entity.core.WK;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
 
@@ -29,8 +26,8 @@ public class MessageController {
      * 发送输入中命令
      * @return ok
      */
-    @GetMapping("/typing{channel_id}{channel_type}")
-    public SingleResponse typing(@PathVariable(value = "channel_id") @NotNull String  channelId, @PathVariable(value = "channel_type") @NotNull byte channelType) {
+    @GetMapping("/typing")
+    public SingleResponse typing(@RequestParam(value = "channel_id") @NotNull String  channelId, @RequestParam(value = "channel_type") @NotNull byte channelType) {
         String uid = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
 

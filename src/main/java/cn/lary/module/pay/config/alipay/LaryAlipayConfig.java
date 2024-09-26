@@ -8,6 +8,7 @@ import com.alipay.api.DefaultAlipayClient;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 
 @Configuration
 public class LaryAlipayConfig {
@@ -35,7 +36,7 @@ public class LaryAlipayConfig {
     private String notifyUrl;
 
     @Bean
-    public AlipayClient alipayClient() {
+    public AlipayConfig getAlipayConfig() {
         AlipayConfig config = new AlipayConfig();
         config.setAppId(appId);
         config.setProxyHost(gatewayHost);
@@ -52,6 +53,11 @@ public class LaryAlipayConfig {
         config.setReadTimeout(15000);
         //空闲连接存活时间，单位：毫秒，默认10000L
         config.setKeepAliveDuration(10000L);
+        return config;
+    }
+
+    @Bean
+    public AlipayClient alipayClient(AlipayConfig config)  {
         DefaultAlipayClient client = null;
         try {
             client = new DefaultAlipayClient(config);

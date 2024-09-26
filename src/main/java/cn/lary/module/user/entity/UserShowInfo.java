@@ -20,4 +20,5 @@ public class UserShowInfo {
     private String avatarUrl;
     @TableField(value = "update_at")
     private LocalDateTime updateAt;
+
 }

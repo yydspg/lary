@@ -29,7 +29,7 @@ public class Codec{
     private static final String ENTITY_PACK_NAME = "entity";
     private static final String DATA_SOURCE_URL = "jdbc:mysql://192.168.1.101:3306/lary";
     private static final String[] TABLE_NAMES = new String[]{
-           "friend"
+           "user_uid"
     };
     public static void main(String[] args) {
         /* 配置数据源 **/

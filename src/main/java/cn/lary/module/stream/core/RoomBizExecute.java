@@ -6,7 +6,6 @@ import cn.lary.module.app.service.EventService;
 import cn.lary.module.common.CS.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
-import cn.lary.module.danmaku.service.DanmakuService;
 import cn.lary.module.event.dto.DownLiveEventDTO;
 import cn.lary.module.event.dto.GoLiveEventDTO;
 import cn.lary.module.stream.dto.GoLiveDTO;
@@ -58,7 +57,6 @@ public class RoomBizExecute {
 
     private final DeviceService deviceService;
     private final RoomService roomService;
-    private final DanmakuService danmakuService;
     private final UserService userService;
     private final EventService eventService;
     private final FollowService followService;
@@ -80,10 +78,10 @@ public class RoomBizExecute {
      */
     public ResPair<JoinLiveVO> join(String uid,String uidName,String toUid,String ip){
         // check user status
-        UserBaseVO userBase = userService.queryBase(uid);
-        if(userBase == null){
-            return BizKit.fail("user status error");
-        }
+//        UserBaseVO userBase = userService.queryBase(uid);
+//        if(userBase == null){
+//            return BizKit.fail("user status error");
+//        }
         // check whether toUid block uid
         Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getUid, toUid).eq(Follow::getIsDelete, false));
         boolean isFan = false;
@@ -163,10 +161,10 @@ public class RoomBizExecute {
      */
     public ResPair<GoLiveVO> go(String uid,String uidName,String ip, GoLiveDTO req) {
         // check user status
-        UserBaseVO userBase = userService.queryBase(uid);
-        if(userBase == null){
-            return BizKit.fail("user status error");
-        }
+//        UserBaseVO userBase = userService.queryBase(uid);
+//        if(userBase == null){
+//            return BizKit.fail("user status error");
+//        }
         // check whether living now
         Map<Object, Object> liveInfo = redisCache.getHash(kvBuilder.goLiveK(uid));
         if (liveInfo != null) {
@@ -209,7 +207,7 @@ public class RoomBizExecute {
             roomService.updateById(updateRecord);
         }
         // build danmaku channel
-        WKChannel wkChannel = danmakuService.getDanmakuChannel(uid);
+        WKChannel wkChannel = null;
         if (wkChannel == null) {
             return BizKit.fail("danmaku channel not available");
         }
@@ -264,10 +262,10 @@ public class RoomBizExecute {
      */
     public ResPair<DownLiveVO> end(String uid,String uidName) {
         // check user status
-        UserBaseVO userBase = userService.queryBase(uid);
-        if(userBase == null){
-            return BizKit.fail("user status error");
-        }
+//        UserBaseVO userBase = userService.queryBase(uid);
+//        if(userBase == null){
+//            return BizKit.fail("user status error");
+//        }
         // check room status
         Room room = roomService.getOne(new LambdaQueryWrapper<Room>().eq(Room::getUid, uid).eq(Room::getIsAlive, true).eq(Room::getIsBlock,false), false);
         if (room == null) {

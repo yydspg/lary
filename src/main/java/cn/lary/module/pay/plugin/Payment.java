@@ -1,7 +1,7 @@
 package cn.lary.module.pay.plugin;
 
 import cn.lary.core.exception.SysException;
-import cn.lary.module.pay.dto.PayBuildDTO;
+import cn.lary.module.pay.vo.PayBuildVO;
 import cn.lary.module.pay.dto.PayParam;
 import jakarta.servlet.http.HttpServletRequest;
 
@@ -14,7 +14,7 @@ public interface Payment {
      * @param payParam {@link PayParam} 核心支付参数
      * @return 返回 VO
      */
-    default PayBuildDTO pcPay(PayParam payParam) {
+    default PayBuildVO pcPay(PayParam payParam) {
         throw new SysException("no support pc pay");
     }
 
@@ -23,7 +23,7 @@ public interface Payment {
      * @param payParam {@link PayParam} 核心支付参数
      * @return VO
      */
-    default PayBuildDTO appPay(PayParam payParam) {
+    default PayBuildVO appPay(PayParam payParam) {
         throw new SysException("no support app pay");
     }
 
@@ -31,7 +31,7 @@ public interface Payment {
      * 回调接口
      * @param request {@link HttpServletRequest}
      */
-    default void callBack(HttpServletRequest request) {
+    default void callBack(HttpServletRequest request,int biz) {
         throw new SysException("no support callBack");
     }
     /**
@@ -53,4 +53,6 @@ public interface Payment {
      * @return 支付名称
      */
     String getPluginName();
+
+    Integer getPayWay();
 }
