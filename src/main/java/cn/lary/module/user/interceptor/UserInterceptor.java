@@ -60,7 +60,7 @@ public class UserInterceptor  implements HandlerInterceptor {
         if(args == null || args.length < 2) {
             return null;
         }
-        return redisCache.get(kvBuilder.userLoginK(args[0],Integer.parseInt(args[1])));
+        return redisCache.get(kvBuilder.userLoginK(Integer.parseInt(args[0]),Integer.parseInt(args[1])));
     }
 
 }

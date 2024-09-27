@@ -10,7 +10,8 @@ import java.util.Map;
 public class JoinLiveCacheDTO {
 
     private String ip;
-    private String streamId;
+    private String name;
+    private int streamId;
     private String srsStreamId;
     private String srsServerId;
     private String srsClientId;
@@ -23,7 +24,7 @@ public class JoinLiveCacheDTO {
         }
         JoinLiveCacheDTO dto = new JoinLiveCacheDTO();
         dto.setIp((String) map.get("ip"));
-        dto.setStreamId((String) map.get("streamId"));
+        dto.setStreamId(Integer.parseInt( map.get("streamId").toString()));
         dto.setSrsStreamId((String) map.get("srsStreamId"));
         dto.setSrsServerId((String) map.get("srsServerId"));
         dto.setSrsClientId((String) map.get("srsClientId"));

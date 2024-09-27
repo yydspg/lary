@@ -33,9 +33,9 @@ public class GiftBuyChannel implements Serializable {
     /**
      * gift buy channel
      */
-    private String channelId;
+    private Integer channelId;
 
-    private String anchorId;
+    private Integer anchorId;
     /**
      * 是否存活
      */
@@ -43,9 +43,6 @@ public class GiftBuyChannel implements Serializable {
 
     private Boolean isDelete;
 
-    private String createBy;
-
-    private String updateBy;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

@@ -28,7 +28,7 @@ public class Device implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    private String uid;
+    private Integer uid;
 
     private String deviceId;
 

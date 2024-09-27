@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 @Data
 @AllArgsConstructor
 public class UpdateTokenDTO {
-    private String uid;
+    private Integer uid;
     private String token;
     @JsonProperty("device_flag")
     private int deviceFlag;

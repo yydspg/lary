@@ -37,12 +37,12 @@ public class RechargeLog implements Serializable {
     /**
      * 用户uid
      */
-    private String uid;
+    private Integer uid;
 
     /**
      * 购买状态 0 未支付，1 已支付 2 取消支付 3 支付失败
      */
-    private Short status;
+    private Integer status;
 
     /**
      * 是否同步，比如wallet是否同步成功
@@ -53,6 +53,11 @@ public class RechargeLog implements Serializable {
      * 完成时间
      */
     private LocalDateTime completeAt;
+
+    /*
+    外部的支付订单号
+     */
+    private String sn;
 
     /**
      * 花费
@@ -75,15 +80,19 @@ public class RechargeLog implements Serializable {
     private String failReason;
 
     /**
+     * 充值事件id
+     */
+    private Integer eventId;
+    /**
      * 支付来源
      */
     private Integer clientType;
 
     private Boolean isDelete;
 
-    private String createBy;
+    
 
-    private String updateBy;
+    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

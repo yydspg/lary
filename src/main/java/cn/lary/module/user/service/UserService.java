@@ -21,10 +21,10 @@ public interface UserService extends IService<User> {
 
 
 
-    User queryByName(String username);
-    User queryByUID(String uid);
-    UserBaseVO queryBase(String uid);
-    UserBasicInfo queryUserBasicInfo(String uid);
+
+    User queryByUID(int uid);
+    UserBaseVO queryBase(int uid);
+    UserBasicInfo queryUserBasicInfo(int uid);
     List<UserShowInfo> queryUserShowInfo(List<String> uids);
     /**
      * use this api carefully
@@ -40,6 +40,5 @@ public interface UserService extends IService<User> {
      */
     List<UserBaseVO> queryUserBaseByUIDs(List<String> uids);
 
-    FriendCodeCheck checkByCode(String code);
-    FriendCodeCheck checkByQRCode(String code);
+
 }

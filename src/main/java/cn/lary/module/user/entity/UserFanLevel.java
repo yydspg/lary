@@ -30,7 +30,7 @@ public class UserFanLevel implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private String uid;
+    private Integer uid;
 
     private String anchorId;
 
@@ -51,9 +51,9 @@ public class UserFanLevel implements Serializable {
 
     private Boolean isDelete;
 
-    private String createBy;
+    
 
-    private String updateBy;
+    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

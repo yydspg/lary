@@ -11,12 +11,12 @@ public class FriendVO {
     /**
      * 用户UID
      */
-    private String uid;
+    private Integer uid;
 
     /**
      * 好友uid
      */
-    private String toUid;
+    private Integer toUid;
     /**
      * 用户名
      */

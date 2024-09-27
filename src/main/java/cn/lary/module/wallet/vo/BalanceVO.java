@@ -31,4 +31,8 @@ public class BalanceVO {
      */
     private Boolean isAnchor;
 
+    /**
+     * 密保问题
+     */
+    private String question;
 }

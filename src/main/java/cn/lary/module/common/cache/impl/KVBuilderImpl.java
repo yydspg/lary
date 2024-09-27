@@ -29,7 +29,7 @@ public class KVBuilderImpl implements KVBuilder {
     public  String buildRegisterCacheKey(String zone,String phone,int codeType){
         return Lary.RedisPrefix.sms+codeType+"@"+zone+"@"+phone+"@";
     }
-    public String buildUserLoginTokenValue(String uid,String username,String role) {
+    public String buildUserLoginTokenValue(Integer uid,String username,String role) {
         return uid+"@"+username+"@"+role;
     }
     public  String buildGroupMemberVerCode() {
@@ -43,7 +43,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String deviceLoginK(String uid,String deviceId) {
+    public String deviceLoginK(int uid,String deviceId) {
         return redisBizConfig.getTokenCachePrefix() + uid+"@"+deviceId;
     }
 
@@ -53,7 +53,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String userLoginK(String uid,int deviceFlag) {
+    public String userLoginK(int uid,int deviceFlag) {
         return redisBizConfig.getTokenCachePrefix() + uid+"@"+deviceFlag;
     }
 
@@ -68,7 +68,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String userLoginTokenV(String uid, String username, int role) {
+    public String userLoginTokenV(int uid, String username, int role) {
         return uid+"@"+username+"@"+role;
     }
 
@@ -83,19 +83,10 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
 
-    @Override
-    public String buildDanmakuChannelTokenKey(String uid) {
-        return redisBizConfig.getDanmakuTokenCachePrefix()+uid;
-    }
-
-    @Override
-    public String buildDanmakuChannelTokenValue(String channelId) {
-        return channelId;
-    }
 
 
     @Override
-    public String streamRecordK(String uid, String streamId) {
+    public String streamRecordK(int uid, int streamId) {
         return redisBizConfig.getStreamRecordPrefix() + uid+":"+streamId;
     }
 
@@ -110,7 +101,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String addDeviceK(String uid) {
+    public String addDeviceK(int uid) {
         return redisBizConfig.getSmsAddDevicePrefix()+uid;
     }
 
@@ -120,16 +111,16 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String goLiveK(String uid) {
+    public String goLiveK(int uid) {
         return redisBizConfig.getGoLivePrefix() + uid;
     }
 
     @Override
     public Map goLiveV(LiveCacheDTO dto) {
-        Map<String, String> args = new HashMap<>();
-        if (StringKit.isNotEmpty(dto.getStreamId())) {
-            args.put("streamId",dto.getStreamId());
-        }
+        Map<Object, Object> args = new HashMap<>();
+        args.put("streamId",dto.getStreamId());
+        args.put("giftBuyChannelId",dto.getGiftBuyChannelId());
+        args.put("wkChannelId",dto.getWkChannelId());
         if (StringKit.isNotEmpty(dto.getIp())) {
             args.put("ip",dto.getIp());
         }
@@ -151,20 +142,11 @@ public class KVBuilderImpl implements KVBuilder {
         if (StringKit.isNotEmpty(dto.getStream())) {
             args.put("stream",dto.getStream());
         }
-        if (StringKit.isNotEmpty(dto.getStreamId())) {
-            args.put("streamId",dto.getStreamId());
-        }
-        if (StringKit.isNotEmpty(dto.getGiftBuyChannelId())) {
-            args.put("giftBuyChannelId",dto.getGiftBuyChannelId());
-        }
-        if (StringKit.isNotEmpty(dto.getWkChannelId())) {
-            args.put("wkChannelId",dto.getWkChannelId());
-        }
         return args;
     }
 
     @Override
-    public String joinLiveK(String uid) {
+    public String joinLiveK(int uid) {
         return redisBizConfig.getJoinLivePrefix() + uid;
     }
 
@@ -192,11 +174,14 @@ public class KVBuilderImpl implements KVBuilder {
         if (StringKit.isNotEmpty(dto.getSrsServerId())) {
             args.put("srsServerId", dto.getSrsServerId());
         }
+        if (StringKit.isNotEmpty(dto.getName())) {
+            args.put("name", dto.getName());
+        }
         return args;
     }
 
 
-    public String buildFriendApplyKey(String token,String uid) {
+    public String buildFriendApplyKey(String token,Integer uid) {
         return redisBizConfig.getFriendApplyTokenCachePrefix() + token + "@" + uid;
     }
 

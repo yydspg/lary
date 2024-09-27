@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class UserBasicInfo {
-    private String uid;
+    private Integer uid;
     private String name;
     private Boolean isRobot;
     private String vercode;

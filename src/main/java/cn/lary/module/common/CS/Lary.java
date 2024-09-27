@@ -36,6 +36,7 @@ public interface Lary {
         String groupUnableAddDestroyAccount = "groupUnableAddDestroyAccount";
         String goLive = "goLive";
         String downLive = "downLive";
+        String recharge = "recharge";
     }
     interface EventStatus {
         int init = 0;
@@ -52,9 +53,9 @@ public interface Lary {
     }
     interface Group {
         interface Role {
-            short common = 0;
-            short creator = 1;
-            short manager = 2;
+            int common = 0;
+            int creator = 1;
+            int manager = 2;
         }
         interface UserStatus {
             int common = 1;

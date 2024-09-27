@@ -17,11 +17,11 @@ public class MessageSendDTO {
     @JsonProperty("stream_no")
     private String streamNo;
     @JsonProperty("from_uid")
-    private String fromUID;
+    private int fromUID;
     @JsonProperty("channel_id")
-    private String chanelID;
+    private int channelID;
     @JsonProperty("channel_type")
-    private Integer channelType;
+    private int channelType;
     //过期时间
     private int expire;
     // 订阅者

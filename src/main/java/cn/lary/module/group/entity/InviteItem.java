@@ -48,7 +48,7 @@ public class InviteItem implements Serializable {
     /**
      * 被邀请者uid
      */
-    private String uid;
+    private Integer uid;
 
     /**
      * 状态： 0.待确认 1.已确认

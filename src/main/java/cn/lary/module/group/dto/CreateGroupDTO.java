@@ -9,5 +9,5 @@ import java.util.List;
 public class CreateGroupDTO {
     private String name; // group name
     @NotNull
-    private List<String> members; // group member uid
+    private List<Integer> members; // group member uid
 }

@@ -1,7 +1,9 @@
 package cn.lary.module.pay.plugin.alipay;
 
 import cn.lary.core.exception.SysException;
+import cn.lary.kit.StringKit;
 import cn.lary.module.common.CS.Lary;
+import cn.lary.module.pay.core.PayCallbackExecute;
 import cn.lary.module.pay.vo.PayBuildVO;
 import cn.lary.module.pay.dto.PayParam;
 import cn.lary.module.pay.entity.PaymentLog;
@@ -16,6 +18,7 @@ import com.alipay.api.domain.AlipayTradePagePayModel;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradePagePayRequest;
 import com.alipay.api.response.AlipayTradePagePayResponse;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -34,6 +37,7 @@ public class AliPayPayment implements Payment {
     private final PaymentLogService paymentLogService;
     private final AlipayClient alipayClient;
     private final AlipayConfig alipayConfig;
+    private final PayCallbackExecute payCallbackExecute;
 
     @Override
     public PayBuildVO pcPay(PayParam payParam) {
@@ -90,26 +94,35 @@ public class AliPayPayment implements Payment {
     public void callBack(HttpServletRequest request,int biz) {
         Map<String, String> params = convertRequestParamsToMap(request); // 将异步通知中收到的待验证所有参数都存放到map中
         String paramsJson = JSON.toJSONString(params);
-        log.info("支付宝回调，{}", paramsJson);
         try {
             boolean signVerified = AlipaySignature.rsaCheckV2(params, alipayConfig.getAlipayPublicKey(),
                     alipayConfig.getCharset(), alipayConfig.getSignType());
             // biz execute
             if (signVerified) {
                 // ok
-
+                PaymentLog check = check(params);
+                if (check == null) {
+                    // alipay error
+                    log.error("alipay payment check failed,params:{}",paramsJson);
+                    return;
+                }else {
+                    // check trade status,do biz execute
+                    String status = params.get("trade_status");
+                    if (StringKit.same("TRADE_SUCCESS",status) || StringKit.same("TRADE_FINISHED",status)) {
+                        payCallbackExecute.onSuccess(params,biz,Lary.PayWay.alipay);
+                    }else {
+                        payCallbackExecute.onFail(params,biz,Lary.PayWay.alipay);
+                    }
+                }
             }else{
-
+                // verify sign fail
+                log.error("alipay payment verify sign failed,params:{}",paramsJson);
             }
         } catch (AlipayApiException e) {
             throw new SysException("alipay pay error", e);
         }
     }
 
-    @Override
-    public void notify(HttpServletRequest request) {
-
-    }
 
     @Override
     public String getPluginName() {
@@ -120,7 +133,23 @@ public class AliPayPayment implements Payment {
     public Integer getPayWay() {
         return Lary.PayWay.alipay;
     }
-
+    private PaymentLog check(Map<String, String> args) {
+        String outTradeNo = args.get("out_trade_no");
+        String totalAmount = args.get("total_amount");
+        String sellId = args.get("sell_id");
+        String appId = args.get("app_id");
+        if (StringKit.diff(alipayConfig.getAppId(),appId)) {
+            return null;
+        }
+        PaymentLog log = paymentLogService.getOne(new LambdaQueryWrapper<PaymentLog>().eq(PaymentLog::getPayId, outTradeNo));
+        if (log == null || log.getPayStatus() == Lary.PayStatus.fail) {
+            return null;
+        }
+        if(StringKit.diff(totalAmount,log.getPayCost().toString())) {
+            return null;
+        }
+        return log;
+    }
     // 将request中的参数转换成Map
     private static Map<String, String> convertRequestParamsToMap(HttpServletRequest request) {
         Map<String, String> retMap = new HashMap<String, String>();

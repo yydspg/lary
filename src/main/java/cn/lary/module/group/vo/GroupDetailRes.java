@@ -79,24 +79,6 @@ public class GroupDetailRes extends DTO {
     private LocalDateTime updateAt;
 
     public static GroupDetailRes of(GroupDetail group) {
-        GroupDetailRes g = new GroupDetailRes();
-        g.setGroupNo(group.getGroup().getGroupNo());
-        g.setName(group.getGroup().getName());
-        g.setStatus(group.getGroup().getStatus());
-        g.setForbidden(group.getGroup().isForbidden());
-        g.setGroupAvatarUrl(group.getGroup().getGroupAvatarUrl());
-        g.setSave(group.getGroupSetting().getSave());
-        g.setChatPwdOn(group.getGroupSetting().getChatPwdOn());
-        g.setGroupType(group.getGroup().getGroupType());
-        g.setCategory(group.getGroup().getCategory());
-        g.setInvite(group.getGroup().getInvite());
-        g.setForbiddenAddFriend(group.getGroup().getForbiddenAddFriend());
-        g.setAllowViewHistoryMsg(group.getGroup().getAllowViewHistoryMsg());
-        g.setGroupType(group.getGroup().getGroupType());
-        g.setCreateAt(group.getGroup().getCreateAt());
-        g.setUpdateAt(group.getGroup().getUpdateAt());
-        g.setReceipt(group.getGroupSetting().getReceipt());
-        g.setScreenshot(group.getGroupSetting().getScreenshot());
-        return g;
+       return  null;
     }
 }

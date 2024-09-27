@@ -7,7 +7,7 @@ import lombok.Data;
 @AllArgsConstructor
 public class JoinLiveVO {
 
-    private String danmakuId;
+    private int danmakuId;
 
     private String specify;
     /**

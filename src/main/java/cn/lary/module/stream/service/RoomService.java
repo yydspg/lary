@@ -12,5 +12,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2024-08-16
  */
 public interface RoomService extends IService<Room> {
-    boolean isAnchor(String uid);
+    boolean isAnchor(Integer uid);
 }

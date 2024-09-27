@@ -38,7 +38,7 @@ public class RechargeLog implements Serializable {
     /**
      * 用户uid
      */
-    private String uid;
+    private Integer uid;
 
     /**
      * 购买状态 0 未支付，1 已支付 2 取消支付 3 支付失败
@@ -82,9 +82,9 @@ public class RechargeLog implements Serializable {
 
     private Boolean isDelete;
 
-    private String createBy;
+    
 
-    private String updateBy;
+    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

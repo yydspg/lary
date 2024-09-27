@@ -31,7 +31,7 @@ public class Room implements Serializable {
     /**
      * uid 等同于 room id
      */
-    private String uid;
+    private Integer uid;
 
     private String streamTypeId;
 
@@ -95,9 +95,9 @@ public class Room implements Serializable {
 
     private Boolean isDelete;
 
-    private String createBy;
+    
 
-    private String updateBy;
+    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

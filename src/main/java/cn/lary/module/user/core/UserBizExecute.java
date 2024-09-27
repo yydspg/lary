@@ -44,12 +44,10 @@ public class UserBizExecute {
 
     private final UserService userService;
     private final RegisterConfig registerConfig;
-    private final AppConfigService appConfigService;
     private final DeviceService deviceService;
     private final EventService eventService;
     private final RedisCache redisCache;
     private final RedisBizConfig redisBizConfig;
-    private final UserUidService userUidService;
     private final KVBuilder kvBuilder;
     // external
     private final WKUserService wkUserService;
@@ -64,7 +62,7 @@ public class UserBizExecute {
         if (user == null) {
             return BizKit.fail("user not exist,please register first");
         }
-        String uid = user.getUid();
+        Integer uid = user.getUid();
         // check login status
         String oldToken = redisCache.get(kvBuilder.userLoginK(user.getUid(), req.getFlag()));
         if (StringKit.isNotEmpty(oldToken)) {
@@ -131,53 +129,46 @@ public class UserBizExecute {
             return BizKit.fail("register channel off");
         }
         // TODO  :  这里实现一个用户名是否重复的判断
-//        String shortNo = "";
-        // 开启数字短编号
-//        if(shortNoConfig.isNumOn()) {
-//            shortNo = shortNoService.getShortNo();
-//        }else {
-//            shortNo = String.valueOf( SystemKit.now());
-//        }
-        String uid = userUidService.getUid();
-        User user = new User().setUid(uid);
-        String name = req.getName();
-        if (StringKit.isNotEmpty(name)) {
-            user.setName(name);
-        }else {
-            user.setName(StringKit.random(6));
-        }
-        // start user register event
-        EventData event = new UserRegisterEventDTO().setUid(uid).setPhone(req.getPhone()).of();
-        int eventId = eventService.begin(event);
+
         // check verify code
         String verifyCode = redisCache.get(kvBuilder.userRegisterK(req.getPhone()));
         if(StringKit.diff(verifyCode,req.getCode())) {
             //test module
 //            return BizKit.fail("verify code error");
         }
+        User user = new User();
+        String name = req.getName();
+        if (StringKit.isNotEmpty(name)) {
+            user.setName(name);
+        }else {
+            user.setName(StringKit.random(6));
+        }
         // set basic info
         user.setQrVercode(UUIDKit.getUUID()+"@"+Lary.VerifyCode.QR).setVercode(UUIDKit.getUUID()+"@"+Lary.VerifyCode.user).setEmail(req.getEmail())
         .setPhone(req.getPhone()).setZone(req.getZone()).setIsRobot(false).setSex(Lary.Sex.man).setBio(req.getBio()).setBirthday(req.getBirthday())
         .setPassword(StringKit.MD5(StringKit.MD5(req.getPassword())));
         userService.save(user);
+        // start user register event
+        EventData event = new UserRegisterEventDTO().setUid(user.getUid()).setPhone(req.getPhone()).of();
+        int eventId = eventService.begin(event);
         // build new device
         String deviceId = UUIDKit.getUUID();
-        Device device = new Device().setDeviceId(deviceId).setUid(uid).setDeviceName(req.getDevice().getName())
+        Device device = new Device().setDeviceId(deviceId).setUid(user.getUid()).setDeviceName(req.getDevice().getName())
                 .setDeviceModel(req.getDevice().getModel());
         deviceService.save(device);
         // set device login info to redis
         DeviceLoginDTO deviceLoginDTO = new DeviceLoginDTO().setId(deviceId).setName(device.getDeviceName()).setModel(device.getDeviceModel())
                 .setFlag(req.getDevice().getFlag());
-        redisCache.set(kvBuilder.deviceLoginK(uid,deviceId),kvBuilder.deviceLoginV(deviceLoginDTO),redisBizConfig.getLoginDeviceCacheExpire());
+        redisCache.set(kvBuilder.deviceLoginK(user.getUid(), deviceId),kvBuilder.deviceLoginV(deviceLoginDTO),redisBizConfig.getLoginDeviceCacheExpire());
         //set user login info to redis
-        String token = userLoginRedisSet(uid, name, Lary.UserRole.normal, req.getDevice().getFlag());
+        String token = userLoginRedisSet(user.getUid(), name, Lary.UserRole.normal, req.getDevice().getFlag());
         // add system friend
 //        friendService.addSystemFriend(uid);
 //        /// add file helper
 //        friendService.addFileHelper(uid);
         // user register to wuKongIm
-        UpdateTokenDTO tokenReq = new UpdateTokenDTO(uid,token,req.getDevice().getFlag(), WK.DeviceLevel.slave);
-        wkUserService.updateToken(tokenReq);
+        UpdateTokenDTO tokenDTO = new UpdateTokenDTO(user.getUid(), token,req.getDevice().getFlag(), WK.DeviceLevel.slave);
+        wkUserService.updateToken(tokenDTO);
 //        // set shortNo was used
 //        if (shortNoConfig.isNumOn()) {
 //            shortNoService.setShortNoUsed(shortNo,"user");
@@ -192,7 +183,7 @@ public class UserBizExecute {
      * @param role r
      * @param deviceFlag {@link WK.DeviceFlag}
      */
-    private String userLoginRedisSet(String uid,String name,int role,int deviceFlag){
+    private String userLoginRedisSet(Integer uid,String name,int role,int deviceFlag){
         String token = UUIDKit.getUUID() + "@" + deviceFlag;
         // remove before device login token
         redisCache.del(kvBuilder.userLoginK(uid,deviceFlag));
@@ -224,7 +215,7 @@ public class UserBizExecute {
      * @param uid user id
      * @return token
      */
-    public ResPair<String> refreshToken(String uid) {
+    public ResPair<String> refreshToken(Integer uid) {
         return null;
     }
 }

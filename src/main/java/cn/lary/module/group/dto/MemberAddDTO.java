@@ -6,12 +6,12 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class AddMemberDTO {
-    @NotNull(message = "uid is null")
-    private String uid;
+public class MemberAddDTO {
+    @NotNull(message = "group id is null")
+    private int groupId;
     @NotNull(message = "name is null")
     private String name;
     @NotNull(message = "members is null")
-    private List<String> members; // group member uid
+    private List<Integer> members; // group member uid
 }
 

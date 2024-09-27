@@ -8,14 +8,14 @@ import cn.lary.module.user.dto.DeviceLoginDTO;
 import java.util.Map;
 
 public interface KVBuilder {
-    String buildFriendApplyKey(String token, String uid);
+    String buildFriendApplyKey(String token, Integer uid);
 
     String buildFriendApplyValue(String fromUid, String vercode, String remark);
 
 
     String buildGroupMemberVerCode();
 
-    public String buildUserLoginTokenValue(String uid, String username, String role);
+    public String buildUserLoginTokenValue(Integer uid, String username, String role);
 
     public String buildRegisterCacheKey(String zone, String phone, int codeType);
 
@@ -29,7 +29,7 @@ public interface KVBuilder {
      * @param uid user id
      * @return k
      */
-    String deviceLoginK(String uid, String deviceId);
+    String deviceLoginK(int uid, String deviceId);
 
     String deviceLoginV(DeviceLoginDTO deviceLoginDTO);
 
@@ -39,7 +39,7 @@ public interface KVBuilder {
      * @param uid u
      * @return k
      */
-    String userLoginK(String uid, int deviceFlag);
+    String userLoginK(int uid, int deviceFlag);
 
     String userLoginV(String token, int deviceFlag);
 
@@ -51,7 +51,7 @@ public interface KVBuilder {
      */
     String userLoginTokenK(String token);
 
-    String userLoginTokenV(String uid, String username, int role);
+    String userLoginTokenV(int uid, String username, int role);
 
     /**
      * 构建用户注册时的验证码
@@ -65,9 +65,6 @@ public interface KVBuilder {
     String userRegisterV(String token);
 
 
-    String buildDanmakuChannelTokenKey(String uid);
-
-    String buildDanmakuChannelTokenValue(String channelId);
 
 
     /**
@@ -77,7 +74,7 @@ public interface KVBuilder {
      * @param streamId s
      * @return s
      */
-    String streamRecordK(String uid, String streamId);
+    String streamRecordK(int uid, int streamId);
 
     Map streamRecordV();
 
@@ -87,7 +84,7 @@ public interface KVBuilder {
      * @param uid u
      * @return S
      */
-    String addDeviceK(String uid);
+    String addDeviceK(int uid);
 
     String addDeviceV(DeviceAddAckDTO loginDTO);
 
@@ -97,7 +94,7 @@ public interface KVBuilder {
      * @param uid u
      * @return s
      */
-    String goLiveK(String uid);
+    String goLiveK(int uid);
 
     Map goLiveV(LiveCacheDTO dto);
 
@@ -107,6 +104,6 @@ public interface KVBuilder {
      * @param uid u
      * @return s
      */
-    String joinLiveK(String uid);
+    String joinLiveK(int uid);
     Map joinLiveV(JoinLiveCacheDTO dto);
 }

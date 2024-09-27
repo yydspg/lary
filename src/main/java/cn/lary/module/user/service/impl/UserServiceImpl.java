@@ -28,23 +28,20 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     private final UserMapper userMapper;
 
-    @Override
-    public User queryByName(String name) {
-        return baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getName,name).eq(User::getDeleted,false),false);
-    }
+
 
     @Override
-    public User queryByUID(String uid) {
+    public User queryByUID(int uid) {
         return baseMapper.selectOne(new LambdaQueryWrapper<User>().eq(User::getUid,uid).eq(User::getDeleted,false),false);
     }
 
     @Override
-    public UserBaseVO queryBase(String uid) {
+    public UserBaseVO queryBase(int uid) {
         return baseMapper.selectBase(uid);
     }
 
     @Override
-    public UserBasicInfo queryUserBasicInfo(String uid) {
+    public UserBasicInfo queryUserBasicInfo(int uid) {
         return baseMapper.selectBasicInfo(uid);
     }
 
@@ -65,13 +62,4 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         return baseMapper.selectBaseByIDs(uids);
     }
 
-    @Override
-    public FriendCodeCheck checkByCode(String code) {
-        return baseMapper.checkWithCode(code);
-    }
-
-    @Override
-    public FriendCodeCheck checkByQRCode(String code) {
-        return baseMapper.checkWithQRCode(code);
-    }
 }

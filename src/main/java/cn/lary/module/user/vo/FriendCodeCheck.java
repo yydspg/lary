@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 @Setter
 @Accessors(chain = true)
 public class FriendCodeCheck {
-    private String uid;
+    private Integer uid;
     private String sourceVercode;
 
 }

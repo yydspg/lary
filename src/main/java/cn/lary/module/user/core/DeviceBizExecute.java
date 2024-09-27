@@ -21,6 +21,7 @@ import java.util.Map;
 @Service
 @RequiredArgsConstructor
 public class DeviceBizExecute {
+
     private final DeviceService deviceService;
     private final KVBuilder kvBuilder;
     private final RedisCache redisCache;
@@ -31,7 +32,7 @@ public class DeviceBizExecute {
      * @param code 验证码
      * @return ok
      */
-    public ResPair<Void> ackAddDeviceCMD(String uid,String code) {
+    public ResPair<Void> ackAddDeviceCMD(Integer uid,String code) {
         String deviceLoginData = redisCache.get(kvBuilder.addDeviceK(uid));
         Map<String, String> map = JSONKit.toMap(deviceLoginData);
         String deviceModel = map.get("device_model");
@@ -53,7 +54,7 @@ public class DeviceBizExecute {
      * @param uid u
      * @return {@link DeviceVO}
      */
-    public ResPair<List<DeviceVO>> list(String uid) {
+    public ResPair<List<DeviceVO>> list(Integer uid) {
         List<Device> devices = deviceService.queryDevicesWithUid(uid);
         if (CollectionKit.isNotEmpty(devices)) {
             log.error("device list fail,uid:{}",uid);
@@ -77,7 +78,7 @@ public class DeviceBizExecute {
      * @param deviceId d
      * @return void
      */
-    public ResPair<Void> delDeviceToken(String uid,String deviceId) {
+    public ResPair<Void> delDeviceToken(Integer uid,String deviceId) {
         redisCache.del(kvBuilder.deviceLoginK(uid,deviceId));
         return BizKit.ok();
     }
@@ -88,7 +89,7 @@ public class DeviceBizExecute {
      * @param deviceId d
      * @return v
      */
-    public ResPair<Void> removeAuthedDevice(String uid,String deviceId) {
+    public ResPair<Void> removeAuthedDevice(Integer uid,String deviceId) {
         // already login
         String token = redisCache.get(kvBuilder.deviceLoginK(uid, deviceId));
         if (StringKit.isNotEmpty(token)) {

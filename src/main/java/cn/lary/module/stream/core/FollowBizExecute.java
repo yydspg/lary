@@ -10,6 +10,7 @@ import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.group.entity.Group;
 import cn.lary.module.group.entity.GroupMember;
 import cn.lary.module.stream.dto.FollowDTO;
+import cn.lary.module.stream.dto.LiveCacheDTO;
 import cn.lary.module.stream.entity.Follow;
 import cn.lary.module.stream.service.FollowService;
 import cn.lary.module.user.entity.User;
@@ -48,12 +49,8 @@ public class FollowBizExecute {
      * @param req {@link FollowDTO}
      * @return ok
      */
-    public ResPair<Void> follow(String uid,String uidName,FollowDTO req) {
+    public ResPair<Void> follow(int uid,String uidName,FollowDTO req) {
 
-//        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, uid).eq(User::getDeleted, false));
-//        if (user == null) {
-//            return BizKit.fail("user not exist");
-//        }
         Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, req.getToUid()).eq(Follow::getIsDelete, false));
         // once follow
         if (relation != null ) {
@@ -74,7 +71,7 @@ public class FollowBizExecute {
         if (toUidInfo == null) {
             return BizKit.fail(req.getToUid()+":not exist");
         }
-        String toUid = toUidInfo.getUid();
+        int toUid = toUidInfo.getUid();
         if (toUidInfo.getStatus() == Lary.UserStatus.ban) {
             return BizKit.fail(req.getToUid()+":banned");
         }
@@ -95,30 +92,42 @@ public class FollowBizExecute {
         if (toUidInfo.getIsAnchor() && req.getCode() == Lary.FollowCode.stream) {
             Map<Object, Object> liveInfo = redisCache.getHash(kvBuilder.goLiveK(toUid));
             if (liveInfo != null) {
-                String streamId = liveInfo.get("streamId").toString();
-                Map<Object, Object> streamRecord = redisCache.getHash(kvBuilder.streamRecordK(toUid, streamId));
+                LiveCacheDTO cache = LiveCacheDTO.of(liveInfo);
+                Map<Object, Object> streamRecord = redisCache.getHash(kvBuilder.streamRecordK(toUid, cache.getStreamId()));
                 if (streamRecord == null) {
                     return BizKit.fail("stream record not exist");
                 }
-                redisCache.incrHash(kvBuilder.streamRecordK(toUid,streamId),"newFansNum");
+                redisCache.incrHash(kvBuilder.streamRecordK(toUid,cache.getStreamId()),"newFansNum");
             }
         }
         //store
         Follow followApply = new Follow().setUid(uid).setToUid(toUid).setUsername(toUidInfo.getName()).setBio(toUidInfo.getBio())
-                .setAvatarUrl(toUidInfo.getAvatarUrl()).setCreateBy(uid).setSource(req.getCode()).setIsAnchor(toUidInfo.getIsAnchor());
+                .setAvatarUrl(toUidInfo.getAvatarUrl()).setSource(req.getCode()).setIsAnchor(toUidInfo.getIsAnchor());
         followService.save(followApply);
         // send message
         if (!isAlone) {
             String payload = uidName + "关注了你";
-            wkMessageService.send(new MessageSendDTO().setHeader(new MessageHeader().setNoPersist(1)).setChanelID(toUid).setChannelType(WK.ChannelType.person)
-                    .setFromUID(uid).setPayload(payload.getBytes(StandardCharsets.UTF_8)));
+            wkMessageService.send(new MessageSendDTO()
+                    .setHeader(new MessageHeader().setNoPersist(1))
+                    .setChannelID(uid)
+                    .setChannelType(WK.ChannelType.person)
+                    .setFromUID(uid)
+                    .setPayload(payload.getBytes(StandardCharsets.UTF_8)));
             payload = "我接受了你的好友申请，快来和我聊天吧";
-            wkMessageService.send(new MessageSendDTO().setHeader(new MessageHeader().setNoPersist(1).setRedDot(1)).setChanelID(uid).setChannelType(WK.ChannelType.person)
-                    .setFromUID(toUid).setPayload(payload.getBytes(StandardCharsets.UTF_8)));
+            wkMessageService.send(new MessageSendDTO()
+                    .setHeader(new MessageHeader().setNoPersist(1).setRedDot(1))
+                    .setChannelID(uid)
+                    .setChannelType(WK.ChannelType.person)
+                    .setFromUID(toUid)
+                    .setPayload(payload.getBytes(StandardCharsets.UTF_8)));
         }else {
             String payload = uidName + "关注了你，快来回关吧";
-            wkMessageService.send(new MessageSendDTO().setHeader(new MessageHeader().setNoPersist(1).setRedDot(1)).setChanelID(toUid).setChannelType(WK.ChannelType.person)
-                    .setFromUID(uid).setPayload(payload.getBytes(StandardCharsets.UTF_8)));
+            wkMessageService.send(new MessageSendDTO()
+                    .setHeader(new MessageHeader().setNoPersist(1).setRedDot(1))
+                    .setChannelID(toUid)
+                    .setChannelType(WK.ChannelType.person)
+                    .setFromUID(uid)
+                    .setPayload(payload.getBytes(StandardCharsets.UTF_8)));
         }
 
         return BizKit.ok();
@@ -130,11 +139,8 @@ public class FollowBizExecute {
      * @param toUid t
      * @return ok
      */
-    public ResPair<Void> unfollow(String uid,String toUid) {
-//        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, uid).eq(User::getDeleted, false).eq(User::getStatus, Lary.UserStatus.ok));
-//        if (user == null) {
-//            return BizKit.fail("user status error");
-//        }
+    public ResPair<Void> unfollow(int uid,int toUid) {
+
         Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, toUid).eq(Follow::getIsDelete, false));
         if (relation == null) {
             return BizKit.fail("request error");
@@ -149,12 +155,12 @@ public class FollowBizExecute {
         if (toUidInfo.getIsAnchor() ) {
             Map<Object, Object> liveInfo = redisCache.getHash(kvBuilder.goLiveK(toUid));
             if (liveInfo != null) {
-                String streamId = liveInfo.get("streamId").toString();
-                Map<Object, Object> streamRecord = redisCache.getHash(kvBuilder.streamRecordK(toUid, streamId));
+                LiveCacheDTO cache = LiveCacheDTO.of(liveInfo);
+                Map<Object, Object> streamRecord = redisCache.getHash(kvBuilder.streamRecordK(toUid, cache.getStreamId()));
                 if (streamRecord == null) {
                     return BizKit.fail("stream record not exist");
                 }
-                redisCache.decrHash(kvBuilder.streamRecordK(toUid,streamId),"newFansNum");
+                redisCache.decrHash(kvBuilder.streamRecordK(toUid,cache.getStreamId()),"newFansNum");
             }
         }
         // not block and unfollow
@@ -172,7 +178,7 @@ public class FollowBizExecute {
      * @param req {@link PageQuery}
      * @return {@link Follow}
      */
-    public ResPair<List<Follow>> follows(String uid, PageQuery req) {
+    public ResPair<List<Follow>> follows(Integer uid, PageQuery req) {
 //        User user = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, uid).eq(User::getDeleted, false).eq(User::getStatus, Lary.UserStatus.ok));
 //        if (user == null) {
 //            return BizKit.fail("user status error");
@@ -190,7 +196,7 @@ public class FollowBizExecute {
      * @param toUid t
      * @return ok
      */
-    public ResPair<Void> block(String uid, String toUid) {
+    public ResPair<Void> block(int uid, int toUid) {
 
         Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, toUid).eq(Follow::getIsDelete, false));
         User toUser = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, toUid).eq(User::getDeleted, false).eq(User::getStatus, Lary.UserStatus.ok));
@@ -211,7 +217,7 @@ public class FollowBizExecute {
      * @param toUid t
      * @return ok
      */
-    public ResPair<Void> unblock(String uid, String toUid) {
+    public ResPair<Void> unblock(int uid, int toUid) {
         Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, toUid).eq(Follow::getIsDelete, false));
         if (relation == null) {
             log.error("no block record exist,uid:{},toUid:{}", uid, toUid);

@@ -24,7 +24,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
 
 
     @Override
-    public boolean isAnchor(String uid) {
+    public boolean isAnchor(Integer uid) {
         LambdaQueryWrapper<Room> qw = new LambdaQueryWrapper<Room>().eq(Room::getUid, uid).eq(Room::getIsDelete, false).eq(Room::getIsBlock, false);
         return roomMapper.exists(qw);
     }

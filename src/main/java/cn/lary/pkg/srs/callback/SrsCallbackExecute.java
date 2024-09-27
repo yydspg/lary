@@ -44,7 +44,7 @@ public class SrsCallbackExecute implements SrsCallback {
     public int onPublish(OnPublishDTO dto) {
         Map<String, String> args = dto.parseParams(dto.getParam());
         String token = args.get("token");
-        String uid = args.get("uid");
+        int uid = Integer.parseInt( args.get("uid"));
         String eventId = args.get("event");
 
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
@@ -78,7 +78,7 @@ public class SrsCallbackExecute implements SrsCallback {
         Map<String, String> args = dto.parseParams(dto.getParam());
 
         String token = args.get("token");
-        String uid = args.get("uid");
+        int uid = Integer.parseInt( args.get("uid"));
         String eventId = args.get("event");
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
         LiveCacheDTO cache = LiveCacheDTO.of(map);
@@ -96,7 +96,7 @@ public class SrsCallbackExecute implements SrsCallback {
         // send close live info to wk channel
         String content =   "主播已经离开，稍后再来哦";
         MessageSendDTO sendDTO = new MessageSendDTO().setHeader(new MessageHeader().setNoPersist(1));
-        sendDTO.setFromUID(uid).setPayload(content.getBytes(StandardCharsets.UTF_8)).setChanelID(cache.getWkChannelId()).setChannelType(WK.ChannelType.data);
+        sendDTO.setFromUID(uid).setPayload(content.getBytes(StandardCharsets.UTF_8)).setChannelID(cache.getWkChannelId()).setChannelType(WK.ChannelType.data);
         wkMessageService.send(sendDTO);
         //update stream record
         streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>().eq(StreamRecord::getStreamId,cache.getStreamId()).set(StreamRecord::getStatus, Lary.Stream.Status.down));
@@ -109,7 +109,7 @@ public class SrsCallbackExecute implements SrsCallback {
     public int onPlay(OnPlayDTO dto) {
         Map<String, String> args = dto.parseParams(dto.getParam());
         String token = args.get("token");
-        String uid = args.get("uid");
+        int uid = Integer.parseInt( args.get("uid"));
         Map<Object, Object> map = redisCache.getHash(kvBuilder.joinLiveK(uid));
         if (map == null) {
             return SRS.CallBackStatus.fail;

@@ -14,8 +14,8 @@ import java.util.List;
  * @since 2024-07-29
  */
 public interface DeviceService extends IService<Device> {
-    Device queryDevice(String uid,String deviceId);
+    Device queryDevice(Integer uid,String deviceId);
     void updateDeviceLogin(Device device);
-    List<Device> queryDevicesWithUid(String uid);
-    void deleteDevice(String deviceId,String uid);
+    List<Device> queryDevicesWithUid(Integer uid);
+    void deleteDevice(String deviceId,Integer uid);
 }

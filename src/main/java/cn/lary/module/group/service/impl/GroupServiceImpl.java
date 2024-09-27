@@ -28,7 +28,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     private final GroupMapper groupMapper;
 
     @Override
-    public int querySameDayCreateGroupCount(String uid, LocalDateTime now) {
+    public int querySameDayCreateGroupCount(int uid, LocalDateTime now) {
         LocalDateTime startOfDay = DateKit.getStartOfDay(now);
         LocalDateTime endOfDay = DateKit.getEndOfDay(now);
         LambdaQueryWrapper<Group> qw = new LambdaQueryWrapper<>();
@@ -50,7 +50,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
 
     @Override
-    public List<GroupDetail> querySavedGroups(String uid) {
+    public List<GroupDetail> querySavedGroups(Integer uid) {
         return groupMapper.queryMySavedGroups(uid);
     }
 

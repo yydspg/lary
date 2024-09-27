@@ -28,7 +28,7 @@ public class GiftOrderDTO {
      */
     @NotNull
     @JsonProperty("to_uid")
-    private String toUid;
+    private Integer toUid;
 
     @NotNull
     @JsonProperty("type")

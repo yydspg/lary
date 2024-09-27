@@ -9,7 +9,7 @@ import lombok.Data;
 public class FollowDTO {
     @JsonProperty("to_uid")
     @NotNull
-    private String toUid;
+    private Integer toUid;
     @NotNull
     private Integer code;
 }

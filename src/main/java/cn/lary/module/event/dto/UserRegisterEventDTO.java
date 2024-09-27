@@ -13,13 +13,18 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class UserRegisterEventDTO implements EventConvert {
 
-    private String uid;
+    private Integer uid;
+
     private String phone;
+
     @JsonProperty("invite_code")
     private String inviteCode;
 
     @Override
     public EventData of() {
-        return new EventData().setEvent(Lary.Event.register).setType(Lary.EventType.cmd).setData(JSONKit.toJSON(this));
+        return new EventData()
+                .setEvent(Lary.Event.register)
+                .setType(Lary.EventType.cmd)
+                .setData(JSONKit.toJSON(this));
     }
 }

@@ -25,77 +25,15 @@ import java.util.List;
 @Service
 public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, GroupMember> implements GroupMemberService {
 
-    @Override
-    public boolean isCreatorOrManager(String uid, String groupNo,String creator) {
-       if (StringKit.same(uid,creator)) {
-           return true;
-       }
-        LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<>();
-        qw.eq(GroupMember::getGroupNo,groupNo);
-        qw.eq(GroupMember::getRole, Lary.Group.Role.manager);
-        qw.select(GroupMember::getUid);
-        List<String> managerUIDs = baseMapper.selectObjs(qw);
-        if (CollectionKit.isEmpty(managerUIDs)) {
-            return false;
-        }
-        return managerUIDs.contains(creator);
-    }
+
 
     @Override
-    public boolean isMember(String uid, String groupNo) {
-        LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<>();
-        qw.eq(GroupMember::getGroupNo,groupNo);
-        qw.eq(GroupMember::getUid, uid);
-        return baseMapper.exists(qw);
-    }
-
-    @Override
-    public List<String> queryMemberWithStatus(String groupNo, int status) {
-        LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<>();
-        qw.select(GroupMember::getUid);
-        qw.eq(GroupMember::getGroupNo,groupNo);
-        qw.eq(GroupMember::getStatus,status);
+    public List<Integer> queryMemberWithStatus(int groupNo, int status) {
+        LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<GroupMember>()
+                .select(GroupMember::getUid)
+                .eq(GroupMember::getGroupNo,groupNo)
+                .eq(GroupMember::getStatus,status);
         return baseMapper.selectObjs(qw);
     }
 
-    @Override
-    public boolean isDeletedMember(String groupNo, String uid) {
-        LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<>();
-        qw.eq(GroupMember::getGroupNo,groupNo);
-        qw.eq(GroupMember::getUid,uid);
-        qw.eq(GroupMember::getIsDeleted,true);
-        return baseMapper.selectCount(qw) > 0;
-    }
-
-    @Override
-    public void recoveryMember(String groupNo, String uid) {
-        LambdaUpdateWrapper<GroupMember> qw = new LambdaUpdateWrapper<>();
-        qw.eq(GroupMember::getGroupNo,groupNo);
-        qw.eq(GroupMember::getUid,uid);
-        qw.set(GroupMember::getIsDeleted,true);
-        baseMapper.update(qw);
-    }
-
-    @Override
-    public long queryMemberCount(String groupNo) {
-        LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<GroupMember>().eq(GroupMember::getGroupNo, groupNo);
-        return baseMapper.selectCount(qw);
-    }
-
-    @Override
-    public List<String> queryMemberWithLimit(String groupNo, long limit) {
-        LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<GroupMember>().select(GroupMember::getUid).eq(GroupMember::getGroupNo, groupNo).last("limit " + limit);
-        return baseMapper.selectObjs(qw);
-    }
-
-    @Override
-    public FriendCodeCheck checkByCode(String code) {
-        return baseMapper.checkWithCode(code);
-    }
-
-    @Override
-    public GroupMember getMemberByVerCode(String vercode) {
-        LambdaQueryWrapper<GroupMember> qw = new LambdaQueryWrapper<GroupMember>().eq(GroupMember::getVercode,vercode);
-        return baseMapper.selectOne(qw,false);
-    }
 }

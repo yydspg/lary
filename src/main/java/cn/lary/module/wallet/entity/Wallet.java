@@ -31,7 +31,7 @@ public class Wallet implements Serializable {
     /**
      * 用户id
      */
-    private String uid;
+    private Integer uid;
 
     /**
      * vc 收入总数量
@@ -75,9 +75,9 @@ public class Wallet implements Serializable {
 
     private Boolean isDelete;
 
-    private String createBy;
+    
 
-    private String updateBy;
+    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

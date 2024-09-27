@@ -30,12 +30,12 @@ public class Follow implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private String uid;
+    private Integer uid;
 
     /**
      * 被关注id
      */
-    private String toUid;
+    private Integer toUid;
 
     /**
      * 被关注用户名
@@ -80,9 +80,6 @@ public class Follow implements Serializable {
 
     private Boolean isDelete;
 
-    private String createBy;
-
-    private String updateBy;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

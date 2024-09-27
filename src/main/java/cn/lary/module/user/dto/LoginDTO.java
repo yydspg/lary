@@ -9,7 +9,7 @@ import lombok.Data;
 @Data
 public class LoginDTO {
     @NotNull(message = "uid is null")
-    private String uid;
+    private Integer uid;
 
     @NotNull(message = "password is null")
     private String password;

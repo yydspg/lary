@@ -21,8 +21,8 @@ import java.util.List;
 public interface UserMapper extends BaseMapper<User> {
     List<UserBaseVO> selectBaseByIDs(@Param("uids") List<String> uids);
 
-    UserBaseVO selectBase(@Param("uid")String uid);
-    UserBasicInfo selectBasicInfo(@Param("uid")String uid);
+    UserBaseVO selectBase(@Param("uid")Integer uid);
+    UserBasicInfo selectBasicInfo(@Param("uid")Integer uid);
     FriendCodeCheck checkWithCode(@Param("code") String code);
 
     FriendCodeCheck checkWithQRCode(@Param("code") String code);

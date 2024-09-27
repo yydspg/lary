@@ -12,22 +12,25 @@ import lombok.Data;
 @AllArgsConstructor
 public class GoLiveEventDTO implements EventConvert {
 
-    private String uid;
+    private Integer uid;
 
     @JsonProperty("device_id")
     private String deviceId;
 
     @JsonProperty("stream_id")
-    private String streamId;
+    private int streamId;
 
     @JsonProperty("wk_channel_id")
-    private String wkChannelId;
+    private int wkChannelId;
 
     @JsonProperty("gift_buy_channel_id")
-    private String giftBuyChannelId;
+    private int giftBuyChannelId;
 
     @Override
     public EventData of() {
-         return new EventData().setEvent(Lary.Event.goLive).setType(Lary.EventType.cmd).setData(JSONKit.toJSON(this));
+         return new EventData()
+                 .setEvent(Lary.Event.goLive)
+                 .setType(Lary.EventType.cmd)
+                 .setData(JSONKit.toJSON(this));
     }
 }

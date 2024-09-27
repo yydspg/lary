@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class DeviceQuitReq {
-    private String uid;
+    private Integer uid;
     @JsonProperty("device_flag")
     private byte deviceFlag;
 }

@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 public class ConversationDeleteReq extends WKChannel {
-    private String uid;
+    private Integer uid;
 }
 

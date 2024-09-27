@@ -19,7 +19,7 @@ import java.util.List;
 @RetrofitClient(baseUrl = "${wk.base.url}/conversations")
 public interface WKConversationService {
     @GET("list")
-    Response<List<ConversationRes>> list(@Query(value = "uid") String uid);
+    Response<List<ConversationRes>> list(@Query(value = "uid") Integer uid);
     @POST("clearUnread")
     Response<Void> clearUnread(@Body ConversationUnreadClearReq conversationUnreadClearReq);
     @POST("delete")

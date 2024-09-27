@@ -29,11 +29,7 @@ public class TestController {
 
     @Autowired
     private UserService userService;
-    @GetMapping("/test")
-    public void test() {
-        User user = userService.queryByUID("12124");
-        System.out.println(user);
-    }
+
     @GetMapping("/channel")
     public void channelTest() {
 

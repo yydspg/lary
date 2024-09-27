@@ -31,7 +31,7 @@ public class PaymentLog implements Serializable {
     /**
      * 业务订单编号，id
      */
-    @TableId(value = "id", type = IdType.AUTO)
+    @TableId(value = "id")
     private Long payId;
 
     /**
@@ -91,9 +91,9 @@ public class PaymentLog implements Serializable {
 
     private Boolean isDelete;
 
-    private String createBy;
+    
 
-    private String updateBy;
+    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

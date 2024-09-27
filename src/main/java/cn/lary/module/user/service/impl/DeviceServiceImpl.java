@@ -23,7 +23,7 @@ import java.util.List;
 public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> implements DeviceService {
 
     @Override
-    public Device queryDevice(String uid, String deviceId) {
+    public Device queryDevice(Integer uid, String deviceId) {
         return baseMapper.selectOne(new LambdaQueryWrapper<Device>().eq(Device::getUid,uid).eq(Device::getDeviceId,deviceId)
                 .eq(Device::getIsDelete,false),false);
     }
@@ -35,13 +35,13 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     }
 
     @Override
-    public List<Device> queryDevicesWithUid(String uid) {
+    public List<Device> queryDevicesWithUid(Integer uid) {
         LambdaQueryWrapper<Device> qw = new LambdaQueryWrapper<Device>().eq(Device::getUid, uid).eq(Device::getIsDelete,false);
         return baseMapper.selectList(qw);
     }
 
     @Override
-    public void deleteDevice(String deviceId, String uid) {
+    public void deleteDevice(String deviceId, Integer uid) {
         LambdaUpdateWrapper<Device> uw = new LambdaUpdateWrapper<Device>().eq(Device::getDeviceId, deviceId).eq(Device::getUid, uid);
         uw.set(Device::getIsDelete,true);
         baseMapper.update(uw);

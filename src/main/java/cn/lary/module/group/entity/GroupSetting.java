@@ -30,7 +30,7 @@ public class GroupSetting implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private String uid;
+    private Integer uid;
 
     private String groupNo;
 

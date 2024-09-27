@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class SyncReq {
-    private String uid;
+    private Integer uid;
     //客户端最大消息序列号
     @JsonProperty("message_seq")
     private long messageSeq;

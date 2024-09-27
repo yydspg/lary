@@ -19,8 +19,9 @@ import java.util.HashMap;
 @RequestMapping("/v1/message/")
 @RequiredArgsConstructor
 public class MessageController {
-    private final WKMessageService wkMessageService;
 
+
+    private final WKMessageService wkMessageService;
 
     /**
      * 发送输入中命令
@@ -28,14 +29,14 @@ public class MessageController {
      */
     @GetMapping("/typing")
     public SingleResponse typing(@RequestParam(value = "channel_id") @NotNull String  channelId, @RequestParam(value = "channel_type") @NotNull byte channelType) {
-        String uid = ReqContext.getLoginUID();
+        Integer uid = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
 
         if (WK.ChannelType.person == channelType) {
-            channelId = uid;
+            channelId = uid.toString();
         }
         HashMap<String, String> args = new HashMap<>();
-        args.put("from_uid", uid);
+        args.put("from_uid", uid.toString());
         args.put("from_name", uidName);
         args.put("channel_id",channelId);
         args.put("channel_type",String.valueOf(channelType));

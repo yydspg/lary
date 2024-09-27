@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Setter
 @Accessors(chain = true)
 public class UserShowInfo {
-    private String uid;
+    private Integer uid;
     private String name;
     private String bio;
     @TableField(value = "is_upload_avatar")

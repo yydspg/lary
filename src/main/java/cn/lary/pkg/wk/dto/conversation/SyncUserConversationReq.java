@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 public class SyncUserConversationReq extends WKChannel {
-    private String uid;
+    private Integer uid;
     // 会话消息数量
     @JsonProperty("msg_count")
     private long msgCount;

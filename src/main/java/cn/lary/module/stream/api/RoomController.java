@@ -42,7 +42,7 @@ public class RoomController {
     @PostMapping("/go")
     public SingleResponse<GoLiveVO> start(@RequestBody @Valid GoLiveDTO req,HttpServletRequest request) {
 
-        String uid = ReqContext.getLoginUID();
+        Integer uid = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
         String ip = IPKit.getIp(request);
         ResPair<GoLiveVO> res = roomBizExecute.go(uid, uidName,ip, req);
@@ -58,8 +58,8 @@ public class RoomController {
      * @return {@link JoinLiveVO}
      */
     @GetMapping("/join")
-    public SingleResponse<JoinLiveVO> join(@RequestParam(value = "toUid") @NotNull String toUid, HttpServletRequest req) {
-        String uid  = ReqContext.getLoginUID();
+    public SingleResponse<JoinLiveVO> join(@RequestParam(value = "toUid") @NotNull Integer toUid, HttpServletRequest req) {
+        Integer uid  = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
         String ip = IPKit.getIp(req);
         ResPair<JoinLiveVO> res = roomBizExecute.join(uid, uidName, toUid,ip);
@@ -75,7 +75,7 @@ public class RoomController {
      */
     @GetMapping("/end")
     public SingleResponse<DownLiveVO> end() {
-        String uid = ReqContext.getLoginUID();
+        Integer uid = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
         ResPair<DownLiveVO> res = roomBizExecute.end(uid, uidName);
         if (!res.isOk()) {
@@ -90,7 +90,7 @@ public class RoomController {
      */
     @GetMapping("/leave")
     public SingleResponse<Void> leave() {
-        String uid = ReqContext.getLoginUID();
+        Integer uid = ReqContext.getLoginUID();
         ResPair<Void> res = roomBizExecute.leave(uid);
         if (!res.isOk()) {
             return ResKit.fail(res.getMsg());

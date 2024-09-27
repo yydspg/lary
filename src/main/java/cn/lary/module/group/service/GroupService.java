@@ -22,7 +22,7 @@ public interface GroupService extends IService<Group> {
      * @param createTime ct
      * @return count of group created by  this account today
      */
-    int querySameDayCreateGroupCount(String uid, LocalDateTime createTime);
+    int querySameDayCreateGroupCount(int uid, LocalDateTime createTime);
 
     Group queryByNo(String groupNo);
     boolean exists(String groupNo);
@@ -31,7 +31,7 @@ public interface GroupService extends IService<Group> {
      * @param uid user id
      * @return group and group setting combine
      */
-    List<GroupDetail> querySavedGroups(String uid);
+    List<GroupDetail> querySavedGroups(Integer uid);
 
     /**
      * query whether group has upload avatar

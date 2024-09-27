@@ -9,9 +9,9 @@ import java.util.Map;
 @Accessors(chain = true)
 public class LiveCacheDTO {
 
-    private String streamId;
-    private String giftBuyChannelId;
-    private String wkChannelId;
+    private int streamId;
+    private int giftBuyChannelId;
+    private int wkChannelId;
     private String ip;
     private String srsTcUrl;
     private String srsToken;
@@ -26,9 +26,9 @@ public class LiveCacheDTO {
             return null;
         }
         LiveCacheDTO dto = new LiveCacheDTO();
-        dto.setStreamId((String) map.get("streamId"));
-        dto.setGiftBuyChannelId((String) map.get("giftBuyChannelId"));
-        dto.setWkChannelId((String) map.get("wkChannelId"));
+        dto.setStreamId(Integer.parseInt( map.get("streamId").toString()));
+        dto.setGiftBuyChannelId(Integer.parseInt( map.get("giftBuyChannelId").toString()));
+        dto.setWkChannelId(Integer.parseInt( map.get("wkChannelId").toString()));
         dto.setIp((String) map.get("ip"));
         dto.setSrsTcUrl((String) map.get("srsTcUrl"));
         dto.setSrsToken((String) map.get("srsToken"));

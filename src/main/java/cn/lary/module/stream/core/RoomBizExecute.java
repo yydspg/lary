@@ -76,7 +76,7 @@ public class RoomBizExecute {
      * @param ip ip
      * @return {@link JoinLiveVO}
      */
-    public ResPair<JoinLiveVO> join(String uid,String uidName,String toUid,String ip){
+    public ResPair<JoinLiveVO> join(int uid,String uidName,int toUid,String ip){
         // check user status
 //        UserBaseVO userBase = userService.queryBase(uid);
 //        if(userBase == null){
@@ -136,7 +136,7 @@ public class RoomBizExecute {
         // send user into room  message
         String content = uidName + "来了";
         MessageSendDTO sendDTO = new MessageSendDTO().setHeader(new MessageHeader().setNoPersist(1));
-        sendDTO.setFromUID(uid).setPayload(content.getBytes(StandardCharsets.UTF_8)).setChanelID(liveCache.getWkChannelId()).setChannelType(WK.ChannelType.stream);
+        sendDTO.setFromUID(uid).setPayload(content.getBytes(StandardCharsets.UTF_8)).setChannelID(liveCache.getWkChannelId()).setChannelType(WK.ChannelType.stream);
         Response<Void> sendVO = wkMessageService.send(sendDTO);
         if (!sendVO.isSuccessful()) {
             log.error("wk message send error:{}", sendVO.errorBody());
@@ -159,7 +159,7 @@ public class RoomBizExecute {
      * @param req {@link GoLiveDTO}
      * @return {@link GoLiveVO}
      */
-    public ResPair<GoLiveVO> go(String uid,String uidName,String ip, GoLiveDTO req) {
+    public ResPair<GoLiveVO> go(Integer uid,String uidName,String ip, GoLiveDTO req) {
         // check user status
 //        UserBaseVO userBase = userService.queryBase(uid);
 //        if(userBase == null){
@@ -200,7 +200,7 @@ public class RoomBizExecute {
                 remark = room.getRemark();
             }
             // update room
-            Room updateRecord = new Room().setId(room.getId()).setUpdateBy(uid).setUid(uid).setLastLogin(SystemKit.now())
+            Room updateRecord = new Room().setId(room.getId()).setUid(uid).setLastLogin(SystemKit.now())
                     .setRemark(remark).setIsAlive(true);
             boolean isHot = room.getFollowNum() > 1000;
             updateRecord.setIsHot(isHot);
@@ -208,46 +208,56 @@ public class RoomBizExecute {
         }
         // build danmaku channel
         WKChannel wkChannel = null;
-        if (wkChannel == null) {
-            return BizKit.fail("danmaku channel not available");
-        }
+//        if (wkChannel == null) {
+//            return BizKit.fail("danmaku channel not available");
+//        }
 
         // prepare gift send channel
-        String giftBuyChannelId = UUIDKit.getUUID();
-        GiftBuyChannel giftBuyChannel = new GiftBuyChannel().setChannelId(giftBuyChannelId).setCreateBy(uid);
+        GiftBuyChannel giftBuyChannel = new GiftBuyChannel().setAnchorId(uid);
         giftBuyChannelService.save(giftBuyChannel);
         // build stream record
-        String streamId = UUIDKit.getUUID();
-        StreamRecord streamRecord = new StreamRecord().setUid(uid).setStreamId(streamId).setChannelId(wkChannel.getChannelId()).setGiftBuyRecordId(giftBuyChannelId);
+        StreamRecord streamRecord = new StreamRecord()
+                .setUid(uid)
+                .setChannelId(wkChannel.getChannelId())
+                .setGiftBuyRecordId(giftBuyChannel.getChannelId());
         // set stream url
-        String stream = UUIDKit.uuidToShort(uid);
+        String stream = UUIDKit.uuidToShort(UUIDKit.getUUID());
         streamRecord.setIdentify(stream);
         streamRecordService.save(streamRecord);
         // start event
-        GoLiveEventDTO eventDTO = new GoLiveEventDTO(uid, device.getDeviceId(), streamId, wkChannel.getChannelId(), giftBuyChannelId);
+        GoLiveEventDTO eventDTO = new GoLiveEventDTO(uid, device.getDeviceId(), streamRecord.getStreamId(), wkChannel.getChannelId(), giftBuyChannel.getChannelId());
         int event = eventService.begin(eventDTO.of());
         if (room.getFollowNum() < 100) {
             List<String> follows = followService.getFollows(uid);
             if (CollectionKit.isNotEmpty(follows)) {
                     //send message to wk
                     // build temporary channel to send start alert
-                    String tempChannelId = UUIDKit.getUUID();
-                    ChannelCreateDTO createTempDTO = new ChannelCreateDTO(tempChannelId,WK.ChannelType.data,0,0,follows);
-                    wkChannelService.createOrUpdate(createTempDTO);
-                    String content = uidName + "开播了，快来围观";
-                    MessageSendDTO messageSendDTO = new MessageSendDTO().setHeader(new MessageHeader().setNoPersist(1).setRedDot(1));
-                    messageSendDTO.setChanelID(tempChannelId).setChannelType(WK.ChannelType.data).setFromUID(uid).setPayload(content.getBytes(StandardCharsets.UTF_8));
-                    wkMessageService.send(messageSendDTO);
+                // TODO  :  弹幕channel管理实现
+//                    ChannelCreateDTO createTempDTO = new ChannelCreateDTO(tempChannelId,WK.ChannelType.data,0,0,follows);
+//                    wkChannelService.createOrUpdate(createTempDTO);
+//                    String content = uidName + "开播了，快来围观";
+//                    MessageSendDTO messageSendDTO = new MessageSendDTO()
+//                            .setHeader(new MessageHeader().setNoPersist(1).setRedDot(1))
+//                            .setChanelID(tempChannelId)
+//                            .setChannelType(WK.ChannelType.data)
+//                            .setFromUID(uid)
+//                            .setPayload(content.getBytes(StandardCharsets.UTF_8));
+//                    wkMessageService.send(messageSendDTO);
                     // send mq to delay deletion temp channel
                     // TODO  :  here need to achieve rocket mq
                 }
         }
         // put it into redis
-        redisCache.setHash(kvBuilder.streamRecordK(uid,streamId),kvBuilder.streamRecordV());
+        redisCache.setHash(kvBuilder.streamRecordK(uid, streamRecord.getStreamId()),kvBuilder.streamRecordV());
         // now gift buy channel , stream channel , message delivery channel id can set to redis
         String token = UUIDKit.getUUID();
-        LiveCacheDTO dto = new LiveCacheDTO().setIp(ip).setGiftBuyChannelId(giftBuyChannelId)
-                .setWkChannelId(wkChannel.getChannelId()).setStreamId(streamId).setStream(stream).setSrsToken(token);
+        LiveCacheDTO dto = new LiveCacheDTO()
+                .setIp(ip)
+                .setGiftBuyChannelId(giftBuyChannel.getChannelId())
+                .setWkChannelId(wkChannel.getChannelId())
+                .setStreamId(streamRecord.getStreamId())
+                .setStream(stream)
+                .setSrsToken(token);
         redisCache.setHash(kvBuilder.goLiveK(uid),kvBuilder.goLiveV(dto));
         // build return vo
         GoLiveVO goLiveVO = new GoLiveVO(token,stream,event);
@@ -260,14 +270,17 @@ public class RoomBizExecute {
      * @param uidName user name
      * @return {@link DownLiveVO}
      */
-    public ResPair<DownLiveVO> end(String uid,String uidName) {
+    public ResPair<DownLiveVO> end(Integer uid,String uidName) {
         // check user status
 //        UserBaseVO userBase = userService.queryBase(uid);
 //        if(userBase == null){
 //            return BizKit.fail("user status error");
 //        }
         // check room status
-        Room room = roomService.getOne(new LambdaQueryWrapper<Room>().eq(Room::getUid, uid).eq(Room::getIsAlive, true).eq(Room::getIsBlock,false), false);
+        Room room = roomService.getOne(new LambdaQueryWrapper<Room>()
+                .eq(Room::getUid, uid)
+                .eq(Room::getIsAlive, true)
+                .eq(Room::getIsBlock,false), false);
         if (room == null) {
             return BizKit.fail("room not exist");
         }
@@ -290,7 +303,7 @@ public class RoomBizExecute {
         // update down live token
         redisCache.setHash(kvBuilder.goLiveK(uid),"srsToken",token);
         // update room status
-        roomService.update(new LambdaUpdateWrapper<Room>().set(Room::getIsAlive,false).set(Room::getUpdateBy,uid).eq(Room::getUid,uid));
+        roomService.update(new LambdaUpdateWrapper<Room>().set(Room::getIsAlive,false).eq(Room::getUid,uid));
         streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>().eq(StreamRecord::getStreamId,liveCache.getStreamId()).set(StreamRecord::getStatus, Lary.Stream.Status.preDown));
 
         //async  collect gift cost
@@ -305,7 +318,7 @@ public class RoomBizExecute {
      * @param uid user id
      * @return ok
      */
-    public ResPair<Void> leave(String uid) {
+    public ResPair<Void> leave(int uid) {
         Map<Object, Object> map = redisCache.getHash(kvBuilder.joinLiveK(uid));
         if (map == null) {
             return BizKit.fail("no join live info");
@@ -322,7 +335,7 @@ public class RoomBizExecute {
      * @return ok
      */
     @Deprecated
-    public ResPair<Void> block(String uid,String toUid) {
+    public ResPair<Void> block(int uid,int toUid) {
         throw new RuntimeException("");
     }
 }

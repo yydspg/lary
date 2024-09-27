@@ -2,6 +2,7 @@ package cn.lary.module.gift.core;
 
 import cn.lary.core.dto.ResPair;
 import cn.lary.kit.BizKit;
+import cn.lary.kit.SystemKit;
 import cn.lary.module.common.CS.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
@@ -9,25 +10,36 @@ import cn.lary.module.gift.dto.GiftOrderDTO;
 import cn.lary.module.gift.dto.GiftPayParam;
 import cn.lary.module.gift.entity.GiftOrder;
 import cn.lary.module.gift.service.GiftOrderService;
+import cn.lary.module.gift.vo.GiftPayCallbackVO;
 import cn.lary.module.pay.core.PayCallback;
+import cn.lary.module.pay.core.PayCallbackVO;
 import cn.lary.module.pay.vo.PayBuildVO;
 import cn.lary.module.pay.dto.PayParam;
 import cn.lary.module.pay.plugin.PluginSupport;
+import cn.lary.module.stream.dto.JoinLiveCacheDTO;
 import cn.lary.module.stream.dto.LiveCacheDTO;
 import cn.lary.module.user.service.UserService;
 import cn.lary.module.user.vo.UserBaseVO;
+import cn.lary.pkg.wk.api.WKMessageService;
+import cn.lary.pkg.wk.dto.message.MessageHeader;
+import cn.lary.pkg.wk.dto.message.MessageSendDTO;
+import cn.lary.pkg.wk.entity.core.WK;
+import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.nio.charset.StandardCharsets;
+import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class GiftBizExecute implements PayCallback {
+public class GiftBizExecute  {
 
     private final RedisCache redisCache;
     private final KVBuilder kvBuilder;
@@ -43,10 +55,10 @@ public class GiftBizExecute implements PayCallback {
      * @param req {@link GiftOrderDTO}
      * @return {@link PayBuildVO}
      */
-    public ResPair<PayBuildVO> pay(String uid, GiftOrderDTO req) {
+    public ResPair<PayBuildVO> pay(int uid, GiftOrderDTO req) {
         // gift id
         Long price = gifts.get(req.getId());
-        String anchorUid = req.getToUid();
+        int anchorUid = req.getToUid();
         if (price == null) {
             return BizKit.fail("gift id error");
         }
@@ -66,13 +78,13 @@ public class GiftBizExecute implements PayCallback {
         LiveCacheDTO dto = LiveCacheDTO.of(map);
         // build order
         GiftOrder order = new GiftOrder()
-                .setGiftId(req.getId())
                 .setUid(uid)
                 .setAnchorUid(anchorUid)
                 .setDanmakuId(dto.getWkChannelId())
                 .setBuyChannelId(dto.getGiftBuyChannelId())
                 .setStreamId(dto.getStreamId())
                 .setGiftNum(req.getNum())
+                .setGiftId(req.getId())
                 .setClientType(req.getType())
                 .setStatus(Lary.OrderStatus.init);
         giftOrderService.save(order);
@@ -82,23 +94,10 @@ public class GiftBizExecute implements PayCallback {
         PayBuildVO pay = pluginSupport.pay(req.getType(), payWay, payParam);
         return BizKit.ok(pay);
     }
+
     @PostConstruct
     public void init(){
         log.info("init gift biz execute");
     }
 
-    @Override
-    public void onSuccess(Map<String, String> map) {
-
-    }
-
-    @Override
-    public void onFail(Map<String, String> map) {
-
-    }
-
-    @Override
-    public Integer getBiz() {
-        return Lary.PayBiz.gift;
-    }
 }

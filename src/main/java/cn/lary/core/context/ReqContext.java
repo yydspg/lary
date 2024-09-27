@@ -20,8 +20,8 @@ public class ReqContext {
      * this method use thread local ,can not return null
      * @return uid
      */
-    public static String getLoginUID() {
-        return  getCurrent().get("uid");
+    public static int getLoginUID() {
+        return  Integer.parseInt(getCurrent().get("uid"));
     }
 
     /**

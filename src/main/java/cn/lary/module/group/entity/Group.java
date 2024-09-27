@@ -24,21 +24,20 @@ public class Group implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
 
-    private String groupNo;
+
+    private Integer groupNo;
 
     private String name;
 
-    private String creator;
+    private Integer creator;
 
-    private Short status;
+    private Integer status;
 
     /**
      * 群禁言
      */
-    private boolean forbidden;
+    private Boolean forbidden;
 
     /**
      * 群头像路径
@@ -53,7 +52,7 @@ public class Group implements Serializable {
     /**
      * 群类型 0. 普通群，1.超大群
      */
-    private Short groupType;
+    private Integer groupType;
 
     /**
      * 群分类

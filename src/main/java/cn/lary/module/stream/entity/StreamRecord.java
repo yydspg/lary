@@ -30,13 +30,13 @@ public class StreamRecord implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private String streamId;
+    private Integer streamId;
 
-    private String uid;
+    private Integer uid;
 
-    private String channelId;
+    private Integer channelId;
 
-    private String giftBuyRecordId;
+    private Integer giftBuyRecordId;
 
     private LocalDateTime startAt;
 
@@ -105,9 +105,9 @@ public class StreamRecord implements Serializable {
 
     private Boolean isDelete;
 
-    private String createBy;
+    
 
-    private String updateBy;
+    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

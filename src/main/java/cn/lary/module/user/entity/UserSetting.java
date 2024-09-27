@@ -30,7 +30,7 @@ public class UserSetting implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private String uid;
+    private Integer uid;
 
     /**
      * 粉丝列表是否展示

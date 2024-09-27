@@ -11,16 +11,19 @@ import lombok.Data;
 @Data
 @AllArgsConstructor
 public class DownLiveEventDTO implements EventConvert {
-    private String uid;
+    private int uid;
     @JsonProperty("stream_id")
-    private String streamId;
+    private int streamId;
     @JsonProperty("wk_channel_id")
-    private String wkChannelId;
+    private int wkChannelId;
     @JsonProperty("gift_buy_channel_id")
-    private String giftBuyChannelId;
+    private int giftBuyChannelId;
 
     @Override
     public EventData of() {
-        return new EventData().setEvent(Lary.Event.downLive).setType(Lary.EventType.cmd).setEvent(JSONKit.toJSON(this));
+        return new EventData()
+                .setEvent(Lary.Event.downLive)
+                .setType(Lary.EventType.cmd)
+                .setEvent(JSONKit.toJSON(this));
     }
 }

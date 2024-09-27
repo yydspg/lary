@@ -7,7 +7,7 @@ import java.util.List;
 
 @Data
 public class SyncRecentMessagesReq {
-    private String uid;
+    private Integer uid;
     private List<WKChannelRecentMessage> channels;
     @JsonProperty("msg_count")
     private int msgCount;

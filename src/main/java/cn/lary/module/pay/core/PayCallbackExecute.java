@@ -10,6 +10,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.RejectedExecutionHandler;
 import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
@@ -19,7 +20,12 @@ import java.util.concurrent.TimeUnit;
 public class PayCallbackExecute {
 
     private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
-            15,20,10L, TimeUnit.SECONDS,new LinkedBlockingDeque<>()
+            15, 20, 10L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), new RejectedExecutionHandler() {
+        @Override
+        public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
+
+        }
+    }
     );
     private final Map<Integer, PayCallback> map = new HashMap<>();
 
@@ -38,14 +44,13 @@ public class PayCallbackExecute {
      * @param args map
      * @param biz 业务code
      */
-    public void onSuccess(Map<String,String> args,int biz) {
+    public void onSuccess(Map<String,String> args,int biz,int payWay) {
         PayCallback callback = map.get(biz);
         if (callback == null) {
             log.error("on success callback error,invalid biz code:{}",biz);
             return;
         }
-        executor.execute(()-> callback.onSuccess(args));
-
+        executor.execute(()-> callback.onSuccess(args,payWay));
     }
 
     /**
@@ -53,12 +58,12 @@ public class PayCallbackExecute {
      * @param args map
      * @param biz 业务code
      */
-    public void onFail(Map<String,String> args,int biz) {
+    public void onFail(Map<String,String> args,int biz,int payWay) {
         PayCallback callback = map.get(biz);
         if (callback == null) {
             log.error("on fail callback error,invalid biz code:{}",biz);
             return;
         }
-        executor.execute(()->callback.onFail(args));
+        executor.execute(()->callback.onFail(args,payWay));
     }
 }

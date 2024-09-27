@@ -15,7 +15,7 @@ import java.util.List;
  */
 public interface FollowService extends IService<Follow> {
 
-    List<String> getFollows(String uid);
-    boolean isBlock(String uid,String toUid);
-    boolean isFan(String uid,String toUid);
+    List<String> getFollows(int uid);
+    boolean isBlock(int uid,int toUid);
+    boolean isFan(int uid,int toUid);
 }

@@ -38,7 +38,7 @@ public class GiftOrder implements Serializable {
     /**
      * 用户id
      */
-    private String uid;
+    private Integer uid;
 
     /**
      * 主播uid
@@ -117,9 +117,9 @@ public class GiftOrder implements Serializable {
 
     private Boolean isDelete;
 
-    private String createBy;
+    
 
-    private String updateBy;
+    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

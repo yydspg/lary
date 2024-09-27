@@ -30,13 +30,13 @@ public class GroupMember implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private String groupNo;
+    private Integer groupNo;
 
-    private String uid;
+    private Integer uid;
 
     private String remark;
 
-    private Short role;
+    private Integer role;
 
     private Long version;
 
@@ -48,7 +48,7 @@ public class GroupMember implements Serializable {
 
     private Boolean robot;
 
-    private String inviteUid;
+    private Integer inviteUid;
 
     /**
      * 群成员禁言时长

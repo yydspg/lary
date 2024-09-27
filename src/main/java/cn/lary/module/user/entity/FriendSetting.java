@@ -27,9 +27,9 @@ public class FriendSetting implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    private String uid;
+    private Integer uid;
 
-    private String toUid;
+    private Integer toUid;
 
     private Short mute;
 

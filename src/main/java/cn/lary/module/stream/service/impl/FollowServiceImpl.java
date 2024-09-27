@@ -28,7 +28,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
 
 
     @Override
-    public List<String> getFollows(String uid) {
+    public List<String> getFollows(int uid) {
         Room room = roomService.getOne(new LambdaQueryWrapper<Room>().eq(Room::getUid, uid));
         if (room == null || room.getIsDelete() || room.getIsBlock() || room.getIsHot()) {
             return null;
@@ -38,13 +38,13 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     }
 
     @Override
-    public boolean isBlock(String uid, String toUid) {
+    public boolean isBlock(int uid, int toUid) {
         Follow follow = followMapper.selectOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, toUid));
         return follow != null && !follow.getIsDelete() && follow.getIsBlock();
     }
 
     @Override
-    public boolean isFan(String uid, String toUid) {
+    public boolean isFan(int uid, int toUid) {
         Follow follow = followMapper.selectOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, toUid));
         return follow != null && !follow.getIsDelete() && follow.getIsBlock();
     }

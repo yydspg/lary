@@ -37,22 +37,22 @@ public class GiftOrder implements Serializable {
     /**
      * 用户id
      */
-    private String uid;
+    private Integer uid;
 
     /**
      * 主播uid
      */
-    private String anchorUid;
+    private Integer anchorUid;
 
     /**
      * 购买通道id
      */
-    private String buyChannelId;
+    private Integer buyChannelId;
 
     /**
      * wk 弹幕流id
      */
-    private String danmakuId;
+    private Integer danmakuId;
 
     /**
      * 异步通知地址
@@ -72,7 +72,7 @@ public class GiftOrder implements Serializable {
     /**
      * 直播流id
      */
-    private String streamId;
+    private Integer streamId;
 
     /**
      * 是否直接向主播支付,不通过wallet或者余额不足
@@ -110,15 +110,20 @@ public class GiftOrder implements Serializable {
     private String giftId;
 
     /**
+     * 礼物name
+     */
+    private String giftName;
+
+    /**
      * 礼物购买数量
      */
     private Integer giftNum;
 
     private Boolean isDelete;
 
-    private String createBy;
+    
 
-    private String updateBy;
+    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

@@ -32,7 +32,7 @@ public class ConversationController {
      */
     @GetMapping("/list")
     public MultiResponse list() {
-        String uid = ReqContext.getLoginUID();
+        Integer uid = ReqContext.getLoginUID();
         Response<List<ConversationRes>> res = wkConversationService.list(uid);
         if (!res.isSuccessful()) {
             return ResKit.multiFail("server error");
@@ -47,7 +47,7 @@ public class ConversationController {
      */
     @PostMapping("/clearUnread")
     public SingleResponse clearUnread(@Valid @RequestBody ClearConversationUnreadReq req) {
-        String uid = ReqContext.getLoginUID();
+        Integer uid = ReqContext.getLoginUID();
         ConversationUnreadClearReq wkReq = new ConversationUnreadClearReq().setUid(uid).setMessageSeq(req.getMessageSeq());
 //        wkReq.setChanelID(req.getChanelID()).setChannelType(req.getChannelType());
         Response<Void> res = wkConversationService.clearUnread(wkReq);
@@ -66,7 +66,7 @@ public class ConversationController {
      */
     @GetMapping("/del{channel_id}{channel_type}")
     public SingleResponse del(@NotNull @RequestParam(value = "channel_id") String channelId, @NotNull @RequestParam(value = "channel_type") byte channelType) {
-        String uid = ReqContext.getLoginUID();
+        Integer uid = ReqContext.getLoginUID();
         ConversationDeleteReq wkReq = new ConversationDeleteReq();
 //        wkReq.setChanelID(channelId).setChannelType(channelType);
         wkReq.setUid(uid);

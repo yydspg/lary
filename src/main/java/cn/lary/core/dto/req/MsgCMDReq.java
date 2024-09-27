@@ -37,8 +37,7 @@ public class MsgCMDReq {
         byte[] payload = JSONKit.toJSON(map).getBytes();
         MessageSendDTO r = new MessageSendDTO();
         r.setPayload(payload);
-        r.setFromUID(fromUID);
-        r.setChanelID(chanelID);
+
         r.setChannelType(channelType);
         r.setSubscribers(subscribers);
         MessageHeader header = new MessageHeader();
