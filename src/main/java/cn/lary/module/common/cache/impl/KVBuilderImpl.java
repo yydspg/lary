@@ -7,9 +7,7 @@ import cn.lary.kit.UUIDKit;
 import cn.lary.module.common.CS.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.server.RedisBizConfig;
-import cn.lary.module.stream.dto.GoLiveDTO;
-import cn.lary.module.stream.dto.JoinLiveCacheDTO;
-import cn.lary.module.stream.dto.LiveCacheDTO;
+import cn.lary.module.stream.dto.*;
 import cn.lary.module.user.dto.DeviceAddAckDTO;
 import cn.lary.module.user.dto.DeviceLoginDTO;
 import lombok.RequiredArgsConstructor;
@@ -25,22 +23,6 @@ import java.util.Map;
 public class KVBuilderImpl implements KVBuilder {
 
     private final RedisBizConfig redisBizConfig;
-
-    public  String buildRegisterCacheKey(String zone,String phone,int codeType){
-        return Lary.RedisPrefix.sms+codeType+"@"+zone+"@"+phone+"@";
-    }
-    public String buildUserLoginTokenValue(Integer uid,String username,String role) {
-        return uid+"@"+username+"@"+role;
-    }
-    public  String buildGroupMemberVerCode() {
-        return UUIDKit.getUUID()+"@" + Lary.VerifyCode.groupMember;
-    }
-    public  String buildUserLoginKey(String tokenPrefix,String token) {
-        return tokenPrefix+token;
-    }
-    public  String buildUserLoginKey(String token) {
-        return redisBizConfig.getTokenCachePrefix() + token;
-    }
 
     @Override
     public String deviceLoginK(int uid,String deviceId) {
@@ -83,8 +65,6 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
 
-
-
     @Override
     public String streamRecordK(int uid, int streamId) {
         return redisBizConfig.getStreamRecordPrefix() + uid+":"+streamId;
@@ -97,6 +77,7 @@ public class KVBuilderImpl implements KVBuilder {
         map.put("newFansNum",0);
         map.put("starNum",0);
         map.put("watchFanNum",0);
+        map.put("giftNum",0);
         return map;
     }
 
@@ -180,17 +161,57 @@ public class KVBuilderImpl implements KVBuilder {
         return args;
     }
 
-
-    public String buildFriendApplyKey(String token,Integer uid) {
-        return redisBizConfig.getFriendApplyTokenCachePrefix() + token + "@" + uid;
+    @Override
+    public String raffleK(int uid) {
+        return redisBizConfig.getRafflePrefix()+uid;
     }
 
     @Override
-    public String buildFriendApplyValue(String fromUid, String vercode, String remark) {
-        HashMap<String, String> map = new HashMap<>();
-        map.put("from_uid",fromUid);
-        map.put("vercode", vercode);
-        map.put("remark",remark);
-        return JSONKit.toJSON(map);
+    public Map raffleV(RaffleCacheDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        HashMap<String, String> args = new HashMap<>();
+        if (StringKit.isNotEmpty(dto.getTitle())) {
+            args.put("title", dto.getTitle());
+        }
+        if (StringKit.isNotEmpty(dto.getContent())) {
+            args.put("content", dto.getContent());
+        }
+        if (StringKit.isNotEmpty(dto.getMessage())) {
+            args.put("message", dto.getMessage());
+        }
+        args.put("num",String.valueOf(dto.getNum()));
+        args.put("item_num",String.valueOf(dto.getNum()));
+        args.put("duration",String.valueOf(dto.getDuration()));
+        args.put("type",String.valueOf(dto.getType()));
+        return args;
     }
+
+    @Override
+    public String redPacketK(int uid) {
+        return redisBizConfig.getRedPacketPrefix() + uid;
+    }
+
+    @Override
+    public Map redPacketV(RedPacketCacheDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        HashMap<String, String> args = new HashMap<>();
+
+        args.put("title", dto.getTitle());
+        args.put("num",String.valueOf(dto.getNum()));
+        args.put("message",dto.getMessage());
+        args.put("cost",String.valueOf(dto.getCost()));
+        args.put("startAt",dto.getStartAt());
+        return args;
+    }
+
+    @Override
+    public String raffleListK(int uid) {
+        return redisBizConfig.getRaffleListPrefix() +uid;
+    }
+
+
 }

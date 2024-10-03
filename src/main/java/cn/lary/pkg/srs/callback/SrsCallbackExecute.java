@@ -23,6 +23,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.util.Map;
@@ -73,6 +74,7 @@ public class SrsCallbackExecute implements SrsCallback {
     }
 
     @Override
+    @Transactional
     public int onUnPublish(OnUnpublishDTO dto) {
 
         Map<String, String> args = dto.parseParams(dto.getParam());
@@ -82,24 +84,18 @@ public class SrsCallbackExecute implements SrsCallback {
         String eventId = args.get("event");
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
         LiveCacheDTO cache = LiveCacheDTO.of(map);
+
         // check ip
         if (StringKit.diff(dto.getIp(), cache.getIp())) {
+            log.error("srs unpublish fail when check ip:{},uid:{}",dto.getIp(),uid);
             return SRS.CallBackStatus.fail;
         }
         // check token
         if (StringKit.diff(token, cache.getSrsToken())) {
+            log.error("srs unpublish fail when check token:{},uid:{}",token,uid);
             return SRS.CallBackStatus.fail;
         }
-        // remove redis data
-        redisCache.del(kvBuilder.streamRecordK(uid, cache.getStreamId()));
         redisCache.del(kvBuilder.goLiveK(uid));
-        // send close live info to wk channel
-        String content =   "主播已经离开，稍后再来哦";
-        MessageSendDTO sendDTO = new MessageSendDTO().setHeader(new MessageHeader().setNoPersist(1));
-        sendDTO.setFromUID(uid).setPayload(content.getBytes(StandardCharsets.UTF_8)).setChannelID(cache.getWkChannelId()).setChannelType(WK.ChannelType.data);
-        wkMessageService.send(sendDTO);
-        //update stream record
-        streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>().eq(StreamRecord::getStreamId,cache.getStreamId()).set(StreamRecord::getStatus, Lary.Stream.Status.down));
         // close event
         eventService.commit(Integer.parseInt(eventId));
        return SRS.CallBackStatus.ok;

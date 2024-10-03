@@ -13,7 +13,7 @@ public class GiftOrderDTO {
      */
     @NotNull
     @JsonProperty("id")
-    private String id;
+    private Integer id;
 
     /**
      * gift buy num
@@ -34,7 +34,9 @@ public class GiftOrderDTO {
     @JsonProperty("type")
     private Integer type;
 
-    @NotNull
+    /**
+     * 支付方式可以为空，若为空，即尝试从钱包扣款
+     */
     @JsonProperty("pay_way")
     private Integer payWay;
 }

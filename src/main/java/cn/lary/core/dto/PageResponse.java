@@ -26,13 +26,12 @@ public class PageResponse<T> extends Response<T> {
 
     private Collection<T> data;
 
-    public static <T> PageResponse<T> ok(long pageIndex,long pageSize,long total,Collection<T> data) {
+    public static <T> PageResponse<T> ok(long pageIndex,long pageSize,Collection<T> data) {
         PageResponse<T> response = new PageResponse<T>();
         response.setSuccess(true);
         response.setData(data);
         response.setPageIndex(pageIndex);
         response.setPageSize(pageSize);
-        response.setTotalCount(total);
         return response;
     }
 

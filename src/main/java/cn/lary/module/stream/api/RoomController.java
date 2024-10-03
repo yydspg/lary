@@ -1,21 +1,28 @@
 package cn.lary.module.stream.api;
 
 import cn.lary.core.context.ReqContext;
+import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.ResPair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.IPKit;
 import cn.lary.kit.ResKit;
 import cn.lary.module.stream.core.RoomBizExecute;
+import cn.lary.module.stream.core.StreamBizExecute;
 import cn.lary.module.stream.dto.GoLiveDTO;
+import cn.lary.module.stream.dto.RaffleDTO;
+import cn.lary.module.stream.dto.RedPacketDTO;
 import cn.lary.module.stream.vo.DownLiveVO;
 import cn.lary.module.stream.vo.GoLiveVO;
 import cn.lary.module.stream.vo.JoinLiveVO;
+import cn.lary.module.stream.vo.StreamRecordVO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * <p>
@@ -33,6 +40,23 @@ import org.springframework.web.bind.annotation.*;
 public class RoomController {
 
     private final RoomBizExecute roomBizExecute;
+    private final StreamBizExecute streamBizExecute;
+
+    /**
+     * 直播记录查询
+     * @param page p
+     * @param limit s
+     * @return {@link StreamRecordVO}
+     */
+    @GetMapping("/page")
+    public PageResponse<StreamRecordVO> records(@RequestParam @NotNull Integer page, @RequestParam @NotNull Integer limit) {
+        int uid = ReqContext.getLoginUID();
+        ResPair<List<StreamRecordVO>> res = streamBizExecute.page(uid, page, limit);
+        if (!res.isOk()) {
+            return ResKit.pageFail(res.getMsg());
+        }
+        return ResKit.pageOk(res.getData(),page,limit);
+    }
 
     /**
      * 开启直播
@@ -42,7 +66,7 @@ public class RoomController {
     @PostMapping("/go")
     public SingleResponse<GoLiveVO> start(@RequestBody @Valid GoLiveDTO req,HttpServletRequest request) {
 
-        Integer uid = ReqContext.getLoginUID();
+        int uid = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
         String ip = IPKit.getIp(request);
         ResPair<GoLiveVO> res = roomBizExecute.go(uid, uidName,ip, req);
@@ -59,7 +83,7 @@ public class RoomController {
      */
     @GetMapping("/join")
     public SingleResponse<JoinLiveVO> join(@RequestParam(value = "toUid") @NotNull Integer toUid, HttpServletRequest req) {
-        Integer uid  = ReqContext.getLoginUID();
+        int uid  = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
         String ip = IPKit.getIp(req);
         ResPair<JoinLiveVO> res = roomBizExecute.join(uid, uidName, toUid,ip);
@@ -75,7 +99,7 @@ public class RoomController {
      */
     @GetMapping("/end")
     public SingleResponse<DownLiveVO> end() {
-        Integer uid = ReqContext.getLoginUID();
+        int uid = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
         ResPair<DownLiveVO> res = roomBizExecute.end(uid, uidName);
         if (!res.isOk()) {
@@ -90,8 +114,39 @@ public class RoomController {
      */
     @GetMapping("/leave")
     public SingleResponse<Void> leave() {
-        Integer uid = ReqContext.getLoginUID();
+        int uid = ReqContext.getLoginUID();
         ResPair<Void> res = roomBizExecute.leave(uid);
+        if (!res.isOk()) {
+            return ResKit.fail(res.getMsg());
+        }
+        return ResKit.ok(res.getData());
+    }
+
+    /**
+     * 创建抽奖事件
+     * @param req {@link RaffleDTO}
+     * @return ok
+     */
+    @PostMapping("/raffle")
+    public SingleResponse<Void> raffle(@RequestBody @Valid RaffleDTO req) {
+        int uid = ReqContext.getLoginUID();
+        ResPair<Void> res = streamBizExecute.raffle(uid, req);
+        if (!res.isOk()) {
+            return ResKit.fail(res.getMsg());
+        }
+        return ResKit.ok(res.getData());
+    }
+
+    /**
+     * 创建红包事件
+     * @param req {@link RedPacketDTO}
+     * @return ok
+     */
+    @PostMapping("/redpacket")
+    public SingleResponse<Void> redpacket(@RequestBody @Valid RedPacketDTO req) {
+        int uid = ReqContext.getLoginUID();
+        String uidName = ReqContext.getLoginName();
+        ResPair<Void> res = streamBizExecute.redPacket(uid, uidName, req);
         if (!res.isOk()) {
             return ResKit.fail(res.getMsg());
         }

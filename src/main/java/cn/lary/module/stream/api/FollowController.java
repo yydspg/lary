@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 
 @RestController
-@RequestMapping("/v1/stream/fan")
+@RequestMapping("/v1/fan")
 @RequiredArgsConstructor
 public class FollowController {
 
@@ -51,7 +51,7 @@ public class FollowController {
         if (!res.isOk()) {
             return ResKit.pageFail(res.getMsg());
         }
-        return ResKit.pageOk(res.getData(),req.getPageIndex(), req.getPageSize(), 0);
+        return ResKit.pageOk(res.getData(),req.getPageIndex(), req.getPageSize());
     }
     @GetMapping("/block")
     public SingleResponse<Void> block(@RequestParam @NotNull int toUid) {

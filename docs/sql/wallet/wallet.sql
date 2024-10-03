@@ -12,8 +12,32 @@ create table `wallet`
     sec_question varchar(255) not null default '' comment '安全问题，用于解锁钱包',
     sec_answer varchar(255) not null default '' comment  '安全问题答案',
     is_delete bool ,
-    create_by varchar(40) ,
-    update_by varchar(40) ,
+    create_at timestamp,
+    update_at timestamp
+);
+drop table if exists `wallet_income_log`;
+create table `wallet_income_log` (
+    id bigint unsigned not null primary key auto_increment,
+    uid int not null default 0 comment '用户id',
+    to_uid int not null default 0 comment 'id',
+    channel_id int not null default 0 comment '频道id',
+    channel_type smallint not null comment '频道类型',
+    type smallint not null comment '交易类型',
+    cost long not null default 0 comment '花费',
+    is_delete bool ,
+    create_at timestamp,
+    update_at timestamp
+);
+drop table if exists `wallet_outcome_log`;
+create table `wallet_outcome_log` (
+    id bigint unsigned not null primary key auto_increment,
+    uid int not null default 0 comment '用户id',
+    to_uid int not null default 0 comment 'id',
+    channel_id int not null default 0 comment '频道id',
+    channel_type smallint not null comment '频道类型',
+    type smallint not null comment '交易类型',
+    cost long not null default 0 comment '花费',
+    is_delete bool ,
     create_at timestamp,
     update_at timestamp
 );

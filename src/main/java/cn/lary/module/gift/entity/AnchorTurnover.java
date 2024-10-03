@@ -28,26 +28,26 @@ public class AnchorTurnover implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
-    private String anchorId;
+    private Integer anchorId;
 
-    private String buyUid;
+    private Integer buyUid;
 
     /**
      * 直播流id
      */
-    private Long streamId;
+    private Integer streamId;
 
     /**
      * 单笔收入
      */
-    private Integer income;
+    private Long income;
 
     /**
      * 收入来源web,app
      */
-    private Short clientType;
+    private Integer clientType;
 
     /**
      * 交易完成时间
@@ -57,7 +57,7 @@ public class AnchorTurnover implements Serializable {
     /**
      * 礼物uid
      */
-    private String giftId;
+    private Integer giftId;
 
     private Integer giftNum;
 

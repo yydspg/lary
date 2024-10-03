@@ -3,7 +3,9 @@ package cn.lary.module.gift.core;
 import cn.lary.module.common.CS.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
+import cn.lary.module.gift.entity.AnchorTurnover;
 import cn.lary.module.gift.entity.GiftOrder;
+import cn.lary.module.gift.service.AnchorTurnoverService;
 import cn.lary.module.gift.service.GiftOrderService;
 import cn.lary.module.gift.vo.GiftPayCallbackVO;
 import cn.lary.module.pay.core.PayCallback;
@@ -18,6 +20,7 @@ import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
@@ -27,7 +30,7 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class GiftPayCallbackExecute implements PayCallback {
-
+    private final AnchorTurnoverService anchorTurnoverService;
     private final RedisCache redisCache;
     private final KVBuilder kvBuilder;
     private final GiftOrderService giftOrderService;
@@ -35,6 +38,7 @@ public class GiftPayCallbackExecute implements PayCallback {
     private final WKMessageService wkMessageService;
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public void onSuccess(Map<String, String> map,int payWay) {
         GiftPayCallbackVO vo =  new GiftPayCallbackVO().of(map, payWay);
         Long orderId = vo.getGiftOrderId();
@@ -49,6 +53,15 @@ public class GiftPayCallbackExecute implements PayCallback {
                 .set(GiftOrder::getSn, vo.getTradeNo())
                 .set(GiftOrder::getStatus, Lary.OrderStatus.commit)
                 .set(GiftOrder::getCompleteAt, LocalDateTime.now()));
+        AnchorTurnover record = new AnchorTurnover().setAnchorId(order.getAnchorUid())
+                .setBuyUid(order.getUid())
+                .setGiftId(order.getGiftId())
+                .setIncome(order.getCost())
+                .setStreamId(order.getStreamId())
+                .setGiftNum(order.getGiftNum())
+                .setClientType(order.getClientType())
+                .setCompleteTime(LocalDateTime.now());
+        anchorTurnoverService.save(record);
         // process wk channel msg
         // get stream info
         Map<Object, Object> data = redisCache.getHash(kvBuilder.goLiveK(order.getAnchorUid()));

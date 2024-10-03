@@ -37,6 +37,8 @@ public interface Lary {
         String goLive = "goLive";
         String downLive = "downLive";
         String recharge = "recharge";
+        String raffle = "raffle";
+        String redpacket = "redpacket";
     }
     interface EventStatus {
         int init = 0;
@@ -129,13 +131,17 @@ public interface Lary {
         }
     }
     interface OrderStatus {
-        int init = 0;
-        int commit = 1;
-        int stop = 2;
-        int fail = 3;
+        int init = 1;
+        int commit = 2;
+        int stop = 3;
+        int fail = 4;
     }
     interface PayBiz {
         int recharge = 1;
         int gift = 2;
+    }
+    interface Raffle {
+        int inner = 1;
+        int external = 2;
     }
 }

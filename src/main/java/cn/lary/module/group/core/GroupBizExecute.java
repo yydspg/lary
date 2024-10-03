@@ -58,6 +58,12 @@ public class GroupBizExecute {
     private final WKMessageService wkMessageService;
     private final WKUserService wkUserService;
 
+    /**
+     * 创建群聊
+     * @param creator 创建者 uid
+     * @param req {@link CreateGroupDTO}
+     * @return {@link CreateGroupVO}
+     */
     public ResPair<CreateGroupVO> create(int creator, CreateGroupDTO req) {
         // check one day create limit
         int count = groupService.querySameDayCreateGroupCount(creator, LocalDateTime.now());
@@ -105,7 +111,7 @@ public class GroupBizExecute {
      * 管理员邀人加群
      * @param uid user id
      * @param req {@link MemberAddDTO}
-     * @return
+     * @return ok
      */
     public ResPair<Void> addByAdmin(int uid, MemberAddDTO req) {
         GroupMember inviter = groupMemberService.getOne(new LambdaQueryWrapper<GroupMember>()

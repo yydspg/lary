@@ -25,8 +25,7 @@ public class PayCallbackExecute {
         public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
 
         }
-    }
-    );
+    });
     private final Map<Integer, PayCallback> map = new HashMap<>();
 
     @Autowired

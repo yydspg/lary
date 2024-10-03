@@ -215,7 +215,16 @@ public class UserBizExecute {
      * @param uid user id
      * @return token
      */
-    public ResPair<String> refreshToken(Integer uid) {
+    public ResPair<String> refreshToken(int uid) {
+        return null;
+    }
+
+    /**
+     * 退出登陆
+     * @param uid u
+     * @return ok
+     */
+    public ResPair<Void> logout(int uid) {
         return null;
     }
 }

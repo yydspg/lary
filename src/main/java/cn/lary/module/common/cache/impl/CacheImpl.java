@@ -18,6 +18,7 @@ public class CacheImpl implements RedisCache {
 
     @Override
     public String get(String k) {
+
         return str.opsForValue().get(k);
     }
 
@@ -106,5 +107,40 @@ public class CacheImpl implements RedisCache {
     @Override
     public void delHashFields(String k, Collection<String> fields) {
         str.opsForHash().delete(k, fields);
+    }
+
+    @Override
+    public void multiDel(Collection<String> k) {
+        str.delete(k);
+    }
+
+    @Override
+    public void delList(String k) {
+            str.delete(k);
+    }
+
+    @Override
+    public void setList(String k, long index,String value) {
+        str.opsForList().set(k,index,value);
+    }
+
+    @Override
+    public Long getListSize(String k) {
+        return str.opsForList().size(k);
+    }
+
+    @Override
+    public List<String> getRangeList(String k, long start, long end) {
+        return str.opsForList().range(k,start,end);
+    }
+
+    @Override
+    public void append(String k, String v) {
+        str.opsForList().rightPush(k,v);
+    }
+
+    @Override
+    public void append(String k, Collection<String> v) {
+        str.opsForList().rightPushAll(k,v);
     }
 }

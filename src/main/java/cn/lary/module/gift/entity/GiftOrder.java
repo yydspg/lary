@@ -43,6 +43,7 @@ public class GiftOrder implements Serializable {
      * 主播uid
      */
     private Integer anchorUid;
+    // TODO  :  给 主播id,购买通道id,是否成功，交易金额，做个联合索引
 
     /**
      * 购买通道id
@@ -97,7 +98,7 @@ public class GiftOrder implements Serializable {
     /**
      * 花费
      */
-    private Integer cost;
+    private Long cost;
 
     /**
      * 支付来源
@@ -107,7 +108,7 @@ public class GiftOrder implements Serializable {
     /**
      * 礼物uid
      */
-    private String giftId;
+    private Integer giftId;
 
     /**
      * 礼物name

@@ -46,4 +46,21 @@ public interface RedisCache {
     Collection<String> getHashFieldValues(String k);
     //hdel k f [f...]
     void delHashFields(String k,Collection<String> fields);
+
+    void multiDel(Collection<String> k) ;
+
+
+    /**
+     * list operation interface
+     * @param k key
+     */
+    void delList(String k);
+    void setList(String k,long index,String v);
+    Long getListSize(String k);
+    List<String> getRangeList(String k,long start,long end);
+    void append(String k,String v);
+    void append(String k,Collection<String> v);
+
+
+
 }

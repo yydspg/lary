@@ -20,7 +20,7 @@ import org.springframework.web.bind.annotation.*;
 
 /**
  * <p>
- *  前端控制器
+ *  钱包模块
  * </p>
  *
  * @author paul
@@ -41,7 +41,7 @@ public class WalletController {
     @PostMapping("/recharge")
     @ResponseBody
     public String recharge(@Valid @RequestBody RechargeDTO req, HttpServletResponse response) {
-        Integer uid = ReqContext.getLoginUID();
+        int uid = ReqContext.getLoginUID();
         ResPair<PayBuildVO> res = walletBizExecute.recharge(req, uid);
         if (!res.isOk()) {
             return res.getMsg();
@@ -57,7 +57,7 @@ public class WalletController {
      */
     @PostMapping("/balance")
     public SingleResponse<BalanceVO> getBalance() {
-        Integer uid = ReqContext.getLoginUID();
+        int uid = ReqContext.getLoginUID();
         ResPair<BalanceVO> res = walletBizExecute.getBalance(uid);
         if (!res.isOk()) {
             return ResKit.fail(res.getMsg());
@@ -72,7 +72,7 @@ public class WalletController {
      */
     @PostMapping("/question")
     public SingleResponse<Void> updatePwd(@RequestBody @Valid UpdateSecurityQuestionDTO req) {
-        Integer uid = ReqContext.getLoginUID();
+        int uid = ReqContext.getLoginUID();
         ResPair<Void> res = walletBizExecute.updateQuestion(uid, req);
         if (!res.isOk()) {
             return ResKit.fail(res.getMsg());

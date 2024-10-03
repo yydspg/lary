@@ -7,6 +7,7 @@ import org.springframework.context.annotation.Configuration;
 @Data
 @Configuration
 public class RedisBizConfig {
+
     private final String friendApplyTokenCachePrefix = "lary:";
     private final String tokenCachePrefix = "lary:";
     private final String loginDeviceCachePrefix = "lary:";
@@ -18,6 +19,9 @@ public class RedisBizConfig {
     private final String joinLivePrefix = "lary:joinLive";
     private final String streamRecordPrefix = "lary:streamRecord";
     private final String smsAddDevicePrefix = "lary:smsAddDevice";
+    private final String rafflePrefix = "lary:raffle:";
+    private final String raffleListPrefix = "lary:raffle:list:";
+    private final String redPacketPrefix = "lary:redPacket:";
     // 单位为 s
     private final long danmakuChannelExistsExpire = 100;
     private final long smsAddDeviceExpire = 100;

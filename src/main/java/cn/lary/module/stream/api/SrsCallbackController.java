@@ -14,7 +14,7 @@ import org.springframework.web.bind.annotation.RestController;
  * 此模块目的是 srs 回调，尽量减少回调后的业务逻辑
  */
 @Slf4j
-@RestController("/srs/v1/callback")
+@RestController("/v1/srs/callback")
 @RequiredArgsConstructor
 public class SrsCallbackController  {
 

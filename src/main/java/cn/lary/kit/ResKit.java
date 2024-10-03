@@ -48,8 +48,8 @@ public class ResKit {
     /*
     分页返回
      */
-    public static <T> PageResponse<T> pageOk(Collection<T> data, long current,long size,long total) {
-        return PageResponse.ok(current,size,total,data);
+    public static <T> PageResponse<T> pageOk(Collection<T> data, long current,long size) {
+        return PageResponse.ok(current,size,data);
     }
     public static <T> PageResponse<T> pageFail(String message) {
         return PageResponse.fail(9001,message);

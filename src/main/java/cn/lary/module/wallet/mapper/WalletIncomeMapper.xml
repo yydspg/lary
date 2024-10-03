@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lary.module.wallet.mapper.WalletIncomeMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.lary.module.wallet.entity.WalletIncome">
+        <id column="id" property="id" />
+        <result column="uid" property="uid" />
+        <result column="to_uid" property="toUid" />
+        <result column="channel_id" property="channelId" />
+        <result column="channel_type" property="channelType" />
+        <result column="type" property="type" />
+        <result column="cost" property="cost" />
+        <result column="is_delete" property="isDelete" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+</mapper>

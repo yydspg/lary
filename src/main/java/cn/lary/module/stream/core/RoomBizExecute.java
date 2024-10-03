@@ -2,12 +2,18 @@ package cn.lary.module.stream.core;
 
 import cn.lary.core.dto.ResPair;
 import cn.lary.kit.*;
+import cn.lary.module.app.entity.LaryChannel;
 import cn.lary.module.app.service.EventService;
+import cn.lary.module.app.service.LaryChannelService;
 import cn.lary.module.common.CS.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.event.dto.DownLiveEventDTO;
 import cn.lary.module.event.dto.GoLiveEventDTO;
+import cn.lary.module.gift.entity.AnchorTurnover;
+import cn.lary.module.gift.entity.GiftOrder;
+import cn.lary.module.gift.service.AnchorTurnoverService;
+import cn.lary.module.gift.service.GiftOrderService;
 import cn.lary.module.stream.dto.GoLiveDTO;
 import cn.lary.module.stream.dto.JoinLiveCacheDTO;
 import cn.lary.module.stream.dto.LiveCacheDTO;
@@ -48,6 +54,9 @@ import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.LinkedBlockingDeque;
+import java.util.concurrent.RejectedExecutionHandler;
+import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 
 @Slf4j
@@ -62,12 +71,23 @@ public class RoomBizExecute {
     private final FollowService followService;
     private final GiftBuyChannelService giftBuyChannelService;
     private final StreamRecordService streamRecordService;
+    private final GiftOrderService giftOrderService;
     private final KVBuilder kvBuilder;
     private final RedisCache redisCache;
+    private final AnchorTurnoverService anchorTurnoverService;
+    private final LaryChannelService laryChannelService;
     //external
     private final WKChannelService wkChannelService;
     private final WKMessageService wkMessageService;
     private final WKUserService wkUserService;
+
+    private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
+            15, 20, 10L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), new RejectedExecutionHandler() {
+        @Override
+        public void rejectedExecution(Runnable runnable, ThreadPoolExecutor threadPoolExecutor) {
+
+        }
+    });
 
     /**
      * 加入直播间
@@ -76,12 +96,9 @@ public class RoomBizExecute {
      * @param ip ip
      * @return {@link JoinLiveVO}
      */
+    // TODO  :  加入直播间，和结束直播，都需要针对直播抽奖和红包做处理
     public ResPair<JoinLiveVO> join(int uid,String uidName,int toUid,String ip){
         // check user status
-//        UserBaseVO userBase = userService.queryBase(uid);
-//        if(userBase == null){
-//            return BizKit.fail("user status error");
-//        }
         // check whether toUid block uid
         Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getUid, toUid).eq(Follow::getIsDelete, false));
         boolean isFan = false;
@@ -96,34 +113,29 @@ public class RoomBizExecute {
         if (room == null || room.getIsBlock()) {
             return BizKit.fail("直播间违规了，在看看吧");
         }
-        // check live status
         Map<Object,Object> args = redisCache.getHash(kvBuilder.goLiveK(toUid));
         if (args == null) {
             return BizKit.fail("no live info");
         }
         //prepare live info
         LiveCacheDTO liveCache = LiveCacheDTO.of(args);
-        // prepare pull stream province
-        // check stream info
         StreamRecord stream = streamRecordService.getOne(new LambdaQueryWrapper<StreamRecord>().eq(StreamRecord::getStreamId, liveCache.getStreamId()).eq(StreamRecord::getIsDelete, false));
         if (stream == null || stream.getStatus() != Lary.Stream.Status.up) {
             return BizKit.fail("stream status error");
         }
-        // incr stream watch num
         redisCache.incrHash(kvBuilder.streamRecordK(uid, liveCache.getStreamId()),"watchNum");
         if (isFan) {
             redisCache.incrHash(kvBuilder.streamRecordK(uid, liveCache.getStreamId()),"watchFanNum");
         }
-        // add joinLive cache
         String authToken = UUIDKit.getUUID();
         // 30 minutes
         long expire = 30;
-        JoinLiveCacheDTO dto = new JoinLiveCacheDTO();
-        dto.setIp(ip);
-        dto.setStreamId(liveCache.getStreamId());
-        dto.setSrsToken(authToken);
-        dto.setSrsStreamId(liveCache.getSrsStreamId());
-        dto.setStream(liveCache.getStream());
+        JoinLiveCacheDTO dto = new JoinLiveCacheDTO()
+            .setIp(ip)
+            .setStreamId(liveCache.getStreamId())
+            .setSrsToken(authToken)
+            .setSrsStreamId(liveCache.getSrsStreamId())
+            .setStream(liveCache.getStream());
         redisCache.setHash(kvBuilder.joinLiveK(uid),kvBuilder.joinLiveV(dto),expire, TimeUnit.MINUTES);
 
         // add user to wk temp channel
@@ -160,11 +172,7 @@ public class RoomBizExecute {
      * @return {@link GoLiveVO}
      */
     public ResPair<GoLiveVO> go(Integer uid,String uidName,String ip, GoLiveDTO req) {
-        // check user status
-//        UserBaseVO userBase = userService.queryBase(uid);
-//        if(userBase == null){
-//            return BizKit.fail("user status error");
-//        }
+
         // check whether living now
         Map<Object, Object> liveInfo = redisCache.getHash(kvBuilder.goLiveK(uid));
         if (liveInfo != null) {
@@ -179,70 +187,76 @@ public class RoomBizExecute {
         String remark = req.getRemark();
         String sensitiveWord = SensitiveWordHelper.findFirst(remark);
         if(StringKit.isNotEmpty(sensitiveWord)){
-            return BizKit.fail("sensitive word:"+sensitiveWord);
+            return BizKit.fail("sensitive word contains:"+sensitiveWord);
         }
         // check if is first start stream
         Room room = roomService.getOne(new LambdaQueryWrapper<Room>().eq(Room::getUid, uid).eq(Room::getIsAlive, true).eq(Room::getIsDelete,false), false);
         if(room != null && room.getIsBlock()) {
-            return BizKit.fail("room is block");
+            return BizKit.fail("room is blocked");
         }
         if (room == null) {
-            // check remark
             if (StringKit.isEmpty(remark)) {
                 remark = "新人开播，多多关注~";
             }
-            // first time to start stream
-            room = new Room().setUid(uid).setIsAlive(true).setIsHot(false).setScore(0L)
-                    .setStreamTypeId(req.getTypeId()).setLastLogin(SystemKit.now()).setRemark(remark);
+            room = new Room().setUid(uid)
+                    .setIsAlive(true)
+                    .setIsHot(false)
+                    .setScore(0L)
+                    .setStreamTypeId(req.getTypeId())
+                    .setLastLogin(SystemKit.now())
+                    .setRemark(remark);
             roomService.save(room);
         }else {
             if (StringKit.isEmpty(remark)) {
                 remark = room.getRemark();
             }
-            // update room
-            Room updateRecord = new Room().setId(room.getId()).setUid(uid).setLastLogin(SystemKit.now())
-                    .setRemark(remark).setIsAlive(true);
+            Room updateRecord = new Room().setId(room.getId())
+                    .setUid(uid)
+                    .setLastLogin(SystemKit.now())
+                    .setRemark(remark)
+                    .setIsAlive(true);
             boolean isHot = room.getFollowNum() > 1000;
             updateRecord.setIsHot(isHot);
             roomService.updateById(updateRecord);
         }
         // build danmaku channel
-        WKChannel wkChannel = null;
+
 //        if (wkChannel == null) {
 //            return BizKit.fail("danmaku channel not available");
 //        }
-
-        // prepare gift send channel
+        LaryChannel laryChannel = new LaryChannel().setUid(uid)
+                .setChannelType(WK.ChannelType.data);
+        laryChannelService.save(laryChannel);
+        int danmakuId = laryChannel.getId();
+        WKChannel wkChannel = new WKChannel().setChannelId(laryChannel.getId())
+                .setChannelType(WK.ChannelType.stream);
         GiftBuyChannel giftBuyChannel = new GiftBuyChannel().setAnchorId(uid);
         giftBuyChannelService.save(giftBuyChannel);
-        // build stream record
         StreamRecord streamRecord = new StreamRecord()
                 .setUid(uid)
-                .setChannelId(wkChannel.getChannelId())
+                .setChannelId(danmakuId)
                 .setGiftBuyRecordId(giftBuyChannel.getChannelId());
-        // set stream url
         String stream = UUIDKit.uuidToShort(UUIDKit.getUUID());
         streamRecord.setIdentify(stream);
         streamRecordService.save(streamRecord);
         // start event
-        GoLiveEventDTO eventDTO = new GoLiveEventDTO(uid, device.getDeviceId(), streamRecord.getStreamId(), wkChannel.getChannelId(), giftBuyChannel.getChannelId());
+        GoLiveEventDTO eventDTO = new GoLiveEventDTO(uid, device.getDeviceId(), streamRecord.getStreamId(), danmakuId, giftBuyChannel.getChannelId());
         int event = eventService.begin(eventDTO.of());
         if (room.getFollowNum() < 100) {
             List<String> follows = followService.getFollows(uid);
             if (CollectionKit.isNotEmpty(follows)) {
                     //send message to wk
                     // build temporary channel to send start alert
-                // TODO  :  弹幕channel管理实现
-//                    ChannelCreateDTO createTempDTO = new ChannelCreateDTO(tempChannelId,WK.ChannelType.data,0,0,follows);
-//                    wkChannelService.createOrUpdate(createTempDTO);
-//                    String content = uidName + "开播了，快来围观";
-//                    MessageSendDTO messageSendDTO = new MessageSendDTO()
-//                            .setHeader(new MessageHeader().setNoPersist(1).setRedDot(1))
-//                            .setChanelID(tempChannelId)
-//                            .setChannelType(WK.ChannelType.data)
-//                            .setFromUID(uid)
-//                            .setPayload(content.getBytes(StandardCharsets.UTF_8));
-//                    wkMessageService.send(messageSendDTO);
+                    ChannelCreateDTO createTempDTO = new ChannelCreateDTO(String.valueOf(danmakuId),WK.ChannelType.data,0,0,follows);
+                    wkChannelService.createOrUpdate(createTempDTO);
+                    String content = uidName + "开播了，快来围观";
+                    MessageSendDTO messageSendDTO = new MessageSendDTO()
+                            .setHeader(new MessageHeader().setNoPersist(1).setRedDot(1))
+                            .setChannelID(danmakuId)
+                            .setChannelType(WK.ChannelType.data)
+                            .setFromUID(uid)
+                            .setPayload(content.getBytes(StandardCharsets.UTF_8));
+                    wkMessageService.send(messageSendDTO);
                     // send mq to delay deletion temp channel
                     // TODO  :  here need to achieve rocket mq
                 }
@@ -254,7 +268,7 @@ public class RoomBizExecute {
         LiveCacheDTO dto = new LiveCacheDTO()
                 .setIp(ip)
                 .setGiftBuyChannelId(giftBuyChannel.getChannelId())
-                .setWkChannelId(wkChannel.getChannelId())
+                .setWkChannelId(danmakuId)
                 .setStreamId(streamRecord.getStreamId())
                 .setStream(stream)
                 .setSrsToken(token);
@@ -271,11 +285,7 @@ public class RoomBizExecute {
      * @return {@link DownLiveVO}
      */
     public ResPair<DownLiveVO> end(Integer uid,String uidName) {
-        // check user status
-//        UserBaseVO userBase = userService.queryBase(uid);
-//        if(userBase == null){
-//            return BizKit.fail("user status error");
-//        }
+
         // check room status
         Room room = roomService.getOne(new LambdaQueryWrapper<Room>()
                 .eq(Room::getUid, uid)
@@ -306,8 +316,23 @@ public class RoomBizExecute {
         roomService.update(new LambdaUpdateWrapper<Room>().set(Room::getIsAlive,false).eq(Room::getUid,uid));
         streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>().eq(StreamRecord::getStreamId,liveCache.getStreamId()).set(StreamRecord::getStatus, Lary.Stream.Status.preDown));
 
-        //async  collect gift cost
-        //build return vo
+        executor.execute(()->{
+            doAnchorTurnOver(uid,liveCache.getStreamId());
+        });
+        redisCache.del(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
+        // send close live info to wk channel
+        String content =   "主播已经离开，稍后再来哦";
+        MessageSendDTO sendDTO = new MessageSendDTO().setHeader(new MessageHeader().setNoPersist(1));
+        sendDTO.setFromUID(uid).setPayload(content.getBytes(StandardCharsets.UTF_8)).setChannelID(liveCache.getWkChannelId()).setChannelType(WK.ChannelType.data);
+        wkMessageService.send(sendDTO);
+        //update stream record
+        streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>()
+                .eq(StreamRecord::getStreamId,liveCache.getStreamId())
+                .set(StreamRecord::getStatus, Lary.Stream.Status.down)
+                .set(StreamRecord::getWatchFanNum,recordCache.getWatchFanNum())
+                .set(StreamRecord::getWatchNum,recordCache.getWatchNum())
+                .set(StreamRecord::getStarNum,recordCache.getStarNum())
+                .set(StreamRecord::getNewFansNum,recordCache.getNewFansNum()));
         String duration = Duration.ofMillis(SystemKit.now() - room.getLastLogin()).toString();
         DownLiveVO downLiveVO = new DownLiveVO( recordCache.getWatchNum(), recordCache.getNewFansNum(), recordCache.getStarNum(), recordCache.getWatchFanNum(), duration,token,event);
         return BizKit.ok(downLiveVO);
@@ -327,6 +352,25 @@ public class RoomBizExecute {
         return BizKit.ok();
     }
 
+    public void doAnchorTurnOver(int uid,int streamId) {
+        StreamRecord record = streamRecordService.getOne(new LambdaQueryWrapper<StreamRecord>()
+                .eq(StreamRecord::getStreamId, streamId));
+
+        long sum = 0L;
+        List<Long> data = anchorTurnoverService.listObjs(new LambdaQueryWrapper<AnchorTurnover>()
+                .select(AnchorTurnover::getIncome)
+                .eq(AnchorTurnover::getAnchorId, record.getUid())
+                .eq(AnchorTurnover::getStreamId, streamId));
+        if (CollectionKit.isNotEmpty(data)) {
+            for (Long t : data) {
+                sum += t;
+            }
+        }
+        streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>()
+                .eq(StreamRecord::getStreamId, streamId)
+                .eq(StreamRecord::getUid, uid)
+                .set(StreamRecord::getStatus, sum));
+    }
     /**
      * block接口,这里不打算实现这个逻辑的原因是，如果要手动下线用户
      * 就要维护srs节点，所以现在的情况是在 mq检查连接的时候，判断用户关系

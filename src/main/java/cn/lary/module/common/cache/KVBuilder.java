@@ -2,26 +2,16 @@ package cn.lary.module.common.cache;
 
 import cn.lary.module.stream.dto.JoinLiveCacheDTO;
 import cn.lary.module.stream.dto.LiveCacheDTO;
+import cn.lary.module.stream.dto.RaffleCacheDTO;
+import cn.lary.module.stream.dto.RedPacketCacheDTO;
 import cn.lary.module.user.dto.DeviceAddAckDTO;
 import cn.lary.module.user.dto.DeviceLoginDTO;
+import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.Map;
 
 public interface KVBuilder {
-    String buildFriendApplyKey(String token, Integer uid);
-
-    String buildFriendApplyValue(String fromUid, String vercode, String remark);
-
-
-    String buildGroupMemberVerCode();
-
-    public String buildUserLoginTokenValue(Integer uid, String username, String role);
-
-    public String buildRegisterCacheKey(String zone, String phone, int codeType);
-
-    public String buildUserLoginKey(String tokenPrefix, String token);
-
-    public String buildUserLoginKey(String token);
 
     /**
      * 生成用户设备登陆 K
@@ -106,4 +96,27 @@ public interface KVBuilder {
      */
     String joinLiveK(int uid);
     Map joinLiveV(JoinLiveCacheDTO dto);
+
+    /**
+     * 直播抽奖
+     * @param uid u
+     * @return s
+     */
+    String raffleK(int uid);
+    Map raffleV(RaffleCacheDTO dto);
+
+    /**
+     * 直播红包
+     * @param uid u
+     * @return ok
+     */
+    String redPacketK(int uid);
+    Map redPacketV(RedPacketCacheDTO dto);
+
+    /**
+     * 直播抽奖集合
+     * @param uid u
+     * @return s
+     */
+    String raffleListK(int uid);
 }

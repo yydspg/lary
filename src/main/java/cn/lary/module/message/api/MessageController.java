@@ -29,14 +29,14 @@ public class MessageController {
      */
     @GetMapping("/typing")
     public SingleResponse typing(@RequestParam(value = "channel_id") @NotNull String  channelId, @RequestParam(value = "channel_type") @NotNull byte channelType) {
-        Integer uid = ReqContext.getLoginUID();
+        int uid = ReqContext.getLoginUID();
         String uidName = ReqContext.getLoginName();
 
         if (WK.ChannelType.person == channelType) {
-            channelId = uid.toString();
+            channelId = String.valueOf(uid);
         }
         HashMap<String, String> args = new HashMap<>();
-        args.put("from_uid", uid.toString());
+        args.put("from_uid", String.valueOf(uid));
         args.put("from_name", uidName);
         args.put("channel_id",channelId);
         args.put("channel_type",String.valueOf(channelType));

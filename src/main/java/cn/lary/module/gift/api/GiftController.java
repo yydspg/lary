@@ -31,14 +31,15 @@ public class GiftController {
     private final GiftBizExecute giftBizExecute;
 
     /**
-     * 购买礼物,不通过钱包支付
+     * 购买礼物
      * @param req {@link GiftOrderDTO}
      * @return {@link PayBuildVO}
      */
     @PostMapping(value = "/pay")
     public SingleResponse<PayBuildVO> pay(@RequestBody GiftOrderDTO req) {
-        Integer uid = ReqContext.getLoginUID();
-        ResPair<PayBuildVO> res = giftBizExecute.pay(uid, req);
+        int uid = ReqContext.getLoginUID();
+        String uidName = ReqContext.getLoginName();
+        ResPair<PayBuildVO> res = giftBizExecute.pay(uid,uidName, req);
         if(!res.isOk()) {
             return ResKit.fail(res.getMsg());
         }

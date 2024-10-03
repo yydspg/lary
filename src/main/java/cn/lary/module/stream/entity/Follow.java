@@ -80,6 +80,7 @@ public class Follow implements Serializable {
 
     private Boolean isDelete;
 
+    private Integer level;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;
