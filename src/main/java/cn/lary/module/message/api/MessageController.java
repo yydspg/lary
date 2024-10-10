@@ -3,8 +3,8 @@ package cn.lary.module.message.api;
 import cn.lary.core.context.ReqContext;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.core.dto.req.MsgCMDReq;
-import cn.lary.kit.ResKit;
-import cn.lary.module.common.CS.Lary;
+import cn.lary.kit.ResponseKit;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.pkg.wk.api.WKMessageService;
 import cn.lary.pkg.wk.entity.core.WK;
 import jakarta.validation.constraints.NotNull;
@@ -42,7 +42,7 @@ public class MessageController {
         args.put("channel_type",String.valueOf(channelType));
         MsgCMDReq cmdReq = new MsgCMDReq().setChanelID(channelId).setChannelType(channelType).setCmd(Lary.CMD.typing).setPersist(false).setParam(args);
         wkMessageService.send(cmdReq.convertCMD());
-        return ResKit.ok();
+        return ResponseKit.ok();
     }
 
 }

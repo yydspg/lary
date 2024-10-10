@@ -3,7 +3,7 @@ package cn.lary.module.message.api;
 import cn.lary.core.context.ReqContext;
 import cn.lary.core.dto.MultiResponse;
 import cn.lary.core.dto.SingleResponse;
-import cn.lary.kit.ResKit;
+import cn.lary.kit.ResponseKit;
 import cn.lary.module.message.dto.req.ClearConversationUnreadReq;
 import cn.lary.pkg.wk.api.WKConversationService;
 import cn.lary.pkg.wk.dto.conversation.ConversationDeleteReq;
@@ -35,9 +35,9 @@ public class ConversationController {
         int uid = ReqContext.getLoginUID();
         Response<List<ConversationRes>> res = wkConversationService.list(uid);
         if (!res.isSuccessful()) {
-            return ResKit.multiFail("server error");
+            return ResponseKit.multiFail("server error");
         }
-        return ResKit.multiOk(res.body());
+        return ResponseKit.multiOk(res.body());
     }
 
     /**
@@ -53,9 +53,9 @@ public class ConversationController {
         Response<Void> res = wkConversationService.clearUnread(wkReq);
         if (!res.isSuccessful()) {
             log.error("wk clear unread error:{}",res.errorBody());
-            return ResKit.fail("wk server error");
+            return ResponseKit.fail("wk server error");
         }
-        return ResKit.ok();
+        return ResponseKit.ok();
     }
 
     /**
@@ -73,9 +73,9 @@ public class ConversationController {
         Response<Void> res = wkConversationService.delete(wkReq);
         if (!res.isSuccessful()) {
             log.error("wk del conversation error:{}",res.errorBody());
-            return ResKit.fail("wk server error");
+            return ResponseKit.fail("wk server error");
         }
-        return ResKit.ok();
+        return ResponseKit.ok();
     }
 
 }

@@ -4,7 +4,7 @@ import cn.lary.core.context.ReqContext;
 import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.ResPair;
 import cn.lary.core.dto.SingleResponse;
-import cn.lary.kit.ResKit;
+import cn.lary.kit.ResponseKit;
 import cn.lary.module.stream.core.FollowBizExecute;
 import cn.lary.module.stream.dto.FollowDTO;
 import cn.lary.module.stream.dto.FollowListDTO;
@@ -29,9 +29,9 @@ public class FollowController {
         String uidName = ReqContext.getLoginName();
         ResPair<Void> res = followBizExecute.follow(uid, uidName, req);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok();
+        return ResponseKit.ok();
     }
 
     @GetMapping("/unfollow{toUid}")
@@ -39,9 +39,9 @@ public class FollowController {
         int uid = ReqContext.getLoginUID();
         ResPair<Void> res = followBizExecute.unfollow(uid, toUid);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok();
+        return ResponseKit.ok();
     }
 
     @PostMapping("/follows")
@@ -49,27 +49,27 @@ public class FollowController {
         int uid = ReqContext.getLoginUID();
         ResPair<List<Follow>> res = followBizExecute.follows(uid, req);
         if (!res.isOk()) {
-            return ResKit.pageFail(res.getMsg());
+            return ResponseKit.pageFail(res.getMsg());
         }
-        return ResKit.pageOk(res.getData(),req.getPageIndex(), req.getPageSize());
+        return ResponseKit.pageOk(res.getData(),req.getPageIndex(), req.getPageSize());
     }
     @GetMapping("/block")
     public SingleResponse<Void> block(@RequestParam @NotNull int toUid) {
         int uid = ReqContext.getLoginUID();
         ResPair<Void> res = followBizExecute.block(uid, toUid);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok();
+        return ResponseKit.ok();
     }
     @GetMapping("/unblock")
     public SingleResponse<Void> unblock(@RequestParam @NotNull int toUid) {
         int uid = ReqContext.getLoginUID();
         ResPair<Void> res = followBizExecute.unblock(uid, toUid);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok();
+        return ResponseKit.ok();
     }
 }
 

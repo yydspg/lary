@@ -1,6 +1,6 @@
 package cn.lary.module.gift.core;
 
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.gift.entity.AnchorTurnover;
@@ -30,10 +30,12 @@ import java.util.Map;
 @Component
 @RequiredArgsConstructor
 public class GiftPayCallbackExecute implements PayCallback {
+
     private final AnchorTurnoverService anchorTurnoverService;
     private final RedisCache redisCache;
     private final KVBuilder kvBuilder;
     private final GiftOrderService giftOrderService;
+
     // external
     private final WKMessageService wkMessageService;
 

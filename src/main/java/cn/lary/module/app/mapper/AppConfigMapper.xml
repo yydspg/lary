@@ -10,8 +10,6 @@
         <result column="version" property="version" />
         <result column="super_token" property="superToken" />
         <result column="super_token_on" property="superTokenOn" />
-        <result column="created_at" property="createdAt" />
-        <result column="updated_at" property="updatedAt" />
         <result column="revoke_second" property="revokeSecond" />
         <result column="welcome_message" property="welcomeMessage" />
         <result column="new_user_join_system_group" property="newUserJoinSystemGroup" />

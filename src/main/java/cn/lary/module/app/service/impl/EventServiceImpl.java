@@ -4,7 +4,7 @@ import cn.lary.module.app.entity.Event;
 import cn.lary.module.app.entity.EventData;
 import cn.lary.module.app.mapper.EventMapper;
 import cn.lary.module.app.service.EventService;
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

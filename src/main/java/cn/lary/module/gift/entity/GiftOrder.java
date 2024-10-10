@@ -43,7 +43,6 @@ public class GiftOrder implements Serializable {
      * 主播uid
      */
     private Integer anchorUid;
-    // TODO  :  给 主播id,购买通道id,是否成功，交易金额，做个联合索引
 
     /**
      * 购买通道id
@@ -122,9 +121,7 @@ public class GiftOrder implements Serializable {
 
     private Boolean isDelete;
 
-    
 
-    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

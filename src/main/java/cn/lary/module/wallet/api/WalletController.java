@@ -1,22 +1,24 @@
 package cn.lary.module.wallet.api;
 
-import cn.lary.core.context.ReqContext;
+import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.ResPair;
 import cn.lary.core.dto.SingleResponse;
-import cn.lary.kit.BizKit;
-import cn.lary.kit.ResKit;
-import cn.lary.module.gift.dto.UpdateSecurityQuestionDTO;
+import cn.lary.kit.ResponseKit;
 import cn.lary.module.pay.vo.PayBuildVO;
-import cn.lary.module.user.service.UserService;
-import cn.lary.module.user.vo.UserBaseVO;
 import cn.lary.module.wallet.core.WalletBizExecute;
 import cn.lary.module.wallet.dto.RechargeDTO;
-import cn.lary.module.wallet.entity.Wallet;
+import cn.lary.module.wallet.dto.UpdateSecurityQuestionDTO;
+import cn.lary.module.wallet.dto.WalletIncomePageQueryDTO;
+import cn.lary.module.wallet.dto.WalletOutcomePageQueryDTO;
 import cn.lary.module.wallet.vo.BalanceVO;
+import cn.lary.module.wallet.vo.WalletIncomeVO;
+import cn.lary.module.wallet.vo.WalletOutcomeVO;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * <p>
@@ -41,8 +43,7 @@ public class WalletController {
     @PostMapping("/recharge")
     @ResponseBody
     public String recharge(@Valid @RequestBody RechargeDTO req, HttpServletResponse response) {
-        int uid = ReqContext.getLoginUID();
-        ResPair<PayBuildVO> res = walletBizExecute.recharge(req, uid);
+        ResPair<PayBuildVO> res = walletBizExecute.recharge(req);
         if (!res.isOk()) {
             return res.getMsg();
         }
@@ -57,12 +58,12 @@ public class WalletController {
      */
     @PostMapping("/balance")
     public SingleResponse<BalanceVO> getBalance() {
-        int uid = ReqContext.getLoginUID();
-        ResPair<BalanceVO> res = walletBizExecute.getBalance(uid);
+
+        ResPair<BalanceVO> res = walletBizExecute.getBalance();
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok(res.getData());
+        return ResponseKit.ok(res.getData());
     }
 
     /**
@@ -72,12 +73,38 @@ public class WalletController {
      */
     @PostMapping("/question")
     public SingleResponse<Void> updatePwd(@RequestBody @Valid UpdateSecurityQuestionDTO req) {
-        int uid = ReqContext.getLoginUID();
-        ResPair<Void> res = walletBizExecute.updateQuestion(uid, req);
+        ResPair<Void> res = walletBizExecute.updateQuestion(req);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok();
+        return ResponseKit.ok();
     }
 
+    /**
+     * 获取收入
+     * @param req {@link WalletIncomePageQueryDTO}
+     * @return {@link WalletIncomeVO}
+     */
+    @PostMapping("/incomes")
+    public PageResponse<WalletIncomeVO> incomes(@RequestBody @Valid WalletIncomePageQueryDTO req) {
+        ResPair<List<WalletIncomeVO>> res = walletBizExecute.getIncomeVOs(req);
+        if (!res.isOk()) {
+            return ResponseKit.pageFail(res.getMsg());
+        }
+        return ResponseKit.pageOk(res.getData(),req.getPageIndex(),req.getPageSize());
+    }
+
+    /**
+     * 获取支出
+     * @param req {@link WalletOutcomePageQueryDTO}
+     * @return {@link WalletOutcomeVO}
+     */
+    @PostMapping("/outcomes")
+    public PageResponse<WalletOutcomeVO> outcomes(@RequestBody @Valid WalletOutcomePageQueryDTO req) {
+        ResPair<List<WalletOutcomeVO>> res = walletBizExecute.getOutcomeVOs(req);
+        if (!res.isOk()) {
+            return ResponseKit.pageFail(res.getMsg());
+        }
+        return ResponseKit.pageOk(res.getData(),req.getPageIndex(),req.getPageSize());
+    }
 }

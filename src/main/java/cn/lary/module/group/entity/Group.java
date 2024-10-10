@@ -25,7 +25,7 @@ public class Group implements Serializable {
     private static final long serialVersionUID = 1L;
 
 
-
+    @TableId(value = "id",type = IdType.AUTO)
     private Integer groupNo;
 
     private String name;
@@ -57,7 +57,7 @@ public class Group implements Serializable {
     /**
      * 群分类
      */
-    private String category;
+    private Integer category;
 
     /**
      * 群邀请开关

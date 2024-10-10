@@ -1,7 +1,11 @@
 package cn.lary.module.wallet.service;
 
+import cn.lary.module.wallet.dto.WalletIncomePageQueryDTO;
 import cn.lary.module.wallet.entity.WalletIncome;
+import cn.lary.module.wallet.vo.WalletIncomeVO;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
  * <p>
@@ -12,5 +16,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2024-10-02
  */
 public interface WalletIncomeService extends IService<WalletIncome> {
-        // TODO  :  加入一个区分业务的字段
+        List<WalletIncomeVO> getWalletIncomeVOs(WalletIncomePageQueryDTO dto);
 }

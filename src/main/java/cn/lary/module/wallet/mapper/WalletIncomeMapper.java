@@ -1,7 +1,11 @@
 package cn.lary.module.wallet.mapper;
 
+import cn.lary.module.wallet.dto.WalletIncomePageQueryDTO;
 import cn.lary.module.wallet.entity.WalletIncome;
+import cn.lary.module.wallet.vo.WalletIncomeVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
+import java.util.List;
 
 /**
  * <p>
@@ -13,4 +17,5 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface WalletIncomeMapper extends BaseMapper<WalletIncome> {
 
+    List<WalletIncomeVO> getIncomes(WalletIncomePageQueryDTO dto);
 }

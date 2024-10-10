@@ -61,6 +61,9 @@ public interface RedisCache {
     void append(String k,String v);
     void append(String k,Collection<String> v);
 
-
-
+    /**
+     * expire
+     */
+    void renewal(String k,long exp);
+    void renewal(String k,long exp,TimeUnit timeUnit);
 }

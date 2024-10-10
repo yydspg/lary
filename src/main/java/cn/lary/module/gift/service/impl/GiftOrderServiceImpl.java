@@ -1,11 +1,16 @@
 package cn.lary.module.gift.service.impl;
 
+import cn.lary.module.gift.dto.GiftOrderPageQueryDTO;
 import cn.lary.module.gift.entity.GiftOrder;
 import cn.lary.module.gift.mapper.GiftOrderMapper;
 import cn.lary.module.gift.service.GiftOrderService;
+import cn.lary.module.gift.vo.GiftOrderVO;
+import cn.lary.module.gift.vo.GiftVO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 /**
  * <p>
@@ -21,7 +26,17 @@ public class GiftOrderServiceImpl extends ServiceImpl<GiftOrderMapper, GiftOrder
 
     private final GiftOrderMapper giftOrderMapper;
     @Override
-    public long collectCostMoneyByGiftChannelId(String giftChannelId) {
+    public long collectCostMoneyByGiftChannelId(int giftChannelId) {
         return giftOrderMapper.getGiftBuyRecordCountByGiftId(giftChannelId);
     }
+
+    @Override
+    public List<GiftOrderVO> queryGiftOrders(GiftOrderPageQueryDTO dto) {
+        if (dto == null || dto.getUid() <= 0) {
+            return null;
+        }
+        return giftOrderMapper.getGiftOrderVOs(dto);
+    }
+
+
 }

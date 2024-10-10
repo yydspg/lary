@@ -2,11 +2,10 @@ package cn.lary.module.user.interceptor;
 
 import cn.lary.core.context.ReqContext;
 import cn.lary.core.cs.ResultCode;
-import cn.lary.kit.ResKit;
+import cn.lary.kit.ResponseKit;
 import cn.lary.kit.StringKit;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
-import cn.lary.module.common.server.RedisBizConfig;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -26,17 +25,17 @@ public class UserInterceptor  implements HandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         String token = request.getHeader("token");
         if(StringKit.isEmpty(token)) {
-            ResKit.responseFail(response, ResultCode.LOGIN_FIRST);
+            ResponseKit.responseFail(response, ResultCode.LOGIN_FIRST);
             return false;
         }
         String value = getLoginTokenV(token);
         if(StringKit.isEmpty(value)) {
-            ResKit.responseFail(response, "token empty");
+            ResponseKit.responseFail(response, "token empty");
             return false;
         }
         String[] args = StringKit.split(value, "@");
         if(args == null || args.length < 2) {
-            ResKit.responseFail(response, "token error");
+            ResponseKit.responseFail(response, "token error");
             return false;
         }
         HashMap<String, String> map = new HashMap<>();

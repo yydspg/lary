@@ -3,7 +3,7 @@ package cn.lary.pkg.wk.api;
 import cn.lary.pkg.wk.dto.user.DeviceQuitReq;
 import cn.lary.pkg.wk.dto.user.UpdateTokenDTO;
 import cn.lary.pkg.wk.vo.user.OnlineStatus;
-import cn.lary.pkg.wk.vo.user.UpdateTokenRes;
+import cn.lary.pkg.wk.vo.user.UpdateTokenVO;
 import com.github.lianjiatech.retrofit.spring.boot.core.RetrofitClient;
 import retrofit2.Response;
 import retrofit2.http.Body;
@@ -14,7 +14,7 @@ import java.util.List;
 @RetrofitClient(baseUrl = "${wk.base.url}/user")
 public interface WKUserService {
     @POST("token")
-    Response<UpdateTokenRes> updateToken(@Body UpdateTokenDTO updateTokenDTO);
+    Response<UpdateTokenVO> updateToken(@Body UpdateTokenDTO updateTokenDTO);
     @POST("device_quit")
     Response<Void> deviceQuit(@Body DeviceQuitReq deviceQuitReq);
     @POST("systemuids_add")

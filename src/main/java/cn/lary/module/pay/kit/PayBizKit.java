@@ -1,6 +1,6 @@
 package cn.lary.module.pay.kit;
 
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 
 public class PayBizKit {
     public static  String getPayClient(Integer clientType) {

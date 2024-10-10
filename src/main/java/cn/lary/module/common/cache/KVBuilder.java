@@ -4,10 +4,8 @@ import cn.lary.module.stream.dto.JoinLiveCacheDTO;
 import cn.lary.module.stream.dto.LiveCacheDTO;
 import cn.lary.module.stream.dto.RaffleCacheDTO;
 import cn.lary.module.stream.dto.RedPacketCacheDTO;
-import cn.lary.module.user.dto.DeviceAddAckDTO;
+import cn.lary.module.user.dto.DeviceAddAckCacheDTO;
 import cn.lary.module.user.dto.DeviceLoginDTO;
-import lombok.Data;
-import lombok.experimental.Accessors;
 
 import java.util.Map;
 
@@ -19,7 +17,7 @@ public interface KVBuilder {
      * @param uid user id
      * @return k
      */
-    String deviceLoginK(int uid, String deviceId);
+    String deviceLoginK(int uid, int deviceId);
 
     String deviceLoginV(DeviceLoginDTO deviceLoginDTO);
 
@@ -45,8 +43,6 @@ public interface KVBuilder {
 
     /**
      * 构建用户注册时的验证码
-     *
-     * @param uid
      * @param phone
      * @return
      */
@@ -76,7 +72,7 @@ public interface KVBuilder {
      */
     String addDeviceK(int uid);
 
-    String addDeviceV(DeviceAddAckDTO loginDTO);
+    Map addDeviceV(DeviceAddAckCacheDTO dto);
 
     /**
      * 开启直播

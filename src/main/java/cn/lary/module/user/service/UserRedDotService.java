@@ -12,5 +12,5 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @since 2024-07-29
  */
 public interface UserRedDotService extends IService<UserRedDot> {
-    UserRedDot getUserRedDot(Integer uid,String category);
+
 }

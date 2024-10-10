@@ -15,5 +15,22 @@
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
+    <select id="getIncomes" resultType="cn.lary.module.wallet.vo.WalletIncomeVO">
+        select id,to_uid,channel_id,type from wallet_income
+        where
+            uid = #{uid}
+        <if test="toUid != null and toUid != ''">
+            and to_uid = #{toUid}
+        </if>
+        <if test="channelId != null and channelId != ''">
+            and channel_id = #{channelId}
+        </if>
+        <if test="type != null and type != ''">
+            and type = #{type}
+        </if>
+        <if test="cost != null and cost != ''">
+            and cost >= #{cost}
+        </if>
+    </select>
 
 </mapper>

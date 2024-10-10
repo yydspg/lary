@@ -13,7 +13,7 @@ public class GoLiveDTO {
     private String province;
 
     @JsonProperty("device_id")
-    private String deviceId;
+    private Integer deviceId;
 
     @NotNull(message = "device_flag is null")
     @JsonProperty("device_flag")

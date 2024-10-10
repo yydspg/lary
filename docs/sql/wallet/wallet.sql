@@ -15,8 +15,8 @@ create table `wallet`
     create_at timestamp,
     update_at timestamp
 );
-drop table if exists `wallet_income_log`;
-create table `wallet_income_log` (
+drop table if exists `wallet_income`;
+create table `wallet_income` (
     id bigint unsigned not null primary key auto_increment,
     uid int not null default 0 comment '用户id',
     to_uid int not null default 0 comment 'id',
@@ -28,8 +28,8 @@ create table `wallet_income_log` (
     create_at timestamp,
     update_at timestamp
 );
-drop table if exists `wallet_outcome_log`;
-create table `wallet_outcome_log` (
+drop table if exists `wallet_outcome`;
+create table `wallet_outcome` (
     id bigint unsigned not null primary key auto_increment,
     uid int not null default 0 comment '用户id',
     to_uid int not null default 0 comment 'id',

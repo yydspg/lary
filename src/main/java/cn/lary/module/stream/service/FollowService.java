@@ -17,5 +17,5 @@ public interface FollowService extends IService<Follow> {
 
     List<String> getFollows(int uid);
     boolean isBlock(int uid,int toUid);
-    boolean isFan(int uid,int toUid);
+    void addSystemHelper(int uid);
 }

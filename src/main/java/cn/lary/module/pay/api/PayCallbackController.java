@@ -1,6 +1,6 @@
 package cn.lary.module.pay.api;
 
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.module.pay.plugin.PluginSupport;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;

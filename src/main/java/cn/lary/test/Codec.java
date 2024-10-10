@@ -17,7 +17,7 @@ import java.util.Arrays;
  */
 
 public class Codec{
-    private static final String SERVICE_NAME = "wallet";
+    private static final String SERVICE_NAME = "stream";
 
     //dataSource config
     private static final String DATA_SOURCE_USER_NAME  = "root";
@@ -29,8 +29,8 @@ public class Codec{
     private static final String ENTITY_PACK_NAME = "entity";
     private static final String DATA_SOURCE_URL = "jdbc:mysql://192.168.1.101:3306/lary";
     private static final String[] TABLE_NAMES = new String[]{
-           "wallet_income",
-           "wallet_outcome",
+           "follow_setting",
+            "follow"
     };
     public static void main(String[] args) {
         /* 配置数据源 **/

@@ -2,7 +2,7 @@ package cn.lary.core.dto.req;
 
 
 import cn.lary.kit.JSONKit;
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.pkg.wk.dto.message.MessageHeader;
 import cn.lary.pkg.wk.dto.message.MessageSendDTO;
 import lombok.Data;

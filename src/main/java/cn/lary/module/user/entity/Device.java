@@ -30,15 +30,14 @@ public class Device implements Serializable {
 
     private Integer uid;
 
-    private String deviceId;
 
-    private String deviceName;
+    private String name;
 
-    private String deviceModel;
+    private String model;
 
-    private Integer deviceLevel;
+    private Integer level;
 
-    private Integer deviceFlag;
+    private Integer flag;
 
     private Long lastLogin;
 

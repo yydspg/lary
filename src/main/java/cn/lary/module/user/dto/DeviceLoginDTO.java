@@ -9,8 +9,9 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 public class DeviceLoginDTO  extends DTO {
+
     @JsonProperty("id")
-    private String id;
+    private int id;
 
     @NotNull(message = "device_name is null")
     @JsonProperty("name")
@@ -21,7 +22,7 @@ public class DeviceLoginDTO  extends DTO {
 
     @JsonProperty("flag")
     @NotNull(message = "device flag is null")
-    private Integer flag;
+    private int flag;
 
-    private Integer level;
+    private int level;
 }

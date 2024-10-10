@@ -8,6 +8,7 @@ import lombok.Data;
 
 @Data
 public class RegisterDTO extends DTO {
+
     private String name;
     @NotNull(message = "zone is null")
     private String zone;
@@ -16,6 +17,9 @@ public class RegisterDTO extends DTO {
     @NotNull(message = "password is null")
     @Size(min = 6,message = "password len less than 6")
     private String password;
+    /**
+     * 验证码
+     */
     @NotNull(message = "code is null")
     private String code;
     // 邀请码

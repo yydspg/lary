@@ -1,7 +1,11 @@
 package cn.lary.module.gift.mapper;
 
+import cn.lary.module.gift.dto.GiftOrderPageQueryDTO;
 import cn.lary.module.gift.entity.GiftOrder;
+import cn.lary.module.gift.vo.GiftOrderVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
+
+import java.util.List;
 
 /**
  * <p>
@@ -13,5 +17,7 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  */
 public interface GiftOrderMapper extends BaseMapper<GiftOrder> {
 
-    long getGiftBuyRecordCountByGiftId(String giftChannelId);
+    long getGiftBuyRecordCountByGiftId(int giftChannelId);
+
+    List<GiftOrderVO> getGiftOrderVOs(GiftOrderPageQueryDTO dto);
 }

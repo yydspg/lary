@@ -3,19 +3,15 @@ package cn.lary.module.stream.core;
 import cn.lary.core.dto.PageQuery;
 import cn.lary.core.dto.ResPair;
 import cn.lary.kit.BizKit;
-import cn.lary.kit.StringKit;
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
-import cn.lary.module.group.entity.Group;
-import cn.lary.module.group.entity.GroupMember;
 import cn.lary.module.stream.dto.FollowDTO;
 import cn.lary.module.stream.dto.LiveCacheDTO;
 import cn.lary.module.stream.entity.Follow;
 import cn.lary.module.stream.service.FollowService;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.service.UserService;
-import cn.lary.module.user.vo.FriendCodeCheck;
 import cn.lary.pkg.wk.api.WKMessageService;
 import cn.lary.pkg.wk.dto.message.MessageHeader;
 import cn.lary.pkg.wk.dto.message.MessageSendDTO;
@@ -101,8 +97,14 @@ public class FollowBizExecute {
             }
         }
         //store
-        Follow followApply = new Follow().setUid(uid).setToUid(toUid).setUsername(toUidInfo.getName()).setBio(toUidInfo.getBio())
-                .setAvatarUrl(toUidInfo.getAvatarUrl()).setSource(req.getCode()).setIsAnchor(toUidInfo.getIsAnchor());
+        Follow followApply = new Follow()
+                .setUid(uid)
+                .setToUid(toUid)
+                .setUsername(toUidInfo.getName())
+                .setBio(toUidInfo.getBio())
+                .setAvatar(toUidInfo.getAvatarUrl())
+                .setSource(req.getCode())
+                .setIsAnchor(toUidInfo.getIsAnchor());
         followService.save(followApply);
         // send message
         if (!isAlone) {
@@ -198,16 +200,30 @@ public class FollowBizExecute {
      */
     public ResPair<Void> block(int uid, int toUid) {
 
-        Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, toUid).eq(Follow::getIsDelete, false));
-        User toUser = userService.getOne(new LambdaQueryWrapper<User>().eq(User::getUid, toUid).eq(User::getDeleted, false).eq(User::getStatus, Lary.UserStatus.ok));
+        Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>()
+                .eq(Follow::getUid, uid)
+                .eq(Follow::getToUid, toUid)
+                .eq(Follow::getIsDelete, false));
+        User toUser = userService.getOne(new LambdaQueryWrapper<User>()
+                .eq(User::getUid, toUid)
+                .eq(User::getDeleted, false)
+                .eq(User::getStatus, Lary.UserStatus.ok));
         if ( toUser == null) {
             return BizKit.fail("user status error");
         }
         if (relation == null) {
-            followService.save(new Follow().setUid(uid).setToUid(toUid).setIsBlock(true).setAvatarUrl(toUser.getAvatarUrl())
-                    .setBio(toUser.getBio()).setUsername(toUser.getName()));
+            followService.save(new Follow()
+                    .setUid(uid)
+                    .setToUid(toUid)
+                    .setIsBlock(true)
+                    .setAvatar(toUser.getAvatarUrl())
+                    .setBio(toUser.getBio())
+                    .setUsername(toUser.getName()));
         }
-        followService.update(new LambdaUpdateWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid,toUid).set(Follow::getIsBlock, true));
+        followService.update(new LambdaUpdateWrapper<Follow>()
+                .eq(Follow::getUid, uid)
+                .eq(Follow::getToUid,toUid)
+                .set(Follow::getIsBlock, true));
         return BizKit.ok();
     }
 

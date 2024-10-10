@@ -20,15 +20,7 @@ create table `room` (
     create_at timestamp,
     update_at timestamp
 );
-drop table if exists `anchor_fan`;
-create table `anchor_fan` (
-    id bigint not null primary key auto_increment ,
-    anchor_id varchar(40) not null default '' comment '主播id',
-    fan_id varchar(40) not null default '' comment '粉丝id',
-    is_delete bool not null default false,
-    create_at timestamp,
-    update_at timestamp
-);
+
 drop table if exists `stream_type`;
 create table `stream_type` (
     id bigint not null primary key auto_increment ,

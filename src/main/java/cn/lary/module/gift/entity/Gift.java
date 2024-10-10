@@ -30,7 +30,7 @@ public class Gift implements Serializable {
 
 
     /**
-     * gift type
+     * gift type id
      */
     private Integer type;
 
@@ -39,30 +39,22 @@ public class Gift implements Serializable {
     /**
      * virtual currency price
      */
-    private Long price;
+    private Long vcPrice;
 
     /**
      * real pay price CNY
      */
-    private Long realPrice;
+    private Long price;
 
     private String name;
 
     /**
-     * 购买数量
-     */
-    private Long purchaseNum;
-
-    /**
      * gift logo
      */
-    private String pictureUrl;
+    private String avatar;
 
     private Boolean isDelete;
 
-    
-
-    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

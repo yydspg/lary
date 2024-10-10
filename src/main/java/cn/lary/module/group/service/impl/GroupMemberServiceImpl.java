@@ -1,14 +1,9 @@
 package cn.lary.module.group.service.impl;
 
-import cn.lary.kit.CollectionKit;
-import cn.lary.kit.StringKit;
-import cn.lary.module.common.CS.Lary;
 import cn.lary.module.group.entity.GroupMember;
 import cn.lary.module.group.mapper.GroupMemberMapper;
 import cn.lary.module.group.service.GroupMemberService;
-import cn.lary.module.user.vo.FriendCodeCheck;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 

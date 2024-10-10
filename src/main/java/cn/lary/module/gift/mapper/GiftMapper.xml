@@ -7,16 +7,16 @@
         <id column="id" property="id" />
         <result column="type" property="type" />
         <result column="type_name" property="typeName" />
+        <result column="vc_price" property="vcPrice" />
         <result column="price" property="price" />
-        <result column="real_price" property="realPrice" />
         <result column="name" property="name" />
-        <result column="purchase_num" property="purchaseNum" />
-        <result column="picture_url" property="pictureUrl" />
+        <result column="avatar" property="avatar" />
         <result column="is_delete" property="isDelete" />
-        <result column="create_by" property="createBy" />
-        <result column="update_by" property="updateBy" />
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
+    <select id="queryAll" resultType="cn.lary.module.gift.vo.GiftVO">
+        select price,vc_price,type,name,avatar from gift
+    </select>
 
 </mapper>

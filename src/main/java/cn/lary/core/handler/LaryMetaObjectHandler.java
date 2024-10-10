@@ -18,7 +18,6 @@ public class LaryMetaObjectHandler implements MetaObjectHandler {
 
     @Override
     public void updateFill(MetaObject metaObject) {
-        log.info("start update fill");
         this.strictUpdateFill(metaObject, "updateAt", LocalDateTime.class, LocalDateTime.now());
     }
 

@@ -1,14 +1,11 @@
 package cn.lary.module.common.cache.impl;
 
-import cn.hutool.core.lang.hash.Hash;
 import cn.lary.kit.JSONKit;
 import cn.lary.kit.StringKit;
-import cn.lary.kit.UUIDKit;
-import cn.lary.module.common.CS.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.server.RedisBizConfig;
 import cn.lary.module.stream.dto.*;
-import cn.lary.module.user.dto.DeviceAddAckDTO;
+import cn.lary.module.user.dto.DeviceAddAckCacheDTO;
 import cn.lary.module.user.dto.DeviceLoginDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,7 +22,7 @@ public class KVBuilderImpl implements KVBuilder {
     private final RedisBizConfig redisBizConfig;
 
     @Override
-    public String deviceLoginK(int uid,String deviceId) {
+    public String deviceLoginK(int uid,int deviceId) {
         return redisBizConfig.getTokenCachePrefix() + uid+"@"+deviceId;
     }
 
@@ -87,8 +84,12 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String addDeviceV(DeviceAddAckDTO loginDTO) {
-        return JSONKit.toJSON(loginDTO);
+    public Map addDeviceV(DeviceAddAckCacheDTO dto) {
+        HashMap<Object, Object> args = new HashMap<>();
+        args.put("name",dto.getName());
+        args.put("code",dto.getCode());
+        args.put("model",dto.getModel());
+        return args;
     }
 
     @Override

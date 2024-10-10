@@ -1,6 +1,6 @@
 package cn.lary.module.wallet.dto;
 
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.module.pay.dto.PayParam;
 import lombok.Data;
 

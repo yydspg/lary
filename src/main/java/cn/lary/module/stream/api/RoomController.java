@@ -5,7 +5,7 @@ import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.ResPair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.IPKit;
-import cn.lary.kit.ResKit;
+import cn.lary.kit.ResponseKit;
 import cn.lary.module.stream.core.RoomBizExecute;
 import cn.lary.module.stream.core.StreamBizExecute;
 import cn.lary.module.stream.dto.GoLiveDTO;
@@ -53,9 +53,9 @@ public class RoomController {
         int uid = ReqContext.getLoginUID();
         ResPair<List<StreamRecordVO>> res = streamBizExecute.page(uid, page, limit);
         if (!res.isOk()) {
-            return ResKit.pageFail(res.getMsg());
+            return ResponseKit.pageFail(res.getMsg());
         }
-        return ResKit.pageOk(res.getData(),page,limit);
+        return ResponseKit.pageOk(res.getData(),page,limit);
     }
 
     /**
@@ -71,9 +71,9 @@ public class RoomController {
         String ip = IPKit.getIp(request);
         ResPair<GoLiveVO> res = roomBizExecute.go(uid, uidName,ip, req);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok(res.getData());
+        return ResponseKit.ok(res.getData());
     }
 
     /**
@@ -88,9 +88,9 @@ public class RoomController {
         String ip = IPKit.getIp(req);
         ResPair<JoinLiveVO> res = roomBizExecute.join(uid, uidName, toUid,ip);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok(res.getData());
+        return ResponseKit.ok(res.getData());
     }
 
     /**
@@ -103,9 +103,9 @@ public class RoomController {
         String uidName = ReqContext.getLoginName();
         ResPair<DownLiveVO> res = roomBizExecute.end(uid, uidName);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok(res.getData());
+        return ResponseKit.ok(res.getData());
     }
 
     /**
@@ -117,9 +117,9 @@ public class RoomController {
         int uid = ReqContext.getLoginUID();
         ResPair<Void> res = roomBizExecute.leave(uid);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok(res.getData());
+        return ResponseKit.ok(res.getData());
     }
 
     /**
@@ -132,9 +132,9 @@ public class RoomController {
         int uid = ReqContext.getLoginUID();
         ResPair<Void> res = streamBizExecute.raffle(uid, req);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok(res.getData());
+        return ResponseKit.ok(res.getData());
     }
 
     /**
@@ -148,8 +148,8 @@ public class RoomController {
         String uidName = ReqContext.getLoginName();
         ResPair<Void> res = streamBizExecute.redPacket(uid, uidName, req);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok(res.getData());
+        return ResponseKit.ok(res.getData());
     }
 }

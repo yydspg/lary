@@ -1,6 +1,6 @@
 package cn.lary.module.pay.plugin.wechat;
 
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.module.pay.plugin.Payment;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;

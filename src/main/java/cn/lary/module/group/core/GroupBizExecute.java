@@ -1,13 +1,13 @@
 package cn.lary.module.group.core;
 
+import cn.lary.core.context.ReqContext;
 import cn.lary.core.dto.ResPair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.StringKit;
 import cn.lary.module.app.service.AppConfigService;
 import cn.lary.module.app.service.EventService;
-import cn.lary.module.app.service.SeqService;
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.server.AccountConfig;
 import cn.lary.module.common.server.GroupConfig;
@@ -24,9 +24,9 @@ import cn.lary.module.user.service.UserService;
 import cn.lary.pkg.wk.api.WKChannelService;
 import cn.lary.pkg.wk.api.WKMessageService;
 import cn.lary.pkg.wk.api.WKUserService;
-import cn.lary.pkg.wk.dto.message.MessageHeader;
 import cn.lary.pkg.wk.dto.message.MessageSendDTO;
 import cn.lary.pkg.wk.entity.core.WK;
+import com.alipay.api.domain.BizInfo;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
@@ -45,8 +45,6 @@ public class GroupBizExecute {
 
     private final GroupService groupService;
     private final GroupConfig groupConfig;
-    private final AppConfigService appConfigService;
-    private final AccountConfig accountConfig;
     private final UserService userService;
     private final GroupMemberService groupMemberService;
     private final EventService eventService;
@@ -60,34 +58,43 @@ public class GroupBizExecute {
 
     /**
      * 创建群聊
-     * @param creator 创建者 uid
      * @param req {@link CreateGroupDTO}
      * @return {@link CreateGroupVO}
      */
-    public ResPair<CreateGroupVO> create(int creator, CreateGroupDTO req) {
-        // check one day create limit
+    public ResPair<CreateGroupVO> create( CreateGroupDTO req) {
+
+        int creator = ReqContext.getLoginUID();
         int count = groupService.querySameDayCreateGroupCount(creator, LocalDateTime.now());
+
         if (groupConfig.getSameDayCreateMaxCount() <= count) {
             return BizKit.fail("reach max group create count");
         }
-        // remove repeat
         List<Integer> members = CollectionKit.removeRepeat(req.getMembers());
         members.add(creator);
-
         List<User> users = userService.listByIds(members);
         List<User> validUser = users.stream()
-                .filter(u -> u.getStatus() == Lary.UserStatus.ok && !u.getDeleted())
+                .filter(u -> u.getStatus() == Lary.UserStatus.ok
+                        && !u.getDeleted())
                 .toList();
-        // build group name
         String groupName = req.getName();
         if (StringKit.isEmpty(groupName)) {
             StringBuilder sb = new StringBuilder();
-            validUser.forEach(u -> {
-                sb.append(u.getUid()).append(",");
-            });
+            validUser.forEach(u -> {sb.append(u.getUid()).append(",");});
             groupName = sb.toString();
         }
-        Group group = new Group().setCreator(creator).setName(groupName);
+        User creatorInfo = userService.lambdaQuery()
+                .eq(User::getUid, creator)
+                .eq(User::getDeleted, false)
+                .one();
+        if(req.getCategory() == Lary.Group.Category.stream) {
+            if (creatorInfo == null || !creatorInfo.getIsAnchor()) {
+                return BizKit.fail("inappropriate category");
+            }
+        }
+        Group group = new Group()
+                .setCreator(creator)
+                .setCategory(req.getCategory())
+                .setName(groupName);
         groupService.save(group);
         List<GroupMember> groupMembers = new ArrayList<>();
         validUser.forEach(u->{
@@ -121,7 +128,7 @@ public class GroupBizExecute {
             return BizKit.fail("inviter not exist,uid:" + uid);
         }
         if (inviter.getRole() == Lary.Group.Role.common) {
-            return BizKit.fail("你无权限操作" + uid);
+            return BizKit.fail("operation without permission,uid:" + uid);
         }
         Group group = groupService.getOne(new LambdaQueryWrapper<Group>()
                 .eq(Group::getGroupNo, req.getGroupId()));
@@ -142,7 +149,6 @@ public class GroupBizExecute {
         if(CollectionKit.isEmpty(addUsers)) {
             return BizKit.fail("no valid users add" );
         }
-        // insert
         List<GroupMember> groupMembers = new ArrayList<>();
         addUsers.forEach(u->{
             GroupMember groupMember = new GroupMember()
@@ -152,9 +158,7 @@ public class GroupBizExecute {
                     .setGroupNo(req.getGroupId());
             groupMembers.add(groupMember);
         });
-
         groupMemberService.saveBatch(groupMembers);
-
         return BizKit.ok();
     }
 
@@ -177,9 +181,9 @@ public class GroupBizExecute {
         if (member == null) {
             groupMemberService.save(new GroupMember().setGroupNo(groupId).setUid(uid));
         }else {
-            groupMemberService.update(new LambdaUpdateWrapper<GroupMember>()
+            groupMemberService.lambdaUpdate()
                     .set(GroupMember::getIsDeleted,false)
-                    .set(GroupMember::getRole,Lary.Group.Role.common));
+                    .set(GroupMember::getRole,Lary.Group.Role.common);
         }
         String content = uidName + "加入了群聊";
         MessageSendDTO sendDTO = new MessageSendDTO()
@@ -242,19 +246,5 @@ public class GroupBizExecute {
                 .eq(GroupMember::getUid,uid));
         return BizKit.ok();
     }
-
-
-
-    //        if(existsUsers.size() < 9 && !group.getIsUploadAvatar() ){
-//            if(addUsers.size() < 9 - existsUsers.size()) {
-//                addUsers.addAll(existsUsers);
-//            }else {
-//                for (Long u : existsUsers) {
-//                    addUsers.add(u);
-//                    if (addUsers.size() == 9) {
-//                        break;
-//                    }
-//                }
-//            }
-//        }
+    // TODO  :  group 这里存在很多的问题！！基于会话的,加群的,群的设置都存在问题
 }

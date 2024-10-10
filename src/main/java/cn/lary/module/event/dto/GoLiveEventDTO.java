@@ -2,8 +2,8 @@ package cn.lary.module.event.dto;
 
 import cn.lary.kit.JSONKit;
 import cn.lary.module.app.entity.EventData;
-import cn.lary.module.common.CS.Lary;
-import cn.lary.module.event.build.EventConvert;
+import cn.lary.module.common.constant.Lary;
+import cn.lary.module.event.convert.EventConvert;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -15,7 +15,7 @@ public class GoLiveEventDTO implements EventConvert {
     private Integer uid;
 
     @JsonProperty("device_id")
-    private String deviceId;
+    private int deviceId;
 
     @JsonProperty("stream_id")
     private int streamId;

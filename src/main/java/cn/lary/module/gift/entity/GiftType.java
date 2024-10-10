@@ -28,7 +28,12 @@ public class GiftType implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
+    private Integer id;
+
+    /**
+     * 父类id
+     */
+    private Integer parentId;
 
     private String name;
 
@@ -40,7 +45,7 @@ public class GiftType implements Serializable {
     /**
      * 类别图片
      */
-    private String avatarUrl;
+    private String avatar;
 
     /**
      * 是否特殊

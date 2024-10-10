@@ -5,13 +5,12 @@ import cn.lary.kit.*;
 import cn.lary.module.app.entity.LaryChannel;
 import cn.lary.module.app.service.EventService;
 import cn.lary.module.app.service.LaryChannelService;
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.event.dto.DownLiveEventDTO;
 import cn.lary.module.event.dto.GoLiveEventDTO;
 import cn.lary.module.gift.entity.AnchorTurnover;
-import cn.lary.module.gift.entity.GiftOrder;
 import cn.lary.module.gift.service.AnchorTurnoverService;
 import cn.lary.module.gift.service.GiftOrderService;
 import cn.lary.module.stream.dto.GoLiveDTO;
@@ -32,7 +31,6 @@ import cn.lary.module.stream.vo.JoinLiveVO;
 import cn.lary.module.user.entity.Device;
 import cn.lary.module.user.service.DeviceService;
 import cn.lary.module.user.service.UserService;
-import cn.lary.module.user.vo.UserBaseVO;
 import cn.lary.pkg.wk.api.WKChannelService;
 import cn.lary.pkg.wk.api.WKMessageService;
 import cn.lary.pkg.wk.api.WKUserService;
@@ -240,7 +238,7 @@ public class RoomBizExecute {
         streamRecord.setIdentify(stream);
         streamRecordService.save(streamRecord);
         // start event
-        GoLiveEventDTO eventDTO = new GoLiveEventDTO(uid, device.getDeviceId(), streamRecord.getStreamId(), danmakuId, giftBuyChannel.getChannelId());
+        GoLiveEventDTO eventDTO = new GoLiveEventDTO(uid, device.getId(), streamRecord.getStreamId(), danmakuId, giftBuyChannel.getChannelId());
         int event = eventService.begin(eventDTO.of());
         if (room.getFollowNum() < 100) {
             List<String> follows = followService.getFollows(uid);
@@ -314,7 +312,9 @@ public class RoomBizExecute {
         redisCache.setHash(kvBuilder.goLiveK(uid),"srsToken",token);
         // update room status
         roomService.update(new LambdaUpdateWrapper<Room>().set(Room::getIsAlive,false).eq(Room::getUid,uid));
-        streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>().eq(StreamRecord::getStreamId,liveCache.getStreamId()).set(StreamRecord::getStatus, Lary.Stream.Status.preDown));
+        streamRecordService.lambdaUpdate()
+                .eq(StreamRecord::getStreamId,liveCache.getStreamId())
+                .set(StreamRecord::getStatus, Lary.Stream.Status.preDown);
 
         executor.execute(()->{
             doAnchorTurnOver(uid,liveCache.getStreamId());

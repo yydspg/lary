@@ -143,4 +143,14 @@ public class CacheImpl implements RedisCache {
     public void append(String k, Collection<String> v) {
         str.opsForList().rightPushAll(k,v);
     }
+
+    @Override
+    public void renewal(String k, long exp) {
+        str.expire(k, exp, TimeUnit.SECONDS);
+    }
+
+    @Override
+    public void renewal(String k, long exp, TimeUnit timeUnit) {
+        str.expire(k, exp, timeUnit);
+    }
 }

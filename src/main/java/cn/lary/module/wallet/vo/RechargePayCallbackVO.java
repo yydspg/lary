@@ -1,7 +1,7 @@
 package cn.lary.module.wallet.vo;
 
 import cn.lary.kit.StringKit;
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.module.pay.core.PayCallbackVO;
 import lombok.Data;
 

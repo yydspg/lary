@@ -8,6 +8,7 @@ import cn.lary.module.stream.service.RoomService;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
+import org.hibernate.validator.internal.constraintvalidators.bv.notempty.NotEmptyValidatorForArraysOfBoolean;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -23,16 +24,11 @@ import java.util.List;
 @Service
 @RequiredArgsConstructor
 public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> implements FollowService {
-    private final RoomService roomService;
-    private final FollowMapper followMapper;
 
+    private final FollowMapper followMapper;
 
     @Override
     public List<String> getFollows(int uid) {
-        Room room = roomService.getOne(new LambdaQueryWrapper<Room>().eq(Room::getUid, uid));
-        if (room == null || room.getIsDelete() || room.getIsBlock() || room.getIsHot()) {
-            return null;
-        }
         return followMapper.selectObjs(new LambdaQueryWrapper<Follow>().select(Follow::getToUid).eq(Follow::getUid, uid)
                 .eq(Follow::getIsDelete, false).eq(Follow::getIsBlock, false));
     }
@@ -44,8 +40,10 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     }
 
     @Override
-    public boolean isFan(int uid, int toUid) {
-        Follow follow = followMapper.selectOne(new LambdaQueryWrapper<Follow>().eq(Follow::getUid, uid).eq(Follow::getToUid, toUid));
-        return follow != null && !follow.getIsDelete() && follow.getIsBlock();
+    public void addSystemHelper(int uid) {
+        followMapper.insert(new Follow()
+                .setUid(uid)
+                // TODO  : 这里实现下系统账户
+                .setToUid(111222333));
     }
 }

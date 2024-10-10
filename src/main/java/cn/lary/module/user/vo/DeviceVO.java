@@ -9,6 +9,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class DeviceVO {
 
+    private int id;
     private String deviceName;
 
     private Long lastLogin;

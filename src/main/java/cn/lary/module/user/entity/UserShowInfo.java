@@ -11,13 +11,19 @@ import java.time.LocalDateTime;
 @Setter
 @Accessors(chain = true)
 public class UserShowInfo {
+
     private Integer uid;
+
     private String name;
+
     private String bio;
+
     @TableField(value = "is_upload_avatar")
     private boolean isUploadAvatar;
+
     @TableField(value = "avatar_url")
     private String avatarUrl;
+
     @TableField(value = "update_at")
     private LocalDateTime updateAt;
 

@@ -1,0 +1,35 @@
+rocketmq:
+  name-server: 192.168.5.135:9876
+  producer:
+    group: dist-test # 生产者组
+  consumer:
+    group: test
+    topic: test
+lary:
+  register:
+    only-china: true
+    username-on: true
+    sticker-add-off: true
+    offe: false # 这里使用 offe 是因为 off会注入不成功
+  shortno:
+    num-on: true
+    num-len: 5
+    edit-off: true
+  account:
+    admin-uid: lary_admin_uid
+    file-helper-uid: lary_file_helper_uid
+    system-group-name: lary_system_group_name
+    system-group-uid: lary_system_group_uid
+    system-uid: lary_system_uid
+  group:
+    same-day-create-max-count: 5
+    allow-view-history-msg-status: true
+  srs:
+    origin:
+      - gansu:127.0.0.1:8080
+      - shanghai:127.0.0.1:9001
+    edge:
+      - sichuan:192.168.0.1:8001
+      - sichuan:127.0.0.1:8001
+  gift:
+    table-num : 10

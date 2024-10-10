@@ -27,5 +27,13 @@ public interface WalletService extends IService<Wallet> {
      */
     ResPair<Void> transfer(TransferDTO dto);
 
+    /**
+     * 批量数据转移<br>
+     * 一个用户对多个用户转移相同数目的资产 <br>
+     * 吊起此接口前对被转移用户状态检查
+     * @param dto {@link BatchOutcomeTransferDTO}
+     * @return {@link ResPair}
+     */
     ResPair<Void> batchOutcomeTransfer(BatchOutcomeTransferDTO dto);
+
 }

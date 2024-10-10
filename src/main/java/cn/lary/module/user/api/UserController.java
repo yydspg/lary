@@ -1,19 +1,20 @@
 package cn.lary.module.user.api;
 
+import cn.lary.core.context.ReqContext;
 import cn.lary.core.dto.ResPair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.*;
-import cn.lary.module.user.core.UserBizExecute;
+import cn.lary.module.user.dto.RefreshTokenDTO;
+import cn.lary.module.user.execute.UserBizExecute;
 import cn.lary.module.user.dto.LoginDTO;
 import cn.lary.module.user.dto.RegisterDTO;
-import jakarta.validation.constraints.NotNull;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.LocalDateTime;
-import java.time.LocalTime;
 
 @Slf4j
 @RestController
@@ -23,28 +24,74 @@ public class UserController {
 
     private final UserBizExecute userBizExecute;
 
+    /**
+     * 注册
+     * @param req {@link RegisterDTO}
+     * @return token
+     */
     @PostMapping("/register")
-    public SingleResponse<Void> register(@Validated @RequestBody RegisterDTO req) {
-        ResPair<Void> res = userBizExecute.register(req);
+    public SingleResponse<String> register(@Valid @RequestBody RegisterDTO req) {
+        ResPair<String> res = userBizExecute.register(req);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok();
+        return ResponseKit.ok(res.getData());
     }
+
+    /**
+     *登陆
+     * @param req {@link LoginDTO}
+     * @return token
+     */
     @PostMapping("/login")
-    public SingleResponse<Void> login(@Validated @RequestBody LoginDTO req) {
-        ResPair<String> res = userBizExecute.login(req);
+    public SingleResponse<String> login(@Validated @RequestBody LoginDTO req) {
+        ResPair<String> res = userBizExecute.loginByUid(req);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok();
+        return ResponseKit.ok(res.getData());
     }
+    // TODO  : 排除这个接口的拦截
+    // TODO  :  限流
     @GetMapping("/sms")
     public SingleResponse<Void> smsCode(@RequestParam(value = "phone") String phone) {
         ResPair<Void> res = userBizExecute.smsCode(phone);
         if (!res.isOk()) {
-            return ResKit.fail(res.getMsg());
+            return ResponseKit.fail(res.getMsg());
         }
-        return ResKit.ok();
+        return ResponseKit.ok();
     }
+
+    /**
+     * 退出登陆
+     * @param request {@link HttpServletRequest}
+     * @param deviceId d
+     * @param flag f
+     * @return ok
+     */
+    @GetMapping("/logout")
+    public SingleResponse<Void> logout(HttpServletRequest request,
+                                       @RequestParam @NotBlank Integer deviceId,
+                                       @RequestParam @NotBlank Integer flag) {
+        ResPair<Void> res = userBizExecute.logout( flag, deviceId, request.getHeader("token"));
+        if (!res.isOk()) {
+            return ResponseKit.fail(res.getMsg());
+        }
+        return ResponseKit.ok();
+    }
+
+    /**
+     * 刷新token
+     * @param dto {@link RefreshTokenDTO}
+     * @param request {@link HttpServletRequest}
+     * @return ok
+     */
+    public SingleResponse<Void> refresh(@RequestBody @Valid RefreshTokenDTO dto,HttpServletRequest request) {
+        ResPair<Void> res = userBizExecute.refreshToken( request.getHeader("token"), dto);
+        if (!res.isOk()) {
+            return ResponseKit.fail(res.getMsg());
+        }
+        return ResponseKit.ok();
+    }
+
 }

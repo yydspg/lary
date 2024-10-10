@@ -1,8 +1,7 @@
 package cn.lary.module.wallet.core;
 
 import cn.lary.module.app.service.EventService;
-import cn.lary.module.common.CS.Lary;
-import cn.lary.module.gift.entity.GiftOrder;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.module.pay.core.PayCallback;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.service.UserService;

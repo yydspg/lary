@@ -99,11 +99,13 @@ create table `friend`
 drop table if exists `login_log`;
 CREATE TABLE IF NOT EXISTS login_log(
                                         id BIGINT PRIMARY KEY AUTO_INCREMENT,
-                                        uid VARCHAR(40) DEFAULT '' NOT NULL  COMMENT '用户OpenId',
+                                        uid INT unsigned  NOT NULL  COMMENT '用户id',
                                         login_ip    VARCHAR(40) DEFAULT '' NOT NULL COMMENT '最后一次登录ip',
-                                        created_at  timeStamp     not null DEFAULT CURRENT_TIMESTAMP comment '创建时间',
-                                        updated_at  timeStamp     not null DEFAULT CURRENT_TIMESTAMP comment '更新时间'
-) CHARACTER SET utf8mb4;
+                                        device_name VARCHAR(40) default '' not null comment '设备名称',
+                                        device_model VARCHAR(40) default '' not null comment '设备模型',
+                                        create_at  timeStamp     not null DEFAULT CURRENT_TIMESTAMP comment '创建时间',
+                                        update_at  timeStamp     not null DEFAULT CURRENT_TIMESTAMP comment '更新时间'
+) ;
 drop table if exists `device_flag`;
 create table `device_flag`
 (

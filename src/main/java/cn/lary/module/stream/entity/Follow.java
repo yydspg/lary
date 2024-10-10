@@ -58,7 +58,7 @@ public class Follow implements Serializable {
     /**
      * 头像地址
      */
-    private String avatarUrl;
+    private String avatar;
 
     /**
      * 是否是主播
@@ -77,14 +77,29 @@ public class Follow implements Serializable {
      */
     private Boolean isOneWay;
 
-
+    /**
+     * 是否删除
+     */
     private Boolean isDelete;
 
+    /**
+     * 粉丝等级
+     */
     private Integer level;
+
+
+    /**
+     * 对主播的花费
+     */
+    private String cost;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;
 
     @TableField(fill = FieldFill.UPDATE)
     private LocalDateTime updateAt;
+
+
+
+
 }

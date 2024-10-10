@@ -10,7 +10,6 @@ public class SingleResponse<T> extends Response<T> {
     private T data;
 
 
-
     public static <T> SingleResponse<T> buildSuccess(T data) {
         SingleResponse<T> response = new SingleResponse<T>();
         response.setSuccess(true);

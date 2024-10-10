@@ -68,9 +68,6 @@ public class AnchorTurnover implements Serializable {
 
     private Boolean isDelete;
 
-    
-
-    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

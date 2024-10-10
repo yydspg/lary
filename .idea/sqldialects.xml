@@ -17,6 +17,7 @@
     <file url="file://$PROJECT_DIR$/docs/sql/recharge/recharge.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/store/store.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/store/store_adjust.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/stream/follow.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/stream/raffle.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/stream/redpack.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/stream/stream_init.sql" dialect="MySQL" />

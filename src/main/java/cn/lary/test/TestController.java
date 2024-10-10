@@ -34,8 +34,4 @@ public class TestController {
     public void channelTest() {
 
     }
-    @GetMapping("r")
-    public void registerTest() {
-        userController.register(null);
-    }
 }

@@ -2,7 +2,7 @@ package cn.lary.module.pay.plugin.alipay;
 
 import cn.lary.core.exception.SysException;
 import cn.lary.kit.StringKit;
-import cn.lary.module.common.CS.Lary;
+import cn.lary.module.common.constant.Lary;
 import cn.lary.module.pay.core.PayCallbackExecute;
 import cn.lary.module.pay.vo.PayBuildVO;
 import cn.lary.module.pay.dto.PayParam;
@@ -99,14 +99,10 @@ public class AliPayPayment implements Payment {
                     alipayConfig.getCharset(), alipayConfig.getSignType());
             // biz execute
             if (signVerified) {
-                // ok
                 PaymentLog check = check(params);
                 if (check == null) {
-                    // alipay error
                     log.error("alipay payment check failed,params:{}",paramsJson);
-                    return;
                 }else {
-                    // check trade status,do biz execute
                     String status = params.get("trade_status");
                     if (StringKit.same("TRADE_SUCCESS",status) || StringKit.same("TRADE_FINISHED",status)) {
                         payCallbackExecute.onSuccess(params,biz,Lary.PayWay.alipay);

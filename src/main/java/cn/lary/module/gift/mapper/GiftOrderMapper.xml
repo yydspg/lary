@@ -4,9 +4,11 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.lary.module.gift.entity.GiftOrder">
-        <id column="id" property="id" />
+        <id column="id" property="orderId" />
         <result column="uid" property="uid" />
-        <result column="channel_id" property="channelId" />
+        <result column="anchor_uid" property="anchorUid" />
+        <result column="buy_channel_id" property="buyChannelId" />
+        <result column="danmaku_id" property="danmakuId" />
         <result column="notify_url" property="notifyUrl" />
         <result column="is_sync" property="isSync" />
         <result column="fail_reason" property="failReason" />
@@ -16,19 +18,33 @@
         <result column="status" property="status" />
         <result column="sn" property="sn" />
         <result column="complete_at" property="completeAt" />
-        <result column="end_at" property="endAt" />
         <result column="cost" property="cost" />
-        <result column="origin_type" property="originType" />
+        <result column="client_type" property="clientType" />
         <result column="gift_id" property="giftId" />
         <result column="gift_num" property="giftNum" />
         <result column="is_delete" property="isDelete" />
-        <result column="create_by" property="createBy" />
-        <result column="update_by" property="updateBy" />
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
     <select id="getGiftBuyRecordCountByGiftId" resultType="java.lang.Long">
-        select count(cost) from gift_order where channel_id = #{giftChannelId} and is_delete = false
+        select count(cost) from gift_order where buy_channel_id = #{giftChannelId} and is_delete = false
+    </select>
+    <select id="getGiftOrderVOs" resultType="cn.lary.module.gift.vo.GiftOrderVO">
+        select anchor_uid ,stream_id ,status,sn,cost,client_type,gift_name,gift_num from gift_order
+        where
+            uid = #{uid}
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="startAt != null and startAt != ''">
+                and create_at >= #{startAt}
+            </if>
+            <if test="endAt != null and endAt != ''">
+                and end_at <= #{endAt}
+            </if>
+        order by
+            create_at
+        limit #{pageIndex} ,#{pageSize}
     </select>
 
 </mapper>

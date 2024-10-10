@@ -18,9 +18,5 @@ import org.springframework.stereotype.Service;
 @Service
 public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRedDot> implements UserRedDotService {
 
-    @Override
-    public UserRedDot getUserRedDot(Integer uid, String category) {
-        LambdaQueryWrapper<UserRedDot> qw = new LambdaQueryWrapper<UserRedDot>().eq(UserRedDot::getUid, uid).eq(UserRedDot::getCategory, category);
-        return baseMapper.selectOne(qw,false);
-    }
+
 }

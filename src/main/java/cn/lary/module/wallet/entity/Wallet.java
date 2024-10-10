@@ -64,6 +64,11 @@ public class Wallet implements Serializable {
     private Boolean isBlock;
 
     /**
+     * 锁定原因
+     *
+     */
+    private Boolean blockReason;
+    /**
      * 安全问题，用于解锁钱包
      */
     private String secQuestion;
