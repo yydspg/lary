@@ -25,7 +25,7 @@ public class MessageSendDTO {
     //过期时间
     private int expire;
     // 订阅者
-    private List<String> subscribers;
+    private List<Integer> subscribers;
     // message content
     private byte[] payload;
 

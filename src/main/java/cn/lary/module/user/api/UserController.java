@@ -1,6 +1,5 @@
 package cn.lary.module.user.api;
 
-import cn.lary.core.context.ReqContext;
 import cn.lary.core.dto.ResPair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.*;

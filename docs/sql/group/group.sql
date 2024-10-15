@@ -2,27 +2,28 @@
 
 
 -- 群组
+drop table if exists `group`;
 create table `group`
 (
     id         bigint     not null primary key AUTO_INCREMENT,
-    group_no   VARCHAR(40) not null default '',                             -- 群唯一编号
-    name       VARCHAR(40) not null default '',                             -- 群名字
-    creator    VARCHAR(40) not null default '',                             -- 创建者uid
-    status     smallint    not null DEFAULT 0,                              -- 群状态 '0.不正常 1.正常',
-    forbidden   smallint    not null DEFAULT 0 comment '群禁言',
-    group_avatar_url varchar(255) not null default '' comment '群头像路径',
+    group_id   int unsigned not null comment '群id',
+    name       int unsigned not null comment '群名字',
+    creator    int unsigned not null comment '群主uid',
+    status     int    not null DEFAULT 0 comment '群状态',
+    is_forbidden   bool    not null DEFAULT false comment '群禁言',
+    group_avatar varchar(255) not null default '' comment '群头像路径',
+    group_num int not null default 0 comment '群人数',
     is_upload_avatar bool comment '群头像是否已经被上传',
-    group_type smallint not null default 0 comment '群类型 0. 普通群，1.超大群',
+    group_type int not null default 0 comment '群类型 0. 普通群，1.超大群',
     category varchar(40) not null default 0 comment '群分类',
-    invite     smallint    not null DEFAULT 0 comment '群邀请开关',
-    forbidden_add_friend   smallint      not null DEFAULT 0,                              -- 群内禁止加好友
-    allow_view_history_msg smallint     not null DEFAULT 1, -- 是否允许新成员查看历史消息
-    `version`    bigint      not null DEFAULT 0,                               -- 数据版本
-    create_at timeStamp     not null DEFAULT CURRENT_TIMESTAMP, -- 创建时间
-    update_at timeStamp     not null DEFAULT CURRENT_TIMESTAMP  -- 更新时间
+    is_enable_invite    bool    not null DEFAULT true comment '群邀请开关',
+    is_forbidden_add_friend   bool     not null DEFAULT false comment '是否禁止群内加好友',
+    is_allow_view_history_msg bool    not null DEFAULT true comment '是否允许新成员查看历史消息',
+    is_delete bool ,
+    create_at timestamp,
+    update_at timestamp
 );
-CREATE UNIQUE INDEX group_groupNo on `group` (group_no);
-CREATE INDEX group_creator on `group` (creator);
+
 
 -- -- +migrate StatementBegin
 -- CREATE TRIGGER group_updated_at
@@ -51,18 +52,6 @@ create table `group_member`
     create_at timeStamp     not null DEFAULT CURRENT_TIMESTAMP, -- 创建时间
     update_at timeStamp     not null DEFAULT CURRENT_TIMESTAMP  -- 更新时间
 );
-CREATE unique INDEX group_no_uid on `group_member` (group_no, uid);
-CREATE INDEX group_member_groupNo on `group_member` (group_no);
-CREATE INDEX group_member_uid on `group_member` (uid);
-
--- -- +migrate StatementBegin
---   CREATE TRIGGER group_member_updated_at
---   BEFORE UPDATE
---   ON `group_member` for each row
---   BEGIN
---    set NEW.updated_at = NOW();
---   END;
--- -- +migrate StatementEnd
 
 
 -- 群设置
@@ -113,16 +102,7 @@ CREATE TABLE `group_invite` (
                                 create_at timeStamp     not null DEFAULT CURRENT_TIMESTAMP comment '创建时间',
                                 update_at timeStamp     not null DEFAULT CURRENT_TIMESTAMP  comment '更新时间'
 );
--- -- +migrate StatementBegin
--- CREATE TRIGGER group_invite_updated_at
---   BEFORE UPDATE
---   ON `group_invite` for each row
---   BEGIN
---     set NEW.updated_at = NOW();
---   END;
--- -- +migrate StatementEnd
 
--- 群邀请
 CREATE TABLE `invite_item` (
                                id         bigint     not null primary key AUTO_INCREMENT,
                                invite_no  VARCHAR(40) not null default '' comment '邀请唯一编号',
@@ -133,11 +113,3 @@ CREATE TABLE `invite_item` (
                                create_at timeStamp     not null DEFAULT CURRENT_TIMESTAMP comment '创建时间',
                                update_at timeStamp     not null DEFAULT CURRENT_TIMESTAMP  comment '更新时间'
 );
--- -- +migrate StatementBegin
--- CREATE TRIGGER invite_item_updated_at
---   BEFORE UPDATE
---   ON `invite_item` for each row
---   BEGIN
---     set NEW.updated_at = NOW();
---   END;
--- -- +migrate StatementEnd

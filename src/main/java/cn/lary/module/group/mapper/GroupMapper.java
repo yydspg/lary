@@ -1,7 +1,6 @@
 package cn.lary.module.group.mapper;
 
 import cn.lary.module.group.entity.Group;
-import cn.lary.module.group.entity.GroupDetail;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
 

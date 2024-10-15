@@ -1,7 +1,9 @@
 package cn.lary.module.group.entity;
 
-import com.baomidou.mybatisplus.annotation.*;
-
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import java.io.Serializable;
 import java.time.LocalDateTime;
 import lombok.Getter;
@@ -10,39 +12,54 @@ import lombok.experimental.Accessors;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author paul
- * @since 2024-07-29
+ * @since 2024-10-15
  */
 @Getter
 @Setter
 @Accessors(chain = true)
-@TableName(value = "lary_groups")
 public class Group implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
+    /**
+     * 群id
+     */
+    @TableId(value = "group_id", type = IdType.AUTO)
+    private Integer groupId;
 
-    @TableId(value = "id",type = IdType.AUTO)
-    private Integer groupNo;
-
+    /**
+     * 群名字
+     */
     private String name;
 
+    /**
+     * 群主uid
+     */
     private Integer creator;
 
+    /**
+     * 群状态
+     */
     private Integer status;
 
     /**
      * 群禁言
      */
-    private Boolean forbidden;
+    private Boolean isForbidden;
 
     /**
      * 群头像路径
      */
-    private String groupAvatarUrl;
+    private String groupAvatar;
+
+    /**
+     * 群人数
+     */
+    private Integer groupNum;
 
     /**
      * 群头像是否已经被上传
@@ -62,19 +79,23 @@ public class Group implements Serializable {
     /**
      * 群邀请开关
      */
-    private Boolean invite;
+    private Boolean isEnableInvite;
 
-    private Boolean forbiddenAddFriend;
+    /**
+     * 是否禁止群内加好友
+     */
+    private Boolean isForbiddenAddFriend;
 
-    private Boolean allowViewHistoryMsg;
+    /**
+     * 是否允许新成员查看历史消息
+     */
+    private Boolean isAllowViewHistoryMsg;
 
-    private Long version;
+    private Boolean isDelete;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;
 
     @TableField(fill = FieldFill.UPDATE)
     private LocalDateTime updateAt;
-
-    private String notice;
 }

@@ -1,5 +1,6 @@
 package cn.lary.module.user.service;
 
+import cn.lary.core.dto.ResPair;
 import cn.lary.module.user.vo.FriendCodeCheck;
 import cn.lary.module.user.vo.UserBaseVO;
 import cn.lary.module.user.vo.UserBasicInfo;
@@ -21,24 +22,12 @@ public interface UserService extends IService<User> {
 
 
 
-
-    User queryByUID(int uid);
     UserBaseVO queryBase(int uid);
-    UserBasicInfo queryUserBasicInfo(int uid);
-    List<UserShowInfo> queryUserShowInfo(List<String> uids);
-    /**
-     * use this api carefully
-     * @param uids user id list
-     * @return useful user list
-     */
-    List<User> queryByUIDs(List<String> uids);
 
     /**
-     *
-     * @param uids user id list
-     * @return @UserbaseRes
+     * 对用户筛选有效用户
+     * @param members m
+     * @return IDs
      */
-    List<UserBaseVO> queryUserBaseByUIDs(List<String> uids);
-
-
+    List<Integer> getValidUsers(List<Integer> members);
 }

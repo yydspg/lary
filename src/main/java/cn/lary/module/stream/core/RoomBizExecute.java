@@ -38,7 +38,7 @@ import cn.lary.pkg.wk.dto.channel.ChannelCreateDTO;
 import cn.lary.pkg.wk.dto.channel.SubscribersAddDTO;
 import cn.lary.pkg.wk.dto.message.MessageHeader;
 import cn.lary.pkg.wk.dto.message.MessageSendDTO;
-import cn.lary.pkg.wk.entity.core.WK;
+import cn.lary.pkg.wk.constant.WK;
 import cn.lary.pkg.wk.entity.core.WKChannel;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;

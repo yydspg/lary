@@ -1,12 +1,12 @@
 package cn.lary.module.message.api;
 
-import cn.lary.core.context.ReqContext;
+import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.core.dto.req.MsgCMDReq;
 import cn.lary.kit.ResponseKit;
 import cn.lary.module.common.constant.Lary;
 import cn.lary.pkg.wk.api.WKMessageService;
-import cn.lary.pkg.wk.entity.core.WK;
+import cn.lary.pkg.wk.constant.WK;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -29,8 +29,8 @@ public class MessageController {
      */
     @GetMapping("/typing")
     public SingleResponse typing(@RequestParam(value = "channel_id") @NotNull String  channelId, @RequestParam(value = "channel_type") @NotNull byte channelType) {
-        int uid = ReqContext.getLoginUID();
-        String uidName = ReqContext.getLoginName();
+        int uid = RequestContext.getLoginUID();
+        String uidName = RequestContext.getLoginName();
 
         if (WK.ChannelType.person == channelType) {
             channelId = String.valueOf(uid);

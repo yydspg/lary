@@ -1,7 +1,6 @@
 package cn.lary.module.user.execute;
 
-import cn.lary.core.context.ReqContext;
-import cn.lary.core.dto.MultiResponse;
+import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResPair;
 import cn.lary.kit.*;
 import cn.lary.module.app.entity.EventData;
@@ -10,7 +9,6 @@ import cn.lary.module.common.constant.Lary;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.server.RedisBizConfig;
-import cn.lary.module.common.server.RegisterConfig;
 import cn.lary.module.event.dto.UserRegisterEventDTO;
 import cn.lary.module.stream.service.FollowService;
 import cn.lary.module.user.dto.*;
@@ -26,11 +24,10 @@ import cn.lary.module.wallet.service.WalletService;
 import cn.lary.pkg.wk.api.WKUserService;
 import cn.lary.pkg.wk.api.WkRouteService;
 import cn.lary.pkg.wk.dto.user.UpdateTokenDTO;
-import cn.lary.pkg.wk.entity.core.WK;
+import cn.lary.pkg.wk.constant.WK;
 import cn.lary.pkg.wk.vo.route.RouteVO;
 import cn.lary.pkg.wk.vo.user.UpdateTokenVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.sms4j.core.factory.SmsFactory;
@@ -38,7 +35,6 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import retrofit2.Response;
 
-import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -218,7 +214,7 @@ public class UserBizExecute {
      * @param deviceFlag {@link WK.DeviceFlag}
      */
     private String userLoginRedisSet(String name,int role,int deviceFlag){
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         String token = UUIDKit.getUUID() + "@" + deviceFlag;
         // remove before device login token
         redisCache.del(kvBuilder.userLoginK(uid,deviceFlag));
@@ -251,7 +247,7 @@ public class UserBizExecute {
      * @return token
      */
     public ResPair<Void> refreshToken(String token, RefreshTokenDTO req) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         redisCache.renewal(kvBuilder.userLoginK(uid,req.getFlag()),redisBizConfig.getLoginUserExpire());
         redisCache.renewal(kvBuilder.userLoginTokenK(token),redisBizConfig.getLoginUserTokenExpire());
         redisCache.renewal(kvBuilder.deviceLoginK(uid,req.getDeviceId()),redisBizConfig.getLoginDeviceCacheExpire());
@@ -264,7 +260,7 @@ public class UserBizExecute {
      * @return ok
      */
     public ResPair<Void> logout(int deviceFlag,int deviceId,String token) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         redisCache.del(kvBuilder.userLoginK(uid,deviceFlag));
         redisCache.del(kvBuilder.deviceLoginK(uid,deviceId));
         redisCache.del(kvBuilder.userLoginTokenK(token));
@@ -292,7 +288,7 @@ public class UserBizExecute {
      * @return {@link UserRedDotVO}
      */
     public ResPair<List<UserRedDotVO>> getRedDot() {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         List<UserRedDot> redDots = userRedDotService.list(new LambdaQueryWrapper<UserRedDot>()
                 .eq(UserRedDot::getUid, uid));
         List<UserRedDotVO> vos = new ArrayList<>();

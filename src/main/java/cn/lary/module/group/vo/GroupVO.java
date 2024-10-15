@@ -1,7 +1,37 @@
 package cn.lary.module.group.vo;
 
+import cn.lary.module.group.entity.Group;
+import cn.lary.module.group.entity.GroupMember;
 import lombok.Data;
 
 @Data
 public class GroupVO {
+
+    /**
+     * 群名字
+     */
+    private Integer name;
+
+
+    /**
+     * 群头像路径
+     */
+    private String avatar;
+
+    /**
+     * 群Id
+     */
+    private Integer id;
+
+    private Integer num;
+
+    public GroupVO of(Group group) {
+        GroupVO vo = new GroupVO();
+        vo.name = group.getName();
+        vo.avatar = group.getGroupAvatar();
+        vo.id = group.getGroupId();
+        vo.num = group.getGroupNum();
+        return vo;
+    }
+
 }

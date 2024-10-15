@@ -12,7 +12,7 @@ import cn.lary.module.stream.entity.Raffle;
 import cn.lary.module.stream.service.RaffleService;
 import cn.lary.module.wallet.dto.BatchOutcomeTransferDTO;
 import cn.lary.module.wallet.service.WalletService;
-import cn.lary.pkg.wk.entity.core.WK;
+import cn.lary.pkg.wk.constant.WK;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;

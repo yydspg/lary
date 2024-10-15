@@ -1,6 +1,6 @@
 package cn.lary.module.stream.api;
 
-import cn.lary.core.context.ReqContext;
+import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResPair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
@@ -34,7 +34,7 @@ public class FanController {
 
     @GetMapping("/raffle/join")
     public SingleResponse<Void> joinRaffle(@RequestParam @NotNull Integer toUid) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         ResPair<Void> res = fanBizExecute.joinRaffle(uid, toUid);
         if (!res.isOk()) {
             return ResponseKit.fail(res.getMsg());
@@ -59,7 +59,7 @@ public class FanController {
     }
     @GetMapping("/redpacket/join")
     public SingleResponse<Void> joinRedPacket(@RequestParam @NotNull Integer toUid) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         ResPair<Void> res = fanBizExecute.redWars(uid, toUid);
         if (!res.isOk()) {
             return ResponseKit.fail(res.getMsg());

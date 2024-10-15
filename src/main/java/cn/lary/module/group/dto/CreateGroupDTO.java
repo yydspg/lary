@@ -7,8 +7,9 @@ import java.util.List;
 
 @Data
 public class CreateGroupDTO {
-    // TODO  :  此处处理好 category 的校验
+    @NotNull
     private Integer category;
+
     private String name; // group name
     @NotNull
     private List<Integer> members; // group member uid

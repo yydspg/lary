@@ -1,6 +1,6 @@
 package cn.lary.module.wallet.core;
 
-import cn.lary.core.context.ReqContext;
+import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResPair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
@@ -52,7 +52,7 @@ public class WalletBizExecute {
      * @return {@link PayBuildVO}
      */
     public ResPair<PayBuildVO> recharge(RechargeDTO req)  {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         Wallet wallet = walletService.getOne(new LambdaQueryWrapper<Wallet>()
                 .eq(Wallet::getUid, uid)
                 .eq(Wallet::getIsBlock, false)
@@ -99,7 +99,7 @@ public class WalletBizExecute {
      * @return  {@link BalanceVO}
      */
     public ResPair<BalanceVO> getBalance()  {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         Wallet wallet = walletService.getOne(new LambdaQueryWrapper<Wallet>()
                 .eq(Wallet::getUid, uid)
                 .eq(Wallet::getIsDelete,false)
@@ -123,7 +123,7 @@ public class WalletBizExecute {
      * @return ok
      */
     public ResPair<Void> updateQuestion( UpdateSecurityQuestionDTO req) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         Wallet wallet = walletService.getOne(new LambdaQueryWrapper<Wallet>()
                 .eq(Wallet::getUid, uid)
                 .eq(Wallet::getIsBlock,false), false);
@@ -146,7 +146,7 @@ public class WalletBizExecute {
      * @return {@link WalletIncomeVO}
      */
     public ResPair<List<WalletIncomeVO>> getIncomeVOs(WalletIncomePageQueryDTO dto){
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         dto.setUid(uid);
         List<WalletIncomeVO> vos = walletIncomeService.getWalletIncomeVOs(dto);
         if(CollectionKit.isEmpty(vos)){
@@ -161,7 +161,7 @@ public class WalletBizExecute {
      * @return {@link WalletOutcomeVO}
      */
     public ResPair<List<WalletOutcomeVO>> getOutcomeVOs(WalletOutcomePageQueryDTO dto){
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         dto.setUid(uid);
         List<WalletOutcomeVO> vos = walletOutcomeService.getWalletOutcomeVOs(dto);
         if(CollectionKit.isEmpty(vos)) {

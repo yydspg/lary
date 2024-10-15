@@ -1,6 +1,6 @@
 package cn.lary.module.stream.api;
 
-import cn.lary.core.context.ReqContext;
+import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.ResPair;
 import cn.lary.core.dto.SingleResponse;
@@ -25,8 +25,8 @@ public class FollowController {
 
     @PostMapping("/foll")
     public SingleResponse<Void> apply(@Valid @RequestBody FollowDTO req) {
-        int uid = ReqContext.getLoginUID();
-        String uidName = ReqContext.getLoginName();
+        int uid = RequestContext.getLoginUID();
+        String uidName = RequestContext.getLoginName();
         ResPair<Void> res = followBizExecute.follow(uid, uidName, req);
         if (!res.isOk()) {
             return ResponseKit.fail(res.getMsg());
@@ -36,7 +36,7 @@ public class FollowController {
 
     @GetMapping("/unfollow{toUid}")
     public SingleResponse<Void> unfollow(@RequestParam @NotNull int toUid) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         ResPair<Void> res = followBizExecute.unfollow(uid, toUid);
         if (!res.isOk()) {
             return ResponseKit.fail(res.getMsg());
@@ -46,7 +46,7 @@ public class FollowController {
 
     @PostMapping("/follows")
     public PageResponse<Follow> page(@RequestBody @Valid FollowListDTO req) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         ResPair<List<Follow>> res = followBizExecute.follows(uid, req);
         if (!res.isOk()) {
             return ResponseKit.pageFail(res.getMsg());
@@ -55,7 +55,7 @@ public class FollowController {
     }
     @GetMapping("/block")
     public SingleResponse<Void> block(@RequestParam @NotNull int toUid) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         ResPair<Void> res = followBizExecute.block(uid, toUid);
         if (!res.isOk()) {
             return ResponseKit.fail(res.getMsg());
@@ -64,7 +64,7 @@ public class FollowController {
     }
     @GetMapping("/unblock")
     public SingleResponse<Void> unblock(@RequestParam @NotNull int toUid) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         ResPair<Void> res = followBizExecute.unblock(uid, toUid);
         if (!res.isOk()) {
             return ResponseKit.fail(res.getMsg());

@@ -13,11 +13,11 @@ import lombok.experimental.Accessors;
 
 /**
  * <p>
- * 
+ *
  * </p>
  *
  * @author paul
- * @since 2024-07-29
+ * @since 2024-10-16
  */
 @Getter
 @Setter
@@ -28,32 +28,71 @@ public class GroupMember implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
-    private Long id;
+    private Integer id;
 
-    private Integer groupNo;
+    /**
+     * 群聊id
+     */
+    private Integer groupId;
 
+    /**
+     * 用户id
+     */
     private Integer uid;
 
+
+
+    /**
+     * 群聊备注
+     */
     private String remark;
 
+    /**
+     * 本群昵称
+     */
+    private String nickname;
+
+    /**
+     * 群聊角色
+     */
     private Integer role;
 
-    private Long version;
+    /**
+     * 群聊状态
+     */
+    private Integer status;
 
-    private Boolean isDeleted;
+    /**
+     * 群成员头像
+     */
+    private String avatar;
 
-    private Short status;
-
-    private String vercode;
-
-    private Boolean robot;
-
-    private Integer inviteUid;
+    /**
+     * 群成员用户名
+     */
+    private String name;
 
     /**
      * 群成员禁言时长
      */
     private Integer forbiddenExpireTime;
+
+    /**
+     * 验证码
+     */
+    private String verifyCode;
+
+    /**
+     * 是否是机器人
+     */
+    private Boolean isRobot;
+
+    /**
+     * 邀请人uid
+     */
+    private Integer inviteUid;
+
+    private Boolean isDelete;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

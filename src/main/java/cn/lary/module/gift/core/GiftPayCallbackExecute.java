@@ -14,7 +14,7 @@ import cn.lary.module.stream.dto.LiveCacheDTO;
 import cn.lary.pkg.wk.api.WKMessageService;
 import cn.lary.pkg.wk.dto.message.MessageHeader;
 import cn.lary.pkg.wk.dto.message.MessageSendDTO;
-import cn.lary.pkg.wk.entity.core.WK;
+import cn.lary.pkg.wk.constant.WK;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;

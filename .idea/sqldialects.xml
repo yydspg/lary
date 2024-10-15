@@ -10,6 +10,7 @@
     <file url="file://$PROJECT_DIR$/docs/sql/gift/gift.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/goods/goods.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/group/20240812.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/group/group.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/location/location.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/member/member.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/order/order.sql" dialect="MySQL" />

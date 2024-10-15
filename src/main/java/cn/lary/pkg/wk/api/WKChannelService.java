@@ -17,27 +17,27 @@ public interface WKChannelService {
     @POST
     Response<Void> createOrUpdate(@Body ChannelCreateDTO channelCreateDTO);
     @POST("info")
-    Response<Void> updateOrAddInfo(@Body WKChannelInfoReq channelInfoReq);
+    Response<Void> updateOrAddInfo(@Body WKChannelInfoDTO channelInfoReq);
     @POST("delete")
-    Response<Void> delete(@Body WKChannelDeleteReq channelDeleteReq);
+    Response<Void> delete(@Body WKChannelDeleteDTO channelDeleteReq);
     @POST("subscribers_add")
     Response<Void> addSubscribers(@Body SubscribersAddDTO subscribersAddDTO);
     @POST("subscribers_remove")
-    Response<Void> removeSubscribers(@Body SubscribersRemoveReq subscribersDel);
+    Response<Void> removeSubscribers(@Body SubscribersRemoveDTO subscribersDel);
     @POST("blacklist_add")
-    Response<Void> addBlacklist(@Body BlacklistAddReq blacklistAddReq);
+    Response<Void> addBlacklist(@Body BlacklistAddDTO blacklistAddDTO);
     @POST("blacklist_set")
-    Response<Void> setBlacklist(@Body BlacklistAddReq blacklistAddReq);
+    Response<Void> setBlacklist(@Body BlacklistAddDTO blacklistAddDTO);
     @POST("whitelist_remove")
-    Response<Void> removeBlacklist(@Body WhitelistAddReq whitelistAddReq);
+    Response<Void> removeBlacklist(@Body WhitelistAddDTO whitelistAddDTO);
     @POST("whitelist_add")
-    Response<Void> addWhitelist(@Body WhitelistAddReq whitelistAddReq);
+    Response<Void> addWhitelist(@Body WhitelistAddDTO whitelistAddDTO);
     @POST("whitelist_set")
-    Response<Void> setWhitelist(@Body WhitelistAddReq whitelistAddReq);
+    Response<Void> setWhitelist(@Body WhitelistAddDTO whitelistAddDTO);
     @POST("whitelist_remove")
-    Response<Void> removeWhitelist(@Body WhitelistAddReq whitelistAddReq);
+    Response<Void> removeWhitelist(@Body WhitelistAddDTO whitelistAddDTO);
     @POST("messagesync")
-    Response<SyncMessageRes> syncMessage(@Body SyncMessageReq syncMessageReq);
+    Response<SyncMessageRes> syncMessage(@Body SyncMessageDTO syncMessageDTO);
     @GET("max_message_seq")
     Response<ChannelMaxMessageSeq> getMaxMessageSeq(@Query("channel_id") String channelId, @Query("channel_type") byte channelType);
 }

@@ -1,6 +1,6 @@
 package cn.lary.module.gift.core;
 
-import cn.lary.core.context.ReqContext;
+import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResPair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
@@ -28,7 +28,6 @@ import cn.lary.module.pay.plugin.PluginSupport;
 import cn.lary.module.stream.dto.LiveCacheDTO;
 import cn.lary.module.user.service.UserService;
 import cn.lary.module.user.vo.UserBaseVO;
-import cn.lary.module.wallet.dto.TransferDTO;
 import cn.lary.module.wallet.entity.Wallet;
 import cn.lary.module.wallet.entity.WalletOutcome;
 import cn.lary.module.wallet.service.WalletOutcomeService;
@@ -36,7 +35,7 @@ import cn.lary.module.wallet.service.WalletService;
 import cn.lary.pkg.wk.api.WKMessageService;
 import cn.lary.pkg.wk.dto.message.MessageHeader;
 import cn.lary.pkg.wk.dto.message.MessageSendDTO;
-import cn.lary.pkg.wk.entity.core.WK;
+import cn.lary.pkg.wk.constant.WK;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import jakarta.annotation.PostConstruct;
@@ -82,8 +81,8 @@ public class GiftBizExecute  {
      */
     @Transactional(rollbackFor = Exception.class)
     public ResPair<PayBuildVO> pay( GiftOrderDTO req) {
-        int uid = ReqContext.getLoginUID();
-        String uidName = ReqContext.getLoginName();
+        int uid = RequestContext.getLoginUID();
+        String uidName = RequestContext.getLoginName();
         Long price = giftPrices.get(req.getId());
         int anchorUid = req.getToUid();
         if (price == null) {
@@ -175,7 +174,7 @@ public class GiftBizExecute  {
      * @return {@link GiftOrderVO}
      */
     public ResPair<List<GiftOrderVO>> orders(GiftOrderPageQueryDTO dto) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         dto.setUid(uid);
         List<GiftOrderVO> orders = giftOrderService.queryGiftOrders(dto);
         if (orders == null) {

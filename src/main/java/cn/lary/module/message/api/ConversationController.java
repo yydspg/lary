@@ -1,6 +1,6 @@
 package cn.lary.module.message.api;
 
-import cn.lary.core.context.ReqContext;
+import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.MultiResponse;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
@@ -32,7 +32,7 @@ public class ConversationController {
      */
     @GetMapping("/list")
     public MultiResponse list() {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         Response<List<ConversationRes>> res = wkConversationService.list(uid);
         if (!res.isSuccessful()) {
             return ResponseKit.multiFail("server error");
@@ -47,7 +47,7 @@ public class ConversationController {
      */
     @PostMapping("/clearUnread")
     public SingleResponse clearUnread(@Valid @RequestBody ClearConversationUnreadReq req) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         ConversationUnreadClearReq wkReq = new ConversationUnreadClearReq().setUid(uid).setMessageSeq(req.getMessageSeq());
 //        wkReq.setChanelID(req.getChanelID()).setChannelType(req.getChannelType());
         Response<Void> res = wkConversationService.clearUnread(wkReq);
@@ -66,7 +66,7 @@ public class ConversationController {
      */
     @GetMapping("/del{channel_id}{channel_type}")
     public SingleResponse del(@NotNull @RequestParam(value = "channel_id") String channelId, @NotNull @RequestParam(value = "channel_type") byte channelType) {
-        int uid = ReqContext.getLoginUID();
+        int uid = RequestContext.getLoginUID();
         ConversationDeleteReq wkReq = new ConversationDeleteReq();
 //        wkReq.setChanelID(channelId).setChannelType(channelType);
         wkReq.setUid(uid);

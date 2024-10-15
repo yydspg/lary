@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lary.module.group.mapper.GroupMemberSettingMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.lary.module.group.entity.GroupMemberSetting">
+        <id column="id" property="id" />
+        <result column="is_top" property="isTop" />
+        <result column="is_no_disturb" property="isNoDisturb" />
+        <result column="nickname" property="nickname" />
+        <result column="remark" property="remark" />
+        <result column="is_hidden" property="isHidden" />
+        <result column="is_join_group_remind" property="isJoinGroupRemind" />
+        <result column="is_show_nickname" property="isShowNickname" />
+        <result column="is_delete" property="isDelete" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+</mapper>

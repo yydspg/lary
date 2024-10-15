@@ -8,6 +8,5 @@ import lombok.experimental.Accessors;
 public class ResPair<T> {
     private boolean ok;
     private String msg;
-    private Integer code;
     private T data;
 }

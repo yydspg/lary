@@ -22,7 +22,7 @@ import cn.lary.module.wallet.entity.Wallet;
 import cn.lary.module.wallet.service.WalletService;
 import cn.lary.pkg.wk.api.WKMessageService;
 import cn.lary.pkg.wk.dto.message.MessageSendDTO;
-import cn.lary.pkg.wk.entity.core.WK;
+import cn.lary.pkg.wk.constant.WK;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;

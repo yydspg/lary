@@ -1,6 +1,6 @@
 package cn.lary.module.user.interceptor;
 
-import cn.lary.core.context.ReqContext;
+import cn.lary.core.context.RequestContext;
 import cn.lary.core.cs.ResultCode;
 import cn.lary.kit.ResponseKit;
 import cn.lary.kit.StringKit;
@@ -44,14 +44,14 @@ public class UserInterceptor  implements HandlerInterceptor {
         if (args.length > 2) {
             map.put("role", args[2]);
         }
-        ReqContext.setCurrent(map);
+        RequestContext.setCurrent(map);
         return HandlerInterceptor.super.preHandle(request, response, handler);
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        ReqContext.getCurrent().clear();
-        ReqContext.removeCurrent();
+        RequestContext.getCurrent().clear();
+        RequestContext.removeCurrent();
         HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
     }
     private String getLoginTokenV(String token) {
