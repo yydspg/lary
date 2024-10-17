@@ -6,9 +6,11 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.util.Map;
+
 @Data
 @Accessors(chain = true)
-public class DeviceLoginDTO  extends DTO {
+public class DeviceLoginCacheDTO extends DTO {
 
     @JsonProperty("id")
     private int id;
@@ -25,4 +27,14 @@ public class DeviceLoginDTO  extends DTO {
     private int flag;
 
     private int level;
+
+    public static DeviceLoginCacheDTO of(Map map) {
+        DeviceLoginCacheDTO dto = new DeviceLoginCacheDTO();
+        dto.setId((Integer) map.get("id"));
+        dto.setName((String) map.get("name"));
+        dto.setModel((String) map.get("model"));
+        dto.setFlag((Integer) map.get("flag"));
+        dto.setLevel((Integer) map.get("level"));
+        return dto;
+    }
 }

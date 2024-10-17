@@ -42,7 +42,6 @@ public class PluginSupport {
         PaymentLog log = new PaymentLog().setPayCost(payParam.getPrice()).setPayWay(payWay);
         paymentLogService.save(log);
         Payment payment = plugins.get(payWay);
-        // according pay client decide which method to use
         return switch (payClient) {
             case 1 -> payment.pcPay(payParam);
             case 2 -> payment.appPay(payParam);

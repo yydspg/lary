@@ -9,7 +9,7 @@ public class GoLiveVO {
 
     public String goLiveToken;
 
-    public String stream;
+    public String identify;
 
     public int event;
 

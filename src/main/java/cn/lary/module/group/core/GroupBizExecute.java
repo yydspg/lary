@@ -1,6 +1,6 @@
 package cn.lary.module.group.core;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.module.group.dto.CreateGroupDTO;
 import cn.lary.module.group.dto.GroupMemberSettingDTO;
 import cn.lary.module.group.service.GroupMemberService;
@@ -28,7 +28,7 @@ public class GroupBizExecute {
      * @param dto {@link CreateGroupDTO}
      * @return {@link CreateGroupVO}
      */
-    public ResPair<CreateGroupVO> create(CreateGroupDTO dto) {
+    public ResponsePair<CreateGroupVO> create(CreateGroupDTO dto) {
         return groupService.create(dto);
     }
  
@@ -38,7 +38,7 @@ public class GroupBizExecute {
      * @param groupId g
      * @return ok
      */
-    public ResPair<Void> forbidden(int groupId) {
+    public ResponsePair<Void> forbidden(int groupId) {
         return groupService.forbidden(groupId);
     }
 
@@ -47,7 +47,7 @@ public class GroupBizExecute {
      * @param groupId g
      * @return {@link GroupDetailVO}
      */
-    public ResPair<GroupDetailVO> getGroup(int groupId) {
+    public ResponsePair<GroupDetailVO> getGroup(int groupId) {
         return groupService.getGroup(groupId);
     }
 
@@ -56,7 +56,7 @@ public class GroupBizExecute {
      * @param role 角色
      * @return {@link GroupVO}
      */
-    public ResPair<List<GroupVO>> myGroups(int role) {
+    public ResponsePair<List<GroupVO>> myGroups(int role) {
         return groupService.my(role);
     }
     /**
@@ -65,7 +65,7 @@ public class GroupBizExecute {
      * @param dto {@link GroupMemberSettingDTO}
      * @return ok
      */
-    public ResPair<Void> setting(GroupMemberSettingDTO dto){
+    public ResponsePair<Void> setting(GroupMemberSettingDTO dto){
         return groupMemberSettingService.saveOrUpdate(dto);
     }
 
@@ -73,7 +73,7 @@ public class GroupBizExecute {
      * 获取群设置
      * @return {@link GroupMemberSettingVO}
      */
-    public ResPair<List<GroupMemberSettingVO>> mySettings(){
+    public ResponsePair<List<GroupMemberSettingVO>> mySettings(){
         return groupMemberSettingService.my();
     }
     
@@ -83,7 +83,7 @@ public class GroupBizExecute {
      * @param status s
      * @return ok
      */
-    public ResPair<List<Integer>> getMembersWithStatus(int groupNo, int status){
+    public ResponsePair<List<Integer>> getMembersWithStatus(int groupNo, int status){
         return groupMemberService.getMembersWithStatus(groupNo, status);
     }
     /**
@@ -91,7 +91,7 @@ public class GroupBizExecute {
      * @param groupId g
      * @return ok
      */
-    public ResPair<Void> quit(int groupId) {
+    public ResponsePair<Void> quit(int groupId) {
         return groupMemberService.quit(groupId);
     }
 
@@ -101,7 +101,7 @@ public class GroupBizExecute {
      * @param uid u
      * @return ok
      */
-    public ResPair<Void> quitByAdmin(int groupId,int uid){
+    public ResponsePair<Void> quitByAdmin(int groupId, int uid){
         return groupMemberService.quitByAdmin(groupId,uid);
     }
 
@@ -110,7 +110,7 @@ public class GroupBizExecute {
      * @param groupId g
      * @return ok
      */
-    public ResPair<Void> join(int groupId) {
+    public ResponsePair<Void> join(int groupId) {
         return groupMemberService.join(groupId);
     }
     /**
@@ -119,7 +119,7 @@ public class GroupBizExecute {
      * @param uid  u
      * @return ok
      */
-    public ResPair<Void> joinByAdmin(int groupId,int uid) {
+    public ResponsePair<Void> joinByAdmin(int groupId, int uid) {
         return groupMemberService.joinByAdmin(groupId,uid);
     }
 
@@ -129,7 +129,7 @@ public class GroupBizExecute {
      * @param ids i
      * @return 正确加群的ids
      */
-    public ResPair<Integer> multiJoinByAdmin(int groupId,List<Integer> ids){
+    public ResponsePair<Integer> multiJoinByAdmin(int groupId, List<Integer> ids){
         return groupMemberService.multiJoinByAdmin(groupId,ids);
     }
 
@@ -139,7 +139,7 @@ public class GroupBizExecute {
      * @param uid 被设置的用户
      * @return ok
      */
-    public ResPair<Void> setAdmin(int groupId,int uid){
+    public ResponsePair<Void> setAdmin(int groupId, int uid){
         return groupMemberService.setAdmin(groupId,uid);
     }
 
@@ -149,7 +149,7 @@ public class GroupBizExecute {
      * @param uid u
      * @return ok
      */
-    public ResPair<Void> removeAdmin(int groupId,int uid){
+    public ResponsePair<Void> removeAdmin(int groupId, int uid){
         return groupMemberService.removeAdmin(groupId,uid);
     }
 
@@ -158,7 +158,7 @@ public class GroupBizExecute {
      * @param groupId g
      * @return {@link GroupMemberVO}
      */
-    public ResPair<List<GroupMemberVO>> members(int groupId){
+    public ResponsePair<List<GroupMemberVO>> members(int groupId){
         return  groupMemberService.members(groupId);
     }
     /**
@@ -167,7 +167,7 @@ public class GroupBizExecute {
      * @param uid 被转移用户
      * @return ok
      */
-    public ResPair<Void> changeOwner(int groupId, int uid) {
+    public ResponsePair<Void> changeOwner(int groupId, int uid) {
         return groupMemberService.changeOwner(groupId, uid);
     }
 
@@ -176,7 +176,7 @@ public class GroupBizExecute {
      * @param groupId g
      * @return ok
      */
-    public ResPair<Void> disband(int groupId) {
+    public ResponsePair<Void> disband(int groupId) {
         return groupService.disband(groupId);
     }
 
@@ -186,7 +186,7 @@ public class GroupBizExecute {
      * @param uid u
      * @return ok
      */
-    public ResPair<Void> block(int groupId,int uid){
+    public ResponsePair<Void> block(int groupId, int uid){
         return groupMemberService.block(groupId,uid);
     }
 }

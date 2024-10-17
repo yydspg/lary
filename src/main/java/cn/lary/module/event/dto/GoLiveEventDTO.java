@@ -23,9 +23,6 @@ public class GoLiveEventDTO implements EventConvert {
     @JsonProperty("wk_channel_id")
     private int wkChannelId;
 
-    @JsonProperty("gift_buy_channel_id")
-    private int giftBuyChannelId;
-
     @Override
     public EventData of() {
          return new EventData()

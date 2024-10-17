@@ -1,7 +1,7 @@
 package cn.lary.module.wallet.core;
 
 import cn.lary.core.context.RequestContext;
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.StringKit;
@@ -51,7 +51,7 @@ public class WalletBizExecute {
      * @param req {@link RechargeDTO}
      * @return {@link PayBuildVO}
      */
-    public ResPair<PayBuildVO> recharge(RechargeDTO req)  {
+    public ResponsePair<PayBuildVO> recharge(RechargeDTO req)  {
         int uid = RequestContext.getLoginUID();
         Wallet wallet = walletService.getOne(new LambdaQueryWrapper<Wallet>()
                 .eq(Wallet::getUid, uid)
@@ -98,7 +98,7 @@ public class WalletBizExecute {
      * 获取余额
      * @return  {@link BalanceVO}
      */
-    public ResPair<BalanceVO> getBalance()  {
+    public ResponsePair<BalanceVO> getBalance()  {
         int uid = RequestContext.getLoginUID();
         Wallet wallet = walletService.getOne(new LambdaQueryWrapper<Wallet>()
                 .eq(Wallet::getUid, uid)
@@ -122,7 +122,7 @@ public class WalletBizExecute {
      * @param req {@link UpdateSecurityQuestionDTO}
      * @return ok
      */
-    public ResPair<Void> updateQuestion( UpdateSecurityQuestionDTO req) {
+    public ResponsePair<Void> updateQuestion(UpdateSecurityQuestionDTO req) {
         int uid = RequestContext.getLoginUID();
         Wallet wallet = walletService.getOne(new LambdaQueryWrapper<Wallet>()
                 .eq(Wallet::getUid, uid)
@@ -145,7 +145,7 @@ public class WalletBizExecute {
      * @param dto {@link WalletIncomePageQueryDTO}
      * @return {@link WalletIncomeVO}
      */
-    public ResPair<List<WalletIncomeVO>> getIncomeVOs(WalletIncomePageQueryDTO dto){
+    public ResponsePair<List<WalletIncomeVO>> getIncomeVOs(WalletIncomePageQueryDTO dto){
         int uid = RequestContext.getLoginUID();
         dto.setUid(uid);
         List<WalletIncomeVO> vos = walletIncomeService.getWalletIncomeVOs(dto);
@@ -160,7 +160,7 @@ public class WalletBizExecute {
      * @param dto {@link WalletOutcomePageQueryDTO}
      * @return {@link WalletOutcomeVO}
      */
-    public ResPair<List<WalletOutcomeVO>> getOutcomeVOs(WalletOutcomePageQueryDTO dto){
+    public ResponsePair<List<WalletOutcomeVO>> getOutcomeVOs(WalletOutcomePageQueryDTO dto){
         int uid = RequestContext.getLoginUID();
         dto.setUid(uid);
         List<WalletOutcomeVO> vos = walletOutcomeService.getWalletOutcomeVOs(dto);

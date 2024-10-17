@@ -1,20 +1,26 @@
 package cn.lary.kit;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 
 
 public class BizKit {
-        public static <T> ResPair<T> ok(){
-            return new ResPair<T>().setOk(true);
+        public static <T> ResponsePair<T> ok(){
+            return new ResponsePair<T>()
+                    .setFail(false);
         }
-        public static <T> ResPair<T> fail(){
-            return new ResPair<T>().setOk(false);
+        public static <T> ResponsePair<T> fail(){
+            return new ResponsePair<T>()
+                    .setFail(true);
         }
 
-        public static <T> ResPair<T> fail(String msg){
-            return new ResPair<T>().setOk(false).setMsg(msg);
+        public static <T> ResponsePair<T> fail(String msg){
+            return new ResponsePair<T>()
+                    .setFail(true)
+                    .setMsg(msg);
         }
-        public static <T> ResPair<T> ok( T args){
-            return new ResPair<T>().setOk(true).setData(args);
+        public static <T> ResponsePair<T> ok(T args){
+            return new ResponsePair<T>()
+                    .setFail(false)
+                    .setData(args);
         }
 }

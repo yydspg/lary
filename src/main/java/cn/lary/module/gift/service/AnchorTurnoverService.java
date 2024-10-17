@@ -1,5 +1,6 @@
 package cn.lary.module.gift.service;
 
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.module.gift.entity.AnchorTurnover;
 import com.baomidou.mybatisplus.extension.service.IService;
 
@@ -13,4 +14,12 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface AnchorTurnoverService extends IService<AnchorTurnover> {
 
+    /**
+     * 计算直播收入
+     * @param uid u
+     * @param streamId s
+     * @return 收入
+     */
+    // TODO  :  使用阿里的ttl优化
+    ResponsePair<Long> buildTurnover(int uid,int streamId);
 }

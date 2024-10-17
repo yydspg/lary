@@ -1,7 +1,9 @@
 package cn.lary.module.wallet.service;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.module.wallet.dto.BatchOutcomeTransferDTO;
+import cn.lary.module.wallet.dto.SystemIncomeTransferDTO;
+import cn.lary.module.wallet.dto.SystemOutcomeTransferDTO;
 import cn.lary.module.wallet.dto.TransferDTO;
 import cn.lary.module.wallet.entity.Wallet;
 import com.baomidou.mybatisplus.extension.service.IService;
@@ -23,17 +25,37 @@ public interface WalletService extends IService<Wallet> {
      * <b>uid</b>是交易发起方，<b>toUid</b>是交易接受方<br>
      * 请注意在调用此接口前，尽量减少对{@link Wallet}的查询
      * @param dto {@link TransferDTO}
-     * @return {@link ResPair}
+     * @return {@link ResponsePair}
      */
-    ResPair<Void> transfer(TransferDTO dto);
+    ResponsePair<Void> transfer(TransferDTO dto);
 
     /**
      * 批量数据转移<br>
      * 一个用户对多个用户转移相同数目的资产 <br>
      * 吊起此接口前对被转移用户状态检查
      * @param dto {@link BatchOutcomeTransferDTO}
-     * @return {@link ResPair}
+     * @return {@link ResponsePair}
      */
-    ResPair<Void> batchOutcomeTransfer(BatchOutcomeTransferDTO dto);
+    ResponsePair<Void> batchOutcomeTransfer(BatchOutcomeTransferDTO dto);
 
+    /**
+     * 系统向用户转钱
+     * @param dto {@link SystemOutcomeTransferDTO}
+     * @return ok
+     */
+    ResponsePair<Void> systemOutcomeTransfer(SystemOutcomeTransferDTO dto);
+    /**
+     * 用户向系统转钱
+     * @param dto {@link SystemIncomeTransferDTO}
+     * @return ok
+     */
+    ResponsePair<Void> systemIncomeTransfer(SystemIncomeTransferDTO dto);
+
+    /**
+     * 获取用户钱包<br>
+     * 此方法不会返回null
+     * @param members 用户
+     * @return ok
+     */
+    ResponsePair<List<Wallet>> getUserWallets(List<Integer> members);
 }

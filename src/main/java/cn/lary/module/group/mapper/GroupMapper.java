@@ -16,5 +16,4 @@ import java.util.List;
  */
 public interface GroupMapper extends BaseMapper<Group> {
 
-    List<GroupDetail> queryMySavedGroups(@Param("uid") Integer uid);
 }

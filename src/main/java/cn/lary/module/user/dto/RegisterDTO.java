@@ -33,6 +33,6 @@ public class RegisterDTO extends DTO {
     private String birthday;
     @JsonProperty("device")
     @NotNull(message = "device info is null")
-    private DeviceLoginDTO device;
+    private DeviceLoginCacheDTO device;
 
 }

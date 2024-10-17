@@ -45,11 +45,6 @@ public class GiftOrder implements Serializable {
     private Integer anchorUid;
 
     /**
-     * 购买通道id
-     */
-    private Integer buyChannelId;
-
-    /**
      * wk 弹幕流id
      */
     private Integer danmakuId;

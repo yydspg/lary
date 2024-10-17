@@ -1,6 +1,6 @@
 package cn.lary.module.user.execute;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.*;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
@@ -34,7 +34,7 @@ public class DeviceBizExecute {
      * @param code 验证码
      * @return ok
      */
-    public ResPair<Void> responseAddDeviceCMD(int uid,String code) {
+    public ResponsePair<Void> responseAddDeviceCMD(int uid, String code) {
         Map<Object, Object> data = redisCache.getHash(kvBuilder.addDeviceK(uid));
         if (data == null) {
             return BizKit.fail("no add device redis cache data");
@@ -61,7 +61,7 @@ public class DeviceBizExecute {
      * @param model m
      * @return {@link DeviceVO}
      */
-    public ResPair<DeviceVO> addDevice(int uid,String name,String model,int flag) {
+    public ResponsePair<DeviceVO> addDevice(int uid, String name, String model, int flag) {
         if (flag == WK.DeviceLevel.master){
             return BizKit.fail("master device no support");
         }
@@ -87,7 +87,7 @@ public class DeviceBizExecute {
      * @param uid u
      * @return {@link DeviceVO}
      */
-    public ResPair<List<DeviceVO>> list(int uid) {
+    public ResponsePair<List<DeviceVO>> list(int uid) {
         List<Device> devices = deviceService.queryDevicesWithUid(uid);
         if (CollectionKit.isEmpty(devices)) {
             log.error("device list fail,uid:{}",uid);
@@ -113,7 +113,7 @@ public class DeviceBizExecute {
      * @param deviceId d
      * @return void
      */
-    public ResPair<Void> delDeviceToken(int uid,int deviceId) {
+    public ResponsePair<Void> delDeviceToken(int uid, int deviceId) {
         redisCache.del(kvBuilder.deviceLoginK(uid,deviceId));
         return BizKit.ok();
     }
@@ -126,7 +126,7 @@ public class DeviceBizExecute {
      * @param deviceId d
      * @return v
      */
-    public ResPair<Void> removeDevice(int uid,int deviceId) {
+    public ResponsePair<Void> removeDevice(int uid, int deviceId) {
         //
         String token = redisCache.get(kvBuilder.deviceLoginK(uid, deviceId));
         if (StringKit.isNotEmpty(token)) {

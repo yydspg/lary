@@ -2,7 +2,7 @@ package cn.lary.module.stream.api;
 
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.PageResponse;
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.IPKit;
 import cn.lary.kit.ResponseKit;
@@ -50,9 +50,8 @@ public class RoomController {
      */
     @GetMapping("/page")
     public PageResponse<StreamRecordVO> records(@RequestParam @NotNull Integer page, @RequestParam @NotNull Integer limit) {
-        int uid = RequestContext.getLoginUID();
-        ResPair<List<StreamRecordVO>> res = streamBizExecute.page(uid, page, limit);
-        if (!res.isOk()) {
+        ResponsePair<List<StreamRecordVO>> res = streamBizExecute.page( page, limit);
+        if (res.isFail()) {
             return ResponseKit.pageFail(res.getMsg());
         }
         return ResponseKit.pageOk(res.getData(),page,limit);
@@ -64,13 +63,11 @@ public class RoomController {
      * @return {@link GoLiveVO}
      */
     @PostMapping("/go")
-    public SingleResponse<GoLiveVO> start(@RequestBody @Valid GoLiveDTO req,HttpServletRequest request) {
+    public SingleResponse<GoLiveVO> start(@RequestBody @Valid GoLiveDTO dto,HttpServletRequest request) {
 
-        int uid = RequestContext.getLoginUID();
-        String uidName = RequestContext.getLoginName();
         String ip = IPKit.getIp(request);
-        ResPair<GoLiveVO> res = roomBizExecute.go(uid, uidName,ip, req);
-        if (!res.isOk()) {
+        ResponsePair<GoLiveVO> res = roomBizExecute.go(ip, dto);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());
@@ -83,11 +80,9 @@ public class RoomController {
      */
     @GetMapping("/join")
     public SingleResponse<JoinLiveVO> join(@RequestParam(value = "toUid") @NotNull Integer toUid, HttpServletRequest req) {
-        int uid  = RequestContext.getLoginUID();
-        String uidName = RequestContext.getLoginName();
         String ip = IPKit.getIp(req);
-        ResPair<JoinLiveVO> res = roomBizExecute.join(uid, uidName, toUid,ip);
-        if (!res.isOk()) {
+        ResponsePair<JoinLiveVO> res = roomBizExecute.join( toUid,ip);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());
@@ -99,10 +94,8 @@ public class RoomController {
      */
     @GetMapping("/end")
     public SingleResponse<DownLiveVO> end() {
-        int uid = RequestContext.getLoginUID();
-        String uidName = RequestContext.getLoginName();
-        ResPair<DownLiveVO> res = roomBizExecute.end(uid, uidName);
-        if (!res.isOk()) {
+        ResponsePair<DownLiveVO> res = roomBizExecute.end();
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());
@@ -114,9 +107,8 @@ public class RoomController {
      */
     @GetMapping("/leave")
     public SingleResponse<Void> leave() {
-        int uid = RequestContext.getLoginUID();
-        ResPair<Void> res = roomBizExecute.leave(uid);
-        if (!res.isOk()) {
+        ResponsePair<Void> res = roomBizExecute.leave();
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());
@@ -124,14 +116,13 @@ public class RoomController {
 
     /**
      * 创建抽奖事件
-     * @param req {@link RaffleDTO}
+     * @param dto {@link RaffleDTO}
      * @return ok
      */
     @PostMapping("/raffle")
-    public SingleResponse<Void> raffle(@RequestBody @Valid RaffleDTO req) {
-        int uid = RequestContext.getLoginUID();
-        ResPair<Void> res = streamBizExecute.raffle(uid, req);
-        if (!res.isOk()) {
+    public SingleResponse<Void> raffle(@RequestBody @Valid RaffleDTO dto) {
+        ResponsePair<Void> res = roomBizExecute.raffle(dto);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());
@@ -139,15 +130,13 @@ public class RoomController {
 
     /**
      * 创建红包事件
-     * @param req {@link RedPacketDTO}
+     * @param dto {@link RedPacketDTO}
      * @return ok
      */
     @PostMapping("/redpacket")
-    public SingleResponse<Void> redpacket(@RequestBody @Valid RedPacketDTO req) {
-        int uid = RequestContext.getLoginUID();
-        String uidName = RequestContext.getLoginName();
-        ResPair<Void> res = streamBizExecute.redPacket(uid, uidName, req);
-        if (!res.isOk()) {
+    public SingleResponse<Void> redpacket(@RequestBody @Valid RedPacketDTO dto) {
+        ResponsePair<Void> res = roomBizExecute.redPacket(dto);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());

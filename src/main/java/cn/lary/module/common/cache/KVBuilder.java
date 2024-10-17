@@ -5,7 +5,7 @@ import cn.lary.module.stream.dto.LiveCacheDTO;
 import cn.lary.module.stream.dto.RaffleCacheDTO;
 import cn.lary.module.stream.dto.RedPacketCacheDTO;
 import cn.lary.module.user.dto.DeviceAddAckCacheDTO;
-import cn.lary.module.user.dto.DeviceLoginDTO;
+import cn.lary.module.user.dto.DeviceLoginCacheDTO;
 
 import java.util.Map;
 
@@ -19,7 +19,7 @@ public interface KVBuilder {
      */
     String deviceLoginK(int uid, int deviceId);
 
-    String deviceLoginV(DeviceLoginDTO deviceLoginDTO);
+    Map deviceLoginV(DeviceLoginCacheDTO deviceLoginCacheDTO);
 
     /**
      * 用户登陆 uid为key,token 为 value

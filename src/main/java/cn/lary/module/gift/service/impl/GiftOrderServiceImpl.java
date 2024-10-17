@@ -25,10 +25,6 @@ import java.util.List;
 public class GiftOrderServiceImpl extends ServiceImpl<GiftOrderMapper, GiftOrder> implements GiftOrderService {
 
     private final GiftOrderMapper giftOrderMapper;
-    @Override
-    public long collectCostMoneyByGiftChannelId(int giftChannelId) {
-        return giftOrderMapper.getGiftBuyRecordCountByGiftId(giftChannelId);
-    }
 
     @Override
     public List<GiftOrderVO> queryGiftOrders(GiftOrderPageQueryDTO dto) {

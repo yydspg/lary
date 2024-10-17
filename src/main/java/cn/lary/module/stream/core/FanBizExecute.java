@@ -1,6 +1,6 @@
 package cn.lary.module.stream.core;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.StringKit;
 import cn.lary.module.common.cache.KVBuilder;
@@ -15,7 +15,6 @@ import cn.lary.module.wallet.service.WalletService;
 import cn.lary.pkg.wk.api.WKMessageService;
 import cn.lary.pkg.wk.dto.message.MessageSendDTO;
 import cn.lary.pkg.wk.constant.WK;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,7 +39,7 @@ public class FanBizExecute {
      * @param toUid anchor id
      * @return ok
      */
-    public ResPair<Void> joinRaffle(int uid,int toUid) {
+    public ResponsePair<Void> joinRaffle(int uid, int toUid) {
         Map<Object, Object> data = redisCache.getHash(kvBuilder.goLiveK(uid));
         if (data == null) {
             return BizKit.fail("no live info");
@@ -53,9 +52,10 @@ public class FanBizExecute {
         }
         RaffleCacheDTO cache = RaffleCacheDTO.of(map);
         if (cache.isFan()) {
-            Follow relation = followService.getOne(new LambdaQueryWrapper<Follow>()
+            Follow relation = followService.lambdaQuery()
                     .eq(Follow::getUid, uid)
-                    .eq(Follow::getToUid, toUid),false);
+                    .eq(Follow::getToUid, toUid)
+                    .one();
             if (relation == null || relation.getIsUnfollow() ) {
                 return BizKit.fail("please follow anchor first");
             }
@@ -67,13 +67,14 @@ public class FanBizExecute {
             }
         }
         if (cache.getCost() > 0 ) {
-            TransferDTO dto = new TransferDTO().setUid(uid)
+            TransferDTO dto = new TransferDTO()
+                    .setUid(uid)
                     .setAmount(cache.getCost())
                     .setChannelId(liveCache.getStreamId())
                     .setChannelType(WK.ChannelType.stream)
                     .setToUid(toUid);
-            ResPair<Void> res = walletService.transfer(dto);
-            if(!res.isOk()) {
+            ResponsePair<Void> res = walletService.transfer(dto);
+            if(res.isFail()) {
                 return BizKit.fail(res.getMsg());
             }
         }
@@ -93,7 +94,7 @@ public class FanBizExecute {
      * @param toUid anchor
      * @return {@link RaffleCacheDTO}
      */
-    public ResPair<RaffleCacheDTO> getRaffleInfo( int toUid) {
+    public ResponsePair<RaffleCacheDTO> getRaffleInfo(int toUid) {
         Map<Object, Object> map = redisCache.getHash(kvBuilder.raffleK(toUid));
         if (map == null) {
             return BizKit.fail("no raffle info");
@@ -106,7 +107,7 @@ public class FanBizExecute {
      * @param toUid anchor
      * @return {@link RedPacketCacheDTO}
      */
-    public ResPair<RedPacketCacheDTO> getRedPacketInfo(int toUid) {
+    public ResponsePair<RedPacketCacheDTO> getRedPacketInfo(int toUid) {
         Map<Object, Object> map = redisCache.getHash(kvBuilder.redPacketK(toUid));
         if (map == null) {
             return BizKit.fail("no red packet info");
@@ -119,7 +120,7 @@ public class FanBizExecute {
      * @param toUid anchor
      * @return ok
      */
-    public ResPair<Void> redWars(int uid,int toUid) {
+    public ResponsePair<Void> redWars(int uid, int toUid) {
         boolean ok = true;
         if (ok) {
             return BizKit.ok();

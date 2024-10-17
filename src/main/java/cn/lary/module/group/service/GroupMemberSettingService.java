@@ -1,6 +1,6 @@
 package cn.lary.module.group.service;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.module.group.dto.GroupMemberSettingDTO;
 import cn.lary.module.group.entity.GroupMemberSetting;
 import cn.lary.module.group.vo.GroupMemberSettingVO;
@@ -24,11 +24,11 @@ public interface GroupMemberSettingService extends IService<GroupMemberSetting> 
      * @param dto {@link GroupMemberSettingDTO}
      * @return ok
      */
-    ResPair<Void> saveOrUpdate(GroupMemberSettingDTO dto);
+    ResponsePair<Void> saveOrUpdate(GroupMemberSettingDTO dto);
 
     /**
      * 获取群设置
      * @return {@link GroupMemberSettingVO}
      */
-    ResPair<List<GroupMemberSettingVO>> my();
+    ResponsePair<List<GroupMemberSettingVO>> my();
 }

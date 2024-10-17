@@ -1,7 +1,7 @@
 package cn.lary.module.group.service.impl;
 
 import cn.lary.core.context.RequestContext;
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.UUIDKit;
@@ -10,9 +10,7 @@ import cn.lary.module.group.entity.GroupMember;
 import cn.lary.module.group.mapper.GroupMemberMapper;
 import cn.lary.module.group.service.GroupMemberService;
 import cn.lary.module.group.vo.GroupMemberVO;
-import cn.lary.module.group.vo.GroupVO;
 import cn.lary.module.user.service.UserService;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -37,7 +35,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     private final UserService userService;
 
     @Override
-    public ResPair<List<Integer>> getMembersWithStatus(int groupNo, int status) {
+    public ResponsePair<List<Integer>> getMembersWithStatus(int groupNo, int status) {
         List<GroupMember> data = lambdaQuery()
                 .select(GroupMember::getUid)
                 .eq(GroupMember::getGroupId, groupNo)
@@ -52,7 +50,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResPair<Void> quit(int groupId) {
+    public ResponsePair<Void> quit(int groupId) {
         int uid = RequestContext.getLoginUID();
         GroupMember member = lambdaQuery()
                 .select(GroupMember::getUid)
@@ -73,9 +71,9 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResPair<Void> quitByAdmin(int groupId, int uid) {
-        ResPair<GroupMember> res = checkRole(groupId);
-        if (!res.isOk()){
+    public ResponsePair<Void> quitByAdmin(int groupId, int uid) {
+        ResponsePair<GroupMember> res = checkRole(groupId);
+        if (res.isFail()){
             return BizKit.fail(res.getMsg());
         }
         lambdaUpdate()
@@ -86,14 +84,14 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResPair<Void> join(int groupId) {
+    public ResponsePair<Void> join(int groupId) {
         return join(RequestContext.getLoginUID(),groupId,0);
     }
 
     @Override
-    public ResPair<Void> joinByAdmin(int groupId, int uid) {
-        ResPair<GroupMember> res = checkRole(groupId);
-        if (!res.isOk()){
+    public ResponsePair<Void> joinByAdmin(int groupId, int uid) {
+        ResponsePair<GroupMember> res = checkRole(groupId);
+        if (res.isFail()){
             return BizKit.fail(res.getMsg());
         }
         return join(uid,groupId,res.getData().getUid());
@@ -101,12 +99,12 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ResPair<Integer> multiJoinByAdmin(int groupId, List<Integer> ids) {
+    public ResponsePair<Integer> multiJoinByAdmin(int groupId, List<Integer> ids) {
         if (CollectionKit.isEmpty(ids)){
             return BizKit.fail("user empty");
         }
-        ResPair<GroupMember> res = checkRole(groupId);
-        if (!res.isOk()){
+        ResponsePair<GroupMember> res = checkRole(groupId);
+        if (res.isFail()){
             return BizKit.fail(res.getMsg());
         }
         List<Integer> members = CollectionKit.removeRepeat(ids);
@@ -114,18 +112,18 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         if (CollectionKit.isEmpty(users)) {
             return BizKit.fail("valid users empty");
         }
-        ResPair<List<Integer>> blockUsers = this.getMembersWithStatus(groupId, Lary.Group.UserStatus.block);
-        ResPair<List<Integer>> existsUsers = this.getMembersWithStatus(groupId, Lary.Group.UserStatus.common);
+        ResponsePair<List<Integer>> blockPair = this.getMembersWithStatus(groupId, Lary.Group.UserStatus.block);
+        ResponsePair<List<Integer>> exsitsPair = this.getMembersWithStatus(groupId, Lary.Group.UserStatus.common);
 
-        if(!blockUsers.isOk() || CollectionKit.isEmpty(blockUsers.getData())){
+        if(blockPair.isFail() || CollectionKit.isEmpty(blockPair.getData())){
             return BizKit.fail(res.getMsg());
         }
-        if(!existsUsers.isOk() || CollectionKit.isEmpty(existsUsers.getData())){
+        if(exsitsPair.isFail() || CollectionKit.isEmpty(exsitsPair.getData())){
             return BizKit.fail(res.getMsg());
         }
         List<Integer> addUsers = new ArrayList<>();
         users.forEach(u->{
-            if (!blockUsers.getData().contains(u) && !existsUsers.getData().contains(u)){
+            if (!blockPair.getData().contains(u) && !exsitsPair.getData().contains(u)){
                 addUsers.add(u);
             }
         });
@@ -146,9 +144,9 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResPair<Void> setAdmin(int groupId, int uid) {
-        ResPair<GroupMember> res = checkRole(groupId);
-        if (!res.isOk()){
+    public ResponsePair<Void> setAdmin(int groupId, int uid) {
+        ResponsePair<GroupMember> res = checkRole(groupId);
+        if (res.isFail()){
             return BizKit.fail(res.getMsg());
         }
         lambdaUpdate()
@@ -159,9 +157,9 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResPair<Void> removeAdmin(int groupId, int uid) {
-        ResPair<GroupMember> res = checkRole(groupId);
-        if (!res.isOk()){
+    public ResponsePair<Void> removeAdmin(int groupId, int uid) {
+        ResponsePair<GroupMember> res = checkRole(groupId);
+        if (res.isFail()){
             return BizKit.fail(res.getMsg());
         }
         lambdaUpdate()
@@ -172,7 +170,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResPair<List<GroupMemberVO>> members(int groupId) {
+    public ResponsePair<List<GroupMemberVO>> members(int groupId) {
         GroupMember operator = lambdaQuery()
                 .eq(GroupMember::getGroupId, groupId)
                 .eq(GroupMember::getUid, RequestContext.getLoginUID())
@@ -202,9 +200,9 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResPair<Void> changeOwner(int groupId, int uid) {
-        ResPair<GroupMember> res = checkRole(groupId);
-        if (!res.isOk()){
+    public ResponsePair<Void> changeOwner(int groupId, int uid) {
+        ResponsePair<GroupMember> res = checkRole(groupId);
+        if (res.isFail()){
             return BizKit.fail(res.getMsg());
         }
         lambdaUpdate()
@@ -219,9 +217,9 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResPair<Void> disband(int groupId) {
-        ResPair<GroupMember> res = checkRole(groupId);
-        if (!res.isOk()){
+    public ResponsePair<Void> disband(int groupId) {
+        ResponsePair<GroupMember> res = checkRole(groupId);
+        if (res.isFail()){
             return BizKit.fail(res.getMsg());
         }
         lambdaUpdate()
@@ -230,7 +228,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         return BizKit.ok();
     }
 
-    private ResPair<Void> join(int uid,int groupId,int inviteId){
+    private ResponsePair<Void> join(int uid, int groupId, int inviteId){
         GroupMember operator = lambdaQuery()
                 .select(GroupMember::getUid)
                 .eq(GroupMember::getGroupId, groupId)
@@ -255,7 +253,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         return BizKit.ok();
     }
 
-    public  ResPair<GroupMember> checkRole(int groupId) {
+    public ResponsePair<GroupMember> checkRole(int groupId) {
         int operator = RequestContext.getLoginUID();
         GroupMember admin = lambdaQuery()
                 .select(GroupMember::getUid)
@@ -272,7 +270,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResPair<List<Integer>> my(int role) {
+    public ResponsePair<List<Integer>> my(int role) {
         int uid = RequestContext.getLoginUID();
         List<GroupMember> data = lambdaQuery()
                 .select(GroupMember::getGroupId)
@@ -283,16 +281,14 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
             return BizKit.fail("data empty");
         }
         List<Integer> vos = new ArrayList<>(data.size());
-        data.forEach(t->{
-            vos.add(t.getGroupId());
-        });
+        data.forEach(t-> vos.add(t.getGroupId()));
         return BizKit.ok(vos);
     }
 
     @Override
-    public ResPair<Void> block(int groupId, int uid) {
-        ResPair<GroupMember> res = checkRole(groupId);
-        if (!res.isOk()){
+    public ResponsePair<Void> block(int groupId, int uid) {
+        ResponsePair<GroupMember> res = checkRole(groupId);
+        if (res.isFail()){
             return BizKit.fail(res.getMsg());
         }
         lambdaUpdate()

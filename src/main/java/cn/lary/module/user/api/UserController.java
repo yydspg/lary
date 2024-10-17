@@ -1,6 +1,6 @@
 package cn.lary.module.user.api;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.*;
 import cn.lary.module.user.dto.RefreshTokenDTO;
@@ -30,8 +30,8 @@ public class UserController {
      */
     @PostMapping("/register")
     public SingleResponse<String> register(@Valid @RequestBody RegisterDTO req) {
-        ResPair<String> res = userBizExecute.register(req);
-        if (!res.isOk()) {
+        ResponsePair<String> res = userBizExecute.register(req);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());
@@ -44,8 +44,8 @@ public class UserController {
      */
     @PostMapping("/login")
     public SingleResponse<String> login(@Validated @RequestBody LoginDTO req) {
-        ResPair<String> res = userBizExecute.loginByUid(req);
-        if (!res.isOk()) {
+        ResponsePair<String> res = userBizExecute.loginByUid(req);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());
@@ -54,8 +54,8 @@ public class UserController {
     // TODO  :  限流
     @GetMapping("/sms")
     public SingleResponse<Void> smsCode(@RequestParam(value = "phone") String phone) {
-        ResPair<Void> res = userBizExecute.smsCode(phone);
-        if (!res.isOk()) {
+        ResponsePair<Void> res = userBizExecute.smsCode(phone);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok();
@@ -72,8 +72,8 @@ public class UserController {
     public SingleResponse<Void> logout(HttpServletRequest request,
                                        @RequestParam @NotBlank Integer deviceId,
                                        @RequestParam @NotBlank Integer flag) {
-        ResPair<Void> res = userBizExecute.logout( flag, deviceId, request.getHeader("token"));
-        if (!res.isOk()) {
+        ResponsePair<Void> res = userBizExecute.logout( flag, deviceId, request.getHeader("token"));
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok();
@@ -86,8 +86,8 @@ public class UserController {
      * @return ok
      */
     public SingleResponse<Void> refresh(@RequestBody @Valid RefreshTokenDTO dto,HttpServletRequest request) {
-        ResPair<Void> res = userBizExecute.refreshToken( request.getHeader("token"), dto);
-        if (!res.isOk()) {
+        ResponsePair<Void> res = userBizExecute.refreshToken( request.getHeader("token"), dto);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok();

@@ -19,9 +19,9 @@ public class GoLiveDTO {
     @JsonProperty("device_flag")
     private int deviceFlag;
 
-    @JsonProperty("type_id")
+    @JsonProperty("type")
     @NotNull
-    private String typeId;
+    private Integer type;
 
     private String remark;
 }

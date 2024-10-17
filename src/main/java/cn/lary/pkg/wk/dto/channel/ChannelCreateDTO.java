@@ -6,13 +6,12 @@ import lombok.Data;
 
 import java.util.List;
 @Data
-@AllArgsConstructor
 public  class ChannelCreateDTO  {
     @JsonProperty("channel_id")
-    private String channelId;
+    private Integer channelId;
     @JsonProperty("channel_type")
     private Integer channelType;
     private int large;
     private int ban;
-    private List<String> subscribers;
+    private List<Integer> subscribers;
  }

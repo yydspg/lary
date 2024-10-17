@@ -22,9 +22,6 @@
         <result column="update_at" property="updateAt" />
         <result column="notice" property="notice" />
     </resultMap>
-    <select id="queryMySavedGroups" resultType="cn.lary.module.group.vo.GroupDetail">
-        select l.*, s.* from  lary_groups l left join group_setting  s on l.group_no = s.group_no
-        where s.uid = #{uid}
-    </select>
+
 
 </mapper>

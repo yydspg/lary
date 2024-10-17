@@ -1,6 +1,6 @@
 package cn.lary.module.group.service.impl;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.module.group.dto.GroupMemberSettingDTO;
@@ -27,13 +27,13 @@ public class GroupMemberSettingServiceImpl extends ServiceImpl<GroupMemberSettin
 
 
     @Override
-    public ResPair<Void> saveOrUpdate(GroupMemberSettingDTO dto) {
+    public ResponsePair<Void> saveOrUpdate(GroupMemberSettingDTO dto) {
         this.saveOrUpdate(dto.to());
         return BizKit.ok();
     }
 
     @Override
-    public ResPair<List<GroupMemberSettingVO>> my() {
+    public ResponsePair<List<GroupMemberSettingVO>> my() {
         List<GroupMemberSetting> data = lambdaQuery()
                 .select(GroupMemberSetting::getIsJoinGroupRemind)
                 .select(GroupMemberSetting::getIsTop)

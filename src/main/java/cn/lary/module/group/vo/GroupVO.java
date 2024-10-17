@@ -10,7 +10,7 @@ public class GroupVO {
     /**
      * 群名字
      */
-    private Integer name;
+    private String name;
 
 
     /**

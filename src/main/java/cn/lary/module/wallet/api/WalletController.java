@@ -1,7 +1,7 @@
 package cn.lary.module.wallet.api;
 
 import cn.lary.core.dto.PageResponse;
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
 import cn.lary.module.pay.vo.PayBuildVO;
@@ -43,8 +43,8 @@ public class WalletController {
     @PostMapping("/recharge")
     @ResponseBody
     public String recharge(@Valid @RequestBody RechargeDTO req, HttpServletResponse response) {
-        ResPair<PayBuildVO> res = walletBizExecute.recharge(req);
-        if (!res.isOk()) {
+        ResponsePair<PayBuildVO> res = walletBizExecute.recharge(req);
+        if (res.isFail()) {
             return res.getMsg();
         }
         response.setContentType("text/html;charset=utf-8");
@@ -59,8 +59,8 @@ public class WalletController {
     @PostMapping("/balance")
     public SingleResponse<BalanceVO> getBalance() {
 
-        ResPair<BalanceVO> res = walletBizExecute.getBalance();
-        if (!res.isOk()) {
+        ResponsePair<BalanceVO> res = walletBizExecute.getBalance();
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());
@@ -73,8 +73,8 @@ public class WalletController {
      */
     @PostMapping("/question")
     public SingleResponse<Void> updatePwd(@RequestBody @Valid UpdateSecurityQuestionDTO req) {
-        ResPair<Void> res = walletBizExecute.updateQuestion(req);
-        if (!res.isOk()) {
+        ResponsePair<Void> res = walletBizExecute.updateQuestion(req);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok();
@@ -87,8 +87,8 @@ public class WalletController {
      */
     @PostMapping("/incomes")
     public PageResponse<WalletIncomeVO> incomes(@RequestBody @Valid WalletIncomePageQueryDTO req) {
-        ResPair<List<WalletIncomeVO>> res = walletBizExecute.getIncomeVOs(req);
-        if (!res.isOk()) {
+        ResponsePair<List<WalletIncomeVO>> res = walletBizExecute.getIncomeVOs(req);
+        if (res.isFail()) {
             return ResponseKit.pageFail(res.getMsg());
         }
         return ResponseKit.pageOk(res.getData(),req.getPageIndex(),req.getPageSize());
@@ -101,8 +101,8 @@ public class WalletController {
      */
     @PostMapping("/outcomes")
     public PageResponse<WalletOutcomeVO> outcomes(@RequestBody @Valid WalletOutcomePageQueryDTO req) {
-        ResPair<List<WalletOutcomeVO>> res = walletBizExecute.getOutcomeVOs(req);
-        if (!res.isOk()) {
+        ResponsePair<List<WalletOutcomeVO>> res = walletBizExecute.getOutcomeVOs(req);
+        if (res.isFail()) {
             return ResponseKit.pageFail(res.getMsg());
         }
         return ResponseKit.pageOk(res.getData(),req.getPageIndex(),req.getPageSize());

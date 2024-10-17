@@ -36,8 +36,6 @@ public class StreamRecord implements Serializable {
 
     private Integer channelId;
 
-    private Integer giftBuyRecordId;
-
     private LocalDateTime startAt;
 
     private LocalDateTime endAt;

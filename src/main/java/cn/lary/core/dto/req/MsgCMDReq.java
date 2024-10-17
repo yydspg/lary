@@ -39,7 +39,6 @@ public class MsgCMDReq {
         r.setPayload(payload);
 
         r.setChannelType(channelType);
-        r.setSubscribers(subscribers);
         MessageHeader header = new MessageHeader();
         header.setNoPersist(noPersist);
         header.setSyncOnce(1);

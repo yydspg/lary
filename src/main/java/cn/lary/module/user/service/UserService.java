@@ -1,11 +1,7 @@
 package cn.lary.module.user.service;
 
-import cn.lary.core.dto.ResPair;
-import cn.lary.module.user.vo.FriendCodeCheck;
 import cn.lary.module.user.vo.UserBaseVO;
-import cn.lary.module.user.vo.UserBasicInfo;
 import cn.lary.module.user.entity.User;
-import cn.lary.module.user.entity.UserShowInfo;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

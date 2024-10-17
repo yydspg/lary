@@ -14,10 +14,8 @@ public class DownLiveEventDTO implements EventConvert {
     private int uid;
     @JsonProperty("stream_id")
     private int streamId;
-    @JsonProperty("wk_channel_id")
-    private int wkChannelId;
-    @JsonProperty("gift_buy_channel_id")
-    private int giftBuyChannelId;
+    @JsonProperty("channel_id")
+    private int channelId;
 
     @Override
     public EventData of() {

@@ -58,8 +58,12 @@ public class SrsCallbackExecute implements SrsCallback {
         }
 
         //update cache
-        LiveCacheDTO updateRecord = new LiveCacheDTO().setSrsClientId(dto.getClientId()).setSrsStreamId(dto.getStreamId())
-                .setSrsTcUrl(dto.getTcUrl()).setSrsServerId(dto.getServerId()).setSrsStreamUrl(dto.getStreamUrl());
+        LiveCacheDTO updateRecord = new LiveCacheDTO()
+                .setSrsClientId(dto.getClientId())
+                .setSrsStreamId(dto.getStreamId())
+                .setSrsTcUrl(dto.getTcUrl())
+                .setSrsServerId(dto.getServerId())
+                .setSrsStreamUrl(dto.getStreamUrl());
         redisCache.setHash(kvBuilder.goLiveK(uid),kvBuilder.goLiveV(updateRecord));
         streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>().eq(StreamRecord::getStreamId,cache.getStreamId()).set(StreamRecord::getStatus, Lary.Stream.Status.up));
         // close event
@@ -115,7 +119,8 @@ public class SrsCallbackExecute implements SrsCallback {
             return SRS.CallBackStatus.fail;
         }
         // set data to cache
-        JoinLiveCacheDTO updateRecord = new JoinLiveCacheDTO().setSrsClientId(dto.getClientId())
+        JoinLiveCacheDTO updateRecord = new JoinLiveCacheDTO()
+                .setSrsClientId(dto.getClientId())
                 .setSrsServerId(dto.getServerId());
         long expire = 30;
         redisCache.setHash(kvBuilder.joinLiveK(uid),kvBuilder.joinLiveV(updateRecord),expire, TimeUnit.MINUTES);

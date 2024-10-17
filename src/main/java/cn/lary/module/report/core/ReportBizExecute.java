@@ -1,6 +1,6 @@
 package cn.lary.module.report.core;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.module.report.service.ReportService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +13,7 @@ public class ReportBizExecute {
 
     private final ReportService reportService;
 
-    public ResPair<Void> report(String uid) {
+    public ResponsePair<Void> report(String uid) {
         return null;
     }
 }

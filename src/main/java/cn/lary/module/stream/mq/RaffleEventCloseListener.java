@@ -1,6 +1,6 @@
 package cn.lary.module.stream.mq;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.CollectionKit;
 import cn.lary.module.app.service.EventService;
 import cn.lary.module.common.constant.Lary;
@@ -82,8 +82,8 @@ public class RaffleEventCloseListener implements RocketMQListener<RaffleCloseMes
                     .setChannelId(message.getStreamId())
                     .setChannelType(WK.ChannelType.stream)
                     .setTotalAmount(raffleCache.getTotalAmount());
-            ResPair<Void> res = walletService.batchOutcomeTransfer(dto);
-            if (!res.isOk()) {
+            ResponsePair<Void> res = walletService.batchOutcomeTransfer(dto);
+            if (res.isFail()) {
                 log.error("batch outcome transfer error,uid:{},raffleId:{},reason:{}",uid,raffleCache.getId(),res.getMsg());
                 return;
             }

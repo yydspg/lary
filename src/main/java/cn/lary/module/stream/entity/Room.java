@@ -33,13 +33,7 @@ public class Room implements Serializable {
      */
     private Integer uid;
 
-    private String streamTypeId;
-
-
-    /**
-     * 是否在直播
-     */
-    private Boolean isAlive;
+    private Integer category;
 
 
     /**
@@ -70,7 +64,7 @@ public class Room implements Serializable {
     /**
      * 封禁类型
      */
-    private String blockTypeId;
+    private Integer blockCategory;
 
     /**
      * 封禁详情

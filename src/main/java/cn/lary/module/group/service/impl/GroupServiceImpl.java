@@ -1,12 +1,11 @@
 package cn.lary.module.group.service.impl;
 
 import cn.lary.core.context.RequestContext;
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.DateKit;
 import cn.lary.kit.StringKit;
-import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.constant.Lary;
 import cn.lary.module.group.dto.CreateGroupDTO;
 import cn.lary.module.group.entity.Group;
@@ -21,8 +20,6 @@ import cn.lary.module.message.dto.group.CreateGroupSuccessNotifyDTO;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.service.UserService;
 import cn.lary.pkg.wk.api.WKMessageService;
-import cn.lary.pkg.wk.dto.message.MessageSendDTO;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -54,7 +51,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     private final WKMessageService wkMessageService;
 
     @Override
-    public boolean checkWhetherReachCreateLimit(int uid, LocalDateTime now) {
+    public boolean isReachCreateLimit(int uid, LocalDateTime now) {
         LocalDateTime startOfDay = DateKit.getStartOfDay(now);
         LocalDateTime endOfDay = DateKit.getEndOfDay(now);
         // TODO  :  这里需要实现动态配置
@@ -66,11 +63,17 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
-    public ResPair<CreateGroupVO> create(CreateGroupDTO dto) {
+    public ResponsePair<CreateGroupVO> create(CreateGroupDTO dto) {
         int creator = RequestContext.getLoginUID();
+        if (isReachCreateLimit(creator, LocalDateTime.now())) {
+            return BizKit.fail("reach create limit");
+        }
         List<Integer> members = CollectionKit.removeRepeat(dto.getMembers());
         members.add(creator);
         List<Integer> users = userService.getValidUsers(members);
+        if (CollectionKit.isEmpty(users)) {
+            return BizKit.fail("valid users empty");
+        }
         String groupName = dto.getName();
         if (StringKit.isEmpty(groupName)) {
             StringBuilder sb = new StringBuilder();
@@ -116,9 +119,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
-    public ResPair<Void> disband(int groupId) {
-        ResPair<Void> res = groupMemberService.disband(groupId);
-        if (!res.isOk()){
+    public ResponsePair<Void> disband(int groupId) {
+        ResponsePair<Void> res = groupMemberService.disband(groupId);
+        if (res.isFail()){
             return res;
         }
         lambdaUpdate()
@@ -128,9 +131,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
-    public ResPair<Void> forbidden(int groupId) {
-        ResPair<GroupMember> res = groupMemberService.checkRole(groupId);
-        if (!res.isOk()){
+    public ResponsePair<Void> forbidden(int groupId) {
+        ResponsePair<GroupMember> res = groupMemberService.checkRole(groupId);
+        if (res.isFail()){
             return BizKit.fail(res.getMsg());
         }
         lambdaUpdate().set(Group::getIsForbidden,true);
@@ -138,7 +141,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
-    public ResPair<GroupDetailVO> getGroup(int groupId) {
+    public ResponsePair<GroupDetailVO> getGroup(int groupId) {
         Group group = lambdaQuery().eq(Group::getGroupId, groupId).one();
         if (group == null){
             return BizKit.fail("group not exist");
@@ -147,9 +150,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
-    public ResPair<List<GroupVO>> my(int role) {
-        ResPair<List<Integer>> res = groupMemberService.my(role);
-        if (!res.isOk()){
+    public ResponsePair<List<GroupVO>> my(int role) {
+        ResponsePair<List<Integer>> res = groupMemberService.my(role);
+        if (res.isFail()){
             return BizKit.fail(res.getMsg());
         }
         List<Group> data = lambdaQuery()
@@ -168,6 +171,5 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         });
         return BizKit.ok(vos);
     }
-
 
 }

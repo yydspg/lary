@@ -11,7 +11,7 @@ public class GroupDetailVO {
     /**
      * 群名字
      */
-    private Integer name;
+    private String name;
 
     /**
      * 群主uid
@@ -46,7 +46,7 @@ public class GroupDetailVO {
     /**
      * 群分类
      */
-    private String category;
+    private int category;
 
     /**
      * 群邀请开关

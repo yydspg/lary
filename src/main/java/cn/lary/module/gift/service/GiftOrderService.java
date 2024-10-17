@@ -18,6 +18,5 @@ import java.util.List;
  */
 public interface GiftOrderService extends IService<GiftOrder> {
 
-    long collectCostMoneyByGiftChannelId(int giftChannelId);
-    List<GiftOrderVO> queryGiftOrders(GiftOrderPageQueryDTO dto);
+   List<GiftOrderVO> queryGiftOrders(GiftOrderPageQueryDTO dto);
 }

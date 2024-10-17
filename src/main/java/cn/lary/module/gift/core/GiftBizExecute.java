@@ -1,7 +1,7 @@
 package cn.lary.module.gift.core;
 
 import cn.lary.core.context.RequestContext;
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.JSONKit;
@@ -66,7 +66,7 @@ public class GiftBizExecute  {
     private final GiftTypeService giftTypeService;
     private final WalletOutcomeService walletOutcomeService;
 
-    //internal
+    //component
     private final HashMap<Integer,Long> giftPrices = new HashMap<>();
     private final HashMap<Integer, GiftCollectionVO> giftCollections = new HashMap<>();
     private String giftCollectionJSON;
@@ -80,7 +80,7 @@ public class GiftBizExecute  {
      * @return {@link PayBuildVO}
      */
     @Transactional(rollbackFor = Exception.class)
-    public ResPair<PayBuildVO> pay( GiftOrderDTO req) {
+    public ResponsePair<PayBuildVO> pay(GiftOrderDTO req) {
         int uid = RequestContext.getLoginUID();
         String uidName = RequestContext.getLoginName();
         Long price = giftPrices.get(req.getId());
@@ -104,7 +104,6 @@ public class GiftBizExecute  {
                 .setUid(uid)
                 .setAnchorUid(anchorUid)
                 .setDanmakuId(dto.getWkChannelId())
-                .setBuyChannelId(dto.getGiftBuyChannelId())
                 .setStreamId(dto.getStreamId())
                 .setGiftNum(req.getNum())
                 .setGiftId(req.getId())
@@ -164,7 +163,7 @@ public class GiftBizExecute  {
      * 返回所有礼物的 VO
      * @return gift collection json
      */
-    public ResPair<String> getGifts() {
+    public ResponsePair<String> getGifts() {
         return BizKit.ok(giftCollectionJSON);
     }
 
@@ -173,7 +172,7 @@ public class GiftBizExecute  {
      * @param dto {@link GiftOrderPageQueryDTO}
      * @return {@link GiftOrderVO}
      */
-    public ResPair<List<GiftOrderVO>> orders(GiftOrderPageQueryDTO dto) {
+    public ResponsePair<List<GiftOrderVO>> orders(GiftOrderPageQueryDTO dto) {
         int uid = RequestContext.getLoginUID();
         dto.setUid(uid);
         List<GiftOrderVO> orders = giftOrderService.queryGiftOrders(dto);

@@ -6,7 +6,7 @@ import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.server.RedisBizConfig;
 import cn.lary.module.stream.dto.*;
 import cn.lary.module.user.dto.DeviceAddAckCacheDTO;
-import cn.lary.module.user.dto.DeviceLoginDTO;
+import cn.lary.module.user.dto.DeviceLoginCacheDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -27,8 +27,17 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String deviceLoginV(DeviceLoginDTO deviceLoginDTO) {
-        return JSONKit.toJSON(deviceLoginDTO);
+    public Map deviceLoginV(DeviceLoginCacheDTO deviceLoginCacheDTO) {
+        if (deviceLoginCacheDTO == null) {
+            return null;
+        }
+        Map<String, String> map = new HashMap<>();
+        map.put("id", String.valueOf(deviceLoginCacheDTO.getId()));
+        map.put("name", deviceLoginCacheDTO.getName());
+        map.put("model", deviceLoginCacheDTO.getModel());
+        map.put("flag", String.valueOf(deviceLoginCacheDTO.getFlag()));
+        map.put("level", String.valueOf(deviceLoginCacheDTO.getLevel()));
+        return map;
     }
 
     @Override
@@ -101,29 +110,13 @@ public class KVBuilderImpl implements KVBuilder {
     public Map goLiveV(LiveCacheDTO dto) {
         Map<Object, Object> args = new HashMap<>();
         args.put("streamId",dto.getStreamId());
-        args.put("giftBuyChannelId",dto.getGiftBuyChannelId());
         args.put("wkChannelId",dto.getWkChannelId());
-        if (StringKit.isNotEmpty(dto.getIp())) {
-            args.put("ip",dto.getIp());
-        }
-        if (StringKit.isNotEmpty(dto.getStream())) {
-            args.put("stream",dto.getStream());
-        }
-        if (StringKit.isNotEmpty(dto.getSrsClientId())) {
-            args.put("srsClientId",dto.getSrsClientId());
-        }
-        if (StringKit.isNotEmpty(dto.getSrsToken())) {
-            args.put("srsToken",dto.getSrsToken());
-        }
-        if (StringKit.isNotEmpty(dto.getSrsServerId())) {
-            args.put("srsServerId",dto.getSrsServerId());
-        }
-        if (StringKit.isNotEmpty(dto.getSrsClientId())) {
-            args.put("srsClientId",dto.getSrsClientId());
-        }
-        if (StringKit.isNotEmpty(dto.getStream())) {
-            args.put("stream",dto.getStream());
-        }
+        args.put("identify",dto.getIdentify());
+        args.put("ip",dto.getIp());
+        args.put("srsClientId",dto.getSrsClientId());
+        args.put("srsToken",dto.getSrsToken());
+        args.put("srsServerId",dto.getSrsServerId());
+        args.put("srsStreamId", dto.getSrsStreamId());
         return args;
     }
 
@@ -138,27 +131,15 @@ public class KVBuilderImpl implements KVBuilder {
             return null;
         }
         HashMap<String, String> args = new HashMap<>();
-        if (StringKit.isNotEmpty(dto.getIp())) {
-            args.put("ip", dto.getIp());
-        }
-        if (StringKit.isNotEmpty(dto.getStream())) {
-            args.put("stream", dto.getStream());
-        }
-        if (StringKit.isNotEmpty(dto.getSrsToken())) {
-            args.put("srsToken", dto.getSrsToken());
-        }
-        if (StringKit.isNotEmpty(dto.getSrsStreamId())) {
-            args.put("srsStreamId", dto.getSrsStreamId());
-        }
-        if (StringKit.isNotEmpty(dto.getSrsClientId())) {
-            args.put("srsClientId", dto.getSrsClientId());
-        }
-        if (StringKit.isNotEmpty(dto.getSrsServerId())) {
-            args.put("srsServerId", dto.getSrsServerId());
-        }
-        if (StringKit.isNotEmpty(dto.getName())) {
-            args.put("name", dto.getName());
-        }
+
+        args.put("identify",dto.getIdentify());
+        args.put("name", dto.getName());
+        args.put("ip",dto.getIp());
+        args.put("srsClientId",dto.getSrsClientId());
+        args.put("srsToken",dto.getSrsToken());
+        args.put("srsServerId",dto.getSrsServerId());
+        args.put("srsStreamId", dto.getSrsStreamId());
+
         return args;
     }
 

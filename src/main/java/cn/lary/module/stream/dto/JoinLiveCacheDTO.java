@@ -16,7 +16,7 @@ public class JoinLiveCacheDTO {
     private String srsServerId;
     private String srsClientId;
     private String srsToken;
-    private String stream;
+    private String identify;
 
     public static JoinLiveCacheDTO of(Map map) {
         if (map == null) {
@@ -29,6 +29,7 @@ public class JoinLiveCacheDTO {
         dto.setSrsServerId((String) map.get("srsServerId"));
         dto.setSrsClientId((String) map.get("srsClientId"));
         dto.setSrsToken((String) map.get("srsToken"));
+        dto.setIdentify((String) map.get("identify"));
         return dto;
     }
 }

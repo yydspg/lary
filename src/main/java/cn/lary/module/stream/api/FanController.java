@@ -1,11 +1,10 @@
 package cn.lary.module.stream.api;
 
 import cn.lary.core.context.RequestContext;
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
 import cn.lary.module.stream.core.FanBizExecute;
-import cn.lary.module.stream.core.StreamBizExecute;
 import cn.lary.module.stream.dto.RaffleCacheDTO;
 import cn.lary.module.stream.dto.RedPacketCacheDTO;
 import jakarta.validation.constraints.NotNull;
@@ -28,31 +27,30 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class FanController {
 
-    private final StreamBizExecute streamBizExecute;
     private final FanBizExecute fanBizExecute;
 
 
     @GetMapping("/raffle/join")
     public SingleResponse<Void> joinRaffle(@RequestParam @NotNull Integer toUid) {
         int uid = RequestContext.getLoginUID();
-        ResPair<Void> res = fanBizExecute.joinRaffle(uid, toUid);
-        if (!res.isOk()) {
+        ResponsePair<Void> res = fanBizExecute.joinRaffle(uid, toUid);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok();
     }
     @GetMapping("/raffle/get")
     public SingleResponse<RaffleCacheDTO> getRaffle(@RequestParam @NotNull Integer toUid) {
-        ResPair<RaffleCacheDTO> res = fanBizExecute.getRaffleInfo(toUid);
-        if (!res.isOk()) {
+        ResponsePair<RaffleCacheDTO> res = fanBizExecute.getRaffleInfo(toUid);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());
     }
     @GetMapping("/redpacket/get")
     public SingleResponse<RedPacketCacheDTO> getRedPacket(@RequestParam @NotNull Integer toUid) {
-        ResPair<RedPacketCacheDTO> res = fanBizExecute.getRedPacketInfo(toUid);
-        if (!res.isOk()) {
+        ResponsePair<RedPacketCacheDTO> res = fanBizExecute.getRedPacketInfo(toUid);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok(res.getData());
@@ -60,8 +58,8 @@ public class FanController {
     @GetMapping("/redpacket/join")
     public SingleResponse<Void> joinRedPacket(@RequestParam @NotNull Integer toUid) {
         int uid = RequestContext.getLoginUID();
-        ResPair<Void> res = fanBizExecute.redWars(uid, toUid);
-        if (!res.isOk()) {
+        ResponsePair<Void> res = fanBizExecute.redWars(uid, toUid);
+        if (res.isFail()) {
             return ResponseKit.fail(res.getMsg());
         }
         return ResponseKit.ok();

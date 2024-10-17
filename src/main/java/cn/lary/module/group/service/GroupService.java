@@ -1,6 +1,6 @@
 package cn.lary.module.group.service;
 
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.module.group.dto.CreateGroupDTO;
 import cn.lary.module.group.entity.Group;
 import cn.lary.module.group.vo.CreateGroupVO;
@@ -28,7 +28,7 @@ public interface GroupService extends IService<Group> {
      * @param now n
      * @return ok
      */
-    boolean  checkWhetherReachCreateLimit(int uid, LocalDateTime now) ;
+    boolean  isReachCreateLimit(int uid, LocalDateTime now) ;
 
 
     /**
@@ -36,7 +36,7 @@ public interface GroupService extends IService<Group> {
      * @param dto {@link CreateGroupDTO}
      * @return {@link CreateGroupVO}
      */
-    ResPair<CreateGroupVO> create(CreateGroupDTO dto) ;
+    ResponsePair<CreateGroupVO> create(CreateGroupDTO dto) ;
 
 
     /**
@@ -44,27 +44,27 @@ public interface GroupService extends IService<Group> {
      * @param groupId g
      * @return ok
      */
-    ResPair<Void> disband(int groupId) ;
+    ResponsePair<Void> disband(int groupId) ;
 
     /**
      * 全体成员禁言
      * @param groupId g
      * @return ok
      */
-    ResPair<Void> forbidden(int groupId) ;
+    ResponsePair<Void> forbidden(int groupId) ;
 
     /**
      * 查询群信息
      * @param groupId g
      * @return {@link GroupDetailVO}
      */
-    ResPair<GroupDetailVO> getGroup(int groupId) ;
+    ResponsePair<GroupDetailVO> getGroup(int groupId) ;
 
     /**
      * 查询我的群聊,通过role
      * @param role 角色
      * @return {@link GroupVO}
      */
-    ResPair<List<GroupVO>> my(int role) ;
+    ResponsePair<List<GroupVO>> my(int role) ;
 
 }

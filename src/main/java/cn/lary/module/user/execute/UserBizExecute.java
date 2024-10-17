@@ -1,7 +1,7 @@
 package cn.lary.module.user.execute;
 
 import cn.lary.core.context.RequestContext;
-import cn.lary.core.dto.ResPair;
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.*;
 import cn.lary.module.app.entity.EventData;
 import cn.lary.module.app.service.EventService;
@@ -67,7 +67,7 @@ public class UserBizExecute {
      * @return login token
      */
     @Transactional(rollbackFor = Exception.class)
-    public ResPair<String> loginByUid(LoginDTO req) {
+    public ResponsePair<String> loginByUid(LoginDTO req) {
         String password = StringKit.MD5(StringKit.MD5(req.getPassword()));
         Integer deviceId = req.getId();
         User user = userService.getOne(new LambdaQueryWrapper<User>()
@@ -130,12 +130,12 @@ public class UserBizExecute {
         if (device == null) {
             return BizKit.fail("device not exist,please register first");
         }
-        DeviceLoginDTO deviceLoginDTO = new DeviceLoginDTO()
+        DeviceLoginCacheDTO deviceLoginCacheDTO = new DeviceLoginCacheDTO()
                 .setFlag(req.getFlag())
                 .setId(deviceId)
                 .setModel(device.getModel())
                 .setName(device.getName());
-        redisCache.set(kvBuilder.deviceLoginK(uid,deviceId),kvBuilder.deviceLoginV(deviceLoginDTO),redisBizConfig.getLoginDeviceCacheExpire());
+        redisCache.setHash(kvBuilder.deviceLoginK(uid,deviceId),kvBuilder.deviceLoginV(deviceLoginCacheDTO),redisBizConfig.getLoginDeviceCacheExpire());
         String token = userLoginRedisSet(user.getName(), user.getRole(), req.getFlag());
         UpdateTokenDTO tokenDTO = new UpdateTokenDTO(user.getUid(), token,req.getFlag(), deviceLevel);
         Response<UpdateTokenVO> vo = wkUserService.updateToken(tokenDTO);
@@ -156,7 +156,7 @@ public class UserBizExecute {
      * @return token
      */
     @Transactional()
-    public ResPair<String> register(RegisterDTO req) {
+    public ResponsePair<String> register(RegisterDTO req) {
         String verifyCode = redisCache.get(kvBuilder.userRegisterK(req.getPhone()));
         if(StringKit.diff(verifyCode,req.getCode())) {
             return BizKit.fail("verify code error");
@@ -187,12 +187,12 @@ public class UserBizExecute {
                 .setName(req.getDevice().getName())
                 .setModel(req.getDevice().getModel());
         deviceService.save(device);
-        DeviceLoginDTO deviceLoginDTO = new DeviceLoginDTO()
+        DeviceLoginCacheDTO deviceLoginCacheDTO = new DeviceLoginCacheDTO()
                 .setId(device.getId())
                 .setName(device.getName())
                 .setModel(device.getModel())
                 .setFlag(req.getDevice().getFlag());
-        redisCache.set(kvBuilder.deviceLoginK(user.getUid(),device.getId()),kvBuilder.deviceLoginV(deviceLoginDTO),redisBizConfig.getLoginDeviceCacheExpire());
+        redisCache.setHash(kvBuilder.deviceLoginK(user.getUid(),device.getId()),kvBuilder.deviceLoginV(deviceLoginCacheDTO),redisBizConfig.getLoginDeviceCacheExpire());
         //set user login info to redis
         String token = userLoginRedisSet(name, Lary.UserRole.normal, req.getDevice().getFlag());
 
@@ -230,7 +230,7 @@ public class UserBizExecute {
      * @param phone 手机号
      * @return ok
      */
-    public ResPair<Void> smsCode(String phone) {
+    public ResponsePair<Void> smsCode(String phone) {
 
         String token = SmsCodeKit.getToken();
         if (Lary.testMode) {
@@ -246,7 +246,7 @@ public class UserBizExecute {
      * @param uid user id
      * @return token
      */
-    public ResPair<Void> refreshToken(String token, RefreshTokenDTO req) {
+    public ResponsePair<Void> refreshToken(String token, RefreshTokenDTO req) {
         int uid = RequestContext.getLoginUID();
         redisCache.renewal(kvBuilder.userLoginK(uid,req.getFlag()),redisBizConfig.getLoginUserExpire());
         redisCache.renewal(kvBuilder.userLoginTokenK(token),redisBizConfig.getLoginUserTokenExpire());
@@ -259,7 +259,7 @@ public class UserBizExecute {
      * 清理 redis 缓存
      * @return ok
      */
-    public ResPair<Void> logout(int deviceFlag,int deviceId,String token) {
+    public ResponsePair<Void> logout(int deviceFlag, int deviceId, String token) {
         int uid = RequestContext.getLoginUID();
         redisCache.del(kvBuilder.userLoginK(uid,deviceFlag));
         redisCache.del(kvBuilder.deviceLoginK(uid,deviceId));
@@ -272,7 +272,7 @@ public class UserBizExecute {
      * 此版本为固定值,后续根据底层IM服务优化
      * @return {@link RouteVO}
      */
-    public ResPair<RouteVO> getRoute() {
+    public ResponsePair<RouteVO> getRoute() {
         Response<RouteVO> route = wkRouteService.getRoute();
         if (route.isSuccessful()) {
             RouteVO routeVO = route.body();
@@ -287,7 +287,7 @@ public class UserBizExecute {
      * 所以后续增加策略要全表加
      * @return {@link UserRedDotVO}
      */
-    public ResPair<List<UserRedDotVO>> getRedDot() {
+    public ResponsePair<List<UserRedDotVO>> getRedDot() {
         int uid = RequestContext.getLoginUID();
         List<UserRedDot> redDots = userRedDotService.list(new LambdaQueryWrapper<UserRedDot>()
                 .eq(UserRedDot::getUid, uid));

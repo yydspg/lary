@@ -16,5 +16,10 @@ import java.util.List;
  * @since 2024-10-02
  */
 public interface WalletOutcomeService extends IService<WalletOutcome> {
+    /**
+     * 分页查询支出
+     * @param dto {@link WalletOutcomePageQueryDTO}
+     * @return {@link WalletOutcomeVO}
+     */
     List<WalletOutcomeVO> getWalletOutcomeVOs(WalletOutcomePageQueryDTO dto);
 }
