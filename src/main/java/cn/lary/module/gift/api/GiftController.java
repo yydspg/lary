@@ -4,7 +4,7 @@ import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
-import cn.lary.module.gift.core.GiftBizExecute;
+import cn.lary.module.gift.execute.GiftBizExecute;
 import cn.lary.module.gift.dto.GiftOrderDTO;
 import cn.lary.module.gift.dto.GiftOrderPageQueryDTO;
 import cn.lary.module.gift.vo.GiftOrderVO;
@@ -37,11 +37,11 @@ public class GiftController {
      */
     @PostMapping(value = "/pay")
     public SingleResponse<PayBuildVO> pay(@RequestBody GiftOrderDTO req) {
-        ResponsePair<PayBuildVO> res = giftBizExecute.pay(req);
-        if(res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<PayBuildVO> response = giftBizExecute.pay(req);
+        if(response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
     /**
@@ -64,11 +64,11 @@ public class GiftController {
      */
     @PostMapping("/orders")
     public PageResponse<GiftOrderVO> orders(@RequestBody @Valid GiftOrderPageQueryDTO req) {
-        ResponsePair<List<GiftOrderVO>> res = giftBizExecute.orders(req);
-        if(res.isFail()) {
-            return ResponseKit.pageFail(res.getMsg());
+        ResponsePair<List<GiftOrderVO>> response = giftBizExecute.orders(req);
+        if(response.isFail()) {
+            return ResponseKit.pageFail(response.getMsg());
         }
-        return ResponseKit.pageOk(res.getData(),req.getPageIndex(),req.getPageSize());
+        return ResponseKit.pageOk(response.getData(),req.getPageIndex(),req.getPageSize());
     }
 
 }

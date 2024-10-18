@@ -38,17 +38,22 @@ public class LoginLog implements Serializable {
     /**
      * 最后一次登录ip
      */
-    private String loginIp;
+    private String ip;
 
     /**
      * 设备名称
      */
-    private String deviceName;
+    private String name;
 
     /**
      * 设备模型
      */
-    private String deviceModel;
+    private Integer flag;
+
+    private Integer level;
+
+    private Boolean isDelete;
+
 
     /**
      * 创建时间
@@ -56,9 +61,4 @@ public class LoginLog implements Serializable {
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;
 
-    /**
-     * 更新时间
-     */
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

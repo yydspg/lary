@@ -1,5 +1,6 @@
 package cn.lary.module.user.vo;
 
+import cn.lary.module.user.entity.Device;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -10,9 +11,22 @@ import lombok.experimental.Accessors;
 public class DeviceVO {
 
     private int id;
+
     private String deviceName;
 
-    private Long lastLogin;
+    private long lastLogin;
 
-    private Boolean isLanding;
+    private boolean landing;
+
+    private int level;
+
+    private int flag;
+
+    public DeviceVO(Device device) {
+        this.id = device.getId();
+        this.deviceName = device.getName();
+        this.lastLogin = device.getLastLogin();
+        this.level = device.getLevel();
+        this.flag = device.getFlag();
+    }
 }

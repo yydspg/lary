@@ -33,34 +33,34 @@ public class FanController {
     @GetMapping("/raffle/join")
     public SingleResponse<Void> joinRaffle(@RequestParam @NotNull Integer toUid) {
         int uid = RequestContext.getLoginUID();
-        ResponsePair<Void> res = fanBizExecute.joinRaffle(uid, toUid);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = fanBizExecute.joinRaffle(uid, toUid);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
     @GetMapping("/raffle/get")
     public SingleResponse<RaffleCacheDTO> getRaffle(@RequestParam @NotNull Integer toUid) {
-        ResponsePair<RaffleCacheDTO> res = fanBizExecute.getRaffleInfo(toUid);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<RaffleCacheDTO> response = fanBizExecute.getRaffleInfo(toUid);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
     @GetMapping("/redpacket/get")
     public SingleResponse<RedPacketCacheDTO> getRedPacket(@RequestParam @NotNull Integer toUid) {
-        ResponsePair<RedPacketCacheDTO> res = fanBizExecute.getRedPacketInfo(toUid);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<RedPacketCacheDTO> response = fanBizExecute.getRedPacketInfo(toUid);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
     @GetMapping("/redpacket/join")
     public SingleResponse<Void> joinRedPacket(@RequestParam @NotNull Integer toUid) {
         int uid = RequestContext.getLoginUID();
-        ResponsePair<Void> res = fanBizExecute.redWars(uid, toUid);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = fanBizExecute.redWars(uid, toUid);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }

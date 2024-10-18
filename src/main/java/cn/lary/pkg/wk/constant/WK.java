@@ -11,12 +11,11 @@ public interface WK {
         int data = 7; //数据
     }
     interface DeviceLevel {
-        int slave = 0;
-        int master = 1;
+        int slave = 1;
+        int master = 2;
     }
     interface DeviceFlag {
-        int app = 0;
-        int web = 1;
+        int app = 1;
         int pc = 2;
     }
     interface UpdateTokenStatus {

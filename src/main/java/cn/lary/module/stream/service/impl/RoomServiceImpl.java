@@ -8,10 +8,9 @@ import cn.lary.module.app.service.EventService;
 import cn.lary.module.app.service.LaryChannelService;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.dto.DownLiveEventDTO;
 import cn.lary.module.event.dto.GoLiveEventDTO;
-import cn.lary.module.gift.entity.AnchorTurnover;
 import cn.lary.module.gift.service.AnchorTurnoverService;
 import cn.lary.module.message.dto.stream.*;
 import cn.lary.module.message.service.MessageService;
@@ -27,23 +26,13 @@ import cn.lary.module.stream.vo.DownLiveVO;
 import cn.lary.module.stream.vo.GoLiveVO;
 import cn.lary.module.stream.vo.JoinLiveVO;
 import cn.lary.module.user.dto.DeviceLoginCacheDTO;
-import cn.lary.module.user.entity.Device;
-import cn.lary.module.user.service.DeviceService;
 import cn.lary.pkg.wk.constant.WK;
-import cn.lary.pkg.wk.dto.channel.SubscribersAddDTO;
-import cn.lary.pkg.wk.dto.message.MessageHeader;
-import cn.lary.pkg.wk.dto.message.MessageSendDTO;
-import cn.lary.pkg.wk.entity.core.WKChannel;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import retrofit2.Response;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -154,7 +143,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         if (map == null) {
             return BizKit.fail("no join live info");
         }
-        redisCache.del(kvBuilder.joinLiveK(uid));
+        redisCache.delete(kvBuilder.joinLiveK(uid));
         return BizKit.ok();
     }
 
@@ -195,19 +184,19 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
             int event = eventService.begin(downLiveEventDTO.of());
             streamRecordService.lambdaUpdate()
                     .eq(StreamRecord::getStreamId, liveCache.getStreamId())
-                    .set(StreamRecord::getStatus, Lary.Stream.Status.down)
+                    .set(StreamRecord::getStatus, LARY.Stream.Status.down)
                     .set(StreamRecord::getWatchFanNum, recordCache.getWatchFanNum())
                     .set(StreamRecord::getWatchNum, recordCache.getWatchNum())
                     .set(StreamRecord::getStarNum, recordCache.getStarNum())
                     .set(StreamRecord::getNewFansNum, recordCache.getNewFansNum());
             streamRecordService.lambdaUpdate()
                     .eq(StreamRecord::getStreamId, liveCache.getStreamId())
-                    .set(StreamRecord::getStatus, Lary.Stream.Status.preDown);
+                    .set(StreamRecord::getStatus, LARY.Stream.Status.preDown);
             return event;
         });
         String duration = Duration.ofMillis(SystemKit.now() - room.getLastLogin()).toString();
         redisCache.setHash(kvBuilder.goLiveK(uid),"srsToken",token);
-        redisCache.del(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
+        redisCache.delete(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
         DownLiveVO downLiveVO = new DownLiveVO( recordCache.getWatchNum(), recordCache.getNewFansNum(), recordCache.getStarNum(), recordCache.getWatchFanNum(), duration,token,eventId);
         executor.execute(()->{
             executeTurnOver(uid,liveCache.getStreamId());

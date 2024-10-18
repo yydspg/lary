@@ -6,7 +6,7 @@ import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.StringKit;
 import cn.lary.module.app.service.EventService;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.dto.RechargeEventDTO;
 import cn.lary.module.wallet.dto.*;
 import cn.lary.module.pay.dto.PayParam;
@@ -66,7 +66,7 @@ public class WalletBizExecute {
                 .setClientType(req.getClientType())
                 .setCost(cost)
                 .setStarNum(cost)
-                .setStatus(Lary.OrderStatus.init);
+                .setStatus(LARY.OrderStatus.init);
         rechargeLogService.save(rechargeLog);
         RechargeEventDTO eventDTO = new RechargeEventDTO(uid, cost, rechargeLog.getRechargeId());
         int eventId = eventService.begin(eventDTO.of());
@@ -74,7 +74,7 @@ public class WalletBizExecute {
                 .set(RechargeLog::getEventId, eventId)
                 .eq(RechargeLog::getRechargeId,rechargeLog.getRechargeId()));
         PaymentLog log = new PaymentLog()
-                .setOrderType(Lary.OrderType.recharge)
+                .setOrderType(LARY.OrderType.recharge)
                 .setPayCost(cost)
                 .setPayWay(req.getPayWay());
         paymentLogService.save(log);
@@ -85,7 +85,7 @@ public class WalletBizExecute {
         PayBuildVO payVO = pluginSupport.pay(clientType, payWay, param);
         if (!payVO.isOk()) {
             rechargeLogService.update(new LambdaUpdateWrapper<RechargeLog>()
-                    .set(RechargeLog::getStatus,Lary.RechargeStatus.failed)
+                    .set(RechargeLog::getStatus, LARY.RechargeStatus.failed)
                     .set(RechargeLog::getFailReason,payVO.getErrMsg())
                     .set(RechargeLog::getCompleteAt, LocalDateTime.now())
                     .eq(RechargeLog::getRechargeId, rechargeLog.getRechargeId()));

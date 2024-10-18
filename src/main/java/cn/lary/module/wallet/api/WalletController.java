@@ -43,12 +43,12 @@ public class WalletController {
     @PostMapping("/recharge")
     @ResponseBody
     public String recharge(@Valid @RequestBody RechargeDTO req, HttpServletResponse response) {
-        ResponsePair<PayBuildVO> res = walletBizExecute.recharge(req);
-        if (res.isFail()) {
-            return res.getMsg();
+        ResponsePair<PayBuildVO> pair= walletBizExecute.recharge(req);
+        if (pair.isFail()) {
+            return pair.getMsg();
         }
         response.setContentType("text/html;charset=utf-8");
-        PayBuildVO data =  res.getData();
+        PayBuildVO data =  pair.getData();
         return data.getBody();
     }
 
@@ -59,11 +59,11 @@ public class WalletController {
     @PostMapping("/balance")
     public SingleResponse<BalanceVO> getBalance() {
 
-        ResponsePair<BalanceVO> res = walletBizExecute.getBalance();
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<BalanceVO> response = walletBizExecute.getBalance();
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
     /**
@@ -73,9 +73,9 @@ public class WalletController {
      */
     @PostMapping("/question")
     public SingleResponse<Void> updatePwd(@RequestBody @Valid UpdateSecurityQuestionDTO req) {
-        ResponsePair<Void> res = walletBizExecute.updateQuestion(req);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = walletBizExecute.updateQuestion(req);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
@@ -87,11 +87,11 @@ public class WalletController {
      */
     @PostMapping("/incomes")
     public PageResponse<WalletIncomeVO> incomes(@RequestBody @Valid WalletIncomePageQueryDTO req) {
-        ResponsePair<List<WalletIncomeVO>> res = walletBizExecute.getIncomeVOs(req);
-        if (res.isFail()) {
-            return ResponseKit.pageFail(res.getMsg());
+        ResponsePair<List<WalletIncomeVO>> response = walletBizExecute.getIncomeVOs(req);
+        if (response.isFail()) {
+            return ResponseKit.pageFail(response.getMsg());
         }
-        return ResponseKit.pageOk(res.getData(),req.getPageIndex(),req.getPageSize());
+        return ResponseKit.pageOk(response.getData(),req.getPageIndex(),req.getPageSize());
     }
 
     /**
@@ -101,10 +101,10 @@ public class WalletController {
      */
     @PostMapping("/outcomes")
     public PageResponse<WalletOutcomeVO> outcomes(@RequestBody @Valid WalletOutcomePageQueryDTO req) {
-        ResponsePair<List<WalletOutcomeVO>> res = walletBizExecute.getOutcomeVOs(req);
-        if (res.isFail()) {
-            return ResponseKit.pageFail(res.getMsg());
+        ResponsePair<List<WalletOutcomeVO>> response = walletBizExecute.getOutcomeVOs(req);
+        if (response.isFail()) {
+            return ResponseKit.pageFail(response.getMsg());
         }
-        return ResponseKit.pageOk(res.getData(),req.getPageIndex(),req.getPageSize());
+        return ResponseKit.pageOk(response.getData(),req.getPageIndex(),req.getPageSize());
     }
 }

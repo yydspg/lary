@@ -1,11 +1,11 @@
-package cn.lary.module.gift.core;
+package cn.lary.module.gift.execute;
 
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.JSONKit;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.gift.dto.GiftOrderDTO;
@@ -60,7 +60,6 @@ public class GiftBizExecute  {
     private final KVBuilder kvBuilder;
     private final GiftOrderService giftOrderService;
     private final PluginSupport pluginSupport;
-    private final UserService userService;
     private final WalletService walletService;
     private final GiftService giftService;
     private final GiftTypeService giftTypeService;
@@ -90,10 +89,6 @@ public class GiftBizExecute  {
         }
         Integer client = req.getType();
         Integer payWay = req.getPayWay();
-        UserBaseVO anchor = userService.queryBase(anchorUid);
-        if (anchor == null) {
-            return BizKit.fail("anchor not exists");
-        }
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(anchorUid));
         if (map == null) {
             return BizKit.fail("no live info");
@@ -108,7 +103,7 @@ public class GiftBizExecute  {
                 .setGiftNum(req.getNum())
                 .setGiftId(req.getId())
                 .setClientType(req.getType())
-                .setStatus(Lary.OrderStatus.init);
+                .setStatus(LARY.OrderStatus.init);
         giftOrderService.save(order);
         long cost = giftPrices.get(req.getId()) * req.getNum();
         // decrease from wallet
@@ -126,7 +121,7 @@ public class GiftBizExecute  {
                         .setToUid(anchorUid)
                         .setChannelId(dto.getStreamId())
                         .setChannelType(WK.ChannelType.stream)
-                        .setType(Lary.WalletBiz.stream)
+                        .setType(LARY.WalletBiz.stream)
                         .setCost(cost));
                 walletService.update(new LambdaUpdateWrapper<Wallet>()
                         .eq(Wallet::getUid, uid)

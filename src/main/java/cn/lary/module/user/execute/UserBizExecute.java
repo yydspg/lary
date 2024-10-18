@@ -3,31 +3,26 @@ package cn.lary.module.user.execute;
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.*;
-import cn.lary.module.app.entity.EventData;
 import cn.lary.module.app.service.EventService;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.server.RedisBizConfig;
-import cn.lary.module.event.dto.UserRegisterEventDTO;
 import cn.lary.module.stream.service.FollowService;
 import cn.lary.module.user.dto.*;
-import cn.lary.module.user.entity.Device;
-import cn.lary.module.user.entity.User;
 import cn.lary.module.user.entity.UserRedDot;
 import cn.lary.module.user.service.DeviceService;
 import cn.lary.module.user.service.UserRedDotService;
 import cn.lary.module.user.service.UserService;
 import cn.lary.module.user.vo.UserRedDotVO;
-import cn.lary.module.wallet.entity.Wallet;
+import cn.lary.module.user.vo.UserVO;
 import cn.lary.module.wallet.service.WalletService;
 import cn.lary.pkg.wk.api.WKUserService;
 import cn.lary.pkg.wk.api.WkRouteService;
-import cn.lary.pkg.wk.dto.user.UpdateTokenDTO;
 import cn.lary.pkg.wk.constant.WK;
 import cn.lary.pkg.wk.vo.route.RouteVO;
-import cn.lary.pkg.wk.vo.user.UpdateTokenVO;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
+import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.dromara.sms4j.core.factory.SmsFactory;
@@ -35,10 +30,8 @@ import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import retrofit2.Response;
 
-import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -46,212 +39,62 @@ import java.util.Map;
 public class UserBizExecute {
 
     private final UserService userService;
-    private final DeviceService deviceService;
-    private final EventService eventService;
-    private final RedisCache redisCache;
-    private final RedisBizConfig redisBizConfig;
-    private final KVBuilder kvBuilder;
-    private final WalletService walletService;
-    private final FollowService followService;
     private final UserRedDotService userRedDotService;
 
-    // external
-    private final WKUserService wkUserService;
-    private final WkRouteService wkRouteService;
 
     /**
      * 登陆接口<br>
      * 如果从设备登陆,且为新设备,需要请求{@link DeviceBizExecute} <br>
      * 获取code重新请求
-     * @param req {@link LoginDTO}
+     * @param dto {@link LoginDTO}
      * @return login token
      */
-    @Transactional(rollbackFor = Exception.class)
-    public ResponsePair<String> loginByUid(LoginDTO req) {
-        String password = StringKit.MD5(StringKit.MD5(req.getPassword()));
-        Integer deviceId = req.getId();
-        User user = userService.getOne(new LambdaQueryWrapper<User>()
-                .eq(User::getDeleted,false)
-                .eq(User::getUid,req.getUid()));
-        if (user == null) {
-            return BizKit.fail("user not exist,please register first");
-        }
-        int uid = user.getUid();
-
-        if(user.getStatus() == Lary.UserStatus.ban) {
-            return BizKit.fail("user was banned");
-        }
-        if (StringKit.diff(user.getPassword(), password)) {
-            return BizKit.fail("pwd error");
-        }
-        byte deviceLevel = WK.DeviceLevel.slave;
-        if (WK.DeviceFlag.app == req.getFlag()) {
-            deviceLevel = WK.DeviceLevel.master;
-        }
-        String oldToken = redisCache.get(kvBuilder.userLoginK(user.getUid(), req.getFlag()));
-        if (StringKit.isNotEmpty(oldToken)) {
-            return BizKit.fail("login repeated");
-        }
-
-        Device checkedDevice = deviceService.checkWhetherNewDevice(uid, deviceId, req.getName(), req.getModel());
-        if (checkedDevice == null) {
-            if (StringKit.isEmpty(req.getCode()) && deviceLevel == WK.DeviceLevel.slave) {
-                return BizKit.fail("cmd:login on new device,send sms code");
-            }else {
-                if (req.getCode() == null) {
-                    return BizKit.fail("cmd:get sms code when login on new device");
-                }
-                Map<Object, Object> map = redisCache.getHash(kvBuilder.addDeviceK(uid));
-                if (map == null) {
-                    log.error("login on new device failed,no verify code,uid:{}",uid);
-                    return BizKit.fail("verify code expire");
-                }
-                DeviceAddAckCacheDTO dto = DeviceAddAckCacheDTO.of(map);
-                if(StringKit.diff(dto.getCode(),req.getCode())) {
-                    log.error("verify code not match,uid:{}",uid);
-                    return BizKit.fail("verify code not match");
-                }
-                Device device = new Device()
-                        .setUid(user.getUid())
-                        .setName(req.getName())
-                        .setModel(req.getModel());
-                deviceService.save(device);
-                deviceId = device.getId();
-                redisCache.del(kvBuilder.addDeviceK(uid));
-            }
-        }else {
-            deviceId = checkedDevice.getId();
-        }
-        if (deviceId == null || deviceId <= 0) {
-            log.error("device id build error,uid:{}",uid);
-            return BizKit.fail("system error");
-        }
-        Device device = deviceService.queryDevice(uid,deviceId);
-        if (device == null) {
-            return BizKit.fail("device not exist,please register first");
-        }
-        DeviceLoginCacheDTO deviceLoginCacheDTO = new DeviceLoginCacheDTO()
-                .setFlag(req.getFlag())
-                .setId(deviceId)
-                .setModel(device.getModel())
-                .setName(device.getName());
-        redisCache.setHash(kvBuilder.deviceLoginK(uid,deviceId),kvBuilder.deviceLoginV(deviceLoginCacheDTO),redisBizConfig.getLoginDeviceCacheExpire());
-        String token = userLoginRedisSet(user.getName(), user.getRole(), req.getFlag());
-        UpdateTokenDTO tokenDTO = new UpdateTokenDTO(user.getUid(), token,req.getFlag(), deviceLevel);
-        Response<UpdateTokenVO> vo = wkUserService.updateToken(tokenDTO);
-        if (!vo.isSuccessful()) {
-            return BizKit.fail(vo.message());
-        }
-        deviceService.lambdaUpdate()
-                .set(Device::getLastLogin, LocalDateTime.now())
-                .eq(Device::getUid, uid)
-                .eq(Device::getId,device.getId());
-        return BizKit.ok(token);
+    public ResponsePair<String> login(LoginDTO dto) {
+        return userService.login(dto);
     }
 
     /**
      * 注册接口<br>
      * 通过验证码校验后,直接执行登陆的逻辑
-     * @param req {@link RegisterDTO}
+     * @param dto {@link RegisterDTO}
      * @return token
      */
-    @Transactional()
-    public ResponsePair<String> register(RegisterDTO req) {
-        String verifyCode = redisCache.get(kvBuilder.userRegisterK(req.getPhone()));
-        if(StringKit.diff(verifyCode,req.getCode())) {
-            return BizKit.fail("verify code error");
-        }
-        redisCache.del(kvBuilder.userRegisterK(req.getPhone()));
-        User user = new User();
-        String name = req.getName();
-        if (StringKit.isNotEmpty(name)) {
-            user.setName(name);
-        }else {
-            user.setName(StringKit.random(6));
-        }
-        user.setQrVercode(UUIDKit.getUUID()+"@"+Lary.VerifyCode.QR)
-            .setVercode(UUIDKit.getUUID()+"@"+Lary.VerifyCode.user)
-            .setEmail(req.getEmail())
-            .setPhone(req.getPhone())
-            .setZone(req.getZone())
-            .setIsRobot(false)
-            .setSex(Lary.Sex.man)
-            .setBio(req.getBio())
-            .setBirthday(req.getBirthday())
-            .setPassword(StringKit.MD5(StringKit.MD5(req.getPassword())));
-        userService.save(user);
-        EventData event = new UserRegisterEventDTO().setUid(user.getUid()).setPhone(req.getPhone()).of();
-        int eventId = eventService.begin(event);
-        Device device = new Device()
-                .setUid(user.getUid())
-                .setName(req.getDevice().getName())
-                .setModel(req.getDevice().getModel());
-        deviceService.save(device);
-        DeviceLoginCacheDTO deviceLoginCacheDTO = new DeviceLoginCacheDTO()
-                .setId(device.getId())
-                .setName(device.getName())
-                .setModel(device.getModel())
-                .setFlag(req.getDevice().getFlag());
-        redisCache.setHash(kvBuilder.deviceLoginK(user.getUid(),device.getId()),kvBuilder.deviceLoginV(deviceLoginCacheDTO),redisBizConfig.getLoginDeviceCacheExpire());
-        //set user login info to redis
-        String token = userLoginRedisSet(name, Lary.UserRole.normal, req.getDevice().getFlag());
-
-        UpdateTokenDTO tokenDTO = new UpdateTokenDTO(user.getUid(), token,req.getDevice().getFlag(), WK.DeviceLevel.slave);
-        Wallet wallet = new Wallet().setUid(user.getUid());
-        walletService.save(wallet);
-        followService.addSystemHelper(user.getUid());
-        Response<UpdateTokenVO> vo = wkUserService.updateToken(tokenDTO);
-        if (!vo.isSuccessful()) {
-            return BizKit.fail(vo.message());
-        }
-        eventService.commit(eventId);
-        return BizKit.ok(token);
+    public ResponsePair<String> register(RegisterDTO dto) {
+        return userService.register(dto);
     }
     /**
-     * 对 用户登陆的 token在用户维度和 token维度设置在redis
-     * @param name username
-     * @param role r
-     * @param deviceFlag {@link WK.DeviceFlag}
+     * 注销接口<br>
+     * 通过验证码校验后
+     * @param dto {@link RegisterDTO}
+     * @return token
      */
-    private String userLoginRedisSet(String name,int role,int deviceFlag){
-        int uid = RequestContext.getLoginUID();
-        String token = UUIDKit.getUUID() + "@" + deviceFlag;
-        // remove before device login token
-        redisCache.del(kvBuilder.userLoginK(uid,deviceFlag));
-        redisCache.del(kvBuilder.userLoginTokenK(token));
-        // add new token
-        redisCache.set(kvBuilder.userLoginK(uid,deviceFlag),kvBuilder.userLoginV(token,deviceFlag),redisBizConfig.getLoginUserExpire());
-        redisCache.set(kvBuilder.userLoginTokenK(token),kvBuilder.userLoginTokenV(uid,name,role),redisBizConfig.getLoginUserTokenExpire());
-        return token;
+    public ResponsePair<Void> destroy(UserDestroyDTO dto) {
+        return userService.destroy(dto);
     }
-
     /**
      * 用户注册时的手机验证
      * @param phone 手机号
      * @return ok
      */
-    public ResponsePair<Void> smsCode(String phone) {
-
-        String token = SmsCodeKit.getToken();
-        if (Lary.testMode) {
-            SmsFactory.getSmsBlend("aliyun-test").sendMessageAsync(phone,token);
-        }
-        redisCache.set(kvBuilder.userRegisterK(phone),kvBuilder.userRegisterV(token),redisBizConfig.getRegisterExpire());
-        return BizKit.ok();
+    public ResponsePair<Void> registerCode(String phone) {
+        return userService.registerCode(phone);
     }
 
     /**
-     * 刷新login的token<br>
-     * 客户端的token刷新必须大于过期时间
-     * @param uid user id
+     * 用户注销时的手机验证
+     * @param phone 手机号
+     * @return ok
+     */
+    public ResponsePair<Void> destroyCode(String phone) {
+        return userService.destroyCode(phone);
+    }
+
+    /**
+     * 刷新token
      * @return token
      */
-    public ResponsePair<Void> refreshToken(String token, RefreshTokenDTO req) {
-        int uid = RequestContext.getLoginUID();
-        redisCache.renewal(kvBuilder.userLoginK(uid,req.getFlag()),redisBizConfig.getLoginUserExpire());
-        redisCache.renewal(kvBuilder.userLoginTokenK(token),redisBizConfig.getLoginUserTokenExpire());
-        redisCache.renewal(kvBuilder.deviceLoginK(uid,req.getDeviceId()),redisBizConfig.getLoginDeviceCacheExpire());
-        return BizKit.ok();
+    public ResponsePair<Void> refreshToken(HttpServletRequest request) {
+       return userService.refresh(request);
     }
 
     /**
@@ -259,12 +102,8 @@ public class UserBizExecute {
      * 清理 redis 缓存
      * @return ok
      */
-    public ResponsePair<Void> logout(int deviceFlag, int deviceId, String token) {
-        int uid = RequestContext.getLoginUID();
-        redisCache.del(kvBuilder.userLoginK(uid,deviceFlag));
-        redisCache.del(kvBuilder.deviceLoginK(uid,deviceId));
-        redisCache.del(kvBuilder.userLoginTokenK(token));
-        return BizKit.ok();
+    public ResponsePair<Void> logout(HttpServletRequest request) {
+       return userService.logout(request);
     }
 
     /**
@@ -273,12 +112,7 @@ public class UserBizExecute {
      * @return {@link RouteVO}
      */
     public ResponsePair<RouteVO> getRoute() {
-        Response<RouteVO> route = wkRouteService.getRoute();
-        if (route.isSuccessful()) {
-            RouteVO routeVO = route.body();
-            return BizKit.ok(routeVO);
-        }
-        return BizKit.fail(route.message());
+        return userService.getRoute();
     }
 
     /**
@@ -288,15 +122,15 @@ public class UserBizExecute {
      * @return {@link UserRedDotVO}
      */
     public ResponsePair<List<UserRedDotVO>> getRedDot() {
-        int uid = RequestContext.getLoginUID();
-        List<UserRedDot> redDots = userRedDotService.list(new LambdaQueryWrapper<UserRedDot>()
-                .eq(UserRedDot::getUid, uid));
-        List<UserRedDotVO> vos = new ArrayList<>();
-        redDots.forEach(t->{
-            vos.add(new UserRedDotVO(t.getCount(),t.getCategory(),t.getIsDot()));
-        });
-        return BizKit.ok(vos);
+        return userRedDotService.redDots();
     }
 
+    /**
+     * 获取我的信息
+     * @return {@link UserVO}
+     */
+    public ResponsePair<UserVO> my(){
+        return userService.my();
+    }
 }
 

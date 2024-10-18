@@ -1,11 +1,10 @@
 package cn.lary.module.common.cache.impl;
 
-import cn.lary.kit.JSONKit;
 import cn.lary.kit.StringKit;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.server.RedisBizConfig;
 import cn.lary.module.stream.dto.*;
-import cn.lary.module.user.dto.DeviceAddAckCacheDTO;
+import cn.lary.module.user.dto.DeviceAddResponseCacheDTO;
 import cn.lary.module.user.dto.DeviceLoginCacheDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,8 +21,8 @@ public class KVBuilderImpl implements KVBuilder {
     private final RedisBizConfig redisBizConfig;
 
     @Override
-    public String deviceLoginK(int uid,int deviceId) {
-        return redisBizConfig.getTokenCachePrefix() + uid+"@"+deviceId;
+    public String deviceLoginK(int uid,int flag) {
+        return redisBizConfig.getLoginDeviceCachePrefix()+ uid+"@"+flag;
     }
 
     @Override
@@ -34,7 +33,6 @@ public class KVBuilderImpl implements KVBuilder {
         Map<String, String> map = new HashMap<>();
         map.put("id", String.valueOf(deviceLoginCacheDTO.getId()));
         map.put("name", deviceLoginCacheDTO.getName());
-        map.put("model", deviceLoginCacheDTO.getModel());
         map.put("flag", String.valueOf(deviceLoginCacheDTO.getFlag()));
         map.put("level", String.valueOf(deviceLoginCacheDTO.getLevel()));
         return map;
@@ -46,8 +44,8 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String userLoginV(String token,int deviceFlag) {
-        return token+"@"+deviceFlag;
+    public String userLoginV(String token) {
+        return token;
     }
 
     @Override
@@ -70,6 +68,16 @@ public class KVBuilderImpl implements KVBuilder {
         return token;
     }
 
+    @Override
+    public String userDestroyK(int uid) {
+        return redisBizConfig.getDestroyPrefix()+uid;
+    }
+
+    @Override
+    public String userDestroyV(String token) {
+        return token;
+    }
+
 
     @Override
     public String streamRecordK(int uid, int streamId) {
@@ -88,16 +96,16 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String addDeviceK(int uid) {
-        return redisBizConfig.getSmsAddDevicePrefix()+uid;
+    public String addDeviceK(int uid,String phone) {
+        return redisBizConfig.getSmsAddDevicePrefix()+uid+"@"+phone;
     }
 
     @Override
-    public Map addDeviceV(DeviceAddAckCacheDTO dto) {
+    public Map addDeviceV(DeviceAddResponseCacheDTO dto) {
         HashMap<Object, Object> args = new HashMap<>();
         args.put("name",dto.getName());
         args.put("code",dto.getCode());
-        args.put("model",dto.getModel());
+        args.put("flag",dto.getFlag());
         return args;
     }
 

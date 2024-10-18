@@ -1,7 +1,7 @@
 package cn.lary.module.wallet.core;
 
 import cn.lary.module.app.service.EventService;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.pay.core.PayCallback;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.service.UserService;
@@ -43,7 +43,7 @@ public class WalletPayCallbackExecute implements PayCallback {
         rechargeLogService.update(new LambdaUpdateWrapper<RechargeLog>()
                 .set(RechargeLog::getSn,vo.getTradeNo())
                 .set(RechargeLog::getCompleteAt, LocalDateTime.now())
-                .set(RechargeLog::getStatus, Lary.OrderStatus.commit));
+                .set(RechargeLog::getStatus, LARY.OrderStatus.commit));
         Wallet wallet = walletService.getOne(new LambdaQueryWrapper<Wallet>()
                 .eq(Wallet::getUid, recharge.getUid())
                 .eq(Wallet::getIsDelete, false),false);
@@ -73,7 +73,7 @@ public class WalletPayCallbackExecute implements PayCallback {
         }
         rechargeLogService.update(new LambdaUpdateWrapper<RechargeLog>()
                 .set(RechargeLog::getSn,vo.getTradeNo())
-                .set(RechargeLog::getStatus, Lary.OrderStatus.fail)
+                .set(RechargeLog::getStatus, LARY.OrderStatus.fail)
                 .set(RechargeLog::getCompleteAt, LocalDateTime.now())
                 .set(RechargeLog::getFailReason,vo.getFailReason())
                 .eq(RechargeLog::getRechargeId,vo.getRechargeId()));
@@ -83,6 +83,6 @@ public class WalletPayCallbackExecute implements PayCallback {
 
     @Override
     public Integer getBiz() {
-        return Lary.PayBiz.recharge;
+        return LARY.PayBiz.recharge;
     }
 }

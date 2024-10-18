@@ -1,11 +1,13 @@
 package cn.lary.module.user.execute;
 
+import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.*;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.server.RedisBizConfig;
-import cn.lary.module.user.dto.DeviceAddAckCacheDTO;
+import cn.lary.module.user.dto.DeviceAddDTO;
+import cn.lary.module.user.dto.DeviceAddResponseCacheDTO;
 import cn.lary.module.user.entity.Device;
 import cn.lary.module.user.service.DeviceService;
 import cn.lary.module.user.vo.DeviceVO;
@@ -24,125 +26,35 @@ import java.util.Map;
 public class DeviceBizExecute {
 
     private final DeviceService deviceService;
-    private final KVBuilder kvBuilder;
-    private final RedisCache redisCache;
-    private final RedisBizConfig redisBizConfig;
 
     /**
-     * 响应 添加新设备
-     * @param uid u
-     * @param code 验证码
+     * 新设备登陆的验证码
+     * @param dto {@link DeviceAddDTO}
      * @return ok
      */
-    public ResponsePair<Void> responseAddDeviceCMD(int uid, String code) {
-        Map<Object, Object> data = redisCache.getHash(kvBuilder.addDeviceK(uid));
-        if (data == null) {
-            return BizKit.fail("no add device redis cache data");
-        }
-        DeviceAddAckCacheDTO dto = DeviceAddAckCacheDTO.of(data);
-
-        if (StringKit.diff(code,dto.getCode())) {
-            return BizKit.fail("auth code error");
-        }
-        Device device = new Device()
-                .setModel(dto.getModel())
-                .setUid(uid)
-                .setName(dto.getName());
-        deviceService.save(device);
-        redisCache.del(kvBuilder.addDeviceK(uid));
-        return BizKit.ok();
+    public ResponsePair<Void> addDeviceCode(DeviceAddDTO dto) {
+        return deviceService.getAddDeviceSmsCode(dto);
     }
 
-    /**
-     * 存在主设备,添加新设备<br>
-     * 如果为新设备,发送验证码
-     * @param uid u
-     * @param name n
-     * @param model m
-     * @return {@link DeviceVO}
-     */
-    public ResponsePair<DeviceVO> addDevice(int uid, String name, String model, int flag) {
-        if (flag == WK.DeviceLevel.master){
-            return BizKit.fail("master device no support");
-        }
-        Device device = deviceService.checkWhetherNewDevice(uid, null, name, model);
-        if (device == null) {
-            // build verify code
-            String token = SmsCodeKit.getToken();
-            DeviceAddAckCacheDTO data = new DeviceAddAckCacheDTO()
-                    .setCode(token)
-                    .setName(name)
-                    .setModel(model);
-            redisCache.setHash(kvBuilder.addDeviceK(uid),kvBuilder.addDeviceV(data),redisBizConfig.getSmsAddDeviceExpire());
-            return BizKit.ok();
-        }
-        DeviceVO vo = new DeviceVO()
-                .setDeviceName(device.getName())
-                .setLastLogin(device.getLastLogin())
-                .setId(device.getId());
-        return BizKit.ok(vo);
-    }
+
     /**
      * 查询所有设备
-     * @param uid u
      * @return {@link DeviceVO}
      */
-    public ResponsePair<List<DeviceVO>> list(int uid) {
-        List<Device> devices = deviceService.queryDevicesWithUid(uid);
-        if (CollectionKit.isEmpty(devices)) {
-            log.error("device list fail,uid:{}",uid);
-            return BizKit.fail("no device found");
-        }
-        List<DeviceVO> deviceVOs = new ArrayList<>();
-        devices.forEach(device -> {
-            DeviceVO deviceVO = new DeviceVO()
-                    .setDeviceName(device.getName())
-                    .setLastLogin(device.getLastLogin());
-            String token = redisCache.get(kvBuilder.deviceLoginK(uid, device.getId()));
-            if (StringKit.isNotEmpty(token)) {
-                deviceVO.setIsLanding(true);
-            }
-            deviceVOs.add(deviceVO);
-        });
-        return BizKit.ok(deviceVOs);
+    public ResponsePair<List<DeviceVO>> my() {
+        return deviceService.devices();
     }
 
-    /**
-     * 删除设备登陆的token
-     * @param uid u
-     * @param deviceId d
-     * @return void
-     */
-    public ResponsePair<Void> delDeviceToken(int uid, int deviceId) {
-        redisCache.del(kvBuilder.deviceLoginK(uid,deviceId));
-        return BizKit.ok();
-    }
 
     /**
-     * 删除已授权的设备<br>
-     * 登陆的设备不能删除<br>
-     * 主设备不能删除
-     * @param uid u
+     * 删除设备
      * @param deviceId d
      * @return v
      */
-    public ResponsePair<Void> removeDevice(int uid, int deviceId) {
-        //
-        String token = redisCache.get(kvBuilder.deviceLoginK(uid, deviceId));
-        if (StringKit.isNotEmpty(token)) {
-            return BizKit.fail("device landing,can not be deleted");
-        }
-        // check login status
-        Device device = deviceService.queryDevice(uid, deviceId);
-        if (device == null || device.getLevel() == WK.DeviceLevel.master) {
-            return BizKit.fail("main device can not be deleted");
-        }
-        deviceService.lambdaUpdate()
-                .eq(Device::getId, deviceId)
-                .eq(Device::getUid,uid)
-                .set(Device::getIsDelete,true);
-        return BizKit.ok();
+    public ResponsePair<Void> removeDevice( int deviceId) {
+       return deviceService.removeDevice(deviceId);
     }
+
 
 
 }

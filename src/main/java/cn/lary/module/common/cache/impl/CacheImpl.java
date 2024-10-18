@@ -48,7 +48,7 @@ public class CacheImpl implements RedisCache {
     }
 
     @Override
-    public void del(String k) {
+    public void delete(String k) {
         str.delete(k);
     }
 

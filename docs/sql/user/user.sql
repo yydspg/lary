@@ -26,17 +26,7 @@ create table `user` (
                         create_at timestamp ,
                         update_at timestamp
 );
-drop table if exists `user_setting`;
-create table `user_setting`(
-                               id bigint not null auto_increment primary key ,
-                               uid varchar(40) not null  ,
-                               fan_list bool not null default true comment '粉丝列表是否展示',
-                               medal bool not null default true comment '勋章是否展示',
-                               dynamic bool not null default true comment '动态是否展示',
-                               new_message_notice bool default true comment '新消息提醒',
-                               create_at timestamp ,
-                               update_at timestamp
-);
+
 drop table if exists `user_detail`;
 create table  `user_detail` (
                                 id bigint not null auto_increment primary key ,

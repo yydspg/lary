@@ -1,7 +1,6 @@
 package cn.lary.pkg.wk.dto.channel;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
 import lombok.Data;
 
 import java.util.List;

@@ -73,9 +73,9 @@ public class FanBizExecute {
                     .setChannelId(liveCache.getStreamId())
                     .setChannelType(WK.ChannelType.stream)
                     .setToUid(toUid);
-            ResponsePair<Void> res = walletService.transfer(dto);
-            if(res.isFail()) {
-                return BizKit.fail(res.getMsg());
+            ResponsePair<Void> response = walletService.transfer(dto);
+            if(response.isFail()) {
+                return BizKit.fail(response.getMsg());
             }
         }
         redisCache.append(kvBuilder.raffleK(toUid),String.valueOf(uid));

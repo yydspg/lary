@@ -22,7 +22,6 @@ public class RegisterDTO extends DTO {
      */
     @NotNull(message = "code is null")
     private String code;
-    // 邀请码
     @JsonProperty("invite_code")
     private String inviteCode;
 
@@ -31,8 +30,18 @@ public class RegisterDTO extends DTO {
     private String email;
 
     private String birthday;
-    @JsonProperty("device")
-    @NotNull(message = "device info is null")
-    private DeviceLoginCacheDTO device;
+
+    @JsonProperty("id")
+    private int id;
+
+    @NotNull(message = "device_name is null")
+    @JsonProperty("name")
+    private String deviceName;
+
+    @JsonProperty("flag")
+    @NotNull(message = "device flag is null")
+    private int flag;
+
+    private int level;
 
 }

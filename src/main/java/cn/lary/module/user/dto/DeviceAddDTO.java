@@ -9,6 +9,10 @@ public class DeviceAddDTO {
     @JsonProperty("name")
     private String name;
 
-    @JsonProperty("model")
-    private String model;
+    @JsonProperty("flag")
+    private int flag;
+
+    private int uid;
+
+    private String phone;
 }

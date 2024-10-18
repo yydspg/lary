@@ -2,7 +2,6 @@ package cn.lary.pkg.wk.dto.message;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
-import lombok.RequiredArgsConstructor;
 import lombok.experimental.Accessors;
 
 import java.util.List;

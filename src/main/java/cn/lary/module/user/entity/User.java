@@ -73,7 +73,7 @@ public class User implements Serializable {
 
     private Integer status;
 
-    private Boolean deleted;
+    private Boolean isDelete;
 
     private Boolean isAnchor;
 

@@ -33,7 +33,6 @@ public class Device implements Serializable {
 
     private String name;
 
-    private String model;
 
     private Integer level;
 

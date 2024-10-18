@@ -1,19 +1,19 @@
 package cn.lary.module.pay.kit;
 
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 
 public class PayBizKit {
     public static  String getPayClient(Integer clientType) {
         return switch(clientType) {
-            case Lary.ClientType.web -> "web";
-            case Lary.ClientType.app -> "app";
+            case LARY.ClientType.web -> "web";
+            case LARY.ClientType.app -> "app";
             default -> null;
         };
     }
     public static String getPayWay(Integer payWay) {
         return switch(payWay) {
-            case Lary.PayWay.alipay -> "alipay";
-            case Lary.PayWay.wechat -> "wechat";
+            case LARY.PayWay.alipay -> "alipay";
+            case LARY.PayWay.wechat -> "wechat";
             default -> null;
         };
     }

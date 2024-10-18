@@ -1,11 +1,13 @@
 package cn.lary.module.user.api;
 
-import cn.lary.core.context.RequestContext;
+import cn.lary.core.dto.MultiResponse;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
+import cn.lary.module.user.dto.DeviceAddDTO;
 import cn.lary.module.user.execute.DeviceBizExecute;
 import cn.lary.module.user.vo.DeviceVO;
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -21,42 +23,29 @@ public class DeviceController {
 
     private final DeviceBizExecute deviceBizExecute;
 
-    @GetMapping("/ack")
-    public SingleResponse<Void> ackAddDevice(@RequestParam(value = "code") @NotNull String code) {
-        int uid = RequestContext.getLoginUID();
-        ResponsePair<Void> res = deviceBizExecute.responseAddDeviceCMD(uid, code);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+
+    @GetMapping("/my")
+    public MultiResponse<DeviceVO> my() {
+        ResponsePair<List<DeviceVO>> response = deviceBizExecute.my();
+        if (response.isFail()) {
+            return ResponseKit.multiFail(response.getMsg());
+        }
+        return ResponseKit.multiOk(response.getData());
+    }
+
+    @GetMapping("/code")
+    public SingleResponse<Void> addDeviceCode(@RequestBody @Valid DeviceAddDTO dto) {
+        ResponsePair<Void> response = deviceBizExecute.addDeviceCode(dto);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
-
-    @GetMapping("/list")
-    public SingleResponse<List<DeviceVO>> list() {
-        int uid = RequestContext.getLoginUID();
-        ResponsePair<List<DeviceVO>> res = deviceBizExecute.list(uid);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
-        }
-        return ResponseKit.ok(res.getData());
-    }
-
-    @GetMapping("/del/token")
-    public SingleResponse<Void> delToken(@RequestParam(value = "deviceId") @NotNull Integer deviceId) {
-        int uid = RequestContext.getLoginUID();
-        ResponsePair<Void> res = deviceBizExecute.delDeviceToken(uid, deviceId);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
-        }
-        return ResponseKit.ok();
-    }
-
     @GetMapping("/del")
     public SingleResponse<DeviceVO> delDevice(@RequestParam(value = "deviceId") @NotNull Integer deviceId) {
-        int uid = RequestContext.getLoginUID();
-        ResponsePair<Void> res = deviceBizExecute.removeDevice(uid, deviceId);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = deviceBizExecute.removeDevice( deviceId);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }

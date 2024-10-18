@@ -17,7 +17,7 @@ import java.util.HashMap;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class UserInterceptor  implements HandlerInterceptor {
+public class UserLoginTokenInterceptor implements HandlerInterceptor {
     private final RedisCache redisCache;
     private final KVBuilder kvBuilder;
 
@@ -55,11 +55,7 @@ public class UserInterceptor  implements HandlerInterceptor {
         HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
     }
     private String getLoginTokenV(String token) {
-        String[] args = StringKit.split(token, "@");
-        if(args == null || args.length < 2) {
-            return null;
-        }
-        return redisCache.get(kvBuilder.userLoginK(Integer.parseInt(args[0]),Integer.parseInt(args[1])));
+        return redisCache.get(kvBuilder.userLoginTokenK(token));
     }
 
 }

@@ -1,6 +1,6 @@
 package cn.lary.module.pay.api;
 
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.pay.plugin.PluginSupport;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
@@ -21,7 +21,7 @@ public class PayCallbackController {
      */
     @GetMapping("/gift/alipay")
     public void giftOrderAlipayCallback(HttpServletRequest req) {
-        support.callback(req, Lary.PayWay.alipay,Lary.PayBiz.gift);
+        support.callback(req, LARY.PayWay.alipay, LARY.PayBiz.gift);
     }
     /**
      * 礼物模块的 wechat 支付后回调接口
@@ -29,7 +29,7 @@ public class PayCallbackController {
      */
     @GetMapping("/gift/wechat")
     public void giftOrderWechatCallback(HttpServletRequest req) {
-        support.callback(req, Lary.PayWay.wechat,Lary.PayBiz.gift);
+        support.callback(req, LARY.PayWay.wechat, LARY.PayBiz.gift);
     }
     /**
      * 充值模块的 alipay 支付后回调接口
@@ -37,7 +37,7 @@ public class PayCallbackController {
      */
     @GetMapping("/recharge/alipay")
     public void rechargeCallback(HttpServletRequest req) {
-        support.callback(req,Lary.PayWay.alipay,Lary.PayBiz.recharge);
+        support.callback(req, LARY.PayWay.alipay, LARY.PayBiz.recharge);
     }
     /**
      * 充值模块的 wechat 支付后回调接口
@@ -45,7 +45,7 @@ public class PayCallbackController {
      */
     @GetMapping("/recharge/wechat")
     public void rechargeWechatCallback(HttpServletRequest req) {
-        support.callback(req,Lary.PayWay.wechat,Lary.PayBiz.recharge);
+        support.callback(req, LARY.PayWay.wechat, LARY.PayBiz.recharge);
     }
 
 }

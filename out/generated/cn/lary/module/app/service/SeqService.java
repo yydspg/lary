@@ -1,6 +1,5 @@
 package cn.lary.module.app.service;
 
-import cn.lary.module.app.entity.Seq;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**

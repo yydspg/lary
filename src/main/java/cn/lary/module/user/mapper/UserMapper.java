@@ -4,7 +4,6 @@ import cn.lary.module.user.vo.FriendCodeCheck;
 import cn.lary.module.user.vo.UserBaseVO;
 import cn.lary.module.user.vo.UserBasicInfo;
 import cn.lary.module.user.entity.User;
-import cn.lary.module.user.entity.UserShowInfo;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -26,5 +25,4 @@ public interface UserMapper extends BaseMapper<User> {
     FriendCodeCheck checkWithCode(@Param("code") String code);
 
     FriendCodeCheck checkWithQRCode(@Param("code") String code);
-    List<UserShowInfo> selectUserShowInfo(@Param("uids") List<String> uid);
 }

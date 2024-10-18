@@ -1,6 +1,6 @@
-package cn.lary.module.gift.core;
+package cn.lary.module.gift.execute;
 
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.gift.entity.AnchorTurnover;
@@ -53,7 +53,7 @@ public class GiftPayCallbackExecute implements PayCallback {
         //update success
         giftOrderService.update(new LambdaUpdateWrapper<GiftOrder>()
                 .set(GiftOrder::getSn, vo.getTradeNo())
-                .set(GiftOrder::getStatus, Lary.OrderStatus.commit)
+                .set(GiftOrder::getStatus, LARY.OrderStatus.commit)
                 .set(GiftOrder::getCompleteAt, LocalDateTime.now()));
         AnchorTurnover record = new AnchorTurnover().setAnchorId(order.getAnchorUid())
                 .setBuyUid(order.getUid())
@@ -102,12 +102,12 @@ public class GiftPayCallbackExecute implements PayCallback {
                 .set(GiftOrder::getSn, vo.getTradeNo())
                 .set(GiftOrder::getFailReason,vo.getFailReason())
                 .set(GiftOrder::getCompleteAt, LocalDateTime.now())
-                .set(GiftOrder::getStatus,Lary.OrderStatus.fail)
+                .set(GiftOrder::getStatus, LARY.OrderStatus.fail)
                 .eq(GiftOrder::getOrderId, orderId));
     }
 
     @Override
     public Integer getBiz() {
-        return Lary.PayBiz.gift;
+        return LARY.PayBiz.gift;
     }
 }

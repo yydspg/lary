@@ -8,7 +8,7 @@ import cn.lary.kit.StringKit;
 import cn.lary.module.app.service.EventService;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.dto.RaffleEventDTO;
 import cn.lary.module.message.dto.stream.CreateRaffleNotifyDTO;
 import cn.lary.module.stream.dto.LiveCacheDTO;
@@ -71,7 +71,7 @@ public class RaffleServiceImpl extends ServiceImpl<RaffleMapper, Raffle> impleme
             return BizKit.fail("have unfinished raffle");
         }
         Integer type = dto.getType();
-        boolean isInner = type == Lary.Raffle.inner;
+        boolean isInner = type == LARY.Raffle.inner;
 
         String title = dto.getTitle();
         String badWord = SensitiveWordHelper.findFirst(title);

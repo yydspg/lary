@@ -29,11 +29,11 @@ public class GroupController {
      */
     @PostMapping("/create")
     public SingleResponse<CreateGroupVO> create(@RequestBody @Valid CreateGroupDTO dto) {
-        ResponsePair<CreateGroupVO> res = groupBizExecute.create(dto);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<CreateGroupVO> response = groupBizExecute.create(dto);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
     /**
@@ -43,9 +43,9 @@ public class GroupController {
      */
     @GetMapping("/disband")
     public SingleResponse<Void> disband(int groupId) {
-        ResponsePair<Void> res = groupBizExecute.disband(groupId);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = groupBizExecute.disband(groupId);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
@@ -57,9 +57,9 @@ public class GroupController {
      */
     @GetMapping("/forbidden")
     public SingleResponse<Void> forbidden( @RequestParam @NotNull int groupId) {
-        ResponsePair<Void> res = groupBizExecute.forbidden(groupId);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = groupBizExecute.forbidden(groupId);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
@@ -71,11 +71,11 @@ public class GroupController {
      */
     @GetMapping("/detail")
     public SingleResponse<GroupDetailVO> getGroup(@RequestParam @NotNull int groupId) {
-        ResponsePair<GroupDetailVO> res = groupBizExecute.getGroup(groupId);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<GroupDetailVO> response = groupBizExecute.getGroup(groupId);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
     /**
@@ -85,11 +85,11 @@ public class GroupController {
      */
     @GetMapping("/my/groups")
     public SingleResponse<List<GroupVO>> myGroups(@RequestParam @NotNull int role) {
-        ResponsePair<List<GroupVO>> res = groupBizExecute.myGroups(role);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<List<GroupVO>> response = groupBizExecute.myGroups(role);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
 

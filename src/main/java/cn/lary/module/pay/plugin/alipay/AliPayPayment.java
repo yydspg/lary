@@ -2,7 +2,7 @@ package cn.lary.module.pay.plugin.alipay;
 
 import cn.lary.core.exception.SysException;
 import cn.lary.kit.StringKit;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.pay.core.PayCallbackExecute;
 import cn.lary.module.pay.vo.PayBuildVO;
 import cn.lary.module.pay.dto.PayParam;
@@ -65,22 +65,22 @@ public class AliPayPayment implements Payment {
         json.put("notify_url", notifyUrl);
         String postJson = json.toJSONString();
         try {
-            AlipayTradePagePayResponse res = alipayClient.pageExecute(alipayRequest);
-            String form = res.getBody();
+            AlipayTradePagePayResponse response = alipayClient.pageExecute(alipayRequest);
+            String form = response.getBody();
             PayBuildVO vo = new PayBuildVO()
                     .setOk(true)
-                    .setOutTradeNo(res.getOutTradeNo());
+                    .setOutTradeNo(response.getOutTradeNo());
             vo.setContentType("text/html;charset=utf-8").setBody(form);
             // update payment log
             paymentLogService.update(new LambdaUpdateWrapper<PaymentLog>()
-                    .set(PaymentLog::getPostStatus, Lary.PostStatus.success)
+                    .set(PaymentLog::getPostStatus, LARY.PostStatus.success)
                     .set(PaymentLog::getPostJson,postJson)
                     .eq(PaymentLog::getPayId, payParam.getPayId()));
             return vo;
         } catch (AlipayApiException e) {
             log.error("alipay pay error{}",e.getMessage());
             paymentLogService.update(new LambdaUpdateWrapper<PaymentLog>()
-                    .set(PaymentLog::getPostStatus, Lary.PostStatus.fail)
+                    .set(PaymentLog::getPostStatus, LARY.PostStatus.fail)
                     .set(PaymentLog::getPostJson,postJson)
                     .eq(PaymentLog::getPayId, payParam.getPayId()));
             return new PayBuildVO()
@@ -105,9 +105,9 @@ public class AliPayPayment implements Payment {
                 }else {
                     String status = params.get("trade_status");
                     if (StringKit.same("TRADE_SUCCESS",status) || StringKit.same("TRADE_FINISHED",status)) {
-                        payCallbackExecute.onSuccess(params,biz,Lary.PayWay.alipay);
+                        payCallbackExecute.onSuccess(params,biz, LARY.PayWay.alipay);
                     }else {
-                        payCallbackExecute.onFail(params,biz,Lary.PayWay.alipay);
+                        payCallbackExecute.onFail(params,biz, LARY.PayWay.alipay);
                     }
                 }
             }else{
@@ -127,7 +127,7 @@ public class AliPayPayment implements Payment {
 
     @Override
     public Integer getPayWay() {
-        return Lary.PayWay.alipay;
+        return LARY.PayWay.alipay;
     }
     private PaymentLog check(Map<String, String> args) {
         String outTradeNo = args.get("out_trade_no");
@@ -138,7 +138,7 @@ public class AliPayPayment implements Payment {
             return null;
         }
         PaymentLog log = paymentLogService.getOne(new LambdaQueryWrapper<PaymentLog>().eq(PaymentLog::getPayId, outTradeNo));
-        if (log == null || log.getPayStatus() == Lary.PayStatus.fail) {
+        if (log == null || log.getPayStatus() == LARY.PayStatus.fail) {
             return null;
         }
         if(StringKit.diff(totalAmount,log.getPayCost().toString())) {

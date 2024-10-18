@@ -50,11 +50,11 @@ public class RoomController {
      */
     @GetMapping("/page")
     public PageResponse<StreamRecordVO> records(@RequestParam @NotNull Integer page, @RequestParam @NotNull Integer limit) {
-        ResponsePair<List<StreamRecordVO>> res = streamBizExecute.page( page, limit);
-        if (res.isFail()) {
-            return ResponseKit.pageFail(res.getMsg());
+        ResponsePair<List<StreamRecordVO>> response = streamBizExecute.page( page, limit);
+        if (response.isFail()) {
+            return ResponseKit.pageFail(response.getMsg());
         }
-        return ResponseKit.pageOk(res.getData(),page,limit);
+        return ResponseKit.pageOk(response.getData(),page,limit);
     }
 
     /**
@@ -66,11 +66,11 @@ public class RoomController {
     public SingleResponse<GoLiveVO> start(@RequestBody @Valid GoLiveDTO dto,HttpServletRequest request) {
 
         String ip = IPKit.getIp(request);
-        ResponsePair<GoLiveVO> res = roomBizExecute.go(ip, dto);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<GoLiveVO> response = roomBizExecute.go(ip, dto);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
     /**
@@ -81,11 +81,11 @@ public class RoomController {
     @GetMapping("/join")
     public SingleResponse<JoinLiveVO> join(@RequestParam(value = "toUid") @NotNull Integer toUid, HttpServletRequest req) {
         String ip = IPKit.getIp(req);
-        ResponsePair<JoinLiveVO> res = roomBizExecute.join( toUid,ip);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<JoinLiveVO> response = roomBizExecute.join( toUid,ip);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
     /**
@@ -94,11 +94,11 @@ public class RoomController {
      */
     @GetMapping("/end")
     public SingleResponse<DownLiveVO> end() {
-        ResponsePair<DownLiveVO> res = roomBizExecute.end();
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<DownLiveVO> response = roomBizExecute.end();
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
     /**
@@ -107,11 +107,11 @@ public class RoomController {
      */
     @GetMapping("/leave")
     public SingleResponse<Void> leave() {
-        ResponsePair<Void> res = roomBizExecute.leave();
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = roomBizExecute.leave();
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
     /**
@@ -121,11 +121,11 @@ public class RoomController {
      */
     @PostMapping("/raffle")
     public SingleResponse<Void> raffle(@RequestBody @Valid RaffleDTO dto) {
-        ResponsePair<Void> res = roomBizExecute.raffle(dto);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = roomBizExecute.raffle(dto);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
     /**
@@ -135,10 +135,10 @@ public class RoomController {
      */
     @PostMapping("/redpacket")
     public SingleResponse<Void> redpacket(@RequestBody @Valid RedPacketDTO dto) {
-        ResponsePair<Void> res = roomBizExecute.redPacket(dto);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = roomBizExecute.redPacket(dto);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 }

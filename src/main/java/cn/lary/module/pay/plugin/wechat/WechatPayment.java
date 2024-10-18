@@ -1,6 +1,6 @@
 package cn.lary.module.pay.plugin.wechat;
 
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.pay.plugin.Payment;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
@@ -28,6 +28,6 @@ public class WechatPayment implements Payment {
 
     @Override
     public Integer getPayWay() {
-        return Lary.PayWay.wechat;
+        return LARY.PayWay.wechat;
     }
 }

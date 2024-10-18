@@ -27,17 +27,14 @@ public class LoginDTO {
     @NotNull(message = "device_name is null")
     @JsonProperty("name")
     private String name;
-    /**
-     *登陆设备model
-     */
-    @JsonProperty("model")
-    private String model;
+
+    @NotNull(message = "phone is null")
+    private String phone;
 
     @JsonProperty("flag")
     @NotNull(message = "device flag is null")
     private Integer flag;
 
-    private Integer level;
 
     /**
      * 如果在新设备上登陆<br>

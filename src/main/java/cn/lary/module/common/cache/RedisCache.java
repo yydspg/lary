@@ -22,7 +22,7 @@ public interface RedisCache {
     void mset(Map<String,String> map);
     // mget k [k ...]
     List<String> mget(Collection<String> keys);
-    void del(String k);
+    void delete(String k);
 
     /*
         hash

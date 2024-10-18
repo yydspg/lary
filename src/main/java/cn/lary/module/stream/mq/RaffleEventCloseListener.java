@@ -3,7 +3,7 @@ package cn.lary.module.stream.mq;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.CollectionKit;
 import cn.lary.module.app.service.EventService;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.stream.dto.RaffleCacheDTO;
@@ -74,7 +74,7 @@ public class RaffleEventCloseListener implements RocketMQListener<RaffleCloseMes
         for (Integer index : randomIndex) {
             uids.add(Integer.parseInt( collects.get(index)));
         }
-        if (type == Lary.Raffle.inner) {
+        if (type == LARY.Raffle.inner) {
             BatchOutcomeTransferDTO dto = new BatchOutcomeTransferDTO().setType(type)
                     .setUid(uid)
                     .setAmount(raffleCache.getCost())
@@ -82,9 +82,9 @@ public class RaffleEventCloseListener implements RocketMQListener<RaffleCloseMes
                     .setChannelId(message.getStreamId())
                     .setChannelType(WK.ChannelType.stream)
                     .setTotalAmount(raffleCache.getTotalAmount());
-            ResponsePair<Void> res = walletService.batchOutcomeTransfer(dto);
-            if (res.isFail()) {
-                log.error("batch outcome transfer error,uid:{},raffleId:{},reason:{}",uid,raffleCache.getId(),res.getMsg());
+            ResponsePair<Void> response = walletService.batchOutcomeTransfer(dto);
+            if (response.isFail()) {
+                log.error("batch outcome transfer error,uid:{},raffleId:{},reason:{}",uid,raffleCache.getId(),response.getMsg());
                 return;
             }
         }
@@ -92,8 +92,8 @@ public class RaffleEventCloseListener implements RocketMQListener<RaffleCloseMes
                 .eq(Raffle::getId,message.getRaffleId())
                 .set(Raffle::getIsSync,true)
                 .set(Raffle::getRecipients,uids);
-        redisCache.del(kvBuilder.raffleListK(uid));
-        redisCache.del(kvBuilder.raffleK(uid));
+        redisCache.delete(kvBuilder.raffleListK(uid));
+        redisCache.delete(kvBuilder.raffleK(uid));
         eventService.commit(message.getEventId());
         log.info("raffle close event success,uid:{},raffleId:{},streamId:{}"
                 ,uid,message.getRaffleId(),message.getStreamId());

@@ -6,12 +6,16 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 @Data
-@AllArgsConstructor
+@Accessors(chain = true)
 public class UpdateTokenDTO {
-    private Integer uid;
+
+    private int uid;
+
     private String token;
+
     @JsonProperty("device_flag")
-    private int deviceFlag;
+    private int flag;
+
     @JsonProperty("device_level")
-    private int deviceLevel;
+    private int level;
 }

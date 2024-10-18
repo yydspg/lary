@@ -1,7 +1,7 @@
 package cn.lary.module.wallet.vo;
 
 import cn.lary.kit.StringKit;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.pay.core.PayCallbackVO;
 import lombok.Data;
 
@@ -20,7 +20,7 @@ public class RechargePayCallbackVO implements PayCallbackVO{
         if(params == null || params.isEmpty()){
             return this;
         }
-        if(payWay == Lary.PayWay.alipay){
+        if(payWay == LARY.PayWay.alipay){
             this.rechargeId = Long.parseLong(params.get("out_trade_no"));
             this.cost = Long.parseLong(params.get("total_amount"));
             this.tradeNo = params.get("trade_no");

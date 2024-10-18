@@ -1,6 +1,5 @@
 package cn.lary.module.app.mapper;
 
-import cn.lary.module.app.entity.Seq;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

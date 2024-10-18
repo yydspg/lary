@@ -19,9 +19,6 @@ public class DeviceLoginCacheDTO extends DTO {
     @JsonProperty("name")
     private String name;
 
-    @JsonProperty("model")
-    private String model;
-
     @JsonProperty("flag")
     @NotNull(message = "device flag is null")
     private int flag;
@@ -32,7 +29,6 @@ public class DeviceLoginCacheDTO extends DTO {
         DeviceLoginCacheDTO dto = new DeviceLoginCacheDTO();
         dto.setId((Integer) map.get("id"));
         dto.setName((String) map.get("name"));
-        dto.setModel((String) map.get("model"));
         dto.setFlag((Integer) map.get("flag"));
         dto.setLevel((Integer) map.get("level"));
         return dto;

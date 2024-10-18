@@ -52,6 +52,9 @@ public class UserSetting implements Serializable {
      */
     private Boolean newMessageNotice;
 
+    private Boolean isDelete;
+
+
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;
 

@@ -4,7 +4,7 @@ import cn.lary.module.stream.dto.JoinLiveCacheDTO;
 import cn.lary.module.stream.dto.LiveCacheDTO;
 import cn.lary.module.stream.dto.RaffleCacheDTO;
 import cn.lary.module.stream.dto.RedPacketCacheDTO;
-import cn.lary.module.user.dto.DeviceAddAckCacheDTO;
+import cn.lary.module.user.dto.DeviceAddResponseCacheDTO;
 import cn.lary.module.user.dto.DeviceLoginCacheDTO;
 
 import java.util.Map;
@@ -17,7 +17,7 @@ public interface KVBuilder {
      * @param uid user id
      * @return k
      */
-    String deviceLoginK(int uid, int deviceId);
+    String deviceLoginK(int uid, int flag);
 
     Map deviceLoginV(DeviceLoginCacheDTO deviceLoginCacheDTO);
 
@@ -29,7 +29,7 @@ public interface KVBuilder {
      */
     String userLoginK(int uid, int deviceFlag);
 
-    String userLoginV(String token, int deviceFlag);
+    String userLoginV(String token);
 
     /**
      * 用户登陆 token 为 key,uid,username,role为value
@@ -43,12 +43,22 @@ public interface KVBuilder {
 
     /**
      * 构建用户注册时的验证码
-     * @param phone
-     * @return
+     * @param phone p
+     * @return s
      */
     String userRegisterK( String phone);
 
     String userRegisterV(String token);
+
+
+    /**
+     * 构建用户注销时的验证码
+     * @return s
+     */
+    String userDestroyK(int uid);
+
+    String userDestroyV(String token);
+
 
 
 
@@ -65,14 +75,13 @@ public interface KVBuilder {
     Map streamRecordV();
 
     /**
-     * 新增用户设备
      *
      * @param uid u
      * @return S
      */
-    String addDeviceK(int uid);
+    String addDeviceK(int uid,String phone);
 
-    Map addDeviceV(DeviceAddAckCacheDTO dto);
+    Map addDeviceV(DeviceAddResponseCacheDTO dto);
 
     /**
      * 开启直播

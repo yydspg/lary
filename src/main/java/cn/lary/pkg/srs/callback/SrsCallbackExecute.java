@@ -2,7 +2,7 @@ package cn.lary.pkg.srs.callback;
 
 import cn.lary.kit.StringKit;
 import cn.lary.module.app.service.EventService;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.stream.dto.JoinLiveCacheDTO;
@@ -34,7 +34,6 @@ public class SrsCallbackExecute implements SrsCallback {
     private final KVBuilder kvBuilder;
     private final StreamRecordService streamRecordService;
     //external
-    private final WKMessageService wkMessageService;
 
     @Override
     public int onPublish(OnPublishDTO dto) {
@@ -65,7 +64,7 @@ public class SrsCallbackExecute implements SrsCallback {
                 .setSrsServerId(dto.getServerId())
                 .setSrsStreamUrl(dto.getStreamUrl());
         redisCache.setHash(kvBuilder.goLiveK(uid),kvBuilder.goLiveV(updateRecord));
-        streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>().eq(StreamRecord::getStreamId,cache.getStreamId()).set(StreamRecord::getStatus, Lary.Stream.Status.up));
+        streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>().eq(StreamRecord::getStreamId,cache.getStreamId()).set(StreamRecord::getStatus, LARY.Stream.Status.up));
         // close event
         eventService.commit(Integer.parseInt(eventId));
         // update stream record status
@@ -94,7 +93,7 @@ public class SrsCallbackExecute implements SrsCallback {
             log.error("srs unpublish fail when check token:{},uid:{}",token,uid);
             return SRS.CallBackStatus.fail;
         }
-        redisCache.del(kvBuilder.goLiveK(uid));
+        redisCache.delete(kvBuilder.goLiveK(uid));
         // close event
         eventService.commit(Integer.parseInt(eventId));
        return SRS.CallBackStatus.ok;

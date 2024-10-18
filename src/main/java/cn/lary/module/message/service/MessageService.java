@@ -3,6 +3,8 @@ package cn.lary.module.message.service;
 import cn.lary.pkg.wk.dto.channel.ChannelCreateDTO;
 import cn.lary.pkg.wk.dto.channel.SubscribersAddDTO;
 import cn.lary.pkg.wk.dto.message.MessageSendDTO;
+import cn.lary.pkg.wk.dto.user.UpdateTokenDTO;
+import cn.lary.pkg.wk.vo.route.RouteVO;
 
 public interface MessageService {
     /**
@@ -26,4 +28,17 @@ public interface MessageService {
      * @param dto {@link SubscribersAddDTO}
      */
     void addSubscriber(SubscribersAddDTO dto);
+
+    /**
+     * 更新token
+     * @param dto {@link UpdateTokenDTO}
+     */
+    void updateToken(UpdateTokenDTO dto);
+
+    /**
+     * 获取IM的节点
+     * @param uid U
+     * @return ok
+     */
+    RouteVO getRoute(int uid);
 }

@@ -1,6 +1,6 @@
 package cn.lary.module.common.constant;
 
-public interface Lary {
+public interface LARY {
     boolean testMode = false;
 
     interface CodeType {
@@ -48,6 +48,12 @@ public interface Lary {
     interface UserStatus {
         int ban = 1;
         int ok = 0;
+    }
+    interface USER {
+        interface STATUS {
+            int BAN = 1;
+            int OK = 2;
+        }
     }
     interface Group {
         interface Role {
@@ -147,5 +153,14 @@ public interface Lary {
     interface WalletBiz {
         int stream = 1;
     }
-
+    interface DEVICE {
+        interface FLAG{
+            int APP = 1;
+            int PC = 2;
+        }
+        interface LEVEL {
+            int SLAVE = 1;
+            int MASTER = 2;
+        }
+    }
 }

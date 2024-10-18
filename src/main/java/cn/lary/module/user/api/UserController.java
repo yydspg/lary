@@ -1,19 +1,24 @@
 package cn.lary.module.user.api;
 
+import cn.lary.core.dto.MultiResponse;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
-import cn.lary.kit.*;
-import cn.lary.module.user.dto.RefreshTokenDTO;
-import cn.lary.module.user.execute.UserBizExecute;
+import cn.lary.kit.ResponseKit;
 import cn.lary.module.user.dto.LoginDTO;
 import cn.lary.module.user.dto.RegisterDTO;
+import cn.lary.module.user.dto.UserDestroyDTO;
+import cn.lary.module.user.execute.UserBizExecute;
+import cn.lary.module.user.vo.UserRedDotVO;
+import cn.lary.module.user.vo.UserVO;
+import cn.lary.pkg.wk.vo.route.RouteVO;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotBlank;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -25,38 +30,57 @@ public class UserController {
 
     /**
      * 注册
-     * @param req {@link RegisterDTO}
+     * @param dto {@link RegisterDTO}
      * @return token
      */
     @PostMapping("/register")
-    public SingleResponse<String> register(@Valid @RequestBody RegisterDTO req) {
-        ResponsePair<String> res = userBizExecute.register(req);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+    public SingleResponse<String> register(@Valid @RequestBody RegisterDTO dto) {
+        ResponsePair<String> response = userBizExecute.register(dto);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
 
     /**
      *登陆
-     * @param req {@link LoginDTO}
+     * @param dto {@link LoginDTO}
      * @return token
      */
     @PostMapping("/login")
-    public SingleResponse<String> login(@Validated @RequestBody LoginDTO req) {
-        ResponsePair<String> res = userBizExecute.loginByUid(req);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+    public SingleResponse<String> login(@Validated @RequestBody LoginDTO dto) {
+        ResponsePair<String> response = userBizExecute.login(dto);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
-        return ResponseKit.ok(res.getData());
+        return ResponseKit.ok(response.getData());
     }
-    // TODO  : 排除这个接口的拦截
-    // TODO  :  限流
-    @GetMapping("/sms")
-    public SingleResponse<Void> smsCode(@RequestParam(value = "phone") String phone) {
-        ResponsePair<Void> res = userBizExecute.smsCode(phone);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+    /**
+     *注销
+     * @param dto {@link UserDestroyDTO}
+     * @return token
+     */
+    @PostMapping("/destroy")
+    public SingleResponse<Void> login(@Validated @RequestBody UserDestroyDTO dto) {
+        ResponsePair<Void> response = userBizExecute.destroy(dto);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
+        }
+        return ResponseKit.ok(response.getData());
+    }
+    @GetMapping("/register/code")
+    public SingleResponse<Void> registerCode(@RequestParam(value = "phone") String phone) {
+        ResponsePair<Void> response = userBizExecute.registerCode(phone);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
+        }
+        return ResponseKit.ok();
+    }
+    @GetMapping("/destroy/code")
+    public SingleResponse<Void> destroyCode(@RequestParam(value = "phone") String phone) {
+        ResponsePair<Void> response = userBizExecute.destroyCode(phone);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
@@ -64,33 +88,51 @@ public class UserController {
     /**
      * 退出登陆
      * @param request {@link HttpServletRequest}
-     * @param deviceId d
-     * @param flag f
      * @return ok
      */
     @GetMapping("/logout")
-    public SingleResponse<Void> logout(HttpServletRequest request,
-                                       @RequestParam @NotBlank Integer deviceId,
-                                       @RequestParam @NotBlank Integer flag) {
-        ResponsePair<Void> res = userBizExecute.logout( flag, deviceId, request.getHeader("token"));
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+    public SingleResponse<Void> logout(HttpServletRequest request) {
+        ResponsePair<Void> response = userBizExecute.logout( request);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
 
     /**
      * 刷新token
-     * @param dto {@link RefreshTokenDTO}
      * @param request {@link HttpServletRequest}
      * @return ok
      */
-    public SingleResponse<Void> refresh(@RequestBody @Valid RefreshTokenDTO dto,HttpServletRequest request) {
-        ResponsePair<Void> res = userBizExecute.refreshToken( request.getHeader("token"), dto);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+    public SingleResponse<Void> refresh(HttpServletRequest request) {
+        ResponsePair<Void> response = userBizExecute.refreshToken( request);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
-
+    @GetMapping("/my")
+    public SingleResponse<UserVO> my() {
+        ResponsePair<UserVO> response = userBizExecute.my();
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
+        }
+        return ResponseKit.ok(response.getData());
+    }
+    @GetMapping("/redDots")
+    public MultiResponse<UserRedDotVO> redDots() {
+        ResponsePair<List<UserRedDotVO>> response = userBizExecute.getRedDot();
+        if (response.isFail()) {
+            return ResponseKit.multiFail(response.getMsg());
+        }
+        return ResponseKit.multiOk(response.getData());
+    }
+    @GetMapping("/route")
+    public SingleResponse<RouteVO> route() {
+        ResponsePair<RouteVO> response = userBizExecute.getRoute();
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
+        }
+        return ResponseKit.ok(response.getData());
+    }
 }

@@ -4,7 +4,7 @@ import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.stream.entity.StreamRecord;
 import cn.lary.module.stream.mapper.StreamRecordMapper;
 import cn.lary.module.stream.service.StreamRecordService;
@@ -31,7 +31,7 @@ public class StreamRecordServiceImpl extends ServiceImpl<StreamRecordMapper, Str
     public ResponsePair<List<StreamRecordVO>> getPages(int page, int size) {
         List<StreamRecord> records = lambdaQuery()
                 .eq(StreamRecord::getUid, RequestContext.getLoginUID())
-                .eq(StreamRecord::getStatus, Lary.Stream.Status.down)
+                .eq(StreamRecord::getStatus, LARY.Stream.Status.down)
                 .orderByDesc(StreamRecord::getCreateAt)
                 .page(new Page<>(page, size))
                 .getRecords();

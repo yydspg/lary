@@ -2,7 +2,7 @@ package cn.lary.module.event.dto;
 
 import cn.lary.kit.JSONKit;
 import cn.lary.module.app.entity.EventData;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.convert.EventConvert;
 import lombok.AllArgsConstructor;
 import lombok.Data;
@@ -20,8 +20,8 @@ public class RechargeEventDTO implements EventConvert {
     @Override
     public EventData of() {
         return new EventData()
-                .setEvent(Lary.Event.recharge)
-                .setType(Lary.EventType.cmd)
+                .setEvent(LARY.Event.recharge)
+                .setType(LARY.EventType.cmd)
                 .setData(JSONKit.toJSON(this));
     }
 }

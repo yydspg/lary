@@ -2,7 +2,7 @@ package cn.lary.module.event.dto;
 
 import cn.lary.kit.JSONKit;
 import cn.lary.module.app.entity.EventData;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.convert.EventConvert;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
@@ -20,8 +20,8 @@ public class DownLiveEventDTO implements EventConvert {
     @Override
     public EventData of() {
         return new EventData()
-                .setEvent(Lary.Event.downLive)
-                .setType(Lary.EventType.cmd)
+                .setEvent(LARY.Event.downLive)
+                .setType(LARY.EventType.cmd)
                 .setEvent(JSONKit.toJSON(this));
     }
 }

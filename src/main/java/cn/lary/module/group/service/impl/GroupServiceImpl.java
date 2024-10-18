@@ -6,7 +6,7 @@ import cn.lary.kit.BizKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.DateKit;
 import cn.lary.kit.StringKit;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.group.dto.CreateGroupDTO;
 import cn.lary.module.group.entity.Group;
 import cn.lary.module.group.entity.GroupMember;
@@ -83,10 +83,11 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
             groupName = sb.toString();
         }
         User creatorInfo = userService.lambdaQuery()
+                .select(User::getIsAnchor)
                 .eq(User::getUid, creator)
-                .eq(User::getDeleted, false)
+                .eq(User::getIsDelete, false)
                 .one();
-        if (dto.getCategory() == Lary.Group.Category.stream) {
+        if (dto.getCategory() == LARY.Group.Category.stream) {
             if (creatorInfo == null || !creatorInfo.getIsAnchor()) {
                 return BizKit.fail("inappropriate category");
             }
@@ -98,9 +99,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         save(group);
         List<GroupMember> groupMembers = new ArrayList<>();
         users.forEach(u -> {
-            int role = Lary.Group.Role.common;
+            int role = LARY.Group.Role.common;
             if (u == creator) {
-                role = Lary.Group.Role.creator;
+                role = LARY.Group.Role.creator;
             }
             GroupMember groupMember = new GroupMember()
                     .setUid(u)
@@ -120,9 +121,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
     @Override
     public ResponsePair<Void> disband(int groupId) {
-        ResponsePair<Void> res = groupMemberService.disband(groupId);
-        if (res.isFail()){
-            return res;
+        ResponsePair<Void> response = groupMemberService.disband(groupId);
+        if (response.isFail()){
+            return BizKit.fail(response.getMsg());
         }
         lambdaUpdate()
                 .eq(Group::getGroupId,groupId)
@@ -132,9 +133,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
     @Override
     public ResponsePair<Void> forbidden(int groupId) {
-        ResponsePair<GroupMember> res = groupMemberService.checkRole(groupId);
-        if (res.isFail()){
-            return BizKit.fail(res.getMsg());
+        ResponsePair<GroupMember> response = groupMemberService.checkRole(groupId);
+        if (response.isFail()){
+            return BizKit.fail(response.getMsg());
         }
         lambdaUpdate().set(Group::getIsForbidden,true);
         return BizKit.ok();
@@ -151,16 +152,16 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
     @Override
     public ResponsePair<List<GroupVO>> my(int role) {
-        ResponsePair<List<Integer>> res = groupMemberService.my(role);
-        if (res.isFail()){
-            return BizKit.fail(res.getMsg());
+        ResponsePair<List<Integer>> response = groupMemberService.my(role);
+        if (response.isFail()){
+            return BizKit.fail(response.getMsg());
         }
         List<Group> data = lambdaQuery()
                 .select(Group::getGroupId)
                 .select(Group::getName)
                 .select(Group::getGroupNum)
                 .select(Group::getGroupAvatar)
-                .in(Group::getGroupId,res.getData())
+                .in(Group::getGroupId,response.getData())
                 .list();
         if (data.isEmpty()){
             return BizKit.fail("data empty");

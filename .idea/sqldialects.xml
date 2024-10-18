@@ -25,6 +25,7 @@
     <file url="file://$PROJECT_DIR$/docs/sql/user/20240807.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/user/20240814.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/user/user.sql" dialect="MySQL" />
+    <file url="file://$PROJECT_DIR$/docs/sql/user/user_setting.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/video/video.sql" dialect="MySQL" />
     <file url="file://$PROJECT_DIR$/docs/sql/wallet/wallet.sql" dialect="MySQL" />
   </component>

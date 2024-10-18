@@ -5,7 +5,7 @@ import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.BizKit;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
-import cn.lary.module.common.constant.Lary;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.message.dto.follow.ActiveFollowResponseDTO;
 import cn.lary.module.message.dto.follow.OneWayActiveFollowResponseDTO;
 import cn.lary.module.message.dto.follow.PassiveFollowResponseDTO;
@@ -77,7 +77,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         if (aimUser == null) {
             return BizKit.fail("用户不存在");
         }
-        if (aimUser.getStatus() == Lary.UserStatus.ban) {
+        if (aimUser.getStatus() == LARY.UserStatus.ban) {
             return BizKit.fail("用户已被封禁");
         }
         Follow reverseRelation = lambdaQuery()
@@ -128,7 +128,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         if (pair.isFail()) {
             return BizKit.fail(pair.getMsg());
         }
-        if (aimUser.getIsAnchor() && dto.getCode() == Lary.FollowCode.stream) {
+        if (aimUser.getIsAnchor() && dto.getCode() == LARY.FollowCode.stream) {
             Map<Object, Object> liveInfo = redisCache.getHash(kvBuilder.goLiveK(toUid));
             if (liveInfo != null) {
                 LiveCacheDTO cache = LiveCacheDTO.of(liveInfo);
@@ -164,8 +164,8 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 .select(User::getName)
                 .select(User::getBio)
                 .eq(User::getUid, toUid)
-                .eq(User::getDeleted, false)
-                .eq(User::getStatus, Lary.UserStatus.ok)
+                .eq(User::getIsDelete, false)
+                .eq(User::getStatus, LARY.UserStatus.ok)
                 .one();
         if ( toUser == null) {
             return BizKit.fail("user status error");
@@ -225,7 +225,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         User aimUser = userService.lambdaQuery()
                 .select(User::getIsAnchor)
                 .eq(User::getUid, toUid)
-                .eq(User::getDeleted, false)
+                .eq(User::getIsDelete, false)
                 .one();
         if (aimUser == null) {
             return BizKit.fail("user not exist");

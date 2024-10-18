@@ -24,43 +24,43 @@ public class FollowController {
 
     @PostMapping("/foll")
     public SingleResponse<Void> apply(@Valid @RequestBody FollowDTO dto) {
-        ResponsePair<Void> res = followBizExecute.follow( dto);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = followBizExecute.follow( dto);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
 
     @GetMapping("/unfollow")
     public SingleResponse<Void> unfollow(@RequestParam @NotNull int toUid) {
-        ResponsePair<Void> res = followBizExecute.unfollow( toUid);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = followBizExecute.unfollow( toUid);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
 
     @PostMapping("/follows")
     public PageResponse<Follow> page(@RequestBody @Valid FollowPageQueryDTO dto) {
-        ResponsePair<List<Follow>> res = followBizExecute.follows(dto);
-        if (res.isFail()) {
-            return ResponseKit.pageFail(res.getMsg());
+        ResponsePair<List<Follow>> response = followBizExecute.follows(dto);
+        if (response.isFail()) {
+            return ResponseKit.pageFail(response.getMsg());
         }
-        return ResponseKit.pageOk(res.getData(),dto.getPageIndex(), dto.getPageSize());
+        return ResponseKit.pageOk(response.getData(),dto.getPageIndex(), dto.getPageSize());
     }
     @GetMapping("/block")
     public SingleResponse<Void> block(@RequestParam @NotNull int toUid) {
-        ResponsePair<Void> res = followBizExecute.block( toUid);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = followBizExecute.block( toUid);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
     @GetMapping("/unblock")
     public SingleResponse<Void> unblock(@RequestParam @NotNull int toUid) {
-        ResponsePair<Void> res = followBizExecute.unblock( toUid);
-        if (res.isFail()) {
-            return ResponseKit.fail(res.getMsg());
+        ResponsePair<Void> response = followBizExecute.unblock( toUid);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }

@@ -23,8 +23,8 @@ public class CollectionKit {
         if (list == null) {
             return null;
         }
-        HashSet<T> res = new HashSet<>(list);
-        return new ArrayList<>(res);
+        HashSet<T> response = new HashSet<>(list);
+        return new ArrayList<>(response);
     }
     public static boolean isEmpty(Collection collection) {
         return collection == null || collection.size() == 0;

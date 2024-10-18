@@ -10,20 +10,22 @@ import java.util.Map;
 
 @Data
 @Accessors(chain = true)
-public class DeviceAddAckCacheDTO extends DTO {
+public class DeviceAddResponseCacheDTO extends DTO {
+
     @JsonProperty("name")
     private String name;
-    @JsonProperty("model")
-    private String model;
+
+    private int flag;
+
     @NotNull
     @JsonProperty("code")
     private String code;
 
-    public static DeviceAddAckCacheDTO of(Map map) {
+    public static DeviceAddResponseCacheDTO of(Map map) {
 
-        DeviceAddAckCacheDTO dto = new DeviceAddAckCacheDTO();
+        DeviceAddResponseCacheDTO dto = new DeviceAddResponseCacheDTO();
         dto.setName(map.get("name").toString());
-        dto.setModel(map.get("model").toString());
+        dto.setFlag((Integer) map.get("flag"));
         dto.setCode(map.get("code").toString());
         return dto;
     }
