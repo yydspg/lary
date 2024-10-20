@@ -1,13 +1,12 @@
 package cn.lary.module.stream.api;
 
-import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.IPKit;
 import cn.lary.kit.ResponseKit;
-import cn.lary.module.stream.core.RoomBizExecute;
-import cn.lary.module.stream.core.StreamBizExecute;
+import cn.lary.module.stream.component.RoomBusinessExecute;
+import cn.lary.module.stream.component.StreamBusinessExecute;
 import cn.lary.module.stream.dto.GoLiveDTO;
 import cn.lary.module.stream.dto.RaffleDTO;
 import cn.lary.module.stream.dto.RedPacketDTO;
@@ -39,8 +38,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class RoomController {
 
-    private final RoomBizExecute roomBizExecute;
-    private final StreamBizExecute streamBizExecute;
+    private final RoomBusinessExecute roomBusinessExecute;
+    private final StreamBusinessExecute streamBusinessExecute;
 
     /**
      * 直播记录查询
@@ -50,7 +49,7 @@ public class RoomController {
      */
     @GetMapping("/page")
     public PageResponse<StreamRecordVO> records(@RequestParam @NotNull Integer page, @RequestParam @NotNull Integer limit) {
-        ResponsePair<List<StreamRecordVO>> response = streamBizExecute.page( page, limit);
+        ResponsePair<List<StreamRecordVO>> response = streamBusinessExecute.page( page, limit);
         if (response.isFail()) {
             return ResponseKit.pageFail(response.getMsg());
         }
@@ -66,7 +65,7 @@ public class RoomController {
     public SingleResponse<GoLiveVO> start(@RequestBody @Valid GoLiveDTO dto,HttpServletRequest request) {
 
         String ip = IPKit.getIp(request);
-        ResponsePair<GoLiveVO> response = roomBizExecute.go(ip, dto);
+        ResponsePair<GoLiveVO> response = roomBusinessExecute.go(ip, dto);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -81,7 +80,7 @@ public class RoomController {
     @GetMapping("/join")
     public SingleResponse<JoinLiveVO> join(@RequestParam(value = "toUid") @NotNull Integer toUid, HttpServletRequest req) {
         String ip = IPKit.getIp(req);
-        ResponsePair<JoinLiveVO> response = roomBizExecute.join( toUid,ip);
+        ResponsePair<JoinLiveVO> response = roomBusinessExecute.join( toUid,ip);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -94,7 +93,7 @@ public class RoomController {
      */
     @GetMapping("/end")
     public SingleResponse<DownLiveVO> end() {
-        ResponsePair<DownLiveVO> response = roomBizExecute.end();
+        ResponsePair<DownLiveVO> response = roomBusinessExecute.end();
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -107,7 +106,7 @@ public class RoomController {
      */
     @GetMapping("/leave")
     public SingleResponse<Void> leave() {
-        ResponsePair<Void> response = roomBizExecute.leave();
+        ResponsePair<Void> response = roomBusinessExecute.leave();
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -121,7 +120,7 @@ public class RoomController {
      */
     @PostMapping("/raffle")
     public SingleResponse<Void> raffle(@RequestBody @Valid RaffleDTO dto) {
-        ResponsePair<Void> response = roomBizExecute.raffle(dto);
+        ResponsePair<Void> response = roomBusinessExecute.raffle(dto);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -135,7 +134,7 @@ public class RoomController {
      */
     @PostMapping("/redpacket")
     public SingleResponse<Void> redpacket(@RequestBody @Valid RedPacketDTO dto) {
-        ResponsePair<Void> response = roomBizExecute.redPacket(dto);
+        ResponsePair<Void> response = roomBusinessExecute.redPacket(dto);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }

@@ -5,7 +5,7 @@ import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
 import cn.lary.module.user.dto.DeviceAddDTO;
-import cn.lary.module.user.execute.DeviceBizExecute;
+import cn.lary.module.user.component.DeviceBizExecute;
 import cn.lary.module.user.vo.DeviceVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -22,7 +22,6 @@ import java.util.List;
 public class DeviceController {
 
     private final DeviceBizExecute deviceBizExecute;
-
 
     @GetMapping("/my")
     public MultiResponse<DeviceVO> my() {
@@ -41,12 +40,14 @@ public class DeviceController {
         }
         return ResponseKit.ok();
     }
+
     @GetMapping("/del")
-    public SingleResponse<DeviceVO> delDevice(@RequestParam(value = "deviceId") @NotNull Integer deviceId) {
+    public SingleResponse<DeviceVO> removeDevice(@RequestParam(value = "deviceId") @NotNull Integer deviceId) {
         ResponsePair<Void> response = deviceBizExecute.removeDevice( deviceId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
+
 }

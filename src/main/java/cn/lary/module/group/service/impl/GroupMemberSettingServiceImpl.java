@@ -1,7 +1,7 @@
 package cn.lary.module.group.service.impl;
 
 import cn.lary.core.dto.ResponsePair;
-import cn.lary.kit.BizKit;
+import cn.lary.kit.BusinessKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.module.group.dto.GroupMemberSettingDTO;
 import cn.lary.module.group.entity.GroupMemberSetting;
@@ -29,7 +29,7 @@ public class GroupMemberSettingServiceImpl extends ServiceImpl<GroupMemberSettin
     @Override
     public ResponsePair<Void> saveOrUpdate(GroupMemberSettingDTO dto) {
         this.saveOrUpdate(dto.to());
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
@@ -42,13 +42,13 @@ public class GroupMemberSettingServiceImpl extends ServiceImpl<GroupMemberSettin
                 .select(GroupMemberSetting::getIsHidden)
                 .list();
         if (CollectionKit.isEmpty(data)) {
-            return BizKit.fail("data empty");
+            return BusinessKit.fail("data empty");
         }
         List<GroupMemberSettingVO> vos = new ArrayList<>();
         data.forEach(e -> {
             GroupMemberSettingVO vo = new GroupMemberSettingVO();
             vos.add(vo.of(e));
         });
-        return BizKit.ok(vos);
+        return BusinessKit.ok(vos);
     }
 }

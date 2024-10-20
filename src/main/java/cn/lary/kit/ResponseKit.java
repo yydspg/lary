@@ -1,6 +1,6 @@
 package cn.lary.kit;
 
-import cn.lary.core.cs.ResultCode;
+import cn.lary.core.constant.ResultCode;
 import cn.lary.core.dto.MultiResponse;
 import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.SingleResponse;

@@ -74,4 +74,17 @@ public class AnchorTurnover implements Serializable {
 
     @TableField(fill = FieldFill.UPDATE)
     private LocalDateTime updateAt;
+
+    public AnchorTurnover of(GiftOrder order){
+
+        setAnchorId(order.getAnchorUid());
+        setBuyUid(order.getUid());
+        setGiftId(order.getGiftId());
+        setIncome(order.getCost());
+        setStreamId(order.getStreamId());
+        setGiftNum(order.getGiftNum());
+        setClientType(order.getClientType());
+        setCompleteTime(LocalDateTime.now());
+        return this;
+    }
 }

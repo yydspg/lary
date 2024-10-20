@@ -3,7 +3,6 @@ package cn.lary.module.user.service.impl;
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.kit.*;
-import cn.lary.module.app.entity.EventData;
 import cn.lary.module.app.service.EventService;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
@@ -16,19 +15,15 @@ import cn.lary.module.user.dto.*;
 import cn.lary.module.user.entity.Device;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.entity.UserSetting;
-import cn.lary.module.user.kit.TokenPairKit;
 import cn.lary.module.user.mapper.UserMapper;
 import cn.lary.module.user.service.DeviceService;
 import cn.lary.module.user.service.UserService;
 import cn.lary.module.user.service.UserSettingService;
-import cn.lary.module.user.vo.UserSettingVO;
 import cn.lary.module.user.vo.UserVO;
 import cn.lary.module.wallet.entity.Wallet;
 import cn.lary.module.wallet.service.WalletService;
-import cn.lary.pkg.wk.constant.WK;
 import cn.lary.pkg.wk.dto.user.UpdateTokenDTO;
 import cn.lary.pkg.wk.vo.route.RouteVO;
-import cn.lary.pkg.wk.vo.user.UpdateTokenVO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -37,7 +32,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.dromara.sms4j.core.factory.SmsFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
-import retrofit2.Response;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -75,15 +69,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .eq(User::getIsDelete,false)
                 .one();
         if (user == null) {
-            return BizKit.fail("user not exist,please register first");
+            return BusinessKit.fail("user not exist,please register first");
         }
         int uid = user.getUid();
 
         if(user.getStatus() == LARY.USER.STATUS.BAN) {
-            return BizKit.fail("user was banned");
+            return BusinessKit.fail("user was banned");
         }
         if (StringKit.diff(user.getPassword(), password)) {
-            return BizKit.fail("password error");
+            return BusinessKit.fail("password error");
         }
         int deviceLevel = LARY.DEVICE.LEVEL.SLAVE;
         if (LARY.DEVICE.FLAG.APP == dto.getFlag()) {
@@ -97,36 +91,36 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             Map<Object, Object> map = redisCache.getHash(kvBuilder.deviceLoginK(uid, dto.getFlag()));
             if (map == null) {
                 log.error("user login failed,uid:{},flag:{}", uid, dto.getFlag());
-                return BizKit.fail("system error");
+                return BusinessKit.fail("system error");
             }
             DeviceLoginCacheDTO cache = DeviceLoginCacheDTO.of(map);
            if (cache.getId() == dto.getId()
                 || StringKit.same(cache.getName(),dto.getName())
                 || cache.getFlag() == dto.getFlag()) {
-               return BizKit.fail("login repeated");
+               return BusinessKit.fail("login repeated");
            }
             needRemovePreviousLogged = true;
         }
         Device device = deviceService.getDevice(dto.getUid(), dto.getId(), dto.getName(), dto.getFlag());
         if (device == null) {
             if (StringKit.isEmpty(dto.getCode()) && deviceLevel == LARY.DEVICE.LEVEL.SLAVE) {
-                return BizKit.fail("cmd:[login on new device],phone:"+user.getPhone());
+                return BusinessKit.fail("cmd:[login on new device],phone:"+user.getPhone());
             }else {
                 if (dto.getCode() == null) {
-                    return BizKit.fail("cmd:get sms code when login on new device");
+                    return BusinessKit.fail("cmd:get sms code when login on new device");
                 }
                 // check code
                 Map<Object, Object> map = redisCache.getHash(kvBuilder.addDeviceK(uid, dto.getPhone()));
                 if (map == null) {
                     log.error("login on new device failed,no verify code found,uid:{}",uid);
-                    return BizKit.fail("verify code expire");
+                    return BusinessKit.fail("verify code expire");
                 }
                 DeviceAddResponseCacheDTO cache = DeviceAddResponseCacheDTO.of(map);
                 if(StringKit.diff(dto.getCode(),cache.getCode())
                     || StringKit.diff(dto.getName(),cache.getName())
                     || dto.getFlag() != cache.getFlag()){
                     log.error("verify code not match,uid:{}",uid);
-                    return BizKit.fail("verify code not match");
+                    return BusinessKit.fail("verify code not match");
                 }
                 device = new Device()
                         .setUid(uid)
@@ -156,14 +150,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .set(Device::getLastLogin, LocalDateTime.now())
                 .eq(Device::getUid, uid)
                 .eq(Device::getId,device.getId());
-        return BizKit.ok(token);
+        return BusinessKit.ok(token);
     }
 
     @Override
     public ResponsePair<String> register(RegisterDTO dto) {
         String verifyCode = redisCache.get(kvBuilder.userRegisterK(dto.getPhone()));
         if(StringKit.diff(verifyCode,dto.getCode())) {
-            return BizKit.fail("verify code error");
+            return BusinessKit.fail("verify code error");
         }
         redisCache.delete(kvBuilder.userRegisterK(dto.getPhone()));
         User user = new User();
@@ -171,7 +165,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (StringKit.isNotEmpty(name)) {
             String badWord = SensitiveWordHelper.findFirst(name);
             if (StringKit.isNotEmpty(badWord)) {
-                return BizKit.fail("username contains sensitive word");
+                return BusinessKit.fail("username contains sensitive word");
             }
             user.setName(name);
         }else {
@@ -226,22 +220,22 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .setFlag(flag)
                 .setLevel(deviceLevel);
         messageService.updateToken(tokenDTO);
-        return BizKit.ok(token);
+        return BusinessKit.ok(token);
     }
 
     @Override
     public ResponsePair<Void> logout(HttpServletRequest request) {
         TokenPair pair = of(request);
         if (pair == null) {
-            return BizKit.fail("logout fail");
+            return BusinessKit.fail("logout fail");
         }
         forceLogout(pair.uid,pair.flag,pair.token);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<RouteVO> getRoute() {
-       return BizKit.ok(messageService.getRoute(RequestContext.getLoginUID()));
+       return BusinessKit.ok(messageService.getRoute(RequestContext.getLoginUID()));
     }
 
     @Override
@@ -251,7 +245,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             SmsFactory.getSmsBlend("aliyun-test").sendMessageAsync(phone,token);
         }
         redisCache.set(kvBuilder.userRegisterK(phone),kvBuilder.userRegisterV(token),redisBizConfig.getRegisterExpire());
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
@@ -261,19 +255,19 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             SmsFactory.getSmsBlend("aliyun-test").sendMessageAsync(phone,token);
         }
         redisCache.set(kvBuilder.userRegisterK(phone),kvBuilder.userRegisterV(token),redisBizConfig.getRegisterExpire());
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<Void> refresh(HttpServletRequest request) {
         TokenPair pair = of(request);
         if (pair == null) {
-            return BizKit.fail("refresh fail");
+            return BusinessKit.fail("refresh fail");
         }
         redisCache.renewal(kvBuilder.userLoginTokenK(pair.token),redisBizConfig.getLoginUserTokenExpire());
         redisCache.renewal(kvBuilder.userLoginK(pair.uid,pair.flag),redisBizConfig.getLoginUserExpire());
         deviceService.renewalDeviceLoginCache(pair.uid,pair.flag);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
@@ -281,7 +275,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         int uid = RequestContext.getLoginUID();
         String verifyCode = redisCache.get(kvBuilder.userDestroyK(uid));
         if(StringKit.diff(verifyCode,dto.getCode())){
-            return BizKit.fail("check verify code error");
+            return BusinessKit.fail("check verify code error");
         }
         String appToken = redisCache.get(kvBuilder.userLoginK(uid, LARY.DEVICE.FLAG.APP));
         String pcToken = redisCache.get(kvBuilder.userLoginK(uid, LARY.DEVICE.FLAG.PC));
@@ -303,7 +297,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                     .set(User::getIsDelete,true)
                     .eq(User::getUid,uid);
         });
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
 
@@ -319,9 +313,9 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .one();
         if (user == null) {
             log.error("search user error,uid:{}", RequestContext.getLoginUID());
-            return BizKit.fail("query fail");
+            return BusinessKit.fail("query fail");
         }
-        return BizKit.ok(new UserVO(user));
+        return BusinessKit.ok(new UserVO(user));
     }
 
     @Override

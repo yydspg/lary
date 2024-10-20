@@ -1,7 +1,7 @@
 package cn.lary.module.user.interceptor;
 
 import cn.lary.core.context.RequestContext;
-import cn.lary.core.cs.ResultCode;
+import cn.lary.core.constant.ResultCode;
 import cn.lary.kit.ResponseKit;
 import cn.lary.kit.StringKit;
 import cn.lary.module.common.cache.KVBuilder;

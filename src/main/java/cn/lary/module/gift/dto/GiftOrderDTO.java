@@ -1,5 +1,7 @@
 package cn.lary.module.gift.dto;
 
+import cn.lary.module.gift.entity.GiftOrder;
+import cn.lary.module.pay.dto.BusinessPaymentDTO;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -7,7 +9,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class GiftOrderDTO {
+public class GiftOrderDTO  extends BusinessPaymentDTO {
     /**
      * gift id
      */
@@ -31,12 +33,14 @@ public class GiftOrderDTO {
     private Integer toUid;
 
     @NotNull
-    @JsonProperty("type")
-    private Integer type;
+    @JsonProperty("client")
+    private Integer client;
 
     /**
      * 支付方式可以为空，若为空，即尝试从钱包扣款
      */
-    @JsonProperty("pay_way")
-    private Integer payWay;
+    @JsonProperty("plugin")
+    private Integer plugin;
+
+
 }

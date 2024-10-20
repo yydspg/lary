@@ -1,6 +1,6 @@
 package cn.lary.module.pay.config.alipay;
 
-import cn.lary.core.exception.SysException;
+import cn.lary.core.exception.SystemException;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.AlipayConfig;
@@ -61,7 +61,7 @@ public class LaryAlipayConfig {
         try {
             client = new DefaultAlipayClient(config);
         } catch (AlipayApiException e) {
-            throw new SysException("alipay client init error", e.getMessage());
+            throw new SystemException("alipay client init error", e.getMessage());
         }
         return client;
     }

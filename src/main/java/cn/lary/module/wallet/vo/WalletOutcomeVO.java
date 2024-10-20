@@ -1,34 +1,44 @@
 package cn.lary.module.wallet.vo;
 
+import cn.lary.module.wallet.entity.WalletOutcome;
 import lombok.Data;
 
 @Data
 public class WalletOutcomeVO {
 
-    private Long id;
+    private long id;
 
     /**
      * id
      */
-    private Integer toUid;
+    private int toUid;
 
     /**
      * 频道id
      */
-    private Integer channelId;
+    private int channelId;
 
     /**
      * 频道类型
      */
-    private Integer channelType;
+    private int channelType;
 
     /**
      * 交易类型
      */
-    private Integer type;
+    private int type;
 
     /**
      * 花费
      */
-    private Long cost;
+    private long cost;
+    
+    public WalletOutcomeVO(WalletOutcome outcome) {
+        this.id = outcome.getId();
+        this.toUid = outcome.getToUid();
+        this.channelId = outcome.getChannelId();
+        this.channelType = outcome.getChannelType();
+        this.type = outcome.getType();
+        this.cost = outcome.getCost();
+    }
 }

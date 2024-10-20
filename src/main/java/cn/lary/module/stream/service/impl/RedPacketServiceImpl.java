@@ -2,7 +2,7 @@ package cn.lary.module.stream.service.impl;
 
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
-import cn.lary.kit.BizKit;
+import cn.lary.kit.BusinessKit;
 import cn.lary.kit.StringKit;
 import cn.lary.module.app.service.EventService;
 import cn.lary.module.common.cache.KVBuilder;
@@ -55,23 +55,23 @@ public class RedPacketServiceImpl extends ServiceImpl<RedPacketMapper, RedPacket
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
         if(map == null){
             log.error("create red pack fail,no live info, uid:{}", uid);
-            return BizKit.fail("no live info");
+            return BusinessKit.fail("no live info");
         }
         LiveCacheDTO cache = LiveCacheDTO.of(map);
         Map<Object, Object> data = redisCache.getHash(kvBuilder.redPacketK(uid));
         if(data != null){
             log.error("have unfinished red packet service,uid:{}", uid);
-            return BizKit.fail("have unfinished red packet");
+            return BusinessKit.fail("have unfinished red packet");
         }
         String badWord = SensitiveWordHelper.findFirst(dto.getTitle());
         if (StringKit.isNotEmpty(badWord)) {
-            return BizKit.fail("title has bad word:"+badWord);
+            return BusinessKit.fail("title has bad word:"+badWord);
         }
         boolean needSendMessage = StringKit.isEmpty(dto.getMessage());
         if (needSendMessage) {
             badWord = SensitiveWordHelper.findFirst(dto.getMessage());
             if (StringKit.isNotEmpty(badWord)) {
-                return BizKit.fail("message has bad word:"+badWord);
+                return BusinessKit.fail("message has bad word:"+badWord);
             }
         }
         Wallet wallet = walletService.lambdaQuery()
@@ -80,11 +80,11 @@ public class RedPacketServiceImpl extends ServiceImpl<RedPacketMapper, RedPacket
                 .one();
         if(wallet == null){
             log.error("create redPacket,wallet not found,uid:{}", uid);
-            return BizKit.fail("wallet not found");
+            return BusinessKit.fail("wallet not found");
         }
         long totalCost = dto.getNum() * dto.getCost();
         if (wallet.getVcFee() - wallet.getVcLocked() <= totalCost) {
-            return BizKit.fail("balance not enough");
+            return BusinessKit.fail("balance not enough");
         }
         walletService.lambdaUpdate()
                 .eq(Wallet::getUid, uid)
@@ -109,7 +109,7 @@ public class RedPacketServiceImpl extends ServiceImpl<RedPacketMapper, RedPacket
         }
         log.info("success send red packet close event,uid:{},streamId:{},redpacketId:{}"
                 , uid,cache.getStreamId(),redPacket.getId());
-        wkMessageService.send(new CreateRedPacketNotifyDTO(uid, cache.getWkChannelId(),totalCost));
-        return BizKit.ok();
+        wkMessageService.send(new CreateRedPacketNotifyDTO(uid, cache.getDanmakuId(),totalCost));
+        return BusinessKit.ok();
     }
 }

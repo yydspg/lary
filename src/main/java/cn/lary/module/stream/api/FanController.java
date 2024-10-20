@@ -4,7 +4,7 @@ import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
-import cn.lary.module.stream.core.FanBizExecute;
+import cn.lary.module.stream.component.FanBizExecute;
 import cn.lary.module.stream.dto.RaffleCacheDTO;
 import cn.lary.module.stream.dto.RedPacketCacheDTO;
 import jakarta.validation.constraints.NotNull;

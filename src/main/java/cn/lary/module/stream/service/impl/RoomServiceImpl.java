@@ -83,19 +83,19 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
                 .one();
         boolean isFan = false;
         if(relation != null && relation.getIsBlock()){
-            return BizKit.fail("你已被拉黑");
+            return BusinessKit.fail("你已被拉黑");
         }
         if (relation == null || !relation.getIsUnfollow()) {
             isFan = true;
         }
         Map<Object,Object> args = redisCache.getHash(kvBuilder.goLiveK(toUid));
         if (args == null) {
-            return BizKit.fail("no live info");
+            return BusinessKit.fail("no live info");
         }
         LiveCacheDTO liveCache = LiveCacheDTO.of(args);
         args = redisCache.getHash(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
         if (args == null) {
-            return BizKit.fail("no stream record");
+            return BusinessKit.fail("no stream record");
         }
         redisCache.incrHash(kvBuilder.streamRecordK(toUid, liveCache.getStreamId()),"watchNum");
         if (isFan) {
@@ -111,11 +111,11 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
                 .setSrsStreamId(liveCache.getSrsStreamId())
                 .setIdentify(liveCache.getIdentify());
         redisCache.setHash(kvBuilder.joinLiveK(uid),kvBuilder.joinLiveV(dto),expire, TimeUnit.MINUTES);
-        messageService.addSubscriber(new AddSubscribersDTO(liveCache.getWkChannelId(), List.of(uid)));
-        messageService.send(new JoinRoomDTO(uid,name,liveCache.getWkChannelId()));
+        messageService.addSubscriber(new AddSubscribersDTO(liveCache.getDanmakuId(), List.of(uid)));
+        messageService.send(new JoinRoomDTO(uid,name,liveCache.getDanmakuId()));
         String specify = liveCache.getIdentify();
         if (StringKit.isEmpty(specify)) {
-            return BizKit.fail("stream url is empty");
+            return BusinessKit.fail("stream url is empty");
         }
         RaffleCacheDTO raffle = null;
         RedPacketCacheDTO redPacket = null;
@@ -128,12 +128,12 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
             redPacket = RedPacketCacheDTO.of(map);
         }
         JoinLiveVO joinLiveVO = new JoinLiveVO()
-                .setDanmakuId(liveCache.getWkChannelId())
+                .setDanmakuId(liveCache.getDanmakuId())
                 .setToken(authToken)
                 .setSpecify(liveCache.getIdentify())
                 .setRaffle(raffle)
                 .setRedPacket(redPacket);
-        return BizKit.ok(joinLiveVO);
+        return BusinessKit.ok(joinLiveVO);
     }
 
     @Override
@@ -141,10 +141,10 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         int uid = RequestContext.getLoginUID();
         Map<Object, Object> map = redisCache.getHash(kvBuilder.joinLiveK(uid));
         if (map == null) {
-            return BizKit.fail("no join live info");
+            return BusinessKit.fail("no join live info");
         }
         redisCache.delete(kvBuilder.joinLiveK(uid));
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
@@ -153,20 +153,20 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         Map<Object, Object> coll = null;
         coll = redisCache.getHash(kvBuilder.raffleK(uid));
         if (coll != null) {
-            return BizKit.fail("存在未完成的抽奖活动");
+            return BusinessKit.fail("存在未完成的抽奖活动");
         }
         coll = redisCache.getHash(kvBuilder.redPacketK(uid));
         if (coll != null) {
-            return BizKit.fail("存在未结束的红包活动");
+            return BusinessKit.fail("存在未结束的红包活动");
         }
         coll = redisCache.getHash(kvBuilder.goLiveK(uid));
         if (coll == null) {
-            return BizKit.fail("no live info");
+            return BusinessKit.fail("no live info");
         }
         LiveCacheDTO liveCache = LiveCacheDTO.of(coll);
         Map<Object, Object> record = redisCache.getHash(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
         if (record == null) {
-            return BizKit.fail("stream record not exist");
+            return BusinessKit.fail("stream record not exist");
         }
         Room room = lambdaQuery()
                 .select(Room::getLastLogin)
@@ -175,11 +175,11 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
                 .eq(Room::getIsBlock,false)
                 .one();
         if (room == null) {
-            return BizKit.fail("room not exist");
+            return BusinessKit.fail("room not exist");
         }
         StreamRecordCacheDTO recordCache = StreamRecordCacheDTO.of(record);
         String token = UUIDKit.getUUID();
-        DownLiveEventDTO downLiveEventDTO = new DownLiveEventDTO(uid, liveCache.getStreamId(), liveCache.getWkChannelId());
+        DownLiveEventDTO downLiveEventDTO = new DownLiveEventDTO(uid, liveCache.getStreamId(), liveCache.getDanmakuId());
         Integer eventId = transactionTemplate.execute(status -> {
             int event = eventService.begin(downLiveEventDTO.of());
             streamRecordService.lambdaUpdate()
@@ -201,8 +201,8 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         executor.execute(()->{
             executeTurnOver(uid,liveCache.getStreamId());
         });
-        messageService.send(new EndLiveDTO(uid,liveCache.getWkChannelId()));
-        return BizKit.ok(downLiveVO);
+        messageService.send(new EndLiveDTO(uid,liveCache.getDanmakuId()));
+        return BusinessKit.ok(downLiveVO);
     }
 
     @Override
@@ -211,28 +211,28 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         String name = RequestContext.getLoginName();
         Map<Object, Object> liveInfo = redisCache.getHash(kvBuilder.goLiveK(uid));
         if (liveInfo != null) {
-            return BizKit.fail("you already go live");
+            return BusinessKit.fail("you already go live");
         }
         Map<Object, Object> map = redisCache.getHash(kvBuilder.deviceLoginK(uid, dto.getDeviceId()));
         if (map == null) {
-            return BizKit.fail("access login device failed");
+            return BusinessKit.fail("access login device failed");
         }
         DeviceLoginCacheDTO deviceCache = DeviceLoginCacheDTO.of(map);
         if (deviceCache.getId() != dto.getDeviceId() ||
                 deviceCache.getFlag() != dto.getDeviceFlag()) {
-            return BizKit.fail("access device failed");
+            return BusinessKit.fail("access device failed");
         }
         String remark = dto.getRemark();
         String sensitiveWord = SensitiveWordHelper.findFirst(remark);
         if(StringKit.isNotEmpty(sensitiveWord)){
-            return BizKit.fail("sensitive word contains:"+sensitiveWord);
+            return BusinessKit.fail("sensitive word contains:"+sensitiveWord);
         }
         Room room = lambdaQuery()
                 .eq(Room::getUid, uid)
                 .eq(Room::getIsDelete,false)
                 .one();
         if(room != null && room.getIsBlock()) {
-            return BizKit.fail("room is blocked");
+            return BusinessKit.fail("room is blocked");
         }
         if (room == null) {
             if (StringKit.isEmpty(remark)) {
@@ -274,7 +274,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         if (room.getFollowNum() < 100) {
             ResponsePair<List<Integer>> pair = followService.getFollows(uid);
             if (pair.isFail()){
-                return BizKit.fail(pair.getMsg());
+                return BusinessKit.fail(pair.getMsg());
             }
             List<Integer> follows = null;
             if (CollectionKit.isNotEmpty(follows)) {
@@ -284,14 +284,14 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         String token = UUIDKit.getUUID();
         LiveCacheDTO cacheDTO = new LiveCacheDTO()
                 .setIp(ip)
-                .setWkChannelId(danmakuId)
+                .setDanmakuId(danmakuId)
                 .setStreamId(streamRecord.getStreamId())
                 .setIdentify(identify)
                 .setSrsToken(token);
         redisCache.setHash(kvBuilder.goLiveK(uid),kvBuilder.goLiveV(cacheDTO));
         redisCache.setHash(kvBuilder.streamRecordK(uid, streamRecord.getStreamId()),kvBuilder.streamRecordV());
         GoLiveVO goLiveVO = new GoLiveVO(token,identify,event);
-        return BizKit.ok(goLiveVO);
+        return BusinessKit.ok(goLiveVO);
     }
 
     @Override

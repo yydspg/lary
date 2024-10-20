@@ -2,7 +2,7 @@ package cn.lary.module.stream.service.impl;
 
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
-import cn.lary.kit.BizKit;
+import cn.lary.kit.BusinessKit;
 import cn.lary.kit.JSONKit;
 import cn.lary.kit.StringKit;
 import cn.lary.module.app.service.EventService;
@@ -62,13 +62,13 @@ public class RaffleServiceImpl extends ServiceImpl<RaffleMapper, Raffle> impleme
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
         if(map == null){
             log.error("create raffle fail,no live info, uid:{}", uid);
-            return BizKit.fail("no live info");
+            return BusinessKit.fail("no live info");
         }
         LiveCacheDTO cache = LiveCacheDTO.of(map);
         Map<Object, Object> raffleData = redisCache.getHash(kvBuilder.raffleK(uid));
         if(raffleData != null){
             log.error("have unfinished raffle,uid:{},streamId:{}", uid,cache.getStreamId());
-            return BizKit.fail("have unfinished raffle");
+            return BusinessKit.fail("have unfinished raffle");
         }
         Integer type = dto.getType();
         boolean isInner = type == LARY.Raffle.inner;
@@ -76,20 +76,20 @@ public class RaffleServiceImpl extends ServiceImpl<RaffleMapper, Raffle> impleme
         String title = dto.getTitle();
         String badWord = SensitiveWordHelper.findFirst(title);
         if (StringKit.isNotEmpty(badWord)) {
-            return BizKit.fail("raffle title contains bad word:"+badWord);
+            return BusinessKit.fail("raffle title contains bad word:"+badWord);
         }
         String content = dto.getContent();
         if (!isInner) {
             badWord = SensitiveWordHelper.findFirst(content);
             if (StringKit.isNotEmpty(badWord)) {
-                return BizKit.fail("raffle content contains bad word:"+badWord);
+                return BusinessKit.fail("raffle content contains bad word:"+badWord);
             }
         }
         boolean needSendMessage = StringKit.isEmpty(dto.getMessage());
         if (needSendMessage) {
             badWord = SensitiveWordHelper.findFirst(dto.getMessage());
             if (StringKit.isNotEmpty(badWord)) {
-                return BizKit.fail("raffle message contains bad word:"+badWord);
+                return BusinessKit.fail("raffle message contains bad word:"+badWord);
             }
         }
         boolean threshold = dto.getCost() != null && dto.getCost() > 0;
@@ -97,12 +97,12 @@ public class RaffleServiceImpl extends ServiceImpl<RaffleMapper, Raffle> impleme
                 .eq(Wallet::getUid, uid));
         if(wallet == null){
             log.error("wallet not found,uid:{}", uid);
-            return BizKit.fail("wallet not found");
+            return BusinessKit.fail("wallet not found");
         }
         if (isInner && threshold) {
             long totalCost = dto.getNum() * dto.getCost();
             if (wallet.getVcFee() - wallet.getVcLocked() <= totalCost) {
-                return BizKit.fail("余额不足，请充值");
+                return BusinessKit.fail("余额不足，请充值");
             }
         }
         Map param = getThreshold(dto);
@@ -136,8 +136,8 @@ public class RaffleServiceImpl extends ServiceImpl<RaffleMapper, Raffle> impleme
             log.error("sync send raffle close message error,uid:{},msg:{}",uid,e.getMessage());
         }
         log.info("sync send raffle close message success,uid:{}", uid);
-        wkMessageService.send(new CreateRaffleNotifyDTO(uid, cache.getWkChannelId()));
-        return BizKit.ok();
+        wkMessageService.send(new CreateRaffleNotifyDTO(uid, cache.getDanmakuId()));
+        return BusinessKit.ok();
     }
     /**
      * 获取 门槛参数

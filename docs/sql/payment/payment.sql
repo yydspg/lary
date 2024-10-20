@@ -1,5 +1,5 @@
-drop table if exists `payment`;
-create table `payment` (
+drop table if exists `paymentPlugin`;
+create table `paymentPlugin` (
     id bigint not null primary key auto_increment,
     uid varchar(40)  not null default '' comment '用户uid',
     order_id varchar(40) not null default '' comment '业务订单编号，id',

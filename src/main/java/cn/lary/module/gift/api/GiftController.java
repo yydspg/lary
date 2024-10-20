@@ -4,11 +4,11 @@ import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
-import cn.lary.module.gift.execute.GiftBizExecute;
+import cn.lary.module.gift.execute.GiftExecute;
 import cn.lary.module.gift.dto.GiftOrderDTO;
 import cn.lary.module.gift.dto.GiftOrderPageQueryDTO;
 import cn.lary.module.gift.vo.GiftOrderVO;
-import cn.lary.module.pay.vo.PayBuildVO;
+import cn.lary.module.pay.vo.PaymentBuildVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -28,16 +28,16 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GiftController {
 
-    private final GiftBizExecute giftBizExecute;
+    private final GiftExecute giftExecute;
 
     /**
      * 购买礼物
      * @param req {@link GiftOrderDTO}
-     * @return {@link PayBuildVO}
+     * @return {@link PaymentBuildVO}
      */
     @PostMapping(value = "/pay")
-    public SingleResponse<PayBuildVO> pay(@RequestBody GiftOrderDTO req) {
-        ResponsePair<PayBuildVO> response = giftBizExecute.pay(req);
+    public SingleResponse<PaymentBuildVO> pay(@RequestBody GiftOrderDTO req) {
+        ResponsePair<PaymentBuildVO> response = giftExecute.pay(req);
         if(response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -49,8 +49,8 @@ public class GiftController {
      * @return JSON 字符串
      */
     @GetMapping("")
-    public SingleResponse<String> allGifts() {
-        ResponsePair<String> pair = giftBizExecute.getGifts();
+    public SingleResponse<String> gifts() {
+        ResponsePair<String> pair = giftExecute.getGifts();
         if(pair.isFail()) {
             return ResponseKit.fail(pair.getMsg());
         }
@@ -64,11 +64,12 @@ public class GiftController {
      */
     @PostMapping("/orders")
     public PageResponse<GiftOrderVO> orders(@RequestBody @Valid GiftOrderPageQueryDTO req) {
-        ResponsePair<List<GiftOrderVO>> response = giftBizExecute.orders(req);
-        if(response.isFail()) {
-            return ResponseKit.pageFail(response.getMsg());
-        }
-        return ResponseKit.pageOk(response.getData(),req.getPageIndex(),req.getPageSize());
+//        ResponsePair<List<GiftOrderVO>> response = giftExecute.orders(req);
+//        if(response.isFail()) {
+//            return ResponseKit.pageFail(response.getMsg());
+//        }
+//        return ResponseKit.pageOk(response.getData(),req.getPageIndex(),req.getPageSize());
+        return null;
     }
 
 }

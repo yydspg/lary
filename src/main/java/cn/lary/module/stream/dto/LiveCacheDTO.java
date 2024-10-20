@@ -10,7 +10,7 @@ import java.util.Map;
 public class LiveCacheDTO {
 
     private int streamId;
-    private int wkChannelId;
+    private int danmakuId;
     private String ip;
     private String srsTcUrl;
     private String srsToken;
@@ -26,7 +26,7 @@ public class LiveCacheDTO {
         }
         LiveCacheDTO dto = new LiveCacheDTO();
         dto.setStreamId(Integer.parseInt( map.get("streamId").toString()));
-        dto.setWkChannelId(Integer.parseInt( map.get("wkChannelId").toString()));
+        dto.setDanmakuId(Integer.parseInt( map.get("danmakuId").toString()));
         dto.setIp((String) map.get("ip"));
         dto.setSrsTcUrl((String) map.get("srsTcUrl"));
         dto.setSrsToken((String) map.get("srsToken"));

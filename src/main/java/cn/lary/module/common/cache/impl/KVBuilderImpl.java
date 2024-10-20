@@ -118,7 +118,7 @@ public class KVBuilderImpl implements KVBuilder {
     public Map goLiveV(LiveCacheDTO dto) {
         Map<Object, Object> args = new HashMap<>();
         args.put("streamId",dto.getStreamId());
-        args.put("wkChannelId",dto.getWkChannelId());
+        args.put("danmakuId",dto.getDanmakuId());
         args.put("identify",dto.getIdentify());
         args.put("ip",dto.getIp());
         args.put("srsClientId",dto.getSrsClientId());

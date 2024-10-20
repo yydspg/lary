@@ -49,13 +49,13 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .eq(Device::getUid, RequestContext.getLoginUID())
                 .one();
         if (device == null || device.getIsDelete()) {
-            return BizKit.ok();
+            return BusinessKit.ok();
         }
         lambdaUpdate()
                 .set(Device::getIsDelete, true)
                 .eq(Device::getId, deviceId)
                 .eq(Device::getUid, RequestContext.getLoginUID());
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
@@ -112,13 +112,13 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .list();
         if (CollectionKit.isEmpty(devices)) {
             log.error("no devices found,uid:{}",uid);
-            return BizKit.fail("no devices found");
+            return BusinessKit.fail("no devices found");
         }
         Map<Object, Object> pcLoginData = redisCache.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.PC));
         Map<Object, Object> appLoginData = redisCache.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.APP));
         if (pcLoginData == null && appLoginData == null) {
             log.error("no login devices found when search landing device,uid:{}",uid);
-            return BizKit.fail("no login devices found");
+            return BusinessKit.fail("no login devices found");
         }
         DeviceLoginCacheDTO pcLoginDTO = null;
         DeviceLoginCacheDTO appLoginDTO= null;
@@ -142,7 +142,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 vo.setLanding(true);
             }
         }
-        return BizKit.ok(vos);
+        return BusinessKit.ok(vos);
     }
 
     @Override
@@ -154,7 +154,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .setFlag(dto.getFlag());
         redisCache.setHash(kvBuilder.addDeviceK(dto.getUid(),dto.getPhone())
                 ,kvBuilder.addDeviceV(data),redisBizConfig.getSmsAddDeviceExpire());
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
 }

@@ -1,11 +1,9 @@
 package cn.lary.module.wallet.service;
 
 import cn.lary.core.dto.ResponsePair;
-import cn.lary.module.wallet.dto.BatchOutcomeTransferDTO;
-import cn.lary.module.wallet.dto.SystemIncomeTransferDTO;
-import cn.lary.module.wallet.dto.SystemOutcomeTransferDTO;
-import cn.lary.module.wallet.dto.TransferDTO;
+import cn.lary.module.wallet.dto.*;
 import cn.lary.module.wallet.entity.Wallet;
+import cn.lary.module.wallet.vo.BalanceVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -58,4 +56,9 @@ public interface WalletService extends IService<Wallet> {
      * @return ok
      */
     ResponsePair<List<Wallet>> getUserWallets(List<Integer> members);
+
+
+    ResponsePair<Void> updateQuestion(UpdateSecurityQuestionDTO dto);
+
+    ResponsePair<BalanceVO> my();
 }

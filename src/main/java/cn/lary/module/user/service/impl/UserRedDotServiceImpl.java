@@ -2,13 +2,12 @@ package cn.lary.module.user.service.impl;
 
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
-import cn.lary.kit.BizKit;
+import cn.lary.kit.BusinessKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.module.user.entity.UserRedDot;
 import cn.lary.module.user.mapper.UserRedDotMapper;
 import cn.lary.module.user.service.UserRedDotService;
 import cn.lary.module.user.vo.UserRedDotVO;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -37,9 +36,9 @@ public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRed
                 .list();
         if (CollectionKit.isEmpty(data)) {
             log.error("search red dots failed,uid:{}",RequestContext.getLoginUID());
-            return BizKit.fail("search red dots failed");
+            return BusinessKit.fail("search red dots failed");
         }
-        return BizKit.ok(data.stream()
+        return BusinessKit.ok(data.stream()
                 .map(UserRedDotVO::new)
                 .toList());
     }
@@ -50,7 +49,7 @@ public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRed
                 .set(UserRedDot::getCount, 0)
                 .eq(UserRedDot::getCategory, category)
                 .eq(UserRedDot::getUid, RequestContext.getLoginUID());
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
@@ -59,6 +58,6 @@ public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRed
                 .setIncrBy(UserRedDot::getCount, amount)
                 .eq(UserRedDot::getCategory, category)
                 .eq(UserRedDot::getUid, RequestContext.getLoginUID());
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 }

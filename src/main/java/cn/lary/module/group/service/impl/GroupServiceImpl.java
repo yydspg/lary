@@ -2,7 +2,7 @@ package cn.lary.module.group.service.impl;
 
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
-import cn.lary.kit.BizKit;
+import cn.lary.kit.BusinessKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.DateKit;
 import cn.lary.kit.StringKit;
@@ -66,13 +66,13 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     public ResponsePair<CreateGroupVO> create(CreateGroupDTO dto) {
         int creator = RequestContext.getLoginUID();
         if (isReachCreateLimit(creator, LocalDateTime.now())) {
-            return BizKit.fail("reach create limit");
+            return BusinessKit.fail("reach create limit");
         }
         List<Integer> members = CollectionKit.removeRepeat(dto.getMembers());
         members.add(creator);
         List<Integer> users = userService.getValidUsers(members);
         if (CollectionKit.isEmpty(users)) {
-            return BizKit.fail("valid users empty");
+            return BusinessKit.fail("valid users empty");
         }
         String groupName = dto.getName();
         if (StringKit.isEmpty(groupName)) {
@@ -89,7 +89,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
                 .one();
         if (dto.getCategory() == LARY.Group.Category.stream) {
             if (creatorInfo == null || !creatorInfo.getIsAnchor()) {
-                return BizKit.fail("inappropriate category");
+                return BusinessKit.fail("inappropriate category");
             }
         }
         Group group = new Group()
@@ -114,47 +114,47 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         Response<Void> response = wkMessageService.send(new CreateGroupSuccessNotifyDTO()
                 .build(RequestContext.getLoginUID(), group.getGroupId(), users));
         if (!response.isSuccessful()) {
-            return BizKit.fail(response.message());
+            return BusinessKit.fail(response.message());
         }
-        return BizKit.ok(vo);
+        return BusinessKit.ok(vo);
     }
 
     @Override
     public ResponsePair<Void> disband(int groupId) {
         ResponsePair<Void> response = groupMemberService.disband(groupId);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
                 .eq(Group::getGroupId,groupId)
                 .set(Group::getIsDelete,true);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<Void> forbidden(int groupId) {
         ResponsePair<GroupMember> response = groupMemberService.checkRole(groupId);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate().set(Group::getIsForbidden,true);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<GroupDetailVO> getGroup(int groupId) {
         Group group = lambdaQuery().eq(Group::getGroupId, groupId).one();
         if (group == null){
-            return BizKit.fail("group not exist");
+            return BusinessKit.fail("group not exist");
         }
-        return BizKit.ok(new GroupDetailVO().of(group));
+        return BusinessKit.ok(new GroupDetailVO().of(group));
     }
 
     @Override
     public ResponsePair<List<GroupVO>> my(int role) {
         ResponsePair<List<Integer>> response = groupMemberService.my(role);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         List<Group> data = lambdaQuery()
                 .select(Group::getGroupId)
@@ -164,13 +164,13 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
                 .in(Group::getGroupId,response.getData())
                 .list();
         if (data.isEmpty()){
-            return BizKit.fail("data empty");
+            return BusinessKit.fail("data empty");
         }
         List<GroupVO> vos = new ArrayList<>();
         data.forEach(d ->{
             vos.add(new GroupVO().of(d));
         });
-        return BizKit.ok(vos);
+        return BusinessKit.ok(vos);
     }
 
 }

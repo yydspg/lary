@@ -1,5 +1,6 @@
 package cn.lary.module.wallet.service;
 
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.module.wallet.dto.WalletIncomePageQueryDTO;
 import cn.lary.module.wallet.entity.WalletIncome;
 import cn.lary.module.wallet.vo.WalletIncomeVO;
@@ -16,5 +17,6 @@ import java.util.List;
  * @since 2024-10-02
  */
 public interface WalletIncomeService extends IService<WalletIncome> {
-        List<WalletIncomeVO> getWalletIncomeVOs(WalletIncomePageQueryDTO dto);
+
+        ResponsePair<List<WalletIncomeVO>> my(WalletIncomePageQueryDTO dto);
 }

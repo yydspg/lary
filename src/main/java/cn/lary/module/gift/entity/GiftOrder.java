@@ -32,7 +32,7 @@ public class GiftOrder implements Serializable {
      * 记录id
      */
     @TableId(value = "id", type = IdType.AUTO)
-    private Long orderId;
+    private Long id;
 
     /**
      * 用户id

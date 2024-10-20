@@ -1,5 +1,6 @@
 package cn.lary.module.wallet.dto;
 
+import cn.lary.module.pay.dto.BusinessPaymentDTO;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -7,16 +8,19 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
-public class RechargeDTO {
+public class RechargeDTO extends BusinessPaymentDTO {
 
     @NotNull
     @Min(value = 0,message = "recharge amount not less than 0")
     @Max(value = Integer.MAX_VALUE,message = "recharge amount over limit")
-    private Long sum;
+    private Long amount;
 
     @NotNull
-    private Integer clientType;
+    private Integer client;
+
     @NotNull
-    @JsonProperty("pay_way")
-    private Integer payWay;
+    @JsonProperty("plugin")
+    private Integer plugin;
+
+    private long rechargeId;
 }

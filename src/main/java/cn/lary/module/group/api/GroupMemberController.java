@@ -3,7 +3,8 @@ package cn.lary.module.group.api;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
-import cn.lary.module.group.core.GroupBizExecute;
+import cn.lary.module.group.component.GroupBusinessExecute;
+import cn.lary.module.group.component.GroupMemberBusinessExecute;
 import cn.lary.module.group.dto.GroupMemberSettingDTO;
 import cn.lary.module.group.vo.GroupMemberSettingVO;
 import cn.lary.module.group.vo.GroupMemberVO;
@@ -21,7 +22,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GroupMemberController {
 
-    private final GroupBizExecute groupBizExecute;
+    
+    private final GroupMemberBusinessExecute groupMemberBusinessExecute;
     /**
      * 查询某种状态的用户
      * @param groupNo g
@@ -30,7 +32,7 @@ public class GroupMemberController {
      */
     @GetMapping("/members/status")
     public SingleResponse<List<Integer>> getMembersWithStatus(int groupNo, int status){
-        ResponsePair<List<Integer>> response = groupBizExecute.getMembersWithStatus(groupNo, status);
+        ResponsePair<List<Integer>> response = groupMemberBusinessExecute.getMembersWithStatus(groupNo, status);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -43,7 +45,7 @@ public class GroupMemberController {
      */
     @GetMapping("/quit")
     public SingleResponse<Void> quit(@RequestParam @NotNull int groupId) {
-        ResponsePair<Void> response = groupBizExecute.quit(groupId);
+        ResponsePair<Void> response = groupMemberBusinessExecute.quit(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -59,7 +61,7 @@ public class GroupMemberController {
     @GetMapping("/admin/quit")
     public SingleResponse<Void> quitByAdmin(@RequestParam @NotNull int groupId,
                                             @RequestParam @NotNull int uid){
-        ResponsePair<Void> response = groupBizExecute.quitByAdmin(groupId, uid);
+        ResponsePair<Void> response = groupMemberBusinessExecute.quitByAdmin(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -73,7 +75,7 @@ public class GroupMemberController {
      */
     @GetMapping("/join")
     public SingleResponse<Void> join(@RequestParam @NotNull int groupId) {
-        ResponsePair<Void> response = groupBizExecute.join(groupId);
+        ResponsePair<Void> response = groupMemberBusinessExecute.join(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -88,7 +90,7 @@ public class GroupMemberController {
     @GetMapping("/admin/join")
     public SingleResponse<Void> joinByAdmin(@RequestParam @NotNull int groupId,
                                             @RequestParam @NotNull int uid) {
-        ResponsePair<Void> response = groupBizExecute.joinByAdmin(groupId, uid);
+        ResponsePair<Void> response = groupMemberBusinessExecute.joinByAdmin(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -104,7 +106,7 @@ public class GroupMemberController {
      */
     @GetMapping("/admin/multi/join")
     public SingleResponse<Integer> multiJoinByAdmin(int groupId,List<Integer> ids){
-        ResponsePair<Integer> response = groupBizExecute.multiJoinByAdmin(groupId, ids);
+        ResponsePair<Integer> response = groupMemberBusinessExecute.multiJoinByAdmin(groupId, ids);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -120,7 +122,7 @@ public class GroupMemberController {
     @GetMapping("/admin/set")
     public SingleResponse<Void> setAdmin(@RequestParam @NotNull int groupId,
                                          @RequestParam @NotNull int uid){
-        ResponsePair<Void> response = groupBizExecute.setAdmin(groupId, uid);
+        ResponsePair<Void> response = groupMemberBusinessExecute.setAdmin(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -136,7 +138,7 @@ public class GroupMemberController {
     @GetMapping("/admin/remove")
     public SingleResponse<Void> removeAdmin(@RequestParam @NotNull int groupId,
                                             @RequestParam @NotNull int uid){
-        ResponsePair<Void> response = groupBizExecute.removeAdmin(groupId, uid);
+        ResponsePair<Void> response = groupMemberBusinessExecute.removeAdmin(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -150,7 +152,7 @@ public class GroupMemberController {
      */
     @GetMapping("/members")
     public SingleResponse<List<GroupMemberVO>> members(@RequestParam @NotNull int groupId){
-        ResponsePair<List<GroupMemberVO>> response = groupBizExecute.members(groupId);
+        ResponsePair<List<GroupMemberVO>> response = groupMemberBusinessExecute.members(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -165,7 +167,7 @@ public class GroupMemberController {
     @GetMapping("/owner")
     public SingleResponse<Void> changeOwner(@RequestParam @NotNull int groupId,
                                             @RequestParam @NotNull int uid) {
-        ResponsePair<Void> response = groupBizExecute.changeOwner(groupId, uid);
+        ResponsePair<Void> response = groupMemberBusinessExecute.changeOwner(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -182,7 +184,7 @@ public class GroupMemberController {
     @GetMapping("/block")
     public SingleResponse<Void> block(@RequestParam @NotNull int groupId,
                                       @RequestParam @NotNull int uid){
-        ResponsePair<Void> response = groupBizExecute.block(groupId, uid);
+        ResponsePair<Void> response = groupMemberBusinessExecute.block(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -196,7 +198,7 @@ public class GroupMemberController {
      */
     @PostMapping("/setting")
     public SingleResponse<Void> setMemberGroupSetting(@RequestBody @Valid GroupMemberSettingDTO dto){
-        ResponsePair<Void> response = groupBizExecute.setting(dto);
+        ResponsePair<Void> response = groupMemberBusinessExecute.setting(dto);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -209,7 +211,7 @@ public class GroupMemberController {
      */
     @GetMapping("/my/settings")
     public SingleResponse<List<GroupMemberSettingVO>> myGroupSettings(){
-        ResponsePair<List<GroupMemberSettingVO>> response = groupBizExecute.mySettings();
+        ResponsePair<List<GroupMemberSettingVO>> response = groupMemberBusinessExecute.mySettings();
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }

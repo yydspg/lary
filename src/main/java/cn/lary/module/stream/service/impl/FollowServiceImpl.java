@@ -2,7 +2,7 @@ package cn.lary.module.stream.service.impl;
 
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
-import cn.lary.kit.BizKit;
+import cn.lary.kit.BusinessKit;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.constant.LARY;
@@ -75,10 +75,10 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 .eq(User::getUid, uid)
                 .one();
         if (aimUser == null) {
-            return BizKit.fail("用户不存在");
+            return BusinessKit.fail("用户不存在");
         }
         if (aimUser.getStatus() == LARY.UserStatus.ban) {
-            return BizKit.fail("用户已被封禁");
+            return BusinessKit.fail("用户已被封禁");
         }
         Follow reverseRelation = lambdaQuery()
                 .eq(Follow::getUid, toUid)
@@ -88,7 +88,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         boolean isAlone = true;
         if (reverseRelation != null) {
             if (reverseRelation.getIsBlock()) {
-                return BizKit.fail("对方拉黑了你");
+                return BusinessKit.fail("对方拉黑了你");
             }
             if (!reverseRelation.getIsUnfollow()) {
                 isAlone = false;
@@ -102,14 +102,14 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                             .one();
                     if (relation != null) {
                         if (relation.getIsBlock()) {
-                            return BizKit.fail("你已拉黑对方,请先移出黑名单");
+                            return BusinessKit.fail("你已拉黑对方,请先移出黑名单");
                         }
                         if (relation.getIsUnfollow()) {
                             lambdaUpdate()
                                     .eq(Follow::getUid, uid)
                                     .eq(Follow::getToUid, toUid)
                                     .set(Follow::getIsUnfollow, false);
-                            return BizKit.ok();
+                            return BusinessKit.ok();
                         }
                     }
                     Follow followApply = new Follow()
@@ -121,12 +121,12 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                             .setSource(dto.getCode())
                             .setIsAnchor(aimUser.getIsAnchor());
                     save(followApply);
-                    return BizKit.ok();
+                    return BusinessKit.ok();
                 }
         );
         assert pair != null;
         if (pair.isFail()) {
-            return BizKit.fail(pair.getMsg());
+            return BusinessKit.fail(pair.getMsg());
         }
         if (aimUser.getIsAnchor() && dto.getCode() == LARY.FollowCode.stream) {
             Map<Object, Object> liveInfo = redisCache.getHash(kvBuilder.goLiveK(toUid));
@@ -134,7 +134,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 LiveCacheDTO cache = LiveCacheDTO.of(liveInfo);
                 Map<Object, Object> streamRecord = redisCache.getHash(kvBuilder.streamRecordK(toUid, cache.getStreamId()));
                 if (streamRecord == null) {
-                    return BizKit.fail("stream record not exist");
+                    return BusinessKit.fail("stream record not exist");
                 }
                 redisCache.incrHash(kvBuilder.streamRecordK(toUid,cache.getStreamId()),"newFansNum");
             }
@@ -146,7 +146,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
         }else {
             messageService.send(new OneWayActiveFollowResponseDTO(uid,toUid,name));
         }
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
@@ -168,7 +168,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 .eq(User::getStatus, LARY.UserStatus.ok)
                 .one();
         if ( toUser == null) {
-            return BizKit.fail("user status error");
+            return BusinessKit.fail("user status error");
         }
         if (relation == null) {
             save(new Follow()
@@ -178,13 +178,13 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                     .setAvatar(toUser.getAvatar())
                     .setBio(toUser.getBio())
                     .setUsername(toUser.getName()));
-            return BizKit.ok();
+            return BusinessKit.ok();
         }
         lambdaUpdate()
                 .eq(Follow::getUid, uid)
                 .eq(Follow::getToUid,toUid)
                 .set(Follow::getIsBlock, true);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
@@ -197,13 +197,13 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 .one();
         if (relation == null) {
             log.error("no block record exist,uid:{},toUid:{}", uid, toUid);
-            return BizKit.fail("relation status error");
+            return BusinessKit.fail("relation status error");
         }
         lambdaUpdate()
                 .eq(Follow::getUid, uid)
                 .eq(Follow::getToUid,toUid)
                 .set(Follow::getIsBlock, false);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
@@ -215,7 +215,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 .eq(Follow::getIsDelete, false)
                 .one();
         if (relation == null) {
-            return BizKit.fail("request error");
+            return BusinessKit.fail("request error");
         }
         Follow reverse = lambdaQuery()
                 .eq(Follow::getUid, toUid)
@@ -228,7 +228,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 .eq(User::getIsDelete, false)
                 .one();
         if (aimUser == null) {
-            return BizKit.fail("user not exist");
+            return BusinessKit.fail("user not exist");
         }
         transactionTemplate.executeWithoutResult(status -> {
             if (reverse != null
@@ -251,18 +251,18 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
                 LiveCacheDTO cache = LiveCacheDTO.of(liveInfo);
                 Map<Object, Object> streamRecord = redisCache.getHash(kvBuilder.streamRecordK(toUid, cache.getStreamId()));
                 if (streamRecord == null) {
-                    return BizKit.fail("stream record not exist");
+                    return BusinessKit.fail("stream record not exist");
                 }
                 redisCache.decrHash(kvBuilder.streamRecordK(toUid,cache.getStreamId()),"newFansNum");
             }
         }
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<List<Follow>> follows( FollowPageQueryDTO dto) {
 
-        return BizKit.ok(lambdaQuery()
+        return BusinessKit.ok(lambdaQuery()
                 .eq(Follow::getUid, RequestContext.getLoginUID())
                 .eq(Follow::getIsUnfollow, false)
                 .eq(Follow::getIsBlock, false)

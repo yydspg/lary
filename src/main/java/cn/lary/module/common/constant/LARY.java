@@ -109,10 +109,6 @@ public interface LARY {
         int recharge = 1;
         int gift = 2;
     }
-    interface PayWay {
-        int alipay = 1;
-        int wechat = 2;
-    }
     interface PayStatus {
         int success = 1;
         int fail = 2;
@@ -120,10 +116,6 @@ public interface LARY {
     interface PostStatus {
         int success = 1;
         int fail = 2;
-    }
-    interface UserRole{
-        int normal = 1;
-        int admin = 2;
     }
     interface FollowCode {
         int stream = 1;
@@ -134,6 +126,23 @@ public interface LARY {
             int up = 2;
             int preDown = 3;
             int down = 4;
+        }
+    }
+    interface PAYMENT {
+        interface STATUS {
+            int INIT = 1;
+            int COMMIT = 2;
+            int STOP = 3;
+            int FAIL = 4;
+            int FINISH = 5;
+        }
+        interface PLUGIN{
+            int ALI = 301;
+            int WECHAT = 302;
+        }
+        interface WAY {
+            int PC = 401;
+            int APP = 402;
         }
     }
     interface OrderStatus {
@@ -161,6 +170,21 @@ public interface LARY {
         interface LEVEL {
             int SLAVE = 1;
             int MASTER = 2;
+        }
+    }
+
+    interface BUSINESS {
+        interface FILE_UPLOAD {
+            int USER_AVATAR = 101;
+            int GROUP_AVATAR = 102;
+            int ROOM_BACKEND = 103;
+        }
+        interface PAYMENT {
+            int RECHARGE = 201;
+            int GIFT = 202;
+        }
+        interface TRANSFER {
+            int STREAM_GIFT = 501;
         }
     }
 }

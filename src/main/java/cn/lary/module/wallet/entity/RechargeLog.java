@@ -32,7 +32,7 @@ public class RechargeLog implements Serializable {
      * 充值id，充值编号
      */
     @TableId(value = "id", type = IdType.AUTO)
-    private Long rechargeId;
+    private Long id;
 
     /**
      * 用户uid

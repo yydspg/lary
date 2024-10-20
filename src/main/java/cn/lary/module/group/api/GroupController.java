@@ -3,8 +3,10 @@ package cn.lary.module.group.api;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
-import cn.lary.module.group.core.GroupBizExecute;
+import cn.lary.module.group.component.GroupBusinessExecute;
 import cn.lary.module.group.dto.CreateGroupDTO;
+import cn.lary.module.group.dto.GroupAvatarUploadDTO;
+import cn.lary.module.group.file.GroupAvatarUploadProcessor;
 import cn.lary.module.group.vo.*;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -20,7 +22,8 @@ import java.util.List;
 @RequiredArgsConstructor
 public class GroupController {
 
-    private final GroupBizExecute groupBizExecute;
+    private final GroupBusinessExecute groupBusinessExecute;
+    private final GroupAvatarUploadProcessor groupAvatarUploadProcessor;
 
     /**
      * 创建群聊
@@ -29,7 +32,7 @@ public class GroupController {
      */
     @PostMapping("/create")
     public SingleResponse<CreateGroupVO> create(@RequestBody @Valid CreateGroupDTO dto) {
-        ResponsePair<CreateGroupVO> response = groupBizExecute.create(dto);
+        ResponsePair<CreateGroupVO> response = groupBusinessExecute.create(dto);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -43,7 +46,7 @@ public class GroupController {
      */
     @GetMapping("/disband")
     public SingleResponse<Void> disband(int groupId) {
-        ResponsePair<Void> response = groupBizExecute.disband(groupId);
+        ResponsePair<Void> response = groupBusinessExecute.disband(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -57,7 +60,7 @@ public class GroupController {
      */
     @GetMapping("/forbidden")
     public SingleResponse<Void> forbidden( @RequestParam @NotNull int groupId) {
-        ResponsePair<Void> response = groupBizExecute.forbidden(groupId);
+        ResponsePair<Void> response = groupBusinessExecute.forbidden(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -71,7 +74,7 @@ public class GroupController {
      */
     @GetMapping("/detail")
     public SingleResponse<GroupDetailVO> getGroup(@RequestParam @NotNull int groupId) {
-        ResponsePair<GroupDetailVO> response = groupBizExecute.getGroup(groupId);
+        ResponsePair<GroupDetailVO> response = groupBusinessExecute.getGroup(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -85,14 +88,25 @@ public class GroupController {
      */
     @GetMapping("/my/groups")
     public SingleResponse<List<GroupVO>> myGroups(@RequestParam @NotNull int role) {
-        ResponsePair<List<GroupVO>> response = groupBizExecute.myGroups(role);
+        ResponsePair<List<GroupVO>> response = groupBusinessExecute.myGroups(role);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok(response.getData());
     }
 
-
+    /**
+     * 上传群头像
+     * @param dto {@link GroupAvatarUploadDTO}
+     * @return url
+     */
+    public SingleResponse<String> avatar(@RequestBody @Valid GroupAvatarUploadDTO dto) {
+        ResponsePair<String> response = groupAvatarUploadProcessor.execute(dto);
+        if (response.isFail()) {
+            return ResponseKit.fail(response.getMsg());
+        }
+        return ResponseKit.ok(response.getData());
+    }
 
 
 

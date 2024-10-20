@@ -4,7 +4,7 @@ import cn.lary.core.dto.PageResponse;
 import cn.lary.core.dto.ResponsePair;
 import cn.lary.core.dto.SingleResponse;
 import cn.lary.kit.ResponseKit;
-import cn.lary.module.stream.core.FollowBizExecute;
+import cn.lary.module.stream.component.FollowBusinessExecute;
 import cn.lary.module.stream.dto.FollowDTO;
 import cn.lary.module.stream.dto.FollowPageQueryDTO;
 import cn.lary.module.stream.entity.Follow;
@@ -20,11 +20,11 @@ import java.util.List;
 @RequiredArgsConstructor
 public class FollowController {
 
-    private final FollowBizExecute followBizExecute;
+    private final FollowBusinessExecute followBusinessExecute;
 
     @PostMapping("/foll")
     public SingleResponse<Void> apply(@Valid @RequestBody FollowDTO dto) {
-        ResponsePair<Void> response = followBizExecute.follow( dto);
+        ResponsePair<Void> response = followBusinessExecute.follow( dto);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -33,7 +33,7 @@ public class FollowController {
 
     @GetMapping("/unfollow")
     public SingleResponse<Void> unfollow(@RequestParam @NotNull int toUid) {
-        ResponsePair<Void> response = followBizExecute.unfollow( toUid);
+        ResponsePair<Void> response = followBusinessExecute.unfollow( toUid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -42,7 +42,7 @@ public class FollowController {
 
     @PostMapping("/follows")
     public PageResponse<Follow> page(@RequestBody @Valid FollowPageQueryDTO dto) {
-        ResponsePair<List<Follow>> response = followBizExecute.follows(dto);
+        ResponsePair<List<Follow>> response = followBusinessExecute.follows(dto);
         if (response.isFail()) {
             return ResponseKit.pageFail(response.getMsg());
         }
@@ -50,7 +50,7 @@ public class FollowController {
     }
     @GetMapping("/block")
     public SingleResponse<Void> block(@RequestParam @NotNull int toUid) {
-        ResponsePair<Void> response = followBizExecute.block( toUid);
+        ResponsePair<Void> response = followBusinessExecute.block( toUid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -58,7 +58,7 @@ public class FollowController {
     }
     @GetMapping("/unblock")
     public SingleResponse<Void> unblock(@RequestParam @NotNull int toUid) {
-        ResponsePair<Void> response = followBizExecute.unblock( toUid);
+        ResponsePair<Void> response = followBusinessExecute.unblock( toUid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }

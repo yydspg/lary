@@ -2,7 +2,7 @@ package cn.lary.module.stream.service.impl;
 
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
-import cn.lary.kit.BizKit;
+import cn.lary.kit.BusinessKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.stream.entity.StreamRecord;
@@ -36,12 +36,12 @@ public class StreamRecordServiceImpl extends ServiceImpl<StreamRecordMapper, Str
                 .page(new Page<>(page, size))
                 .getRecords();
         if(CollectionKit.isEmpty(records)) {
-            return BizKit.fail("no records");
+            return BusinessKit.fail("no records");
         }
         List<StreamRecordVO> vos = new ArrayList<>();
         records.forEach(record -> {
             vos.add(new StreamRecordVO().of(record));
         });
-        return BizKit.ok(vos);
+        return BusinessKit.ok(vos);
     }
 }

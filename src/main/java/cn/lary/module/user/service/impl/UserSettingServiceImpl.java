@@ -2,7 +2,7 @@ package cn.lary.module.user.service.impl;
 
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
-import cn.lary.kit.BizKit;
+import cn.lary.kit.BusinessKit;
 import cn.lary.module.user.dto.UserSettingUpdateDTO;
 import cn.lary.module.user.entity.UserSetting;
 import cn.lary.module.user.mapper.UserSettingMapper;
@@ -36,8 +36,8 @@ public class UserSettingServiceImpl extends ServiceImpl<UserSettingMapper, UserS
                 .one();
         if (setting == null) {
             log.error("search user setting failed,uid:{}",RequestContext.getLoginUID());
-            return BizKit.fail("user setting not found");
+            return BusinessKit.fail("user setting not found");
         }
-        return BizKit.ok(new UserSettingVO(setting));
+        return BusinessKit.ok(new UserSettingVO(setting));
     }
 }

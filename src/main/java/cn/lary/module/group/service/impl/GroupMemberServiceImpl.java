@@ -2,7 +2,7 @@ package cn.lary.module.group.service.impl;
 
 import cn.lary.core.context.RequestContext;
 import cn.lary.core.dto.ResponsePair;
-import cn.lary.kit.BizKit;
+import cn.lary.kit.BusinessKit;
 import cn.lary.kit.CollectionKit;
 import cn.lary.kit.UUIDKit;
 import cn.lary.module.common.constant.LARY;
@@ -42,11 +42,11 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .eq(GroupMember::getStatus, status)
                 .list();
         if (CollectionKit.isEmpty(data)) {
-            return BizKit.ok(Collections.emptyList());
+            return BusinessKit.ok(Collections.emptyList());
         }
         List<Integer> vos = new ArrayList<>(data.size());
         data.forEach(t-> vos.add(t.getUid()));
-        return BizKit.ok(vos);
+        return BusinessKit.ok(vos);
     }
 
     @Override
@@ -58,29 +58,29 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .eq(GroupMember::getUid,uid)
                 .one();
         if (member == null) {
-            return BizKit.fail("not group member");
+            return BusinessKit.fail("not group member");
         }
         if (member.getRole() == LARY.Group.Role.creator) {
-            return BizKit.fail("creator can not quit");
+            return BusinessKit.fail("creator can not quit");
         }
         lambdaUpdate()
                 .set(GroupMember::getIsDelete,true)
                 .eq(GroupMember::getGroupId, groupId)
                 .eq(GroupMember::getUid,uid);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<Void> quitByAdmin(int groupId, int uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
                 .set(GroupMember::getIsDelete,true)
                 .eq(GroupMember::getGroupId, groupId)
                 .eq(GroupMember::getUid, uid);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
@@ -92,7 +92,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     public ResponsePair<Void> joinByAdmin(int groupId, int uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         return join(uid,groupId,response.getData().getUid());
     }
@@ -101,25 +101,25 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     @Transactional(rollbackFor = Exception.class)
     public ResponsePair<Integer> multiJoinByAdmin(int groupId, List<Integer> ids) {
         if (CollectionKit.isEmpty(ids)){
-            return BizKit.fail("user empty");
+            return BusinessKit.fail("user empty");
         }
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         List<Integer> members = CollectionKit.removeRepeat(ids);
         List<Integer> users = userService.getValidUsers(members);
         if (CollectionKit.isEmpty(users)) {
-            return BizKit.fail("valid users empty");
+            return BusinessKit.fail("valid users empty");
         }
         ResponsePair<List<Integer>> blockPair = this.getMembersWithStatus(groupId, LARY.Group.UserStatus.block);
         ResponsePair<List<Integer>> exsitsPair = this.getMembersWithStatus(groupId, LARY.Group.UserStatus.common);
 
         if(blockPair.isFail() || CollectionKit.isEmpty(blockPair.getData())){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         if(exsitsPair.isFail() || CollectionKit.isEmpty(exsitsPair.getData())){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         List<Integer> addUsers = new ArrayList<>();
         users.forEach(u->{
@@ -128,7 +128,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
             }
         });
         if (CollectionKit.isEmpty(addUsers)){
-            return BizKit.fail("no valid users");
+            return BusinessKit.fail("no valid users");
         }
         List<GroupMember> groupMembers = new ArrayList<>();
         addUsers.forEach(u -> {
@@ -140,27 +140,27 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
             groupMembers.add(groupMember);
         });
         saveBatch(groupMembers);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<Void> setAdmin(int groupId, int uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
                 .set(GroupMember::getRole, LARY.Group.Role.manager)
                 .eq(GroupMember::getGroupId,groupId)
                 .eq(GroupMember::getUid,uid);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<Void> removeAdmin(int groupId, int uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
                 .set(GroupMember::getRole, LARY.Group.Role.common)
@@ -177,7 +177,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .one();
         if (operator == null || operator.getIsDelete()
                 || operator.getStatus() == LARY.Group.UserStatus.block) {
-            return BizKit.fail("status error");
+            return BusinessKit.fail("status error");
         }
         List<GroupMember> data = lambdaQuery()
                 .select(GroupMember::getUid)
@@ -189,21 +189,21 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .eq(GroupMember::getGroupId, groupId)
                 .list();
         if (CollectionKit.isEmpty(data)){
-            return BizKit.fail("data empty");
+            return BusinessKit.fail("data empty");
         }
         List<GroupMemberVO> vos = new ArrayList<>(data.size());
         data.forEach(t->{
             GroupMemberVO vo = new GroupMemberVO();
             vos.add(vo.of(t));
         });
-        return BizKit.ok(vos);
+        return BusinessKit.ok(vos);
     }
 
     @Override
     public ResponsePair<Void> changeOwner(int groupId, int uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
                 .set(GroupMember::getRole, LARY.Group.Role.creator)
@@ -213,19 +213,19 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .set(GroupMember::getRole, LARY.Group.Role.manager)
                 .eq(GroupMember::getGroupId,groupId)
                 .eq(GroupMember::getUid, response.getData().getUid());
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<Void> disband(int groupId) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
                 .set(GroupMember::getIsDelete,true)
                 .eq(GroupMember::getGroupId,groupId);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     private ResponsePair<Void> join(int uid, int groupId, int inviteId){
@@ -235,7 +235,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .eq(GroupMember::getUid, uid)
                 .one();
         if (operator != null && operator.getStatus() == LARY.Group.UserStatus.block) {
-            return BizKit.fail("been blocked");
+            return BusinessKit.fail("been blocked");
         }
         if (operator == null) {
             this.save(new GroupMember()
@@ -250,7 +250,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                     .set(GroupMember::getInviteUid, inviteId)
                     .eq(GroupMember::getUid, uid);
         }
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 
     public ResponsePair<GroupMember> checkRole(int groupId) {
@@ -261,12 +261,12 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .eq(GroupMember::getUid, operator)
                 .one();
         if (admin == null) {
-            return BizKit.fail("not group member");
+            return BusinessKit.fail("not group member");
         }
         if (admin.getRole() == LARY.Group.Role.common) {
-            return BizKit.fail("no privilege");
+            return BusinessKit.fail("no privilege");
         }
-        return BizKit.ok(admin);
+        return BusinessKit.ok(admin);
     }
 
     @Override
@@ -278,23 +278,23 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .eq(GroupMember::getRole, role)
                 .list();
         if (CollectionKit.isEmpty(data)){
-            return BizKit.fail("data empty");
+            return BusinessKit.fail("data empty");
         }
         List<Integer> vos = new ArrayList<>(data.size());
         data.forEach(t-> vos.add(t.getGroupId()));
-        return BizKit.ok(vos);
+        return BusinessKit.ok(vos);
     }
 
     @Override
     public ResponsePair<Void> block(int groupId, int uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
-            return BizKit.fail(response.getMsg());
+            return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
                 .set(GroupMember::getStatus, LARY.Group.UserStatus.block)
                 .eq(GroupMember::getGroupId, groupId)
                 .eq(GroupMember::getUid, uid);
-        return BizKit.ok();
+        return BusinessKit.ok();
     }
 }

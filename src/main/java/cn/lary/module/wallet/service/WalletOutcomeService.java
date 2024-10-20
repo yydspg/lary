@@ -1,5 +1,6 @@
 package cn.lary.module.wallet.service;
 
+import cn.lary.core.dto.ResponsePair;
 import cn.lary.module.wallet.dto.WalletOutcomePageQueryDTO;
 import cn.lary.module.wallet.entity.WalletOutcome;
 import cn.lary.module.wallet.vo.WalletOutcomeVO;
@@ -16,10 +17,11 @@ import java.util.List;
  * @since 2024-10-02
  */
 public interface WalletOutcomeService extends IService<WalletOutcome> {
+
     /**
      * 分页查询支出
      * @param dto {@link WalletOutcomePageQueryDTO}
      * @return {@link WalletOutcomeVO}
      */
-    List<WalletOutcomeVO> getWalletOutcomeVOs(WalletOutcomePageQueryDTO dto);
+    ResponsePair<List<WalletOutcomeVO>> my(WalletOutcomePageQueryDTO dto);
 }

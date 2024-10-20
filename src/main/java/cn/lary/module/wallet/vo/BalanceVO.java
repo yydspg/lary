@@ -1,5 +1,6 @@
 package cn.lary.module.wallet.vo;
 
+import cn.lary.module.wallet.entity.Wallet;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -35,4 +36,13 @@ public class BalanceVO {
      * 密保问题
      */
     private String question;
+
+    public BalanceVO(Wallet wallet) {
+        this.vcIncome = wallet.getVcIncome();
+        this.vcOutcome = wallet.getVcOutcome();
+        this.vcFee = wallet.getVcFee();
+        this.vcLocked = wallet.getVcLocked();
+        this.question = wallet.getSecQuestion();
+        this.isAnchor = wallet.getIsAnchor();
+    }
 }
