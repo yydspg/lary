@@ -8,7 +8,10 @@
         <sourceTestOutputDir name="target/generated-test-sources/test-annotations" />
         <outputRelativeToContentRoot value="true" />
         <module name="lary-manager" />
-        <module name="lary" />
+        <module name="lary-starter" />
+        <module name="lary-external" />
+        <module name="lary-common" />
+        <module name="lary-module" />
       </profile>
     </annotationProcessing>
     <bytecodeTargetLevel>
@@ -33,8 +36,12 @@
   <component name="JavacSettings">
     <option name="ADDITIONAL_OPTIONS_OVERRIDE">
       <module name="lary" options="" />
-      <module name="lary-manager" options="-parameters" />
+      <module name="lary-common" options="" />
+      <module name="lary-external" options="" />
+      <module name="lary-manager" options="" />
+      <module name="lary-module" options="" />
       <module name="lary-rpc" options="" />
+      <module name="lary-starter" options="" />
     </option>
   </component>
 </project>
