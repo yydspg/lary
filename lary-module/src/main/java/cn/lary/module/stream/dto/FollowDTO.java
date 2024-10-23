@@ -1,7 +1,6 @@
 package cn.lary.module.stream.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 

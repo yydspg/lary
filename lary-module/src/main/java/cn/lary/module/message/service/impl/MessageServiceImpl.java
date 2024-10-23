@@ -1,6 +1,5 @@
 package cn.lary.module.message.service.impl;
 
-import cn.lary.module.message.service.MessageService;
 import cn.lary.external.wk.api.WKChannelService;
 import cn.lary.external.wk.api.WKMessageService;
 import cn.lary.external.wk.api.WKUserService;
@@ -10,6 +9,7 @@ import cn.lary.external.wk.dto.channel.SubscribersAddDTO;
 import cn.lary.external.wk.dto.message.MessageSendDTO;
 import cn.lary.external.wk.dto.user.UpdateTokenDTO;
 import cn.lary.external.wk.vo.route.RouteVO;
+import cn.lary.module.message.service.MessageService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -4,8 +4,6 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
-import java.util.Map;
-
 /**
  * 抽奖流是 ： 中奖的每人所得：itemNum * vcCost
  * 主播所花费： 中奖每人所得 * num

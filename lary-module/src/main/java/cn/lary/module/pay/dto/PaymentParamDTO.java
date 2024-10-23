@@ -2,7 +2,6 @@ package cn.lary.module.pay.dto;
 
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
-import lombok.ToString;
 import lombok.experimental.Accessors;
 
 import java.util.Map;

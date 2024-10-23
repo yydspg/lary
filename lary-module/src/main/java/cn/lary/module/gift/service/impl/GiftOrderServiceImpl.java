@@ -5,7 +5,6 @@ import cn.lary.module.gift.entity.GiftOrder;
 import cn.lary.module.gift.mapper.GiftOrderMapper;
 import cn.lary.module.gift.service.GiftOrderService;
 import cn.lary.module.gift.vo.GiftOrderVO;
-import cn.lary.module.gift.vo.GiftVO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

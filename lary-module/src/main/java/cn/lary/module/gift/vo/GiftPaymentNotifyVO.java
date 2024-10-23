@@ -3,10 +3,7 @@ package cn.lary.module.gift.vo;
 import cn.lary.common.kit.StringKit;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
-import cn.lary.module.pay.component.PaymentNotifyVO;
 import lombok.Data;
-
-import java.util.Map;
 
 @Data
 public class GiftPaymentNotifyVO {

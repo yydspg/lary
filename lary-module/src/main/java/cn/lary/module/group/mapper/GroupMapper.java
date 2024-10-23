@@ -2,9 +2,6 @@ package cn.lary.module.group.mapper;
 
 import cn.lary.module.group.entity.Group;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.Param;
-
-import java.util.List;
 
 /**
  * <p>

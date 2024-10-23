@@ -1,7 +1,6 @@
 package cn.lary.external.wk.dto.message;
 
 import cn.lary.external.wk.entity.core.WKChannel;
-import cn.lary.external.wk.entity.core.WKChannel;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 

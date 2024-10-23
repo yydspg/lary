@@ -1,8 +1,8 @@
 package cn.lary.external.wk.api;
 
 import cn.lary.external.wk.dto.message.MessageSendDTO;
-import cn.lary.external.wk.dto.message.SyncDTO;
 import cn.lary.external.wk.dto.message.SyncAckDTO;
+import cn.lary.external.wk.dto.message.SyncDTO;
 import cn.lary.external.wk.vo.message.Message;
 import com.github.lianjiatech.retrofit.spring.boot.core.RetrofitClient;
 import retrofit2.Response;

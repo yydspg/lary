@@ -5,8 +5,6 @@ import cn.lary.module.pay.dto.PaymentParamDTO;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import java.util.Map;
-
 @Data
 @Accessors(chain = true)
 public class GiftPaymentParamDTO extends PaymentParamDTO {

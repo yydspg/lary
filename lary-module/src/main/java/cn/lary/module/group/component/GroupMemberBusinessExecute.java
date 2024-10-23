@@ -6,7 +6,6 @@ import cn.lary.module.group.service.GroupMemberService;
 import cn.lary.module.group.service.GroupMemberSettingService;
 import cn.lary.module.group.vo.GroupMemberSettingVO;
 import cn.lary.module.group.vo.GroupMemberVO;
-import cn.lary.module.group.vo.GroupVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

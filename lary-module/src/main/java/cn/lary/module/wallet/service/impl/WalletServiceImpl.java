@@ -15,8 +15,6 @@ import cn.lary.module.wallet.service.WalletIncomeService;
 import cn.lary.module.wallet.service.WalletOutcomeService;
 import cn.lary.module.wallet.service.WalletService;
 import cn.lary.module.wallet.vo.BalanceVO;
-import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

@@ -3,7 +3,6 @@ package cn.lary.module.gift.service;
 import cn.lary.module.gift.dto.GiftOrderPageQueryDTO;
 import cn.lary.module.gift.entity.GiftOrder;
 import cn.lary.module.gift.vo.GiftOrderVO;
-import cn.lary.module.gift.vo.GiftVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

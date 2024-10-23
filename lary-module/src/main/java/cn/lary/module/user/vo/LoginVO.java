@@ -1,8 +1,6 @@
 package cn.lary.module.user.vo;
 
 import cn.lary.module.user.entity.LoginLog;
-import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.TableField;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;

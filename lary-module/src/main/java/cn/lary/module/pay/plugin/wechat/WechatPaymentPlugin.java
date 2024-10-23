@@ -4,7 +4,6 @@ import cn.lary.module.common.constant.LARY;
 import cn.lary.module.pay.component.AbstractPaymentPlugin;
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
 import cn.lary.module.pay.component.PaymentProcessPair;
-import cn.lary.module.pay.plugin.PaymentPlugin;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

@@ -1,6 +1,5 @@
 package cn.lary.module.stream.service;
 
-import cn.lary.common.dto.PageQuery;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.module.stream.dto.FollowDTO;
 import cn.lary.module.stream.dto.FollowPageQueryDTO;

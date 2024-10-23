@@ -2,7 +2,6 @@ package cn.lary.common.kit;
 
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.Random;
 

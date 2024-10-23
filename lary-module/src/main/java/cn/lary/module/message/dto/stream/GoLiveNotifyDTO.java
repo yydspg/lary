@@ -1,6 +1,5 @@
 package cn.lary.module.message.dto.stream;
 
-import cn.lary.external.wk.constant.WK;
 import cn.lary.external.wk.dto.message.MessageHeader;
 import cn.lary.external.wk.dto.message.MessageSendDTO;
 import lombok.Data;

@@ -1,7 +1,6 @@
 package cn.lary.module.group.vo;
 
 import cn.lary.module.group.entity.Group;
-import cn.lary.module.group.entity.GroupMember;
 import lombok.Data;
 
 @Data

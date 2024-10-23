@@ -4,7 +4,6 @@ package cn.lary.module.message.dto.stream;
 import cn.lary.external.wk.constant.WK;
 import cn.lary.external.wk.dto.message.MessageHeader;
 import cn.lary.external.wk.dto.message.MessageSendDTO;
-import cn.lary.module.common.constant.LARY;
 import lombok.Data;
 
 import java.nio.charset.StandardCharsets;

@@ -2,11 +2,10 @@ package cn.lary.module.group.component;
 
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.module.group.dto.CreateGroupDTO;
-import cn.lary.module.group.dto.GroupMemberSettingDTO;
-import cn.lary.module.group.service.GroupMemberService;
-import cn.lary.module.group.service.GroupMemberSettingService;
 import cn.lary.module.group.service.GroupService;
-import cn.lary.module.group.vo.*;
+import cn.lary.module.group.vo.CreateGroupVO;
+import cn.lary.module.group.vo.GroupDetailVO;
+import cn.lary.module.group.vo.GroupVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

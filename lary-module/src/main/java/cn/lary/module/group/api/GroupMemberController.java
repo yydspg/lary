@@ -3,7 +3,6 @@ package cn.lary.module.group.api;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.dto.SingleResponse;
 import cn.lary.common.kit.ResponseKit;
-import cn.lary.module.group.component.GroupBusinessExecute;
 import cn.lary.module.group.component.GroupMemberBusinessExecute;
 import cn.lary.module.group.dto.GroupMemberSettingDTO;
 import cn.lary.module.group.vo.GroupMemberSettingVO;
