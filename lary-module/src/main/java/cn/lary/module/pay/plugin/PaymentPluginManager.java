@@ -2,7 +2,9 @@ package cn.lary.module.pay.plugin;
 
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
 import cn.lary.module.pay.component.PaymentProcessPair;
+import cn.lary.module.pay.component.PaymentQueryProcessPair;
 import cn.lary.module.pay.vo.PaymentBuildVO;
+import cn.lary.module.pay.vo.PaymentQueryVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
@@ -40,6 +42,14 @@ public class PaymentPluginManager {
      */
     public void doNotify(PaymentNotifyProcessPair pair){
         plugins.get(pair.getPaymentPlugin()).doNotify(pair);
+    }
+
+    /**
+     * delegate
+     * @param pair {@link PaymentQueryProcessPair}}
+     */
+    public void doQuery(PaymentQueryProcessPair pair){
+       plugins.get(pair.getPlugin()).doQuery(pair);
     }
 
 }

@@ -44,41 +44,42 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    @Transactional(rollbackFor = Exception.class)
     public ResponsePair<Void> transfer(TransferDTO dto) {
-        Wallet uidWallet = lambdaQuery()
-                .select(Wallet::getVcFee)
-                .select(Wallet::getVcLocked)
-                .eq(Wallet::getUid, dto.getUid())
-                .eq(Wallet::getIsBlock, false)
-                .one();
-        if (uidWallet == null) {
-            return BusinessKit.fail("uid wallet not exist");
-        }
-        Wallet toUidWallet = lambdaQuery()
-                .select(Wallet::getVcLocked)
-                .select(Wallet::getVcFee)
-                .eq(Wallet::getUid, dto.getToUid())
-                .eq(Wallet::getIsBlock, false)
-                .one();
-        if (toUidWallet == null) {
-            return BusinessKit.fail("to uid wallet not exist");
-        }
-        if (uidWallet.getVcFee() - uidWallet.getVcLocked() < dto.getAmount()) {
-            return BusinessKit.fail("uid balance not enough");
-        }
-        //update
-        lambdaUpdate()
-                .eq(Wallet::getUid, dto.getUid())
-                .setIncrBy(Wallet::getVcOutcome, dto.getAmount())
-                .setDecrBy(Wallet::getVcFee, dto.getAmount());
-        lambdaUpdate()
-                .eq(Wallet::getUid, dto.getToUid())
-                .setIncrBy(Wallet::getVcFee,dto.getAmount())
-                .setIncrBy(Wallet::getVcIncome,dto.getAmount());
-        walletIncomeService.save(WalletIncome.of(dto));
-        walletOutcomeService.save(WalletOutcome.of(dto));
-        return BusinessKit.ok();
+        return transactionTemplate.execute(status -> {
+            Wallet uidWallet = lambdaQuery()
+                    .select(Wallet::getVcFee)
+                    .select(Wallet::getVcLocked)
+                    .eq(Wallet::getUid, dto.getUid())
+                    .eq(Wallet::getIsBlock, false)
+                    .one();
+            if (uidWallet == null) {
+                return BusinessKit.fail("uid wallet not exist");
+            }
+            Wallet toUidWallet = lambdaQuery()
+                    .select(Wallet::getVcLocked)
+                    .select(Wallet::getVcFee)
+                    .eq(Wallet::getUid, dto.getToUid())
+                    .eq(Wallet::getIsBlock, false)
+                    .one();
+            if (toUidWallet == null) {
+                return BusinessKit.fail("to uid wallet not exist");
+            }
+            if (uidWallet.getVcFee() - uidWallet.getVcLocked() < dto.getAmount()) {
+                return BusinessKit.fail("uid balance not enough");
+            }
+            //update
+            lambdaUpdate()
+                    .eq(Wallet::getUid, dto.getUid())
+                    .setIncrBy(Wallet::getVcOutcome, dto.getAmount())
+                    .setDecrBy(Wallet::getVcFee, dto.getAmount());
+            lambdaUpdate()
+                    .eq(Wallet::getUid, dto.getToUid())
+                    .setIncrBy(Wallet::getVcFee,dto.getAmount())
+                    .setIncrBy(Wallet::getVcIncome,dto.getAmount());
+            walletIncomeService.save(WalletIncome.of(dto));
+            walletOutcomeService.save(WalletOutcome.of(dto));
+            return BusinessKit.ok();
+        });
     }
 
     @Override

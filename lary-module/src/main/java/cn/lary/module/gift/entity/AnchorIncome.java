@@ -20,16 +20,16 @@ import java.time.LocalDateTime;
 @Setter
 @Accessors(chain = true)
 @TableName("anchor_turnover")
-public class AnchorTurnover implements Serializable {
+public class AnchorIncome implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    private Integer anchorId;
+    private Integer uid;
 
-    private Integer buyUid;
+    private Integer toUid;
 
     /**
      * 直播流id
@@ -44,12 +44,12 @@ public class AnchorTurnover implements Serializable {
     /**
      * 收入来源web,app
      */
-    private Integer clientType;
+    private Integer client;
 
     /**
      * 交易完成时间
      */
-    private LocalDateTime completeTime;
+    private LocalDateTime completeAt;
 
     /**
      * 礼物uid
@@ -72,16 +72,17 @@ public class AnchorTurnover implements Serializable {
     @TableField(fill = FieldFill.UPDATE)
     private LocalDateTime updateAt;
 
-    public AnchorTurnover of(GiftOrder order){
+    public AnchorIncome of(GiftOrder order){
 
-        setAnchorId(order.getAnchorUid());
-        setBuyUid(order.getUid());
+        setUid(order.getAnchorUid());
+        setToUid(order.getUid());
         setGiftId(order.getGiftId());
         setIncome(order.getCost());
         setStreamId(order.getStreamId());
         setGiftNum(order.getGiftNum());
-        setClientType(order.getClientType());
-        setCompleteTime(LocalDateTime.now());
+        setClient(order.getClient());
+        setIsFan(order.getIsFan());
+        setCompleteAt(LocalDateTime.now());
         return this;
     }
 }

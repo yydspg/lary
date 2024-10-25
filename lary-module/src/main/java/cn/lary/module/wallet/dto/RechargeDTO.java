@@ -22,5 +22,4 @@ public class RechargeDTO extends BusinessPaymentDTO {
     @JsonProperty("plugin")
     private Integer plugin;
 
-    private long rechargeId;
 }

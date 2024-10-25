@@ -37,13 +37,13 @@ public class WalletController {
 
     /**
      * 钱包充值
-     * @param req {@link RechargeDTO}
+     * @param dto {@link RechargeDTO}
      * @return form/html
      */
     @PostMapping("/recharge")
     @ResponseBody
-    public String recharge(@Valid @RequestBody RechargeDTO req, HttpServletResponse response) {
-        ResponsePair<PaymentBuildVO> pair= walletExecute.recharge(req);
+    public String recharge(@Valid @RequestBody RechargeDTO dto, HttpServletResponse response) {
+        ResponsePair<PaymentBuildVO> pair= walletExecute.recharge(dto);
         if (pair.isFail()) {
             return pair.getMsg();
         }
@@ -100,11 +100,11 @@ public class WalletController {
      * @return {@link WalletOutcomeVO}
      */
     @PostMapping("/outcomes")
-    public PageResponse<WalletOutcomeVO> outcomes(@RequestBody @Valid WalletOutcomePageQueryDTO req) {
-        ResponsePair<List<WalletOutcomeVO>> response = walletExecute.getOutcomeVOs(req);
+    public PageResponse<WalletOutcomeVO> outcomes(@RequestBody @Valid WalletOutcomePageQueryDTO dto) {
+        ResponsePair<List<WalletOutcomeVO>> response = walletExecute.getOutcomeVOs(dto);
         if (response.isFail()) {
             return ResponseKit.pageFail(response.getMsg());
         }
-        return ResponseKit.pageOk(response.getData(),req.getPageIndex(),req.getPageSize());
+        return ResponseKit.pageOk(response.getData(),dto.getPageIndex(),dto.getPageSize());
     }
 }

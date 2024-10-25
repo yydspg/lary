@@ -1,6 +1,5 @@
-package cn.lary.module.stream.listener;
+package cn.lary.module.stream.listener.redpacket;
 
-import cn.lary.module.stream.dto.RedPacketCloseMessage;
 import cn.lary.module.stream.service.RedPacketService;
 import cn.lary.module.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;

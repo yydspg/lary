@@ -1,4 +1,4 @@
-package cn.lary.module.stream.dto;
+package cn.lary.module.stream.listener.redpacket;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

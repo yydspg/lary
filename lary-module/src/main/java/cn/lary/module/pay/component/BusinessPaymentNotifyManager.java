@@ -2,6 +2,7 @@ package cn.lary.module.pay.component;
 
 import cn.lary.common.exception.SystemException;
 import cn.lary.common.kit.CollectionKit;
+import cn.lary.module.pay.vo.PaymentQueryVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,7 +41,7 @@ public class BusinessPaymentNotifyManager {
     }
 
     /**
-     * 业务支付回调
+     * 服务商异步通知,支付成功处理
      */
     public void processSuccess(PaymentNotifyProcessPair pair) {
         BusinessPaymentNotify callback = map.get(pair.getBusinessSign());
@@ -52,14 +53,39 @@ public class BusinessPaymentNotifyManager {
     }
 
     /**
-     * 业务支付失败回调
+     * 服务商异步通知,支付失败处理
      */
     public void processFail(PaymentNotifyProcessPair pair) {
-        BusinessPaymentNotify callback = map.get(pair.getBusinessSign());
-        if (callback == null) {
+        BusinessPaymentNotify notify = map.get(pair.getBusinessSign());
+        if (notify == null) {
             log.error("on fail callback error,invalid business code:{}",pair.getBusinessSign());
             return;
         }
-        executor.execute(()->callback.onFail(pair));
+        executor.execute(()->notify.onFail(pair));
+    }
+
+    /**
+     * 主动查询,支付成功处理
+     * @param vo {@link PaymentQueryVO}
+     */
+    public void processQuerySuccess(PaymentQueryVO vo) {
+        BusinessPaymentNotify notify = map.get(vo.getPair().getBusinessSign());
+        if (notify == null) {
+            log.error("on query success process ,invalid business code:{}",vo.getPair().getBusinessSign());
+            return;
+        }
+        executor.execute(()->{notify.onQuerySuccess(vo);});
+    }
+    /**
+     * 主动查询,支付失败处理
+     * @param vo {@link PaymentQueryVO}
+     */
+    public void processQueryFail(PaymentQueryVO vo) {
+        BusinessPaymentNotify notify = map.get(vo.getPair().getBusinessSign());
+        if (notify == null) {
+            log.error("on query fail process ,invalid business code:{}",vo.getPair().getBusinessSign());
+            return;
+        }
+        executor.execute(()->{notify.onQueryFail(vo);});
     }
 }

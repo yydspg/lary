@@ -11,7 +11,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 @Slf4j
-@RestController("/v1/callback")
+@RestController("/v1/notify")
 @RequiredArgsConstructor
 public class PayNotifyController {
 
@@ -22,27 +22,27 @@ public class PayNotifyController {
      */
     @GetMapping("/gift/alipay")
     public void giftOrderAlipayNotify(HttpServletRequest request) {
-        support.doCallback(new GiftOrderWechatPaymentNotifyPair(request));
+        support.doNotify(new GiftOrderWechatPaymentNotifyPair(request));
     }
     /**
      * 礼物模块的 wechat 支付后回调接口*/
     @GetMapping("/gift/wechat")
     public void giftOrderWechatNotify(HttpServletRequest request) {
-        support.doCallback(new GiftOrderWechatPaymentNotifyPair(request));
+        support.doNotify(new GiftOrderWechatPaymentNotifyPair(request));
     }
     /**
      * 充值模块的 alipay 支付后回调接口
      */
     @GetMapping("/recharge/alipay")
     public void rechargeAlipayNotify(HttpServletRequest request) {
-        support.doCallback(new GiftOrderAliPaymentNotifyPair(request));
+        support.doNotify(new GiftOrderAliPaymentNotifyPair(request));
     }
     /**
      * 充值模块的 wechat 支付后回调接口
      */
     @GetMapping("/recharge/wechat")
     public void rechargeWechatNotify(HttpServletRequest request) {
-        support.doCallback(new RechargeWechatPaymentNotifyPair(request));
+        support.doNotify(new RechargeWechatPaymentNotifyPair(request));
     }
 
 }

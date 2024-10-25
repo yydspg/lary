@@ -12,7 +12,7 @@ import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.dto.DownLiveEventDTO;
 import cn.lary.module.event.dto.GoLiveEventDTO;
-import cn.lary.module.gift.service.AnchorTurnoverService;
+import cn.lary.module.gift.service.AnchorIncomeService;
 import cn.lary.module.message.dto.stream.*;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.stream.dto.*;
@@ -61,7 +61,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
     private final FollowService followService;
     private final MessageService messageService;
     private final TransactionTemplate transactionTemplate;
-    private final AnchorTurnoverService anchorTurnoverService;
+    private final AnchorIncomeService anchorIncomeService;
 
     private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
             15, 20, 10L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), new RejectedExecutionHandler() {
@@ -181,7 +181,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         String token = UUIDKit.getUUID();
         DownLiveEventDTO downLiveEventDTO = new DownLiveEventDTO(uid, liveCache.getStreamId(), liveCache.getDanmakuId());
         Integer eventId = transactionTemplate.execute(status -> {
-            int event = eventService.begin(downLiveEventDTO.of());
+            int event = eventService.begin(downLiveEventDTO);
             streamRecordService.lambdaUpdate()
                     .eq(StreamRecord::getStreamId, liveCache.getStreamId())
                     .set(StreamRecord::getStatus, LARY.Stream.Status.down)
@@ -270,7 +270,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
                 .setIdentify(identify);
         streamRecordService.save(streamRecord);
         GoLiveEventDTO eventDTO = new GoLiveEventDTO(uid, dto.getDeviceId(), streamRecord.getStreamId(), danmakuId);
-        int event = eventService.begin(eventDTO.of());
+        int event = eventService.begin(eventDTO);
         if (room.getFollowNum() < 100) {
             ResponsePair<List<Integer>> pair = followService.getFollows(uid);
             if (pair.isFail()){
@@ -300,7 +300,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
     }
 
     public void executeTurnOver(int uid,int streamId) {
-        ResponsePair<Long> pair = anchorTurnoverService.buildTurnover(uid, streamId);
+        ResponsePair<Long> pair = anchorIncomeService.buildTurnover(uid, streamId);
         Long sum = pair.getData();
         streamRecordService.lambdaUpdate()
                 .eq(StreamRecord::getStreamId, streamId)

@@ -1,6 +1,6 @@
 package cn.lary.module.gift.mapper;
 
-import cn.lary.module.gift.entity.AnchorTurnover;
+import cn.lary.module.gift.entity.AnchorIncome;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author paul
  * @since 2024-08-16
  */
-public interface AnchorTurnoverMapper extends BaseMapper<AnchorTurnover> {
+public interface AnchorIncomeMapper extends BaseMapper<AnchorIncome> {
 
 }

@@ -3,7 +3,8 @@ package cn.lary.module.pay.plugin.alipay;
 import cn.lary.common.kit.JSONKit;
 import cn.lary.common.kit.StringKit;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.pay.component.AbstractPaymentPlugin;
+import cn.lary.module.pay.component.PaymentQueryProcessPair;
+import cn.lary.module.pay.plugin.AbstractPaymentPlugin;
 import cn.lary.module.pay.component.BusinessPaymentNotifyManager;
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
 import cn.lary.module.pay.component.PaymentProcessPair;
@@ -11,23 +12,25 @@ import cn.lary.module.pay.dto.PaymentParamDTO;
 import cn.lary.module.pay.entity.PaymentLog;
 import cn.lary.module.pay.service.PaymentLogService;
 import cn.lary.module.pay.vo.PaymentBuildVO;
+import cn.lary.module.pay.vo.PaymentQueryVO;
 import com.alibaba.fastjson2.JSONObject;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.AlipayConfig;
 import com.alipay.api.domain.AlipayTradePagePayModel;
+import com.alipay.api.domain.AlipayTradeQueryModel;
 import com.alipay.api.internal.util.AlipaySignature;
 import com.alipay.api.request.AlipayTradePagePayRequest;
+import com.alipay.api.request.AlipayTradeQueryRequest;
 import com.alipay.api.response.AlipayTradePagePayResponse;
+import com.alipay.api.response.AlipayTradeQueryResponse;
 import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Slf4j
 @Component
@@ -39,7 +42,16 @@ public class AliPayPaymentPlugin extends AbstractPaymentPlugin {
     private final AlipayConfig alipayConfig;
     private final BusinessPaymentNotifyManager businessPaymentNotifyManager;
     private final String NOTIFY_URL = "https://openapi.alipay.com/gateway.do";
-    
+
+    @Override
+    public boolean whetherOrderStatusSuccess(PaymentQueryVO vo) {
+        if (StringKit.same(vo.getStatus(),"TRADE_SUCCESS")
+        || StringKit.same(vo.getStatus(),"TRADE_FINISHED") ){
+            return true;
+        }
+        return false;
+    }
+
     @Override
     public PaymentBuildVO pcPay(PaymentParamDTO dto) {
 
@@ -71,23 +83,22 @@ public class AliPayPaymentPlugin extends AbstractPaymentPlugin {
         }
     }
 
-
-    private PaymentLog check(Map<String, String> args) {
+    @Override
+    public  boolean check(Map<String, String> args) {
         String outTradeNo = args.get("out_trade_no");
         String totalAmount = args.get("total_amount");
-        String sellId = args.get("sell_id");
         String appId = args.get("app_id");
         if (StringKit.diff(alipayConfig.getAppId(),appId)) {
-            return null;
+            return false;
         }
-        PaymentLog log = paymentLogService.getOne(new LambdaQueryWrapper<PaymentLog>().eq(PaymentLog::getPayId, outTradeNo));
-        if (log == null || log.getPayStatus() == LARY.PayStatus.fail) {
-            return null;
+        PaymentLog log = paymentLogService.lambdaQuery()
+                .select(PaymentLog::getPayId)
+                .eq(PaymentLog::getPayId, outTradeNo)
+                .one();
+        if (log == null || log.getPayStatus() == LARY.PAYMENT.STATUS.COMMIT) {
+            return false;
         }
-        if(StringKit.diff(totalAmount,log.getPayCost().toString())) {
-            return null;
-        }
-        return log;
+        return !StringKit.diff(totalAmount, log.getAmount().toString());
     }
 
 
@@ -152,7 +163,7 @@ public class AliPayPaymentPlugin extends AbstractPaymentPlugin {
         String postJson = json.toJSONString();
             paymentLogService.save(new PaymentLog()
                     .setPayId(pair.getParam().getPayId())
-                    .setPayCost(pair.getParam().getAmount())
+                    .setAmount(pair.getParam().getAmount())
                     .setPayWay(pair.getPaymentWay())
                     .setPostJson(postJson)
                     .setPayStatus(LARY.PAYMENT.STATUS.INIT));
@@ -170,6 +181,44 @@ public class AliPayPaymentPlugin extends AbstractPaymentPlugin {
             paymentLogService.lambdaUpdate()
                     .set(PaymentLog::getPayStatus, LARY.PAYMENT.STATUS.FAIL)
                     .eq(PaymentLog::getPayId, pair.getParam().getPayId());
+    }
+
+    @Override
+    protected PaymentQueryVO processActiveQuery(PaymentQueryProcessPair pair) {
+        AlipayTradeQueryRequest request = new AlipayTradeQueryRequest();
+        AlipayTradeQueryModel model = new AlipayTradeQueryModel();
+        model.setOutTradeNo(String.valueOf(pair.getPaymentId()));
+
+        AlipayTradeQueryResponse response = null;
+        try {
+            response = alipayClient.execute(request);
+        } catch (AlipayApiException e) {
+            log.error("alipay payment query error,message:{}", e.getMessage());
+            return new PaymentQueryVO()
+                    .setPaymentId(pair.getPaymentId())
+                    .setExecuteFail(true)
+                    .setReason("alipay payment query error");
+        }
+        return new PaymentQueryVO()
+                .setPaymentId(pair.getPaymentId())
+                .setSn(response.getOutTradeNo())
+                .setStatus(response.getTradeStatus())
+                .setExecuteFail(false);
+    }
+
+    @Override
+    protected void processQueryWhenFail(PaymentQueryVO pair) {
+        businessPaymentNotifyManager.processQueryFail(pair);
+    }
+
+    @Override
+    protected void processQueryWhenSuccess(PaymentQueryVO pair) {
+        businessPaymentNotifyManager.processQuerySuccess(pair);
+    }
+
+    @Override
+    protected void processQueryExecuteFail(PaymentQueryVO pair) {
+        log.error("payment query execute fail,params:{}", JSONKit.toJSON(pair));
     }
 
 

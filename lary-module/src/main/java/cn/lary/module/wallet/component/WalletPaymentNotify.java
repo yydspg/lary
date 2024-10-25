@@ -4,6 +4,7 @@ import cn.lary.module.app.service.EventService;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.pay.component.BusinessPaymentNotify;
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
+import cn.lary.module.pay.vo.PaymentQueryVO;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.service.UserService;
 import cn.lary.module.wallet.entity.RechargeLog;
@@ -22,7 +23,8 @@ import java.time.LocalDateTime;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class WalletPaymentNotifyExecute implements BusinessPaymentNotify {
+public class WalletPaymentNotify implements BusinessPaymentNotify {
+
 
     private final WalletService walletService;
     private final UserService userService;
@@ -94,6 +96,16 @@ public class WalletPaymentNotifyExecute implements BusinessPaymentNotify {
                     .eq(RechargeLog::getId,vo.getRechargeId());
             eventService.commit(rechargeLog.getEventId());
         });
+    }
+
+    @Override
+    public void onQuerySuccess(PaymentQueryVO pair) {
+
+    }
+
+    @Override
+    public void onQueryFail(PaymentQueryVO pair) {
+
     }
 
     @Override

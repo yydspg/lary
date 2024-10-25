@@ -1,7 +1,7 @@
 package cn.lary.module.gift.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.module.gift.entity.AnchorTurnover;
+import cn.lary.module.gift.entity.AnchorIncome;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**
@@ -12,7 +12,7 @@ import com.baomidou.mybatisplus.extension.service.IService;
  * @author paul
  * @since 2024-08-16
  */
-public interface AnchorTurnoverService extends IService<AnchorTurnover> {
+public interface AnchorIncomeService extends IService<AnchorIncome> {
 
     /**
      * 计算直播收入

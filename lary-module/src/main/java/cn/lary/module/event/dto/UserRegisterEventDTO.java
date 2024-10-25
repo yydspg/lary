@@ -1,17 +1,20 @@
 package cn.lary.module.event.dto;
 
 import cn.lary.common.kit.JSONKit;
-import cn.lary.module.app.entity.EventData;
+import cn.lary.module.app.service.AbstractEventData;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.convert.EventConvert;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.util.HashMap;
+import java.util.Map;
+
 
 @Data
 @Accessors(chain = true)
-public class UserRegisterEventDTO implements EventConvert {
+public class UserRegisterEventDTO extends AbstractEventData {
 
     private int uid;
 
@@ -20,11 +23,22 @@ public class UserRegisterEventDTO implements EventConvert {
     @JsonProperty("invite_code")
     private String inviteCode;
 
+
+    public String getData() {
+        Map<Object,Object> map = new HashMap<>();
+        map.put("uid", uid);
+        map.put("phone", phone);
+        map.put("inviteCode", inviteCode);
+        return JSONKit.toJSON(map);
+    }
+
     @Override
-    public EventData of() {
-        return new EventData()
-                .setEvent(LARY.Event.register)
-                .setType(LARY.EventType.cmd)
-                .setData(JSONKit.toJSON(this));
+    public int getCategory() {
+        return LARY.EVENT.CATEGORY.USER_REGISTER;
+    }
+
+    @Override
+    public int getType() {
+        return LARY.EVENT.TYPE.CMD;
     }
 }

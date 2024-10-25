@@ -43,5 +43,7 @@ public abstract class AbstractBusinessPayment implements BusinessPayment, Busine
 
     protected abstract void processWhenPaymentFail(PaymentBuildVO vo);
 
+
     protected abstract void processWhenPaymentSuccess(PaymentBuildVO vo);
+
 }

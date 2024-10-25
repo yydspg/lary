@@ -1,27 +1,43 @@
 package cn.lary.module.event.dto;
 
 import cn.lary.common.kit.JSONKit;
-import cn.lary.module.app.entity.EventData;
+import cn.lary.module.app.service.AbstractEventData;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.convert.EventConvert;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Data
 @AllArgsConstructor
-public class DownLiveEventDTO implements EventConvert {
+public class DownLiveEventDTO extends AbstractEventData {
+
     private int uid;
+
     @JsonProperty("stream_id")
     private int streamId;
+
     @JsonProperty("channel_id")
     private int channelId;
 
+    public String getData() {
+        Map<Object,Object> map = new HashMap<>();
+        map.put("uid", uid);
+        map.put("streamId", streamId);
+        map.put("channelId", channelId);
+        return JSONKit.toJSON(map);
+    }
+
     @Override
-    public EventData of() {
-        return new EventData()
-                .setEvent(LARY.Event.downLive)
-                .setType(LARY.EventType.cmd)
-                .setEvent(JSONKit.toJSON(this));
+    public int getCategory() {
+        return LARY.EVENT.CATEGORY.DOWN_LIVE;
+    }
+
+    @Override
+    public int getType() {
+        return LARY.EVENT.TYPE.CMD;
     }
 }

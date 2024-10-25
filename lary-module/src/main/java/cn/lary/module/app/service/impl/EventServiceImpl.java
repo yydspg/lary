@@ -1,7 +1,7 @@
 package cn.lary.module.app.service.impl;
 
+import cn.lary.module.app.service.AbstractEventData;
 import cn.lary.module.app.entity.Event;
-import cn.lary.module.app.entity.EventData;
 import cn.lary.module.app.mapper.EventMapper;
 import cn.lary.module.app.service.EventService;
 import cn.lary.module.common.constant.LARY;
@@ -22,16 +22,28 @@ import org.springframework.stereotype.Service;
 public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements EventService {
 
     @Override
-    public int begin(EventData eventData) {
-        Event e = new Event().setEvent(eventData.getEvent()).setData(eventData.getData()).setType(eventData.getType());
-        baseMapper.insert(e);
+    public int begin(AbstractEventData abstractEventData) {
+        Event e = new Event()
+                .setCategory(abstractEventData.getCategory())
+                .setData(abstractEventData.getData())
+                .setType(abstractEventData.getType());
+        save(e);
         return e.getId();
     }
 
     @Override
-    public void commit(int eventID) {
-        // post handler
-        Event event = new Event().setId(eventID).setStatus(LARY.EventStatus.commit);
-        baseMapper.updateById(event);
+    public void commit(int eventId) {
+        Event event = new Event()
+                .setId(eventId)
+                .setStatus(LARY.EVENT.STATUS.COMMIT);
+        updateById(event);
+    }
+
+    @Override
+    public void fail(int eventID, String reason) {
+        Event event = new Event()
+                .setStatus(LARY.EVENT.STATUS.FAIL)
+                .setId(eventID);
+        updateById(event);
     }
 }

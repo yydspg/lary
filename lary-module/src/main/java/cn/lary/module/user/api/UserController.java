@@ -107,6 +107,7 @@ public class UserController {
      * @param request {@link HttpServletRequest}
      * @return ok
      */
+    @GetMapping("/refresh")
     public SingleResponse<Void> refresh(HttpServletRequest request) {
         ResponsePair<Void> response = userExecute.refreshToken( request);
         if (response.isFail()) {

@@ -1,10 +1,14 @@
-package cn.lary.module.pay.component;
+package cn.lary.module.pay.plugin;
 
 import cn.lary.common.exception.SystemException;
 import cn.lary.module.common.constant.LARY;
+import cn.lary.module.pay.component.BusinessPaymentNotifyManager;
+import cn.lary.module.pay.component.PaymentNotifyProcessPair;
+import cn.lary.module.pay.component.PaymentProcessPair;
+import cn.lary.module.pay.component.PaymentQueryProcessPair;
 import cn.lary.module.pay.dto.PaymentParamDTO;
-import cn.lary.module.pay.plugin.PaymentPlugin;
 import cn.lary.module.pay.vo.PaymentBuildVO;
+import cn.lary.module.pay.vo.PaymentQueryVO;
 import jakarta.servlet.http.HttpServletRequest;
 
 import java.util.Map;
@@ -30,7 +34,7 @@ public abstract class AbstractPaymentPlugin implements PaymentPlugin {
             return;
         }
         try {
-            if (verificationSign(params)) {
+            if (verificationSign(params) && check(params)) {
                 processNotifyWhenSuccess(pair);
             }else{
                 processNotifyWhenFailure(pair);
@@ -62,6 +66,21 @@ public abstract class AbstractPaymentPlugin implements PaymentPlugin {
         return vo;
     }
 
+    @Override
+    public final void doQuery(PaymentQueryProcessPair pair) {
+        PaymentQueryVO vo = processActiveQuery(pair);
+        if (vo.isExecuteFail()) {
+            processQueryExecuteFail(vo);
+            processQueryWhenFail(vo);
+            return;
+        }
+        if (whetherOrderStatusSuccess(vo)) {
+            processQueryWhenSuccess(vo);
+        }else {
+            processQueryWhenFail(vo);
+        }
+    }
+    public abstract boolean whetherOrderStatusSuccess(PaymentQueryVO vo);
     public PaymentBuildVO pcPay(PaymentParamDTO dto) {
         throw new SystemException(NONSUPPORT_OPERATION);
     }
@@ -69,6 +88,8 @@ public abstract class AbstractPaymentPlugin implements PaymentPlugin {
      public PaymentBuildVO appPay(PaymentParamDTO dto) {
         throw new SystemException(NONSUPPORT_OPERATION);
     }
+
+    protected abstract boolean check(Map<String, String> params);
 
     /**
      * 从httpServletRequest中获取回调参数
@@ -113,4 +134,12 @@ public abstract class AbstractPaymentPlugin implements PaymentPlugin {
     protected abstract void processAfterPaymentWhenSuccess(PaymentProcessPair pair);
 
     protected abstract void processAfterPaymentWhenFail(PaymentProcessPair pair);
+
+    protected abstract PaymentQueryVO processActiveQuery(PaymentQueryProcessPair pair);
+
+    protected abstract void processQueryWhenFail(PaymentQueryVO pair);
+
+    protected abstract void processQueryWhenSuccess(PaymentQueryVO pair);
+
+    protected abstract void processQueryExecuteFail(PaymentQueryVO pair);
 }

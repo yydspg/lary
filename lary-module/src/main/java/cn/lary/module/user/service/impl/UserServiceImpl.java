@@ -188,8 +188,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             int uid = user.getUid();
             int eventId = eventService.begin(new UserRegisterEventDTO()
                     .setUid(uid)
-                    .setPhone(dto.getPhone())
-                    .of());
+                    .setPhone(dto.getPhone()));
             userSettingService.save(new UserSetting().setUid(uid));
 //            walletService.save(new Wallet().setUid(uid));
 //            followService.addSystemHelper(uid);

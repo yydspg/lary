@@ -42,4 +42,9 @@ public interface MessageService {
      * @return ok
      */
     RouteVO getRoute(int uid);
+
+
+    void syncSendRocketMessage(AbstractSyncRocketMessage message);
+
+    void asyncSendRocketMessage(AbstractAsyncRocketMessage message);
 }

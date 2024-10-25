@@ -1,17 +1,19 @@
-package cn.lary.module.gift.execute;
+package cn.lary.module.gift.component;
 
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.gift.entity.AnchorTurnover;
+import cn.lary.module.gift.entity.AnchorIncome;
 import cn.lary.module.gift.entity.GiftOrder;
-import cn.lary.module.gift.service.AnchorTurnoverService;
+import cn.lary.module.gift.service.AnchorIncomeService;
 import cn.lary.module.gift.service.GiftOrderService;
 import cn.lary.module.gift.vo.GiftPaymentNotifyVO;
 import cn.lary.module.message.dto.stream.GiftSendNotifyDTO;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.pay.component.BusinessPaymentNotify;
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
+import cn.lary.module.pay.component.PaymentQueryProcessPair;
+import cn.lary.module.pay.vo.PaymentQueryVO;
 import cn.lary.module.stream.dto.JoinLiveCacheDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,7 +28,7 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class GiftPaymentNotify implements BusinessPaymentNotify {
 
-    private final AnchorTurnoverService anchorTurnoverService;
+    private final AnchorIncomeService anchorIncomeService;
     private final RedisCache redisCache;
     private final KVBuilder kvBuilder;
     private final GiftOrderService giftOrderService;
@@ -36,7 +38,32 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
 
     @Override
     public void onSuccess(PaymentNotifyProcessPair pair) {
-        GiftPaymentNotifyVO vo =  new GiftPaymentNotifyVO(pair);
+        processSuccess(pair,null);
+    }
+
+    @Override
+    public void onFail(PaymentNotifyProcessPair pair) {
+        processFail(pair,null);
+    }
+
+    @Override
+    public void onQuerySuccess(PaymentQueryVO pair) {
+        processSuccess(null,pair);
+    }
+
+    @Override
+    public void onQueryFail(PaymentQueryVO pair) {
+        processFail(null,pair);
+    }
+
+    @Override
+    public int getSign() {
+        return LARY.BUSINESS.PAYMENT.GIFT;
+    }
+
+
+    private void processSuccess(PaymentNotifyProcessPair pair,PaymentQueryVO queryData) {
+        GiftPaymentNotifyVO vo = getPaymentNotify(pair, queryData);
         Long orderId = vo.getGiftOrderId();
         GiftOrder order = transactionTemplate.execute(status -> {
             GiftOrder temp = giftOrderService.lambdaQuery()
@@ -52,7 +79,7 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
                     .set(GiftOrder::getStatus, LARY.PAYMENT.STATUS.FINISH)
                     .set(GiftOrder::getCompleteAt, LocalDateTime.now())
                     .eq(GiftOrder::getId, orderId);
-            anchorTurnoverService.save(new AnchorTurnover().of(temp));
+            anchorIncomeService.save(new AnchorIncome().of(temp));
             return temp;
         });
         if (order == null) {
@@ -67,14 +94,13 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
         messageService.send(new GiftSendNotifyDTO(order.getDanmakuId(),
                 order.getUid(),
                 dto.getName(),
-                order.getGiftName(),
+                order.getGiftId(),
                 order.getGiftNum()));
     }
 
-    @Override
-    public void onFail(PaymentNotifyProcessPair pair) {
-        GiftPaymentNotifyVO vo =  new GiftPaymentNotifyVO(pair);
-        Long orderId = vo.getGiftOrderId();
+    private void processFail(PaymentNotifyProcessPair pair,PaymentQueryVO data) {
+        GiftPaymentNotifyVO vo = getPaymentNotify(pair, data);
+        long orderId = vo.getGiftOrderId();
         transactionTemplate.executeWithoutResult(status -> {
             GiftOrder order = giftOrderService.lambdaQuery()
                     .select(GiftOrder::getId)
@@ -93,10 +119,17 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
         });
     }
 
-    @Override
-    public int getSign() {
-        return LARY.BUSINESS.PAYMENT.GIFT;
+    private GiftPaymentNotifyVO getPaymentNotify(PaymentNotifyProcessPair pair,PaymentQueryVO data) {
+        GiftPaymentNotifyVO vo = null;
+        if (pair == null) {
+            vo = new GiftPaymentNotifyVO()
+                    .setCost(data.getAmount())
+                    .setGiftOrderId(data.getPaymentId())
+                    .setFailReason(data.getReason())
+                    .setTradeNo(data.getSn());
+        }else {
+            vo = new GiftPaymentNotifyVO(pair);
+        }
+        return vo;
     }
-
-
 }

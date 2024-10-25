@@ -1,4 +1,4 @@
-package cn.lary.module.stream.listener;
+package cn.lary.module.stream.listener.raffle;
 
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.CollectionKit;
@@ -8,7 +8,6 @@ import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.stream.dto.RaffleCacheDTO;
-import cn.lary.module.stream.dto.RaffleCloseMessage;
 import cn.lary.module.stream.entity.Raffle;
 import cn.lary.module.stream.service.RaffleService;
 import cn.lary.module.wallet.dto.BatchOutcomeTransferDTO;

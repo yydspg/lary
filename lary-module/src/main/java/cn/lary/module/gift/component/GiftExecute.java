@@ -1,4 +1,4 @@
-package cn.lary.module.gift.execute;
+package cn.lary.module.gift.component;
 
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;

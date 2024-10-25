@@ -11,7 +11,7 @@ import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.event.dto.RedPacketEventDTO;
 import cn.lary.module.message.dto.stream.CreateRedPacketNotifyDTO;
 import cn.lary.module.stream.dto.LiveCacheDTO;
-import cn.lary.module.stream.dto.RedPacketCloseMessage;
+import cn.lary.module.stream.listener.redpacket.RedPacketCloseMessage;
 import cn.lary.module.stream.dto.RedPacketDTO;
 import cn.lary.module.stream.entity.RedPacket;
 import cn.lary.module.stream.mapper.RedPacketMapper;
@@ -98,7 +98,7 @@ public class RedPacketServiceImpl extends ServiceImpl<RedPacketMapper, RedPacket
                 .setVc(dto.getCost())
                 .setVcAll(totalCost);
         save(redPacket);
-        int eventId = eventService.begin(new RedPacketEventDTO(uid, cache.getStreamId(), redPacket.getId()).of());
+        int eventId = eventService.begin(new RedPacketEventDTO(uid, cache.getStreamId(), redPacket.getId()));
         RedPacketCloseMessage redPacketCloseMessage = new RedPacketCloseMessage(eventId, uid, cache.getStreamId(), redPacket.getId());
         GenericMessage<RedPacketCloseMessage> genericMessage = new GenericMessage<>(redPacketCloseMessage);
         try {

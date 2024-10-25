@@ -56,7 +56,7 @@ public class PaymentLog implements Serializable {
     /**
      * 支付金额
      */
-    private Long payCost;
+    private Long amount;
 
     /**
      * 请求支付状态，1：成功，2：失败

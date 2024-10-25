@@ -29,7 +29,7 @@ public class Event implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Integer id;
 
-    private String event;
+    private Integer category;
 
     private Integer type;
 
@@ -42,7 +42,7 @@ public class Event implements Serializable {
     /**
      * 乐观锁
      */
-    private Integer versionLock;
+    private Integer version;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

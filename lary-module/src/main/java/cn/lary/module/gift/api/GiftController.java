@@ -6,7 +6,7 @@ import cn.lary.common.dto.SingleResponse;
 import cn.lary.common.kit.ResponseKit;
 import cn.lary.module.gift.dto.GiftOrderDTO;
 import cn.lary.module.gift.dto.GiftOrderPageQueryDTO;
-import cn.lary.module.gift.execute.GiftExecute;
+import cn.lary.module.gift.component.GiftExecute;
 import cn.lary.module.gift.vo.GiftOrderVO;
 import cn.lary.module.pay.vo.PaymentBuildVO;
 import jakarta.validation.Valid;

@@ -194,4 +194,24 @@ public interface LARY {
             int PERSON = 703;
         }
     }
+    interface EVENT {
+        interface TYPE {
+            int CMD = 1;
+            int MESSAGE = 2;
+        }
+        interface CATEGORY {
+            int DOWN_LIVE = 801;
+            int GO_LIVE = 802;
+            int RECHARGE_DETECTION = 803;
+            int RED_PACKET = 804;
+            int GIFT_DETECTION = 805;
+            int RAFFLE = 806;
+            int USER_REGISTER = 807;
+        }
+        interface STATUS {
+            int INIT = 901;
+            int COMMIT = 902;
+            int FAIL = 903;
+        }
+    }
 }

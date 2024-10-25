@@ -6,10 +6,12 @@ import cn.lary.common.kit.BusinessKit;
 import cn.lary.module.app.service.EventService;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.dto.RechargeEventDTO;
+import cn.lary.module.message.service.MessageService;
 import cn.lary.module.pay.component.AbstractBusinessPayment;
 import cn.lary.module.pay.component.PaymentProcessPair;
 import cn.lary.module.pay.dto.BusinessPaymentDTO;
 import cn.lary.module.pay.dto.PaymentParamDTO;
+import cn.lary.module.pay.listener.recharge.RechargeActiveDetectionMessage;
 import cn.lary.module.pay.plugin.PaymentPluginManager;
 import cn.lary.module.pay.vo.PaymentBuildVO;
 import cn.lary.module.wallet.dto.RechargeDTO;
@@ -33,6 +35,7 @@ public class WalletPayment extends AbstractBusinessPayment{
     private final WalletService walletService;
     private final RechargeLogService rechargeLogService;
     private final EventService eventService;
+    private final MessageService messageService;
     private final TransactionTemplate transactionTemplate;
 
     @Override
@@ -60,7 +63,7 @@ public class WalletPayment extends AbstractBusinessPayment{
                     .setStatus(LARY.PAYMENT.STATUS.INIT);
             rechargeLogService.save(rechargeLog);
             RechargeEventDTO eventDTO = new RechargeEventDTO(uid, cost, rechargeLog.getId());
-            int eventId = eventService.begin(eventDTO.of());
+            int eventId = eventService.begin(eventDTO);
             rechargeLogService.lambdaUpdate()
                     .set(RechargeLog::getEventId, eventId)
                     .eq(RechargeLog::getId, rechargeLog.getId());
@@ -108,6 +111,7 @@ public class WalletPayment extends AbstractBusinessPayment{
         rechargeLogService.lambdaUpdate()
                 .set(RechargeLog::getStatus, LARY.PAYMENT.STATUS.COMMIT)
                 .eq(RechargeLog::getId, vo.getPaymentId());
+        messageService.asyncSendRocketMessage(new RechargeActiveDetectionMessage());
     }
 
     @Override

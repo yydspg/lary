@@ -1,9 +1,11 @@
 package cn.lary.module.pay.plugin.wechat;
 
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.pay.component.AbstractPaymentPlugin;
+import cn.lary.module.pay.component.PaymentQueryProcessPair;
+import cn.lary.module.pay.plugin.AbstractPaymentPlugin;
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
 import cn.lary.module.pay.component.PaymentProcessPair;
+import cn.lary.module.pay.vo.PaymentQueryVO;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -14,6 +16,16 @@ import java.util.Map;
 @Component
 public class WechatPaymentPlugin extends AbstractPaymentPlugin {
 
+
+    @Override
+    public boolean whetherOrderStatusSuccess(PaymentQueryVO vo) {
+        return false;
+    }
+
+    @Override
+    protected boolean check(Map<String, String> params) {
+        return false;
+    }
 
     @Override
     protected Map<String, String> getParamsFromRequest(HttpServletRequest request) throws Exception {
@@ -57,6 +69,26 @@ public class WechatPaymentPlugin extends AbstractPaymentPlugin {
 
     @Override
     protected void processAfterPaymentWhenFail(PaymentProcessPair pair) {
+
+    }
+
+    @Override
+    protected PaymentQueryVO processActiveQuery(PaymentQueryProcessPair pair) {
+        return null;
+    }
+
+    @Override
+    protected void processQueryWhenFail(PaymentQueryVO pair) {
+
+    }
+
+    @Override
+    protected void processQueryWhenSuccess(PaymentQueryVO pair) {
+
+    }
+
+    @Override
+    protected void processQueryExecuteFail(PaymentQueryVO pair) {
 
     }
 

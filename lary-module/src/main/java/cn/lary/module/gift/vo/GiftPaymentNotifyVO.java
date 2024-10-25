@@ -4,15 +4,20 @@ import cn.lary.common.kit.StringKit;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 @Data
+@Accessors(chain = true)
 public class GiftPaymentNotifyVO {
 
-    private Long giftOrderId;
-    private Long cost;
+    private long giftOrderId;
+    private long cost;
     private String tradeNo;
     private String failReason;
 
+    public GiftPaymentNotifyVO() {
+
+    }
 
     public GiftPaymentNotifyVO(PaymentNotifyProcessPair pair) {
         if(pair.getPaymentPlugin() == LARY.PAYMENT.PLUGIN.ALI){

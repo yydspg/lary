@@ -94,22 +94,20 @@ public class GiftOrder implements Serializable {
     /**
      * 支付来源
      */
-    private Integer clientType;
+    private Integer client;
 
     /**
      * 礼物uid
      */
     private Integer giftId;
 
-    /**
-     * 礼物name
-     */
-    private String giftName;
 
     /**
      * 礼物购买数量
      */
     private Integer giftNum;
+
+    private Boolean isFan;
 
     private Boolean isDelete;
 

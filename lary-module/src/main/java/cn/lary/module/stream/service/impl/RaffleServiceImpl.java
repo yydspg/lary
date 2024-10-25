@@ -14,7 +14,7 @@ import cn.lary.module.event.dto.RaffleEventDTO;
 import cn.lary.module.message.dto.stream.CreateRaffleNotifyDTO;
 import cn.lary.module.stream.dto.LiveCacheDTO;
 import cn.lary.module.stream.dto.RaffleCacheDTO;
-import cn.lary.module.stream.dto.RaffleCloseMessage;
+import cn.lary.module.stream.listener.raffle.RaffleCloseMessage;
 import cn.lary.module.stream.dto.RaffleDTO;
 import cn.lary.module.stream.entity.Raffle;
 import cn.lary.module.stream.mapper.RaffleMapper;
@@ -117,7 +117,7 @@ public class RaffleServiceImpl extends ServiceImpl<RaffleMapper, Raffle> impleme
                 .setTitle(title)
                 .setType(dto.getType());
         this.save(raffle);
-        int eventId = eventService.begin(new RaffleEventDTO(uid, cache.getStreamId(), raffle.getId()).of());
+        int eventId = eventService.begin(new RaffleEventDTO(uid, cache.getStreamId(), raffle.getId()));
         RaffleCacheDTO cacheDTO = new RaffleCacheDTO()
                 .setDuration(dto.getDuration())
                 .setContent(dto.getContent())
@@ -129,13 +129,7 @@ public class RaffleServiceImpl extends ServiceImpl<RaffleMapper, Raffle> impleme
                 .setFanLevel(dto.getFanLevel());
         redisCache.setHash(kvBuilder.raffleK(uid),kvBuilder.raffleV(cacheDTO),dto.getDuration());
         RaffleCloseMessage closeMessage = new RaffleCloseMessage(eventId, uid, cache.getStreamId(), raffle.getId());
-        GenericMessage<RaffleCloseMessage> rocketMQMessage = new GenericMessage<>(closeMessage);
-        try {
-            rocketMQTemplate.syncSend("lary:raffle-close",rocketMQMessage,0,0);
-        } catch (Exception e) {
-            log.error("sync send raffle close message error,uid:{},msg:{}",uid,e.getMessage());
-        }
-        log.info("sync send raffle close message success,uid:{}", uid);
+
         wkMessageService.send(new CreateRaffleNotifyDTO(uid, cache.getDanmakuId()));
         return BusinessKit.ok();
     }

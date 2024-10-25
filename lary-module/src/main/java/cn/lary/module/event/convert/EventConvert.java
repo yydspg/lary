@@ -1,7 +1,7 @@
 package cn.lary.module.event.convert;
 
-import cn.lary.module.app.entity.EventData;
+import cn.lary.module.app.service.AbstractEventData;
 
 public interface EventConvert {
-    EventData of();
+    AbstractEventData of();
 }

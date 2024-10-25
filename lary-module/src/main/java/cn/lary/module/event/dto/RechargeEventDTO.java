@@ -1,27 +1,40 @@
 package cn.lary.module.event.dto;
 
 import cn.lary.common.kit.JSONKit;
-import cn.lary.module.app.entity.EventData;
+import cn.lary.module.app.service.AbstractEventData;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.event.convert.EventConvert;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.util.HashMap;
+import java.util.Map;
+
 @Data
 @AllArgsConstructor
-public class RechargeEventDTO implements EventConvert {
+public class RechargeEventDTO extends AbstractEventData {
 
-    private Integer uid;
+    private int uid;
 
-    private Long cost;
+    private long cost;
 
-    private Long rechargeId;
+    private long rechargeId;
 
     @Override
-    public EventData of() {
-        return new EventData()
-                .setEvent(LARY.Event.recharge)
-                .setType(LARY.EventType.cmd)
-                .setData(JSONKit.toJSON(this));
+    public String getData() {
+        Map<Object,Object> map = new HashMap<>();
+        map.put("uid", uid);
+        map.put("cost", cost);
+        map.put("rechargeId", rechargeId);
+        return JSONKit.toJSON(map);
+    }
+
+    @Override
+    public int getCategory() {
+        return LARY.EVENT.CATEGORY.RECHARGE_DETECTION;
+    }
+
+    @Override
+    public int getType() {
+        return LARY.EVENT.TYPE.MESSAGE;
     }
 }
