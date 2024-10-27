@@ -8,7 +8,7 @@ import java.util.List;
 @Data
 @Accessors(chain = true)
 public class SystemOutcomeTransferDTO {
-    private List<Integer> members;
+    private List<Long> members;
     private int type;
     private long amount;
 }

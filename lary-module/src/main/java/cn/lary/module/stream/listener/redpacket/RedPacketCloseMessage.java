@@ -9,8 +9,8 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class RedPacketCloseMessage {
 
-    private int eventId;
-    private int uid;
+    private long eventId;
+    private long uid;
     private int streamId;
     private long redPacketId;
 

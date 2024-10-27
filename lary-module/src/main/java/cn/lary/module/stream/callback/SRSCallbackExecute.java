@@ -38,7 +38,7 @@ public class SRSCallbackExecute implements SRSCallback {
     public int onPublish(OnPublishDTO dto) {
         Map<String, String> args = dto.parseParams(dto.getParam());
         String token = args.get("token");
-        int uid = Integer.parseInt( args.get("uid"));
+        long uid = Integer.parseInt( args.get("uid"));
         String eventId = args.get("event");
 
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
@@ -77,7 +77,7 @@ public class SRSCallbackExecute implements SRSCallback {
         Map<String, String> args = dto.parseParams(dto.getParam());
 
         String token = args.get("token");
-        int uid = Integer.parseInt( args.get("uid"));
+        long uid = Integer.parseInt( args.get("uid"));
         String eventId = args.get("event");
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
         LiveCacheDTO cache = LiveCacheDTO.of(map);
@@ -102,7 +102,7 @@ public class SRSCallbackExecute implements SRSCallback {
     public int onPlay(OnPlayDTO dto) {
         Map<String, String> args = dto.parseParams(dto.getParam());
         String token = args.get("token");
-        int uid = Integer.parseInt( args.get("uid"));
+        long uid = Integer.parseInt( args.get("uid"));
         Map<Object, Object> map = redisCache.getHash(kvBuilder.joinLiveK(uid));
         if (map == null) {
             return SRS.CallBackStatus.fail;

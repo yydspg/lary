@@ -16,7 +16,11 @@ import org.springframework.context.annotation.Configuration;
         "cn.lary.module.wallet.mapper",
         "cn.lary.module.gift.mapper",
         "cn.lary.module.report.mapper",
-        "cn.lary.module.app.mapper"})
+        "cn.lary.module.app.mapper",
+        "cn.lary.module.goods.mapper",
+        "cn.lary.module.store.mapper",
+        "cn.lary.module.order.mapper",
+})
 public class MybatisPlusConfig {
 
     @Bean

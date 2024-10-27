@@ -31,12 +31,12 @@ public interface DeviceService extends IService<Device> {
      * 删除设备登录的token
      * @param  flag 设备flag
      */
-    void removeDeviceLoginCache(int uid,int flag);
+    void removeDeviceLoginCache(long uid,int flag);
 
     /**
      *刷新token
      */
-    void renewalDeviceLoginCache(int uid,int flag);
+    void renewalDeviceLoginCache(long uid,int flag);
 
 
     /**
@@ -44,7 +44,7 @@ public interface DeviceService extends IService<Device> {
      * @param flag 设备flag
      * @param dto {@link DeviceLoginCacheDTO}
      */
-    void buildDeviceLoginCache(int uid,int flag, DeviceLoginCacheDTO dto);
+    void buildDeviceLoginCache(long uid,int flag, DeviceLoginCacheDTO dto);
 
     /**
      * 获取设备
@@ -53,7 +53,7 @@ public interface DeviceService extends IService<Device> {
      * @param flag 设备模式
      * @return ok
      */
-    Device getDevice(int uid,int deviceId,String name,int flag);
+    Device getDevice(long uid,long deviceId,String name,int flag);
 
     /**
      * 查询登陆设备

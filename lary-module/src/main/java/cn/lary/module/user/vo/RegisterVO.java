@@ -9,7 +9,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class RegisterVO {
 
-    private Integer uid;
+    private Long uid;
 
     private String name;
 

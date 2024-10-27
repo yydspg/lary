@@ -7,11 +7,11 @@ import lombok.Data;
 @AllArgsConstructor
 public class DownLiveVO {
 
-    private Integer watchNum;
-    private Integer newFansNum;
-    private Integer starNum;
-    private Integer watchFanNum;
+    private int watchNum;
+    private int newFansNum;
+    private int starNum;
+    private int watchFanNum;
     private String duration;
     private String token;
-    private int event;
+    private long event;
 }

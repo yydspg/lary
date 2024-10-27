@@ -28,17 +28,17 @@ public class GroupMember implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
     /**
      * 群聊id
      */
-    private Integer groupId;
+    private Long groupId;
 
     /**
      * 用户id
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * 群聊备注

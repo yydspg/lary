@@ -29,9 +29,9 @@ public class StreamRecord implements Serializable {
 
     private Integer streamId;
 
-    private Integer uid;
+    private Long uid;
 
-    private Integer channelId;
+    private Long channelId;
 
     private LocalDateTime startAt;
 

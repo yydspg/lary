@@ -10,8 +10,8 @@ import java.util.List;
 @Data
 public class AddSubscribersDTO extends SubscribersAddDTO {
 
-    public AddSubscribersDTO(int channelId, List<Integer> subscribers) {
-        setChannelId(channelId);
+    public AddSubscribersDTO(long danmakuId, List<Long> subscribers) {
+        setChannelId(danmakuId);
         setSubscribers(subscribers);
         setChannelType(WK.CHANNEL.TYPE.STREAM);
     }

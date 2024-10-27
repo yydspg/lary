@@ -9,7 +9,7 @@ public class GroupMemberVO {
     /**
      * 用户id
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * 本群昵称

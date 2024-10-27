@@ -15,13 +15,13 @@ import java.util.Map;
 @AllArgsConstructor
 public class DownLiveEventDTO extends AbstractEventData {
 
-    private int uid;
+    private long uid;
 
     @JsonProperty("stream_id")
     private int streamId;
 
     @JsonProperty("channel_id")
-    private int channelId;
+    private long channelId;
 
     public String getData() {
         Map<Object,Object> map = new HashMap<>();

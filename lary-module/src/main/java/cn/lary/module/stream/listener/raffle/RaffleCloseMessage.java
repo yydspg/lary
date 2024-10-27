@@ -8,8 +8,8 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 @NoArgsConstructor
 public class RaffleCloseMessage {
-    private int eventId;
-    private int uid;
-    private int streamId;
-    private int raffleId;
+    private long eventId;
+    private long uid;
+    private long streamId;
+    private long raffleId;
 }

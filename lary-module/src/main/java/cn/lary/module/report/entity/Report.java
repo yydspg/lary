@@ -25,12 +25,12 @@ public class Report implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
     /**
      * 举报用户
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * 类别编号
@@ -40,7 +40,7 @@ public class Report implements Serializable {
     /**
      * 频道ID
      */
-    private Integer channelId;
+    private Long channelId;
 
     /**
      * 频道类型

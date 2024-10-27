@@ -32,7 +32,7 @@ public class FanController {
 
     @GetMapping("/raffle/join")
     public SingleResponse<Void> joinRaffle(@RequestParam @NotNull Integer toUid) {
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         ResponsePair<Void> response = fanExecute.joinRaffle(uid, toUid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -57,7 +57,7 @@ public class FanController {
     }
     @GetMapping("/redpacket/join")
     public SingleResponse<Void> joinRedPacket(@RequestParam @NotNull Integer toUid) {
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         ResponsePair<Void> response = fanExecute.redWars(uid, toUid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());

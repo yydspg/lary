@@ -12,11 +12,11 @@ import java.util.List;
 @AllArgsConstructor
 public class SubscribersAddDTO  {
     @JsonProperty("channel_id")
-    private int channelId;
+    private long channelId;
     @JsonProperty("channel_type")
     private int channelType;
     private int reset;
     @JsonProperty("temp_subscriber")
     private int tempSubscribers;
-    private List<Integer> subscribers;
+    private List<Long> subscribers;
 }

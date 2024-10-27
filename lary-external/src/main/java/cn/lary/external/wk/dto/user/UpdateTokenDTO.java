@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class UpdateTokenDTO {
 
-    private int uid;
+    private long uid;
 
     private String token;
 

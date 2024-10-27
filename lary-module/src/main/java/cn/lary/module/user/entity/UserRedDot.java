@@ -27,7 +27,7 @@ public class UserRedDot implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private Integer uid;
+    private Long uid;
 
     private Integer count;
 

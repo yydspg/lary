@@ -1,0 +1,71 @@
+DROP TABLE IF EXISTS `goods`;
+CREATE TABLE `goods`  (
+                          id bigint primary key NOT NULL COMMENT 'id',
+                          auth_message varchar(255)COMMENT '审核信息',
+                          brand_id bigint COMMENT '品牌ID',
+                          brand_name varchar(20) comment '品牌名称',
+                          buy_count int NULL DEFAULT 0 COMMENT '购买数量',
+                          category_path varchar(255)COMMENT '分类路径',
+                          comment_num int COMMENT '评论数量',
+                          cost decimal(10, 2) COMMENT '成本价格',
+                          name varchar(255)COMMENT '商品名称',
+                          goods_unit varchar(255)COMMENT '计量单位',
+                          goods_video varchar(255)COMMENT '商品视频',
+                          grade decimal(10, 2) COMMENT '商品好评率',
+                          intro varchar(1024) COMMENT '商品详情',
+                          auth_status int COMMENT '审核状态',
+                          market_status int COMMENT '上架状态',
+                          mobile_intro text NULL COMMENT '商品移动端详情',
+                          original varchar(255)COMMENT '原图路径',
+                          price decimal(10, 2) COMMENT '商品价格',
+                          quantity int NULL DEFAULT 0 COMMENT '库存',
+                          is_recommend bool COMMENT '是否为推荐商品',
+                          sales_model varchar(255)COMMENT '销售模式',
+                          store_id bigint COMMENT '店铺ID',
+                          store_name varchar(255)COMMENT '店铺名称',
+                          selling_point varchar(255)COMMENT '卖点',
+                          shop_category_path varchar(255)COMMENT '店铺分类',
+                          small_avatar varchar(255) COMMENT '小图路径',
+                          big_avatar varchar(255) COMMENT '大图路径',
+                          thumbnail varchar(255)COMMENT '缩略图路径',
+                          sn varchar(30)COMMENT '商品编号',
+                          template_id varchar(255)COMMENT '运费模板ID',
+                          under_message varchar(255) COMMENT '下架原因',
+                          store_category_path varchar(255)COMMENT '店铺分类路径',
+                          goods_type varchar(255)NULL DEFAULT NULL,
+                          is_delete bool not null default false,
+                          create_by varchar(40) ,
+                          update_by varchar(40) ,
+                          create_at timestamp,
+                          update_at timestamp
+);
+drop table if exists `store_goods_view`;
+create table `store_goods_view` (
+                                    id bigint primary key NOT NULL COMMENT 'id',
+                                    store_id bigint COMMENT '店铺ID',
+                                    idx_db int not null comment '库索引',
+                                    idx_table int not null comment '表索引',
+                                    goods_id bigint NOT NULL COMMENT 'id',
+                                    name varchar(255)COMMENT '商品名称',
+                                    brand_name varchar(20) comment '品牌名称',
+                                    buy_count int NULL DEFAULT 0 COMMENT '购买数量',
+                                    category_path varchar(255)COMMENT '分类路径',
+                                    price decimal(10, 2) COMMENT '商品价格',
+                                    small_avatar varchar(255) COMMENT '小图路径',
+                                    create_at timestamp
+);
+drop table if exists `user_goods_view`;
+create table `user_goods_view`(
+                                  id         bigint primary key NOT NULL COMMENT 'id',
+                                  idx_db     int    not null comment '库索引',
+                                  idx_table  int    not null comment '表索引',
+                                  goods_id   bigint NOT NULL COMMENT 'id',
+                                  store_id bigint COMMENT '店铺ID',
+                                  name       varchar(255) COMMENT '商品名称',
+                                  brand_name varchar(20) comment '品牌名称',
+                                  buy_count  int    NULL DEFAULT 0 COMMENT '购买数量',
+                                  price decimal(10, 2) COMMENT '商品价格',
+                                  small_avatar varchar(255) COMMENT '小图路径',
+                                  create_at timestamp
+);
+

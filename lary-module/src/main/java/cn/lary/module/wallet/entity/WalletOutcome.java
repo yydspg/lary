@@ -31,17 +31,17 @@ public class WalletOutcome implements Serializable {
     /**
      * 用户id
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * id
      */
-    private Integer toUid;
+    private Long toUid;
 
     /**
      * 频道id
      */
-    private Integer channelId;
+    private Long channelId;
 
     /**
      * 频道类型

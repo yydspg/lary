@@ -1,6 +1,6 @@
 package cn.lary.module.gift.mapper;
 
-import cn.lary.module.gift.entity.AnchorIncome;
+import cn.lary.module.gift.entity.AnchorFLow;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author paul
  * @since 2024-08-16
  */
-public interface AnchorIncomeMapper extends BaseMapper<AnchorIncome> {
+public interface AnchorFlowMapper extends BaseMapper<AnchorFLow> {
 
 }

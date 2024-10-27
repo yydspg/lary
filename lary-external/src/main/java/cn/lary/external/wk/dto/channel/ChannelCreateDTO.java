@@ -8,7 +8,7 @@ import java.util.List;
 public  class ChannelCreateDTO  {
 
     @JsonProperty("channel_id")
-    private int channelId;
+    private long channelId;
 
     @JsonProperty("channel_type")
     private int channelType;

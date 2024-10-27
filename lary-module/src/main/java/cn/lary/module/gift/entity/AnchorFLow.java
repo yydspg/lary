@@ -20,16 +20,16 @@ import java.time.LocalDateTime;
 @Setter
 @Accessors(chain = true)
 @TableName("anchor_turnover")
-public class AnchorIncome implements Serializable {
+public class AnchorFLow implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
-    private Integer uid;
+    private Long uid;
 
-    private Integer toUid;
+    private Long toUid;
 
     /**
      * 直播流id
@@ -72,7 +72,7 @@ public class AnchorIncome implements Serializable {
     @TableField(fill = FieldFill.UPDATE)
     private LocalDateTime updateAt;
 
-    public AnchorIncome of(GiftOrder order){
+    public AnchorFLow of(GiftOrder order){
 
         setUid(order.getAnchorUid());
         setToUid(order.getUid());

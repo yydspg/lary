@@ -62,23 +62,23 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     }
 
     @Override
-    public void removeDeviceLoginCache(int uid,int flag){
+    public void removeDeviceLoginCache(long uid,int flag){
         redisCache.delete(kvBuilder.deviceLoginK(uid, flag));
     }
 
     @Override
-    public void renewalDeviceLoginCache(int uid, int flag) {
+    public void renewalDeviceLoginCache(long uid, int flag) {
         redisCache.renewal(kvBuilder.deviceLoginK(uid,flag),redisBizConfig.getLoginDeviceCacheExpire());
     }
 
     @Override
-    public void buildDeviceLoginCache(int uid,int flag, DeviceLoginCacheDTO dto) {
+    public void buildDeviceLoginCache(long uid,int flag, DeviceLoginCacheDTO dto) {
         redisCache.setHash(kvBuilder.deviceLoginK(uid,flag),
                 kvBuilder.deviceLoginV(dto),redisBizConfig.getLoginDeviceCacheExpire());
     }
 
     @Override
-    public Device getDevice(int uid,int deviceId, String name, int flag) {
+    public Device getDevice(long uid,long deviceId, String name, int flag) {
         Device device = lambdaQuery()
                 .select(Device::getId)
                 .eq(Device::getUid, uid)
@@ -106,7 +106,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
     @Override
     public ResponsePair<List<DeviceVO>> devices() {
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         List<Device> devices = lambdaQuery()
                 .select(Device::getId, Device::getName)
                 .select(Device::getFlag, Device::getLevel)

@@ -8,8 +8,8 @@ import lombok.Data;
 @Data
 public class CreateDanmakuChannelDTO extends ChannelCreateDTO {
 
-    public CreateDanmakuChannelDTO(int channelId) {
-        setChannelId(channelId);
+    public CreateDanmakuChannelDTO(long danmakuId) {
+        setChannelId(danmakuId);
         setChannelType(WK.CHANNEL.TYPE.STREAM);
     }
 }

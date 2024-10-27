@@ -35,7 +35,7 @@ public class GroupBusinessExecute {
      * @param groupId g
      * @return ok
      */
-    public ResponsePair<Void> forbidden(int groupId) {
+    public ResponsePair<Void> forbidden(long groupId) {
         return groupService.forbidden(groupId);
     }
 
@@ -44,7 +44,7 @@ public class GroupBusinessExecute {
      * @param groupId g
      * @return {@link GroupDetailVO}
      */
-    public ResponsePair<GroupDetailVO> getGroup(int groupId) {
+    public ResponsePair<GroupDetailVO> getGroup(long groupId) {
         return groupService.getGroup(groupId);
     }
 
@@ -62,7 +62,7 @@ public class GroupBusinessExecute {
      * @param groupId g
      * @return ok
      */
-    public ResponsePair<Void> disband(int groupId) {
+    public ResponsePair<Void> disband(long groupId) {
         return groupService.disband(groupId);
     }
 

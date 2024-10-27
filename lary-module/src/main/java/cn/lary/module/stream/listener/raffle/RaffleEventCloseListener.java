@@ -39,7 +39,7 @@ public class RaffleEventCloseListener implements RocketMQListener<RaffleCloseMes
     public void onMessage(RaffleCloseMessage message) {
 
         log.info("RaffleEventCloseListener receive message:{}", message.toString());
-        int uid = message.getUid();
+        long uid = message.getUid();
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
         if (map == null) {
             log.error("raffle close event error,no live info,uid:{}",uid);
@@ -69,12 +69,13 @@ public class RaffleEventCloseListener implements RocketMQListener<RaffleCloseMes
             }
         }
         Set<Integer> randomIndex = CollectionKit.generateUniqueRandomNumbers(0, Math.toIntExact(size - 1), raffleCache.getNum());
-        List<Integer> uids = new ArrayList<>();
+        List<Long> uids = new ArrayList<>();
         for (Integer index : randomIndex) {
-            uids.add(Integer.parseInt( collects.get(index)));
+            uids.add(Long.parseLong( collects.get(index)));
         }
         if (type == LARY.Raffle.inner) {
-            BatchOutcomeTransferDTO dto = new BatchOutcomeTransferDTO().setType(type)
+            BatchOutcomeTransferDTO dto = new BatchOutcomeTransferDTO()
+                    .setType(type)
                     .setUid(uid)
                     .setAmount(raffleCache.getCost())
                     .setRecipients(uids)

@@ -11,12 +11,12 @@ public class WalletOutcomeVO {
     /**
      * id
      */
-    private int toUid;
+    private long toUid;
 
     /**
      * 频道id
      */
-    private int channelId;
+    private long channelId;
 
     /**
      * 频道类型

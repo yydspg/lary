@@ -27,12 +27,12 @@ public class Follow implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private Integer uid;
+    private Long uid;
 
     /**
      * 被关注id
      */
-    private Integer toUid;
+    private Long toUid;
 
     /**
      * 被关注用户名

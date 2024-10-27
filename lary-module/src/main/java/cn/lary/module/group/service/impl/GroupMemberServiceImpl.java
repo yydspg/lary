@@ -35,7 +35,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     private final UserService userService;
 
     @Override
-    public ResponsePair<List<Integer>> getMembersWithStatus(int groupNo, int status) {
+    public ResponsePair<List<Long>> getMembersWithStatus(long groupNo, int status) {
         List<GroupMember> data = lambdaQuery()
                 .select(GroupMember::getUid)
                 .eq(GroupMember::getGroupId, groupNo)
@@ -44,14 +44,14 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         if (CollectionKit.isEmpty(data)) {
             return BusinessKit.ok(Collections.emptyList());
         }
-        List<Integer> vos = new ArrayList<>(data.size());
+        List<Long> vos = new ArrayList<>(data.size());
         data.forEach(t-> vos.add(t.getUid()));
         return BusinessKit.ok(vos);
     }
 
     @Override
-    public ResponsePair<Void> quit(int groupId) {
-        int uid = RequestContext.getLoginUID();
+    public ResponsePair<Void> quit(long groupId) {
+        long uid = RequestContext.getLoginUID();
         GroupMember member = lambdaQuery()
                 .select(GroupMember::getUid)
                 .eq(GroupMember::getGroupId,groupId)
@@ -71,7 +71,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResponsePair<Void> quitByAdmin(int groupId, int uid) {
+    public ResponsePair<Void> quitByAdmin(long groupId, long uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
@@ -84,12 +84,12 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResponsePair<Void> join(int groupId) {
+    public ResponsePair<Void> join(long groupId) {
         return join(RequestContext.getLoginUID(),groupId,0);
     }
 
     @Override
-    public ResponsePair<Void> joinByAdmin(int groupId, int uid) {
+    public ResponsePair<Void> joinByAdmin(long groupId, long uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
@@ -99,7 +99,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public ResponsePair<Integer> multiJoinByAdmin(int groupId, List<Integer> ids) {
+    public ResponsePair<List<Long>> multiJoinByAdmin(long groupId, List<Long> ids) {
         if (CollectionKit.isEmpty(ids)){
             return BusinessKit.fail("user empty");
         }
@@ -107,13 +107,13 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
         }
-        List<Integer> members = CollectionKit.removeRepeat(ids);
-        List<Integer> users = userService.getValidUsers(members);
+        List<Long> members = CollectionKit.removeRepeat(ids);
+        List<Long> users = userService.getValidUsers(members);
         if (CollectionKit.isEmpty(users)) {
             return BusinessKit.fail("valid users empty");
         }
-        ResponsePair<List<Integer>> blockPair = this.getMembersWithStatus(groupId, LARY.Group.UserStatus.block);
-        ResponsePair<List<Integer>> exsitsPair = this.getMembersWithStatus(groupId, LARY.Group.UserStatus.common);
+        ResponsePair<List<Long>> blockPair = this.getMembersWithStatus(groupId, LARY.Group.UserStatus.block);
+        ResponsePair<List<Long>> exsitsPair = this.getMembersWithStatus(groupId, LARY.Group.UserStatus.common);
 
         if(blockPair.isFail() || CollectionKit.isEmpty(blockPair.getData())){
             return BusinessKit.fail(response.getMsg());
@@ -121,7 +121,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         if(exsitsPair.isFail() || CollectionKit.isEmpty(exsitsPair.getData())){
             return BusinessKit.fail(response.getMsg());
         }
-        List<Integer> addUsers = new ArrayList<>();
+        List<Long> addUsers = new ArrayList<>();
         users.forEach(u->{
             if (!blockPair.getData().contains(u) && !exsitsPair.getData().contains(u)){
                 addUsers.add(u);
@@ -140,11 +140,11 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
             groupMembers.add(groupMember);
         });
         saveBatch(groupMembers);
-        return BusinessKit.ok();
+        return BusinessKit.ok(addUsers);
     }
 
     @Override
-    public ResponsePair<Void> setAdmin(int groupId, int uid) {
+    public ResponsePair<Void> setAdmin(long groupId, long uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
@@ -157,7 +157,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResponsePair<Void> removeAdmin(int groupId, int uid) {
+    public ResponsePair<Void> removeAdmin(long groupId, long uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
@@ -170,7 +170,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResponsePair<List<GroupMemberVO>> members(int groupId) {
+    public ResponsePair<List<GroupMemberVO>> members(long groupId) {
         GroupMember operator = lambdaQuery()
                 .eq(GroupMember::getGroupId, groupId)
                 .eq(GroupMember::getUid, RequestContext.getLoginUID())
@@ -200,7 +200,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResponsePair<Void> changeOwner(int groupId, int uid) {
+    public ResponsePair<Void> changeOwner(long groupId, long uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
@@ -217,7 +217,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResponsePair<Void> disband(int groupId) {
+    public ResponsePair<Void> disband(long groupId) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
@@ -228,7 +228,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         return BusinessKit.ok();
     }
 
-    private ResponsePair<Void> join(int uid, int groupId, int inviteId){
+    private ResponsePair<Void> join(long uid, long groupId, long inviteId){
         GroupMember operator = lambdaQuery()
                 .select(GroupMember::getUid)
                 .eq(GroupMember::getGroupId, groupId)
@@ -253,7 +253,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         return BusinessKit.ok();
     }
 
-    public ResponsePair<GroupMember> checkRole(int groupId) {
+    public ResponsePair<GroupMember> checkRole(long groupId) {
         int operator = RequestContext.getLoginUID();
         GroupMember admin = lambdaQuery()
                 .select(GroupMember::getUid)
@@ -270,8 +270,8 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     @Override
-    public ResponsePair<List<Integer>> my(int role) {
-        int uid = RequestContext.getLoginUID();
+    public ResponsePair<List<Long>> my(int role) {
+        long uid = RequestContext.getLoginUID();
         List<GroupMember> data = lambdaQuery()
                 .select(GroupMember::getGroupId)
                 .eq(GroupMember::getUid, uid)
@@ -280,13 +280,12 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         if (CollectionKit.isEmpty(data)){
             return BusinessKit.fail("data empty");
         }
-        List<Integer> vos = new ArrayList<>(data.size());
-        data.forEach(t-> vos.add(t.getGroupId()));
-        return BusinessKit.ok(vos);
+
+        return BusinessKit.ok(data.stream().map(GroupMember::getUid).toList());
     }
 
     @Override
-    public ResponsePair<Void> block(int groupId, int uid) {
+    public ResponsePair<Void> block(long groupId, long uid) {
         ResponsePair<GroupMember> response = checkRole(groupId);
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());

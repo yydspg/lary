@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class DeviceQuitDTO {
 
-    private int uid;
+    private long uid;
 
     @JsonProperty("device_flag")
     private int deviceFlag;

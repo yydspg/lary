@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lary.module.store.mapper.StoreDetailMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.lary.module.store.entity.StoreDetail">
+        <id column="id" property="id" />
+        <result column="store_id" property="storeId" />
+        <result column="store_name" property="storeName" />
+        <result column="stock_warning" property="stockWarning" />
+        <result column="settlement_cycle" property="settlementCycle" />
+        <result column="company_address" property="companyAddress" />
+        <result column="company_address_id_path" property="companyAddressIdPath" />
+        <result column="company_address_path" property="companyAddressPath" />
+        <result column="company_email" property="companyEmail" />
+        <result column="company_name" property="companyName" />
+        <result column="company_phone" property="companyPhone" />
+        <result column="dd_code" property="ddCode" />
+        <result column="employee_num" property="employeeNum" />
+        <result column="goods_management_category" property="goodsManagementCategory" />
+        <result column="legal_id" property="legalId" />
+        <result column="legal_name" property="legalName" />
+        <result column="legal_photo" property="legalPhoto" />
+        <result column="licence_photo" property="licencePhoto" />
+        <result column="license_num" property="licenseNum" />
+        <result column="link_name" property="linkName" />
+        <result column="link_phone" property="linkPhone" />
+        <result column="registered_capital" property="registeredCapital" />
+        <result column="scope" property="scope" />
+        <result column="settlement_bank_account_name" property="settlementBankAccountName" />
+        <result column="settlement_bank_account_num" property="settlementBankAccountNum" />
+        <result column="settlement_bank_branch_name" property="settlementBankBranchName" />
+        <result column="settlement_bank_joint_name" property="settlementBankJointName" />
+        <result column="sales_consignee_address_id" property="salesConsigneeAddressId" />
+        <result column="sales_consignee_address_path" property="salesConsigneeAddressPath" />
+        <result column="sales_consignee_detail" property="salesConsigneeDetail" />
+        <result column="sales_consignee_mobile" property="salesConsigneeMobile" />
+        <result column="sales_consignee_name" property="salesConsigneeName" />
+        <result column="settlement_day" property="settlementDay" />
+        <result column="consignor_address_path" property="consignorAddressPath" />
+        <result column="consignor_detail" property="consignorDetail" />
+        <result column="consignor_mobile" property="consignorMobile" />
+        <result column="consignor_name" property="consignorName" />
+        <result column="app_secret_key" property="appSecretKey" />
+        <result column="merchant_number" property="merchantNumber" />
+        <result column="app_merchant_key" property="appMerchantKey" />
+        <result column="is_delete" property="isDelete" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+</mapper>

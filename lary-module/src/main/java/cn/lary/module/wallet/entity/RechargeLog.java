@@ -34,7 +34,7 @@ public class RechargeLog implements Serializable {
     /**
      * 用户uid
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * 购买状态 0 未支付，1 已支付 2 取消支付 3 支付失败

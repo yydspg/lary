@@ -92,8 +92,8 @@ public class AliPayPaymentPlugin extends AbstractPaymentPlugin {
             return false;
         }
         PaymentLog log = paymentLogService.lambdaQuery()
-                .select(PaymentLog::getPayId)
-                .eq(PaymentLog::getPayId, outTradeNo)
+                .select(PaymentLog::getId)
+                .eq(PaymentLog::getId, outTradeNo)
                 .one();
         if (log == null || log.getPayStatus() == LARY.PAYMENT.STATUS.COMMIT) {
             return false;
@@ -162,7 +162,7 @@ public class AliPayPaymentPlugin extends AbstractPaymentPlugin {
         json.put("notify_url", NOTIFY_URL);
         String postJson = json.toJSONString();
             paymentLogService.save(new PaymentLog()
-                    .setPayId(pair.getParam().getPayId())
+                    .setId(pair.getParam().getPayId())
                     .setAmount(pair.getParam().getAmount())
                     .setPayWay(pair.getPaymentWay())
                     .setPostJson(postJson)
@@ -173,14 +173,14 @@ public class AliPayPaymentPlugin extends AbstractPaymentPlugin {
     protected void processAfterPaymentWhenSuccess(PaymentProcessPair pair) {
             paymentLogService.lambdaUpdate()
                     .set(PaymentLog::getPayStatus, LARY.PAYMENT.STATUS.COMMIT)
-                    .eq(PaymentLog::getPayId, pair.getParam().getPayId());
+                    .eq(PaymentLog::getId, pair.getParam().getPayId());
     }
 
     @Override
     protected void processAfterPaymentWhenFail(PaymentProcessPair pair) {
             paymentLogService.lambdaUpdate()
                     .set(PaymentLog::getPayStatus, LARY.PAYMENT.STATUS.FAIL)
-                    .eq(PaymentLog::getPayId, pair.getParam().getPayId());
+                    .eq(PaymentLog::getId, pair.getParam().getPayId());
     }
 
     @Override

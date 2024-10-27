@@ -34,7 +34,7 @@ public class PaymentLog implements Serializable {
     /**
      * 用户uid
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * 业务订单编号，id

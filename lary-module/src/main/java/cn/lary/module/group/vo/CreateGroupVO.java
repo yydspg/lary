@@ -8,7 +8,7 @@ import java.time.LocalDateTime;
 @Data
 @AllArgsConstructor
 public class CreateGroupVO {
-    private int groupId;
+    private long groupId;
     private String groupName;
     private LocalDateTime createAt;
 }

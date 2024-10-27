@@ -48,25 +48,25 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    public ResponsePair<List<Integer>> getFollows(int uid) {
+    public ResponsePair<List<Integer>> getFollows(long uid) {
         return null;
     }
 
 
 
     @Override
-    public void addSystemHelper(int uid) {
+    public void addSystemHelper(long uid) {
         save(new Follow()
                 .setUid(uid)
                 // TODO  : 这里实现下系统账户
-                .setToUid(111222333));
+                .setToUid(111222333L));
     }
 
     @Override
     public ResponsePair<Void> follow(FollowDTO dto) {
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         String name = RequestContext.getLoginName();
-        int toUid = dto.getToUid();
+        long toUid = dto.getToUid();
 
 
         User aimUser = userService.lambdaQuery()
@@ -150,8 +150,8 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     }
 
     @Override
-    public ResponsePair<Void> block(int toUid) {
-        int uid = RequestContext.getLoginUID();
+    public ResponsePair<Void> block(long toUid) {
+        long uid = RequestContext.getLoginUID();
         Follow relation = lambdaQuery()
                 .eq(Follow::getUid, uid)
                 .eq(Follow::getToUid, toUid)
@@ -188,8 +188,8 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     }
 
     @Override
-    public ResponsePair<Void> unblock(int toUid) {
-        int uid = RequestContext.getLoginUID();
+    public ResponsePair<Void> unblock(long toUid) {
+        long uid = RequestContext.getLoginUID();
         Follow relation = lambdaQuery()
                 .eq(Follow::getUid, uid)
                 .eq(Follow::getToUid, toUid)
@@ -207,8 +207,8 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     }
 
     @Override
-    public ResponsePair<Void> unfollow(int toUid) {
-        int uid = RequestContext.getLoginUID();
+    public ResponsePair<Void> unfollow(long toUid) {
+        long uid = RequestContext.getLoginUID();
         Follow relation = lambdaQuery()
                 .eq(Follow::getUid, uid)
                 .eq(Follow::getToUid, toUid)

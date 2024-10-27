@@ -8,7 +8,7 @@ public class ReportDTO {
     /**
      * 举报id
      */
-    private Integer id;
+    private Long id;
     /**
      * 举报类型id
      */

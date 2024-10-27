@@ -30,7 +30,7 @@ public class LoginLog implements Serializable {
     /**
      * 用户id
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * 最后一次登录ip

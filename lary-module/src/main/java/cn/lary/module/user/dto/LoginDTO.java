@@ -7,7 +7,7 @@ import lombok.Data;
 @Data
 public class LoginDTO {
     @NotNull(message = "uid is null")
-    private Integer uid;
+    private Long uid;
 
     @NotNull(message = "password is null")
     private String password;
@@ -18,7 +18,7 @@ public class LoginDTO {
      */
     @JsonProperty("id")
     @NotNull(message = "device id is null")
-    private Integer id;
+    private Long id;
     /**
      * 登陆设备名称
      */

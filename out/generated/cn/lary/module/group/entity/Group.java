@@ -31,7 +31,7 @@ public class Group implements Serializable {
     /**
      * 群id
      */
-    private Integer groupId;
+    private Long groupId;
 
     /**
      * 群名字
@@ -41,7 +41,7 @@ public class Group implements Serializable {
     /**
      * 群主uid
      */
-    private Integer creator;
+    private Long creator;
 
     /**
      * 群状态

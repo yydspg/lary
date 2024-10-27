@@ -11,6 +11,6 @@ public class GoLiveVO {
 
     public String identify;
 
-    public int event;
+    public long event;
 
 }

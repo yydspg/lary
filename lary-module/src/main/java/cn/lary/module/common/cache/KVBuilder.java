@@ -17,7 +17,7 @@ public interface KVBuilder {
      * @param uid user id
      * @return k
      */
-    String deviceLoginK(int uid, int flag);
+    String deviceLoginK(long uid, int flag);
 
     Map deviceLoginV(DeviceLoginCacheDTO deviceLoginCacheDTO);
 
@@ -27,7 +27,7 @@ public interface KVBuilder {
      * @param uid u
      * @return k
      */
-    String userLoginK(int uid, int deviceFlag);
+    String userLoginK(long uid, int deviceFlag);
 
     String userLoginV(String token);
 
@@ -39,7 +39,7 @@ public interface KVBuilder {
      */
     String userLoginTokenK(String token);
 
-    String userLoginTokenV(int uid, String username, int role);
+    String userLoginTokenV(long uid, String username, int role);
 
     /**
      * 构建用户注册时的验证码
@@ -55,7 +55,7 @@ public interface KVBuilder {
      * 构建用户注销时的验证码
      * @return s
      */
-    String userDestroyK(int uid);
+    String userDestroyK(long uid);
 
     String userDestroyV(String token);
 
@@ -70,7 +70,7 @@ public interface KVBuilder {
      * @param streamId s
      * @return s
      */
-    String streamRecordK(int uid, int streamId);
+    String streamRecordK(long uid, int streamId);
 
     Map streamRecordV();
 
@@ -79,7 +79,7 @@ public interface KVBuilder {
      * @param uid u
      * @return S
      */
-    String addDeviceK(int uid,String phone);
+    String addDeviceK(long uid,String phone);
 
     Map addDeviceV(DeviceAddResponseCacheDTO dto);
 
@@ -89,7 +89,7 @@ public interface KVBuilder {
      * @param uid u
      * @return s
      */
-    String goLiveK(int uid);
+    String goLiveK(long uid);
 
     Map goLiveV(LiveCacheDTO dto);
 
@@ -99,7 +99,7 @@ public interface KVBuilder {
      * @param uid u
      * @return s
      */
-    String joinLiveK(int uid);
+    String joinLiveK(long uid);
     Map joinLiveV(JoinLiveCacheDTO dto);
 
     /**
@@ -107,7 +107,7 @@ public interface KVBuilder {
      * @param uid u
      * @return s
      */
-    String raffleK(int uid);
+    String raffleK(long uid);
     Map raffleV(RaffleCacheDTO dto);
 
     /**
@@ -115,7 +115,7 @@ public interface KVBuilder {
      * @param uid u
      * @return ok
      */
-    String redPacketK(int uid);
+    String redPacketK(long uid);
     Map redPacketV(RedPacketCacheDTO dto);
 
     /**
@@ -123,5 +123,5 @@ public interface KVBuilder {
      * @param uid u
      * @return s
      */
-    String raffleListK(int uid);
+    String raffleListK(long uid);
 }

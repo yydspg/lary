@@ -7,7 +7,7 @@ import cn.lary.external.wk.dto.message.MessageSendDTO;
 import java.nio.charset.StandardCharsets;
 
 public class PassiveFollowResponseDTO extends MessageSendDTO {
-    public PassiveFollowResponseDTO(int uid, int toUid) {
+    public PassiveFollowResponseDTO(long uid, long toUid) {
         setHeader(new MessageHeader()
                 .setRedDot(1)
                 .setNoPersist(1));

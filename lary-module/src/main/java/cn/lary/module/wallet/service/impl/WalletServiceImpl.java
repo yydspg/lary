@@ -156,7 +156,7 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
                         .setType(dto.getType());
                 walletIncomes.add(out);
             });
-            List<Integer> users = userWallets
+            List<Long> users = userWallets
                     .stream()
                     .map(Wallet::getUid)
                     .toList();
@@ -176,7 +176,7 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
                 return BusinessKit.fail(data.getMsg());
             }
             List<Wallet> userWallets = data.getData();
-            List<Integer> validUsers = userWallets
+            List<Long> validUsers = userWallets
                     .stream()
                     .filter(u -> u.getVcFee() - u.getVcLocked() >= dto.getAmount())
                     .map(Wallet::getUid)
@@ -202,11 +202,11 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
     }
 
     @Override
-    public ResponsePair<List<Wallet>> getUserWallets(List<Integer> members) {
+    public ResponsePair<List<Wallet>> getUserWallets(List<Long> members) {
         if (CollectionKit.isEmpty(members)) {
             return BusinessKit.fail("members null");
         }
-        List<Integer> users = userService.getValidUsers(members);
+        List<Long> users = userService.getValidUsers(members);
         if (CollectionKit.isEmpty(users)) {
             return BusinessKit.fail("users empty");
         }
@@ -225,7 +225,7 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
 
     @Override
     public ResponsePair<Void> updateQuestion(UpdateSecurityQuestionDTO dto) {
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         Wallet wallet = lambdaQuery()
                 .select(Wallet::getUid)
                 .eq(Wallet::getUid, uid)

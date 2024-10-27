@@ -94,5 +94,5 @@ public interface UserService extends IService<User> {
      * @param members m
      * @return IDs
      */
-    List<Integer> getValidUsers(List<Integer> members);
+    List<Long> getValidUsers(List<Long> members);
 }

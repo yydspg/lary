@@ -29,7 +29,7 @@ public class RoomBusinessExecute {
      * @param ip ip
      * @return {@link JoinLiveVO}
      */
-    public ResponsePair<JoinLiveVO> join( int toUid, String ip){
+    public ResponsePair<JoinLiveVO> join( long toUid, String ip){
             return roomService.join(toUid,ip);
     }
 
@@ -84,7 +84,7 @@ public class RoomBusinessExecute {
      * @return ok
      */
     @Deprecated
-    public ResponsePair<Void> block(int uid, int toUid) {
+    public ResponsePair<Void> block(long uid, long toUid) {
         throw new RuntimeException("");
     }
 }

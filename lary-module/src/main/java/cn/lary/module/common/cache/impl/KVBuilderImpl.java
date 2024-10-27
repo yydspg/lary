@@ -24,7 +24,7 @@ public class KVBuilderImpl implements KVBuilder {
     private final RedisBizConfig redisBizConfig;
 
     @Override
-    public String deviceLoginK(int uid,int flag) {
+    public String deviceLoginK(long uid,int flag) {
         return redisBizConfig.getLoginDeviceCachePrefix()+ uid+"@"+flag;
     }
 
@@ -42,7 +42,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String userLoginK(int uid,int deviceFlag) {
+    public String userLoginK(long uid,int deviceFlag) {
         return redisBizConfig.getTokenCachePrefix() + uid+"@"+deviceFlag;
     }
 
@@ -57,7 +57,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String userLoginTokenV(int uid, String username, int role) {
+    public String userLoginTokenV(long uid, String username, int role) {
         return uid+"@"+username+"@"+role;
     }
 
@@ -72,7 +72,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String userDestroyK(int uid) {
+    public String userDestroyK(long uid) {
         return redisBizConfig.getDestroyPrefix()+uid;
     }
 
@@ -83,7 +83,7 @@ public class KVBuilderImpl implements KVBuilder {
 
 
     @Override
-    public String streamRecordK(int uid, int streamId) {
+    public String streamRecordK(long uid, int streamId) {
         return redisBizConfig.getStreamRecordPrefix() + uid+":"+streamId;
     }
 
@@ -99,7 +99,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String addDeviceK(int uid,String phone) {
+    public String addDeviceK(long uid,String phone) {
         return redisBizConfig.getSmsAddDevicePrefix()+uid+"@"+phone;
     }
 
@@ -113,7 +113,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String goLiveK(int uid) {
+    public String goLiveK(long uid) {
         return redisBizConfig.getGoLivePrefix() + uid;
     }
 
@@ -132,7 +132,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String joinLiveK(int uid) {
+    public String joinLiveK(long uid) {
         return redisBizConfig.getJoinLivePrefix() + uid;
     }
 
@@ -155,7 +155,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String raffleK(int uid) {
+    public String raffleK(long uid) {
         return redisBizConfig.getRafflePrefix()+uid;
     }
 
@@ -182,7 +182,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String redPacketK(int uid) {
+    public String redPacketK(long uid) {
         return redisBizConfig.getRedPacketPrefix() + uid;
     }
 
@@ -202,7 +202,7 @@ public class KVBuilderImpl implements KVBuilder {
     }
 
     @Override
-    public String raffleListK(int uid) {
+    public String raffleListK(long uid) {
         return redisBizConfig.getRaffleListPrefix() +uid;
     }
 

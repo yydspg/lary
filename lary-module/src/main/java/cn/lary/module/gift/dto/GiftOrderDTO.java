@@ -29,7 +29,7 @@ public class GiftOrderDTO  extends BusinessPaymentDTO {
      */
     @NotNull
     @JsonProperty("to_uid")
-    private Integer toUid;
+    private Long toUid;
 
     @NotNull
     @JsonProperty("client")

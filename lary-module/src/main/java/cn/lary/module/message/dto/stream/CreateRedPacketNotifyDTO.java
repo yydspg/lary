@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 
 public class CreateRedPacketNotifyDTO extends MessageSendDTO {
 
-    public CreateRedPacketNotifyDTO(int creator,int danmakuId,long total){
+    public CreateRedPacketNotifyDTO(long creator,long danmakuId,long total){
         setHeader(new MessageHeader()
                 .setNoPersist(1)
                 .setRedDot(0));

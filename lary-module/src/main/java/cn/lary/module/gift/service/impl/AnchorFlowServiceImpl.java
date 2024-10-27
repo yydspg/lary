@@ -2,9 +2,9 @@ package cn.lary.module.gift.service.impl;
 
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
-import cn.lary.module.gift.entity.AnchorIncome;
-import cn.lary.module.gift.mapper.AnchorIncomeMapper;
-import cn.lary.module.gift.service.AnchorIncomeService;
+import cn.lary.module.gift.entity.AnchorFLow;
+import cn.lary.module.gift.mapper.AnchorFlowMapper;
+import cn.lary.module.gift.service.AnchorFlowService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -24,20 +24,20 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class AnchorIncomeServiceImpl extends ServiceImpl<AnchorIncomeMapper, AnchorIncome> implements AnchorIncomeService {
+public class AnchorFlowServiceImpl extends ServiceImpl<AnchorFlowMapper, AnchorFLow> implements AnchorFlowService {
 
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    public ResponsePair<Long> buildTurnover(int uid,int streamId) {
+    public ResponsePair<Long> buildTurnover(long uid,int streamId) {
         return transactionTemplate.execute(status -> {
-            List<AnchorIncome> data = lambdaQuery()
-                    .select(AnchorIncome::getIncome)
-                    .eq(AnchorIncome::getUid, uid)
-                    .eq(AnchorIncome::getStreamId, streamId)
+            List<AnchorFLow> data = lambdaQuery()
+                    .select(AnchorFLow::getIncome)
+                    .eq(AnchorFLow::getUid, uid)
+                    .eq(AnchorFLow::getStreamId, streamId)
                     .list();
             Long sum = 0L;
-            for (AnchorIncome a : data) {
+            for (AnchorFLow a : data) {
                 sum += a.getIncome();
             }
             log.info("build turnover sum:{},uid:{}.streamId:{}", sum, uid, streamId);

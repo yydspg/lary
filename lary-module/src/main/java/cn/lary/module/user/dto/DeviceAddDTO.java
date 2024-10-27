@@ -12,7 +12,7 @@ public class DeviceAddDTO {
     @JsonProperty("flag")
     private int flag;
 
-    private int uid;
+    private long uid;
 
     private String phone;
 }

@@ -58,7 +58,7 @@ public class RaffleServiceImpl extends ServiceImpl<RaffleMapper, Raffle> impleme
     
     @Override
     public ResponsePair<Void> raffle(RaffleDTO dto) {
-        int uid= RequestContext.getLoginUID();
+        long uid= RequestContext.getLoginUID();
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
         if(map == null){
             log.error("create raffle fail,no live info, uid:{}", uid);
@@ -117,7 +117,7 @@ public class RaffleServiceImpl extends ServiceImpl<RaffleMapper, Raffle> impleme
                 .setTitle(title)
                 .setType(dto.getType());
         this.save(raffle);
-        int eventId = eventService.begin(new RaffleEventDTO(uid, cache.getStreamId(), raffle.getId()));
+        long eventId = eventService.begin(new RaffleEventDTO(uid, cache.getStreamId(), raffle.getId()));
         RaffleCacheDTO cacheDTO = new RaffleCacheDTO()
                 .setDuration(dto.getDuration())
                 .setContent(dto.getContent())

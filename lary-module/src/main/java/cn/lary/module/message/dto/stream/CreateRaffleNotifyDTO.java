@@ -11,7 +11,7 @@ import java.nio.charset.StandardCharsets;
 @Data
 public class CreateRaffleNotifyDTO extends MessageSendDTO {
 
-    public CreateRaffleNotifyDTO (int creator,int danmakuId){
+    public CreateRaffleNotifyDTO (long creator,long danmakuId){
         setHeader(new MessageHeader()
                 .setNoPersist(1)
                 .setRedDot(0));

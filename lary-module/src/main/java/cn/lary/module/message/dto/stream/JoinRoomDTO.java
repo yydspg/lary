@@ -11,14 +11,14 @@ import java.nio.charset.StandardCharsets;
 @Data
 public class JoinRoomDTO extends MessageSendDTO {
 
-    public JoinRoomDTO(int uid,String name,int channelId){
+    public JoinRoomDTO(long uid,String name,long danmakuId){
         setHeader(new MessageHeader()
                 .setNoPersist(1)
                 .setRedDot(0));
         setFromUID(uid);
         String content = name +"来了";
         setPayload(content.getBytes(StandardCharsets.UTF_8));
-        setChannelID(channelId);
+        setChannelID(danmakuId);
         setChannelType(WK.CHANNEL.TYPE.STREAM);
     }
 }

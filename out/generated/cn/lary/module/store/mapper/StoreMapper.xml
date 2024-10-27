@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lary.module.store.mapper.StoreMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.lary.module.store.entity.Store">
+        <id column="id" property="id" />
+        <result column="name" property="name" />
+        <result column="avatar" property="avatar" />
+        <result column="description" property="description" />
+        <result column="delivery_score" property="deliveryScore" />
+        <result column="description_score" property="descriptionScore" />
+        <result column="service_score" property="serviceScore" />
+        <result column="goods_num" property="goodsNum" />
+        <result column="collection_num" property="collectionNum" />
+        <result column="is_delete" property="isDelete" />
+        <result column="create_at" property="createAt" />
+        <result column="update_at" property="updateAt" />
+    </resultMap>
+
+</mapper>

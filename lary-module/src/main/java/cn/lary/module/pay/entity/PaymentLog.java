@@ -31,7 +31,7 @@ public class PaymentLog implements Serializable {
      * 业务订单编号，id
      */
     @TableId(value = "id")
-    private Long payId;
+    private Long id;
 
     /**
      * 订单类型 1 充值钱包 2 购买礼物,根据业务类型变更

@@ -51,7 +51,7 @@ public class RedPacketServiceImpl extends ServiceImpl<RedPacketMapper, RedPacket
 
     @Override
     public ResponsePair<Void> redPacket(RedPacketDTO dto) {
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
         if(map == null){
             log.error("create red pack fail,no live info, uid:{}", uid);
@@ -98,7 +98,7 @@ public class RedPacketServiceImpl extends ServiceImpl<RedPacketMapper, RedPacket
                 .setVc(dto.getCost())
                 .setVcAll(totalCost);
         save(redPacket);
-        int eventId = eventService.begin(new RedPacketEventDTO(uid, cache.getStreamId(), redPacket.getId()));
+        long eventId = eventService.begin(new RedPacketEventDTO(uid, cache.getStreamId(), redPacket.getId()));
         RedPacketCloseMessage redPacketCloseMessage = new RedPacketCloseMessage(eventId, uid, cache.getStreamId(), redPacket.getId());
         GenericMessage<RedPacketCloseMessage> genericMessage = new GenericMessage<>(redPacketCloseMessage);
         try {

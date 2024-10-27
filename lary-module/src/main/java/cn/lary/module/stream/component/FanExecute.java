@@ -39,7 +39,7 @@ public class FanExecute {
      * @param toUid anchor id
      * @return ok
      */
-    public ResponsePair<Void> joinRaffle(int uid, int toUid) {
+    public ResponsePair<Void> joinRaffle(long uid, long toUid) {
         Map<Object, Object> data = redisCache.getHash(kvBuilder.goLiveK(uid));
         if (data == null) {
             return BusinessKit.fail("no live info");
@@ -94,7 +94,7 @@ public class FanExecute {
      * @param toUid anchor
      * @return {@link RaffleCacheDTO}
      */
-    public ResponsePair<RaffleCacheDTO> getRaffleInfo(int toUid) {
+    public ResponsePair<RaffleCacheDTO> getRaffleInfo(long toUid) {
         Map<Object, Object> map = redisCache.getHash(kvBuilder.raffleK(toUid));
         if (map == null) {
             return BusinessKit.fail("no raffle info");
@@ -107,7 +107,7 @@ public class FanExecute {
      * @param toUid anchor
      * @return {@link RedPacketCacheDTO}
      */
-    public ResponsePair<RedPacketCacheDTO> getRedPacketInfo(int toUid) {
+    public ResponsePair<RedPacketCacheDTO> getRedPacketInfo(long toUid) {
         Map<Object, Object> map = redisCache.getHash(kvBuilder.redPacketK(toUid));
         if (map == null) {
             return BusinessKit.fail("no red packet info");
@@ -120,7 +120,7 @@ public class FanExecute {
      * @param toUid anchor
      * @return ok
      */
-    public ResponsePair<Void> redWars(int uid, int toUid) {
+    public ResponsePair<Void> redWars(long uid, long toUid) {
         boolean ok = true;
         if (ok) {
             return BusinessKit.ok();

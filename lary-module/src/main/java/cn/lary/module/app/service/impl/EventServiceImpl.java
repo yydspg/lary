@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements EventService {
 
     @Override
-    public int begin(AbstractEventData abstractEventData) {
+    public long begin(AbstractEventData abstractEventData) {
         Event e = new Event()
                 .setCategory(abstractEventData.getCategory())
                 .setData(abstractEventData.getData())
@@ -32,7 +32,7 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
     }
 
     @Override
-    public void commit(int eventId) {
+    public void commit(long eventId) {
         Event event = new Event()
                 .setId(eventId)
                 .setStatus(LARY.EVENT.STATUS.COMMIT);
@@ -40,10 +40,10 @@ public class EventServiceImpl extends ServiceImpl<EventMapper, Event> implements
     }
 
     @Override
-    public void fail(int eventID, String reason) {
+    public void fail(long eventId, String reason) {
         Event event = new Event()
                 .setStatus(LARY.EVENT.STATUS.FAIL)
-                .setId(eventID);
+                .setId(eventId);
         updateById(event);
     }
 }

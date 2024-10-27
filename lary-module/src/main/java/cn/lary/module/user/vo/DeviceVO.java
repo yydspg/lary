@@ -10,7 +10,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class DeviceVO {
 
-    private int id;
+    private long id;
 
     private String deviceName;
 

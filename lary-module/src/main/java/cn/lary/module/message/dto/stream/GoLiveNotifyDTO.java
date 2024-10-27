@@ -10,7 +10,7 @@ import java.util.List;
 @Data
 public class GoLiveNotifyDTO extends MessageSendDTO {
 
-    public GoLiveNotifyDTO(int uid, String name, List<Integer> members) {
+    public GoLiveNotifyDTO(long uid, String name, List<Long> members) {
         setHeader(new MessageHeader()
                 .setNoPersist(1)
                 .setRedDot(0));

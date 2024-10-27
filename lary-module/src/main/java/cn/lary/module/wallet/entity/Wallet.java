@@ -32,7 +32,7 @@ public class Wallet implements Serializable {
     /**
      * 用户id
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * vc 收入总数量

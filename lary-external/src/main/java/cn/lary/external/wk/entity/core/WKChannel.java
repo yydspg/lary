@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class WKChannel {
     @JsonProperty("channel_id")
-    private int channelId;
+    private long channelId;
     @JsonProperty("channel_type")
     private Integer channelType;
 

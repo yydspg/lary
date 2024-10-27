@@ -1,8 +1,6 @@
 package cn.lary.module.pay.listener.gift;
 
-import cn.lary.module.app.service.EventService;
 import cn.lary.module.pay.listener.AbstractDetectionMessageListener;
-import cn.lary.module.pay.plugin.PaymentPluginManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.annotation.RocketMQMessageListener;

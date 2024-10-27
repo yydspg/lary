@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class GroupDetailVO {
     
-    private Integer groupId;
+    private Long groupId;
 
     /**
      * 群名字
@@ -16,7 +16,7 @@ public class GroupDetailVO {
     /**
      * 群主uid
      */
-    private Integer creator;
+    private Long creator;
 
     /**
      * 群状态

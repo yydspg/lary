@@ -33,7 +33,7 @@ public class FollowBusinessExecute {
      * @param toUid t
      * @return ok
      */
-    public ResponsePair<Void> unfollow( int toUid) {
+    public ResponsePair<Void> unfollow( long toUid) {
         return followService.unfollow(toUid);
     }
 
@@ -51,7 +51,7 @@ public class FollowBusinessExecute {
      * @param toUid t
      * @return ok
      */
-    public ResponsePair<Void> block( int toUid) {
+    public ResponsePair<Void> block( long toUid) {
         return followService.block(toUid);
     }
 
@@ -60,7 +60,7 @@ public class FollowBusinessExecute {
      * @param toUid t
      * @return ok
      */
-    public ResponsePair<Void> unblock( int toUid) {
+    public ResponsePair<Void> unblock( long toUid) {
        return followService.unblock(toUid);
     }
 

@@ -32,7 +32,7 @@ public class Room implements Serializable {
     /**
      * uid 等同于 room id
      */
-    private Integer uid;
+    private Long uid;
 
     private Integer category;
 

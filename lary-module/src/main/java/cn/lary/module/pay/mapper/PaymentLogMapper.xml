@@ -5,13 +5,11 @@
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.lary.module.pay.entity.PaymentLog">
         <id column="id" property="id" />
-        <result column="uid" property="uid" />
-        <result column="order_id" property="orderId" />
         <result column="order_type" property="orderType" />
         <result column="trade_no" property="tradeNo" />
         <result column="pay_way" property="payWay" />
         <result column="pay_status" property="payStatus" />
-        <result column="pay_cost" property="payCost" />
+        <result column="amount" property="amount" />
         <result column="post_status" property="postStatus" />
         <result column="return_status" property="returnStatus" />
         <result column="post_json" property="postJson" />
@@ -19,8 +17,6 @@
         <result column="result_code" property="resultCode" />
         <result column="err_code_str" property="errCodeStr" />
         <result column="is_delete" property="isDelete" />
-        <result column="create_by" property="createBy" />
-        <result column="update_by" property="updateBy" />
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>

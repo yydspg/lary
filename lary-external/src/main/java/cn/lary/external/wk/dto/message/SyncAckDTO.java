@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class SyncAckDTO {
-    private int uid;
+    private long uid;
     // 最后一次同步的 message_seq ,
     @JsonProperty("last_message_seq")
     private long lastMessageSeq;

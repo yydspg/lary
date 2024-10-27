@@ -12,5 +12,5 @@ public class CreateGroupDTO {
 
     private String name; // group name
     @NotNull
-    private List<Integer> members; // group member uid
+    private List<Long> members; // group member uid
 }

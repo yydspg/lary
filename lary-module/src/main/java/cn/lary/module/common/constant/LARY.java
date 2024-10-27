@@ -58,7 +58,7 @@ public interface LARY {
     interface Group {
         interface Role {
             int common = 0;
-            int creator = 1;
+            long creator = 1;
             int manager = 2;
         }
         interface UserStatus {
@@ -82,41 +82,14 @@ public interface LARY {
     interface RedDot {
         String friendApply = "friendApply";
     }
-    interface ApplyStatus {
-        short notProcess = 0;
-        short ok = 1;
-        short refused = 2;
-    }
-    interface ContentType {
-        int CMD = 99;
-    }
+
+
     interface CMD {
         String friendRequest = "friendRequest";
         String friendApplyAck = "friendApplyAck";
         String typing = "typing";
     }
-    interface ClientType {
-        int web = 0;
-        int app = 1;
-    }
-    interface RechargeStatus {
-        short noPay = 0;
-        short paid = 1;
-        short cancel = 2;
-        short failed = 3;
-    }
-    interface OrderType {
-        int recharge = 1;
-        int gift = 2;
-    }
-    interface PayStatus {
-        int success = 1;
-        int fail = 2;
-    }
-    interface PostStatus {
-        int success = 1;
-        int fail = 2;
-    }
+
     interface FollowCode {
         int stream = 1;
     }
@@ -212,6 +185,13 @@ public interface LARY {
             int INIT = 901;
             int COMMIT = 902;
             int FAIL = 903;
+        }
+    }
+    interface GROUP {
+        interface ROLE {
+            int COMMON = 1001;
+            int CREATOR = 1002;
+            int MANAGER = 1003;
         }
     }
 }

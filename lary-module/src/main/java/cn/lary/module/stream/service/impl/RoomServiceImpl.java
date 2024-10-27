@@ -12,7 +12,7 @@ import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.dto.DownLiveEventDTO;
 import cn.lary.module.event.dto.GoLiveEventDTO;
-import cn.lary.module.gift.service.AnchorIncomeService;
+import cn.lary.module.gift.service.AnchorFlowService;
 import cn.lary.module.message.dto.stream.*;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.stream.dto.*;
@@ -61,7 +61,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
     private final FollowService followService;
     private final MessageService messageService;
     private final TransactionTemplate transactionTemplate;
-    private final AnchorIncomeService anchorIncomeService;
+    private final AnchorFlowService anchorFlowService;
 
     private final ThreadPoolExecutor executor = new ThreadPoolExecutor(
             15, 20, 10L, TimeUnit.SECONDS, new LinkedBlockingDeque<>(), new RejectedExecutionHandler() {
@@ -72,8 +72,8 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
     });
 
     @Override
-    public ResponsePair<JoinLiveVO> join(int toUid, String ip) {
-        int uid = RequestContext.getLoginUID();
+    public ResponsePair<JoinLiveVO> join(long toUid, String ip) {
+        long uid = RequestContext.getLoginUID();
         String name = RequestContext.getLoginName();
         Follow relation = followService.lambdaQuery()
                 .select(Follow::getIsBlock)
@@ -138,7 +138,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
 
     @Override
     public ResponsePair<Void> leave() {
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         Map<Object, Object> map = redisCache.getHash(kvBuilder.joinLiveK(uid));
         if (map == null) {
             return BusinessKit.fail("no join live info");
@@ -149,7 +149,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
 
     @Override
     public ResponsePair<DownLiveVO> end() {
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         Map<Object, Object> coll = null;
         coll = redisCache.getHash(kvBuilder.raffleK(uid));
         if (coll != null) {
@@ -180,8 +180,8 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         StreamRecordCacheDTO recordCache = StreamRecordCacheDTO.of(record);
         String token = UUIDKit.getUUID();
         DownLiveEventDTO downLiveEventDTO = new DownLiveEventDTO(uid, liveCache.getStreamId(), liveCache.getDanmakuId());
-        Integer eventId = transactionTemplate.execute(status -> {
-            int event = eventService.begin(downLiveEventDTO);
+        Long eventId = transactionTemplate.execute(status -> {
+            long event = eventService.begin(downLiveEventDTO);
             streamRecordService.lambdaUpdate()
                     .eq(StreamRecord::getStreamId, liveCache.getStreamId())
                     .set(StreamRecord::getStatus, LARY.Stream.Status.down)
@@ -207,7 +207,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
 
     @Override
     public ResponsePair<GoLiveVO> go(String ip, GoLiveDTO dto) {
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         String name = RequestContext.getLoginName();
         Map<Object, Object> liveInfo = redisCache.getHash(kvBuilder.goLiveK(uid));
         if (liveInfo != null) {
@@ -261,7 +261,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
                 .setUid(uid)
                 .setChannelType(WK.CHANNEL.TYPE.DATA);
         laryChannelService.save(laryChannel);
-        int danmakuId = laryChannel.getId();
+        long danmakuId = laryChannel.getId();
         messageService.saveOrUpdateChannel(new CreateDanmakuChannelDTO(danmakuId));
         String identify = UUIDKit.uuidToShort(UUIDKit.getUUID());
         StreamRecord streamRecord = new StreamRecord()
@@ -270,13 +270,13 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
                 .setIdentify(identify);
         streamRecordService.save(streamRecord);
         GoLiveEventDTO eventDTO = new GoLiveEventDTO(uid, dto.getDeviceId(), streamRecord.getStreamId(), danmakuId);
-        int event = eventService.begin(eventDTO);
+        long event = eventService.begin(eventDTO);
         if (room.getFollowNum() < 100) {
             ResponsePair<List<Integer>> pair = followService.getFollows(uid);
             if (pair.isFail()){
                 return BusinessKit.fail(pair.getMsg());
             }
-            List<Integer> follows = null;
+            List<Long> follows = null;
             if (CollectionKit.isNotEmpty(follows)) {
                 messageService.send(new GoLiveNotifyDTO(uid,name,follows));
             }
@@ -299,8 +299,8 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         return  room.getFollowNum() > 1000;
     }
 
-    public void executeTurnOver(int uid,int streamId) {
-        ResponsePair<Long> pair = anchorIncomeService.buildTurnover(uid, streamId);
+    public void executeTurnOver(long uid,int streamId) {
+        ResponsePair<Long> pair = anchorFlowService.buildTurnover(uid, streamId);
         Long sum = pair.getData();
         streamRecordService.lambdaUpdate()
                 .eq(StreamRecord::getStreamId, streamId)

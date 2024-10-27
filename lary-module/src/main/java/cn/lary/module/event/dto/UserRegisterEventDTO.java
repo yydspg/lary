@@ -16,7 +16,7 @@ import java.util.Map;
 @Accessors(chain = true)
 public class UserRegisterEventDTO extends AbstractEventData {
 
-    private int uid;
+    private long uid;
 
     private String phone;
 

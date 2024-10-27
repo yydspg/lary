@@ -46,7 +46,7 @@ public class WalletPayment extends AbstractBusinessPayment{
     @Override
     protected ResponsePair<PaymentProcessPair> beforePay(BusinessPaymentDTO rechargeDTO) {
         RechargeDTO dto = (RechargeDTO) rechargeDTO;
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         RechargeLog data = transactionTemplate.execute(status -> {
             Wallet wallet = walletService.lambdaQuery()
                     .select(Wallet::getUid)
@@ -63,7 +63,7 @@ public class WalletPayment extends AbstractBusinessPayment{
                     .setStatus(LARY.PAYMENT.STATUS.INIT);
             rechargeLogService.save(rechargeLog);
             RechargeEventDTO eventDTO = new RechargeEventDTO(uid, cost, rechargeLog.getId());
-            int eventId = eventService.begin(eventDTO);
+            long eventId = eventService.begin(eventDTO);
             rechargeLogService.lambdaUpdate()
                     .set(RechargeLog::getEventId, eventId)
                     .eq(RechargeLog::getId, rechargeLog.getId());

@@ -30,7 +30,7 @@ public class ReportCategory implements Serializable {
      * 类别编号
      */
     @TableId(value = "id", type = IdType.AUTO)
-    private Integer id;
+    private Long id;
 
     /**
      * 类别名称

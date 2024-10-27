@@ -30,12 +30,12 @@ public class FollowSetting implements Serializable {
     /**
      * 用户id
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * 被关注id
      */
-    private Integer toUid;
+    private Long toUid;
 
     /**
      * 是否静默

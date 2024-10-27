@@ -14,7 +14,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class RedPacketEventDTO extends AbstractEventData {
 
-    private int uid;
+    private long uid;
 
     private int streamId;
 

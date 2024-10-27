@@ -13,7 +13,7 @@ import java.util.Map;
 public class DeviceLoginCacheDTO extends DTO {
 
     @JsonProperty("id")
-    private int id;
+    private long id;
 
     @NotNull(message = "device_name is null")
     @JsonProperty("name")

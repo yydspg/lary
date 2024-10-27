@@ -24,7 +24,7 @@ public interface RoomService extends IService<Room> {
      * @param ip 用户ip
      * @return {@link JoinLiveVO}
      */
-     ResponsePair<JoinLiveVO> join( int toUid, String ip);
+     ResponsePair<JoinLiveVO> join( long toUid, String ip);
 
     /**
      * 离开直播间

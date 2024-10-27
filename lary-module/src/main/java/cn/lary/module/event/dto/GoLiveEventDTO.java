@@ -15,7 +15,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class GoLiveEventDTO extends AbstractEventData {
 
-    private int uid;
+    private long uid;
 
     @JsonProperty("device_id")
     private int deviceId;
@@ -24,7 +24,7 @@ public class GoLiveEventDTO extends AbstractEventData {
     private int streamId;
 
     @JsonProperty("channel_id")
-    private int channelId;
+    private long channelId;
 
 
     public String getData() {

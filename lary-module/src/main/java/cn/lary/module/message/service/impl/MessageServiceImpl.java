@@ -70,7 +70,7 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public RouteVO getRoute(int uid) {
+    public RouteVO getRoute(long uid) {
         try {
              return wkRouteService.getRoute().body();
         }catch (Exception e){

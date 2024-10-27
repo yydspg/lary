@@ -32,7 +32,7 @@ public class FollowController {
     }
 
     @GetMapping("/unfollow")
-    public SingleResponse<Void> unfollow(@RequestParam @NotNull int toUid) {
+    public SingleResponse<Void> unfollow(@RequestParam @NotNull long toUid) {
         ResponsePair<Void> response = followBusinessExecute.unfollow( toUid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -49,7 +49,7 @@ public class FollowController {
         return ResponseKit.pageOk(response.getData(),dto.getPageIndex(), dto.getPageSize());
     }
     @GetMapping("/block")
-    public SingleResponse<Void> block(@RequestParam @NotNull int toUid) {
+    public SingleResponse<Void> block(@RequestParam @NotNull long toUid) {
         ResponsePair<Void> response = followBusinessExecute.block( toUid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -57,7 +57,7 @@ public class FollowController {
         return ResponseKit.ok();
     }
     @GetMapping("/unblock")
-    public SingleResponse<Void> unblock(@RequestParam @NotNull int toUid) {
+    public SingleResponse<Void> unblock(@RequestParam @NotNull long toUid) {
         ResponsePair<Void> response = followBusinessExecute.unblock( toUid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());

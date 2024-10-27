@@ -34,17 +34,17 @@ public class GiftOrder implements Serializable {
     /**
      * 用户id
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * 主播uid
      */
-    private Integer anchorUid;
+    private Long anchorUid;
 
     /**
      * wk 弹幕流id
      */
-    private Integer danmakuId;
+    private Long danmakuId;
 
     /**
      * 异步通知地址

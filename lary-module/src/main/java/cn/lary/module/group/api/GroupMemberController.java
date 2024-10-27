@@ -30,8 +30,8 @@ public class GroupMemberController {
      * @return ok
      */
     @GetMapping("/members/status")
-    public SingleResponse<List<Integer>> getMembersWithStatus(int groupNo, int status){
-        ResponsePair<List<Integer>> response = groupMemberBusinessExecute.getMembersWithStatus(groupNo, status);
+    public SingleResponse<List<Long>> getMembersWithStatus(long groupNo, int status){
+        ResponsePair<List<Long>> response = groupMemberBusinessExecute.getMembersWithStatus(groupNo, status);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -43,7 +43,7 @@ public class GroupMemberController {
      * @return ok
      */
     @GetMapping("/quit")
-    public SingleResponse<Void> quit(@RequestParam @NotNull int groupId) {
+    public SingleResponse<Void> quit(@RequestParam @NotNull long groupId) {
         ResponsePair<Void> response = groupMemberBusinessExecute.quit(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -58,8 +58,8 @@ public class GroupMemberController {
      * @return ok
      */
     @GetMapping("/admin/quit")
-    public SingleResponse<Void> quitByAdmin(@RequestParam @NotNull int groupId,
-                                            @RequestParam @NotNull int uid){
+    public SingleResponse<Void> quitByAdmin(@RequestParam @NotNull long groupId,
+                                            @RequestParam @NotNull long uid){
         ResponsePair<Void> response = groupMemberBusinessExecute.quitByAdmin(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -73,7 +73,7 @@ public class GroupMemberController {
      * @return ok
      */
     @GetMapping("/join")
-    public SingleResponse<Void> join(@RequestParam @NotNull int groupId) {
+    public SingleResponse<Void> join(@RequestParam @NotNull long groupId) {
         ResponsePair<Void> response = groupMemberBusinessExecute.join(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -87,8 +87,8 @@ public class GroupMemberController {
      * @return ok
      */
     @GetMapping("/admin/join")
-    public SingleResponse<Void> joinByAdmin(@RequestParam @NotNull int groupId,
-                                            @RequestParam @NotNull int uid) {
+    public SingleResponse<Void> joinByAdmin(@RequestParam @NotNull long groupId,
+                                            @RequestParam @NotNull long uid) {
         ResponsePair<Void> response = groupMemberBusinessExecute.joinByAdmin(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -104,8 +104,8 @@ public class GroupMemberController {
      * @return 正确加群的ids
      */
     @GetMapping("/admin/multi/join")
-    public SingleResponse<Integer> multiJoinByAdmin(int groupId,List<Integer> ids){
-        ResponsePair<Integer> response = groupMemberBusinessExecute.multiJoinByAdmin(groupId, ids);
+    public SingleResponse<List<Long>> multiJoinByAdmin(long groupId,List<Long> ids){
+        ResponsePair<List<Long>> response = groupMemberBusinessExecute.multiJoinByAdmin(groupId, ids);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -119,8 +119,8 @@ public class GroupMemberController {
      * @return ok
      */
     @GetMapping("/admin/set")
-    public SingleResponse<Void> setAdmin(@RequestParam @NotNull int groupId,
-                                         @RequestParam @NotNull int uid){
+    public SingleResponse<Void> setAdmin(@RequestParam @NotNull long groupId,
+                                         @RequestParam @NotNull long uid){
         ResponsePair<Void> response = groupMemberBusinessExecute.setAdmin(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -135,8 +135,8 @@ public class GroupMemberController {
      * @return ok
      */
     @GetMapping("/admin/remove")
-    public SingleResponse<Void> removeAdmin(@RequestParam @NotNull int groupId,
-                                            @RequestParam @NotNull int uid){
+    public SingleResponse<Void> removeAdmin(@RequestParam @NotNull long groupId,
+                                            @RequestParam @NotNull long uid){
         ResponsePair<Void> response = groupMemberBusinessExecute.removeAdmin(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -150,7 +150,7 @@ public class GroupMemberController {
      * @return {@link GroupMemberVO}
      */
     @GetMapping("/members")
-    public SingleResponse<List<GroupMemberVO>> members(@RequestParam @NotNull int groupId){
+    public SingleResponse<List<GroupMemberVO>> members(@RequestParam @NotNull long groupId){
         ResponsePair<List<GroupMemberVO>> response = groupMemberBusinessExecute.members(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -164,8 +164,8 @@ public class GroupMemberController {
      * @return ok
      */
     @GetMapping("/owner")
-    public SingleResponse<Void> changeOwner(@RequestParam @NotNull int groupId,
-                                            @RequestParam @NotNull int uid) {
+    public SingleResponse<Void> changeOwner(@RequestParam @NotNull long groupId,
+                                            @RequestParam @NotNull long uid) {
         ResponsePair<Void> response = groupMemberBusinessExecute.changeOwner(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -181,8 +181,8 @@ public class GroupMemberController {
      * @return ok
      */
     @GetMapping("/block")
-    public SingleResponse<Void> block(@RequestParam @NotNull int groupId,
-                                      @RequestParam @NotNull int uid){
+    public SingleResponse<Void> block(@RequestParam @NotNull long groupId,
+                                      @RequestParam @NotNull long uid){
         ResponsePair<Void> response = groupMemberBusinessExecute.block(groupId, uid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());

@@ -30,7 +30,7 @@ public class RedPacket implements Serializable {
     /**
      * 用户id
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * 直播id

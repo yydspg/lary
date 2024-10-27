@@ -41,7 +41,7 @@ public interface MessageService {
      * @param uid U
      * @return ok
      */
-    RouteVO getRoute(int uid);
+    RouteVO getRoute(long uid);
 
 
     void syncSendRocketMessage(AbstractSyncRocketMessage message);

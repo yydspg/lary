@@ -7,7 +7,7 @@ import cn.lary.external.wk.dto.message.MessageSendDTO;
 import java.nio.charset.StandardCharsets;
 
 public class ActiveFollowResponseDTO extends MessageSendDTO {
-    public ActiveFollowResponseDTO(int uid,int toUid,String uidName) {
+    public ActiveFollowResponseDTO(long uid,long toUid,String uidName) {
         setHeader(new MessageHeader()
                 .setRedDot(1));
         setChannelID(toUid);

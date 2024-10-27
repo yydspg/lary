@@ -20,7 +20,7 @@ public class GroupVO {
     /**
      * 群Id
      */
-    private Integer id;
+    private Long id;
 
     private Integer num;
 

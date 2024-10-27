@@ -47,7 +47,7 @@ public class GroupController {
      * @return ok
      */
     @GetMapping("/disband")
-    public SingleResponse<Void> disband(int groupId) {
+    public SingleResponse<Void> disband(long groupId) {
         ResponsePair<Void> response = groupBusinessExecute.disband(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -61,7 +61,7 @@ public class GroupController {
      * @return ok
      */
     @GetMapping("/forbidden")
-    public SingleResponse<Void> forbidden( @RequestParam @NotNull int groupId) {
+    public SingleResponse<Void> forbidden( @RequestParam @NotNull long groupId) {
         ResponsePair<Void> response = groupBusinessExecute.forbidden(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
@@ -75,7 +75,7 @@ public class GroupController {
      * @return {@link GroupDetailVO}
      */
     @GetMapping("/detail")
-    public SingleResponse<GroupDetailVO> getGroup(@RequestParam @NotNull int groupId) {
+    public SingleResponse<GroupDetailVO> getGroup(@RequestParam @NotNull long groupId) {
         ResponsePair<GroupDetailVO> response = groupBusinessExecute.getGroup(groupId);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());

@@ -44,7 +44,7 @@ public class GroupMemberBusinessExecute {
      * @param status s
      * @return ok
      */
-    public ResponsePair<List<Integer>> getMembersWithStatus(int groupNo, int status){
+    public ResponsePair<List<Long>> getMembersWithStatus(long groupNo, int status){
         return groupMemberService.getMembersWithStatus(groupNo, status);
     }
     /**
@@ -52,7 +52,7 @@ public class GroupMemberBusinessExecute {
      * @param groupId g
      * @return ok
      */
-    public ResponsePair<Void> quit(int groupId) {
+    public ResponsePair<Void> quit(long groupId) {
         return groupMemberService.quit(groupId);
     }
 
@@ -62,7 +62,7 @@ public class GroupMemberBusinessExecute {
      * @param uid u
      * @return ok
      */
-    public ResponsePair<Void> quitByAdmin(int groupId, int uid){
+    public ResponsePair<Void> quitByAdmin(long groupId, long uid){
         return groupMemberService.quitByAdmin(groupId,uid);
     }
 
@@ -71,7 +71,7 @@ public class GroupMemberBusinessExecute {
      * @param groupId g
      * @return ok
      */
-    public ResponsePair<Void> join(int groupId) {
+    public ResponsePair<Void> join(long groupId) {
         return groupMemberService.join(groupId);
     }
     /**
@@ -80,7 +80,7 @@ public class GroupMemberBusinessExecute {
      * @param uid  u
      * @return ok
      */
-    public ResponsePair<Void> joinByAdmin(int groupId, int uid) {
+    public ResponsePair<Void> joinByAdmin(long groupId, long uid) {
         return groupMemberService.joinByAdmin(groupId,uid);
     }
 
@@ -90,7 +90,7 @@ public class GroupMemberBusinessExecute {
      * @param ids i
      * @return 正确加群的ids
      */
-    public ResponsePair<Integer> multiJoinByAdmin(int groupId, List<Integer> ids){
+    public ResponsePair<List<Long>> multiJoinByAdmin(long groupId, List<Long> ids){
         return groupMemberService.multiJoinByAdmin(groupId,ids);
     }
 
@@ -100,7 +100,7 @@ public class GroupMemberBusinessExecute {
      * @param uid 被设置的用户
      * @return ok
      */
-    public ResponsePair<Void> setAdmin(int groupId, int uid){
+    public ResponsePair<Void> setAdmin(long groupId, long uid){
         return groupMemberService.setAdmin(groupId,uid);
     }
 
@@ -110,7 +110,7 @@ public class GroupMemberBusinessExecute {
      * @param uid u
      * @return ok
      */
-    public ResponsePair<Void> removeAdmin(int groupId, int uid){
+    public ResponsePair<Void> removeAdmin(long groupId, long uid){
         return groupMemberService.removeAdmin(groupId,uid);
     }
 
@@ -119,7 +119,7 @@ public class GroupMemberBusinessExecute {
      * @param groupId g
      * @return {@link GroupMemberVO}
      */
-    public ResponsePair<List<GroupMemberVO>> members(int groupId){
+    public ResponsePair<List<GroupMemberVO>> members(long groupId){
         return  groupMemberService.members(groupId);
     }
     /**
@@ -128,7 +128,7 @@ public class GroupMemberBusinessExecute {
      * @param uid 被转移用户
      * @return ok
      */
-    public ResponsePair<Void> changeOwner(int groupId, int uid) {
+    public ResponsePair<Void> changeOwner(long groupId, long uid) {
         return groupMemberService.changeOwner(groupId, uid);
     }
 
@@ -138,7 +138,7 @@ public class GroupMemberBusinessExecute {
      * @param uid u
      * @return ok
      */
-    public ResponsePair<Void> block(int groupId, int uid){
+    public ResponsePair<Void> block(long groupId, long uid){
         return groupMemberService.block(groupId,uid);
     }
 

@@ -5,9 +5,9 @@ import lombok.Data;
 
 @Data
 public class WalletIncomePageQueryDTO extends PageQuery {
-    private int uid;
+    private long uid;
     private Long cost;
-    private Integer toUid;
-    private Integer channelId;
+    private Long toUid;
+    private Long channelId;
     private Integer type;
 }

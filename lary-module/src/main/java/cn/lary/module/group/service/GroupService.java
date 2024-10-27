@@ -28,7 +28,7 @@ public interface GroupService extends IService<Group> {
      * @param now n
      * @return ok
      */
-    boolean  isReachCreateLimit(int uid, LocalDateTime now) ;
+    boolean  isReachCreateLimit(long uid, LocalDateTime now) ;
 
 
     /**
@@ -44,21 +44,21 @@ public interface GroupService extends IService<Group> {
      * @param groupId g
      * @return ok
      */
-    ResponsePair<Void> disband(int groupId) ;
+    ResponsePair<Void> disband(long groupId) ;
 
     /**
      * 全体成员禁言
      * @param groupId g
      * @return ok
      */
-    ResponsePair<Void> forbidden(int groupId) ;
+    ResponsePair<Void> forbidden(long groupId) ;
 
     /**
      * 查询群信息
      * @param groupId g
      * @return {@link GroupDetailVO}
      */
-    ResponsePair<GroupDetailVO> getGroup(int groupId) ;
+    ResponsePair<GroupDetailVO> getGroup(long groupId) ;
 
     /**
      * 查询我的群聊,通过role

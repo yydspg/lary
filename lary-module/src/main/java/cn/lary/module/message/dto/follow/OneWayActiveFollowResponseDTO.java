@@ -8,7 +8,7 @@ import java.nio.charset.StandardCharsets;
 
 public class OneWayActiveFollowResponseDTO extends MessageSendDTO {
 
-    public OneWayActiveFollowResponseDTO(int uid,int toUid,String uidName) {
+    public OneWayActiveFollowResponseDTO(long uid,long toUid,String uidName) {
         setHeader(new MessageHeader()
                 .setRedDot(1));
         setChannelID(toUid);

@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 public class ConversationDeleteDTO extends WKChannel {
-    private Integer uid;
+    private Long uid;
 }
 

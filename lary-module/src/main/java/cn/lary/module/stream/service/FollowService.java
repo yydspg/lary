@@ -24,13 +24,13 @@ public interface FollowService extends IService<Follow> {
      * @param uid uid
      * @return uid
      */
-    ResponsePair<List<Integer>> getFollows(int uid);
+    ResponsePair<List<Integer>> getFollows(long uid);
 
     /**
      * 主动关注系统账户
      * @param uid 关注者
      */
-    void addSystemHelper(int uid);
+    void addSystemHelper(long uid);
 
     /**
      * 关注用户
@@ -43,17 +43,17 @@ public interface FollowService extends IService<Follow> {
      * 拉黑
      * @return ok
      */
-     ResponsePair<Void> block(int toUid);
+     ResponsePair<Void> block(long toUid);
     /**
      * 取消拉黑
      * @return ok
      */
-     ResponsePair<Void> unblock(int toUid);
+     ResponsePair<Void> unblock(long toUid);
     /**
      * 取消关注
      * @return ok
      */
-     ResponsePair<Void> unfollow(int toUid);
+     ResponsePair<Void> unfollow(long toUid);
     /**
      * 关注列表
      * @param dto {@link FollowPageQueryDTO}

@@ -10,7 +10,7 @@ import java.util.Map;
 public class LiveCacheDTO {
 
     private int streamId;
-    private int danmakuId;
+    private long danmakuId;
     private String ip;
     private String srsTcUrl;
     private String srsToken;

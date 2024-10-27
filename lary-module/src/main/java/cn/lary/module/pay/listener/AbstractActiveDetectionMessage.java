@@ -8,11 +8,11 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public abstract class AbstractActiveDetectionMessage extends AbstractAsyncRocketMessage {
 
-    private int eventId;
+    private long eventId;
 
     private int paymentId;
 
-    private int uid;
+    private long uid;
 
     private int plugin;
 

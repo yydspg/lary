@@ -27,7 +27,7 @@ public class UserOnline implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private Integer uid;
+    private Long uid;
 
     private Short deviceFlag;
 

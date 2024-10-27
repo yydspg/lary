@@ -55,7 +55,7 @@ public interface WalletService extends IService<Wallet> {
      * @param members 用户
      * @return ok
      */
-    ResponsePair<List<Wallet>> getUserWallets(List<Integer> members);
+    ResponsePair<List<Wallet>> getUserWallets(List<Long> members);
 
 
     ResponsePair<Void> updateQuestion(UpdateSecurityQuestionDTO dto);

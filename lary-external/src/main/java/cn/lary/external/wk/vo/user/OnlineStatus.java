@@ -5,7 +5,7 @@ import lombok.Data;
 
 @Data
 public class OnlineStatus {
-    private Integer uid;
+    private Long uid;
     @JsonProperty("device_flag")
     private byte deviceFlag;
     private int online;

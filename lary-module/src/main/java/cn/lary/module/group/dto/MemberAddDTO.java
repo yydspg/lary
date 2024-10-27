@@ -9,12 +9,12 @@ import java.util.List;
 public class MemberAddDTO {
 
     @NotNull(message = "group id is null")
-    private int groupId;
+    private long groupId;
 
     @NotNull(message = "name is null")
     private String name;
 
     @NotNull(message = "members is null")
-    private List<Integer> members; // group member uid
+    private List<Long> members; // group member uid
 }
 

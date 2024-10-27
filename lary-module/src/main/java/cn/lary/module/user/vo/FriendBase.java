@@ -11,12 +11,12 @@ public class FriendBase {
     /**
      * 用户UID
      */
-    private Integer uid;
+    private Long uid;
 
     /**
      * 好友uid
      */
-    private Integer toUid;
+    private Long toUid;
 
     /**
      * 好友标示

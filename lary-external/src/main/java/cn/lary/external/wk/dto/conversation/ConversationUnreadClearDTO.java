@@ -8,7 +8,7 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 public class ConversationUnreadClearDTO extends WKChannel {
-    private Integer uid;
+    private Long uid;
     @JsonProperty("message_seq")
     private int messageSeq;
 }

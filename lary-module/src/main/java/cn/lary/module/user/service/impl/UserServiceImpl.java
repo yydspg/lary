@@ -67,7 +67,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (user == null) {
             return BusinessKit.fail("user not exist,please register first");
         }
-        int uid = user.getUid();
+        long uid = user.getUid();
 
         if(user.getStatus() == LARY.USER.STATUS.BAN) {
             return BusinessKit.fail("user was banned");
@@ -185,8 +185,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                     .setBirthday(dto.getBirthday())
                     .setPassword(StringKit.MD5(StringKit.MD5(dto.getPassword())));
             save(user);
-            int uid = user.getUid();
-            int eventId = eventService.begin(new UserRegisterEventDTO()
+            long uid = user.getUid();
+            long eventId = eventService.begin(new UserRegisterEventDTO()
                     .setUid(uid)
                     .setPhone(dto.getPhone()));
             userSettingService.save(new UserSetting().setUid(uid));
@@ -267,7 +267,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public ResponsePair<Void> destroy(UserDestroyDTO dto) {
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         String verifyCode = redisCache.get(kvBuilder.userDestroyK(uid));
         if(StringKit.diff(verifyCode,dto.getCode())){
             return BusinessKit.fail("check verify code error");
@@ -314,7 +314,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public List<Integer> getValidUsers(List<Integer> members) {
+    public List<Long> getValidUsers(List<Long> members) {
         List<User> data = lambdaQuery()
                 .select(User::getUid)
                 .eq(User::getStatus, LARY.USER.STATUS.OK)
@@ -329,12 +329,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .toList();
     }
 
-    private void forceLogout(int uid,int flag,String token) {
+    private void forceLogout(long uid,int flag,String token) {
         redisCache.delete(kvBuilder.userLoginK(uid,flag));
         redisCache.delete(kvBuilder.userLoginTokenK(token));
         deviceService.removeDeviceLoginCache(uid,flag);
     }
-    private String buildUserLoginCache(int uid,String name,int flag,int role) {
+    private String buildUserLoginCache(long uid,String name,int flag,int role) {
         String token = UUIDKit.getUUID() + "@" + flag;
         redisCache.set(kvBuilder.userLoginK(uid,flag),kvBuilder.userLoginV(token),redisBizConfig.getLoginUserExpire());
         redisCache.set(kvBuilder.userLoginTokenK(token),kvBuilder.userLoginTokenV(uid,name,role),redisBizConfig.getLoginUserTokenExpire());

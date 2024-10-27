@@ -14,11 +14,11 @@ import java.util.Map;
 @AllArgsConstructor
 public class RaffleEventDTO  extends AbstractEventData {
 
-    private int uid;
+    private long uid;
 
     private int streamId;
 
-    private int raffleId;
+    private long raffleId;
 
 
     public String getData() {

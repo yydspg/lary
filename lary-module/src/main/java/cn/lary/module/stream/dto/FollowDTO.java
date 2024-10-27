@@ -8,7 +8,7 @@ import lombok.Data;
 public class FollowDTO {
     @JsonProperty("to_uid")
     @NotNull
-    private Integer toUid;
+    private Long toUid;
     @NotNull
     private Integer code;
 }

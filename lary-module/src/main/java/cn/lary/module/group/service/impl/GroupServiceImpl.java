@@ -51,7 +51,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     private final WKMessageService wkMessageService;
 
     @Override
-    public boolean isReachCreateLimit(int uid, LocalDateTime now) {
+    public boolean isReachCreateLimit(long uid, LocalDateTime now) {
         LocalDateTime startOfDay = DateKit.getStartOfDay(now);
         LocalDateTime endOfDay = DateKit.getEndOfDay(now);
         // TODO  :  这里需要实现动态配置
@@ -64,13 +64,13 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
     @Override
     public ResponsePair<CreateGroupVO> create(CreateGroupDTO dto) {
-        int creator = RequestContext.getLoginUID();
+        long creator = RequestContext.getLoginUID();
         if (isReachCreateLimit(creator, LocalDateTime.now())) {
             return BusinessKit.fail("reach create limit");
         }
-        List<Integer> members = CollectionKit.removeRepeat(dto.getMembers());
+        List<Long> members = CollectionKit.removeRepeat(dto.getMembers());
         members.add(creator);
-        List<Integer> users = userService.getValidUsers(members);
+        List<Long> users = userService.getValidUsers(members);
         if (CollectionKit.isEmpty(users)) {
             return BusinessKit.fail("valid users empty");
         }
@@ -99,9 +99,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         save(group);
         List<GroupMember> groupMembers = new ArrayList<>();
         users.forEach(u -> {
-            int role = LARY.Group.Role.common;
+            int role = LARY.GROUP.ROLE.COMMON;
             if (u == creator) {
-                role = LARY.Group.Role.creator;
+                role = LARY.GROUP.ROLE.CREATOR;
             }
             GroupMember groupMember = new GroupMember()
                     .setUid(u)
@@ -120,7 +120,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
-    public ResponsePair<Void> disband(int groupId) {
+    public ResponsePair<Void> disband(long groupId) {
         ResponsePair<Void> response = groupMemberService.disband(groupId);
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
@@ -132,7 +132,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
-    public ResponsePair<Void> forbidden(int groupId) {
+    public ResponsePair<Void> forbidden(long groupId) {
         ResponsePair<GroupMember> response = groupMemberService.checkRole(groupId);
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
@@ -142,7 +142,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
-    public ResponsePair<GroupDetailVO> getGroup(int groupId) {
+    public ResponsePair<GroupDetailVO> getGroup(long groupId) {
         Group group = lambdaQuery().eq(Group::getGroupId, groupId).one();
         if (group == null){
             return BusinessKit.fail("group not exist");
@@ -152,7 +152,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
     @Override
     public ResponsePair<List<GroupVO>> my(int role) {
-        ResponsePair<List<Integer>> response = groupMemberService.my(role);
+        ResponsePair<List<Long>> response = groupMemberService.my(role);
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
         }

@@ -26,13 +26,13 @@ public interface GroupMemberService extends IService<GroupMember> {
      * @param status s
      * @return ok
      */
-    ResponsePair<List<Integer>> getMembersWithStatus(int groupNo, int status);
+    ResponsePair<List<Long>> getMembersWithStatus(long groupNo, int status);
     /**
      * 退出群聊
      * @param groupId g
      * @return ok
      */
-    ResponsePair<Void> quit(int groupId) ;
+    ResponsePair<Void> quit(long groupId) ;
 
     /**
      * 管理员强退
@@ -40,21 +40,21 @@ public interface GroupMemberService extends IService<GroupMember> {
      * @param uid u
      * @return ok
      */
-    ResponsePair<Void> quitByAdmin(int groupId, int uid);
+    ResponsePair<Void> quitByAdmin(long groupId, long uid);
 
     /**
      * 加入群聊
      * @param groupId g
      * @return ok
      */
-    ResponsePair<Void> join(int groupId) ;
+    ResponsePair<Void> join(long groupId) ;
     /**
      * 管理员邀请加入群聊
      * @param groupId g
      * @param uid  u
      * @return ok
      */
-    ResponsePair<Void> joinByAdmin(int groupId, int uid) ;
+    ResponsePair<Void> joinByAdmin(long groupId, long uid) ;
 
     /**
      * 批量加群
@@ -62,7 +62,7 @@ public interface GroupMemberService extends IService<GroupMember> {
      * @param ids i
      * @return 正确加群的ids
      */
-    ResponsePair<Integer> multiJoinByAdmin(int groupId, List<Integer> ids);
+    ResponsePair<List<Long>> multiJoinByAdmin(long groupId, List<Long> ids);
 
     /**
      * 设置用户为管理员
@@ -70,7 +70,7 @@ public interface GroupMemberService extends IService<GroupMember> {
      * @param uid 被设置的用户
      * @return ok
      */
-    ResponsePair<Void> setAdmin(int groupId, int uid);
+    ResponsePair<Void> setAdmin(long groupId, long uid);
 
     /**
      * 移除管理员
@@ -78,42 +78,42 @@ public interface GroupMemberService extends IService<GroupMember> {
      * @param uid u
      * @return ok
      */
-    ResponsePair<Void> removeAdmin(int groupId, int uid);
+    ResponsePair<Void> removeAdmin(long groupId, long uid);
 
     /**
      * 查询群成员
      * @param groupId g
      * @return {@link GroupMemberVO}
      */
-    ResponsePair<List<GroupMemberVO>> members(int groupId);
+    ResponsePair<List<GroupMemberVO>> members(long groupId);
     /**
      * 转移群主
      * @param groupId g
      * @param uid 被转移用户
      * @return ok
      */
-    ResponsePair<Void> changeOwner(int groupId, int uid) ;
+    ResponsePair<Void> changeOwner(long groupId, long uid) ;
 
     /**
      * 移除成员
      * @param groupId g
      * @return ok
      */
-    ResponsePair<Void> disband(int groupId) ;
+    ResponsePair<Void> disband(long groupId) ;
 
     /**
      * 检查是否权限足够
      * @param groupId g
      * @return GroupMember
      */
-    ResponsePair<GroupMember> checkRole(int groupId) ;
+    ResponsePair<GroupMember> checkRole(long groupId) ;
 
     /**
      * 查询我的群聊
      * @param role 角色
      * @return {@link GroupDetailVO}
      */
-    ResponsePair<List<Integer>> my(int role);
+    ResponsePair<List<Long>> my(int role);
 
     /**
      * 封禁用户
@@ -121,5 +121,5 @@ public interface GroupMemberService extends IService<GroupMember> {
      * @param uid u
      * @return ok
      */
-    ResponsePair<Void> block(int groupId, int uid);
+    ResponsePair<Void> block(long groupId, long uid);
 }

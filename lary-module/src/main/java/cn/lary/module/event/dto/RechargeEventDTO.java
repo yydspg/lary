@@ -13,7 +13,7 @@ import java.util.Map;
 @AllArgsConstructor
 public class RechargeEventDTO extends AbstractEventData {
 
-    private int uid;
+    private long uid;
 
     private long cost;
 

@@ -12,7 +12,7 @@ import java.util.List;
 @Data
 public class CreateGroupSuccessNotifyDTO extends MessageSendDTO {
 
-    public CreateGroupSuccessNotifyDTO build(int creator,int groupId, List<Integer> members) {
+    public CreateGroupSuccessNotifyDTO build(long creator,long groupId, List<Long> members) {
         setHeader(new MessageHeader()
                 .setNoPersist(1)
                 .setRedDot(0));

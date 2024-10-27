@@ -7,11 +7,9 @@ import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.gift.dto.GiftOrderDTO;
-import cn.lary.module.gift.entity.AnchorIncome;
 import cn.lary.module.gift.entity.Gift;
 import cn.lary.module.gift.entity.GiftOrder;
 import cn.lary.module.gift.listener.SynchronizeGiftOrderMessage;
-import cn.lary.module.gift.service.AnchorIncomeService;
 import cn.lary.module.gift.service.GiftOrderService;
 import cn.lary.module.message.dto.stream.GiftSendNotifyDTO;
 import cn.lary.module.message.service.MessageService;
@@ -57,10 +55,10 @@ public class GiftPayment extends AbstractBusinessPayment {
     @Override
     protected ResponsePair<PaymentProcessPair> beforePay(BusinessPaymentDTO paymentDTO) {
         GiftOrderDTO dto = (GiftOrderDTO) paymentDTO;
-        int uid = RequestContext.getLoginUID();
+        long uid = RequestContext.getLoginUID();
         String uidName = RequestContext.getLoginName();
         Gift gift = gifts.get(dto.getId());
-        int anchorUid = dto.getToUid();
+        long anchorUid = dto.getToUid();
         if (gift == null) {
             return BusinessKit.fail("gift id error");
         }

@@ -10,7 +10,7 @@ import lombok.experimental.Accessors;
 @Accessors(chain = true)
 public class JoinLiveVO {
 
-    private int danmakuId;
+    private long danmakuId;
 
     private String specify;
     /**

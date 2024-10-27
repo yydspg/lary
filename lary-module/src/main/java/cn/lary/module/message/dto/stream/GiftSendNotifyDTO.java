@@ -8,8 +8,8 @@ import java.nio.charset.StandardCharsets;
 
 public class GiftSendNotifyDTO extends MessageSendDTO {
 
-    public GiftSendNotifyDTO(int danmakuId,int uid,String username,
-                             int giftId,int giftCount) {
+    public GiftSendNotifyDTO(long danmakuId,long uid,String username,
+                             long giftId,int giftCount) {
         setHeader(new MessageHeader()
                 .setNoPersist(1)
                 .setRedDot(0));

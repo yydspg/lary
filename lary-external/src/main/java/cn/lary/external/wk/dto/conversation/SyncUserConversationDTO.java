@@ -8,7 +8,7 @@ import java.util.List;
 
 @Data
 public class SyncUserConversationDTO extends WKChannel {
-    private Integer uid;
+    private Long uid;
     // 会话消息数量
     @JsonProperty("msg_count")
     private long msgCount;
