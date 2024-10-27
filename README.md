@@ -1,27 +1,38 @@
 ## stream project
+直播，购物,聊天项目
+### structure
+1. [SRS](https://github.com/ossrs/srs)
+2. [WuKongIM](https://github.com/WuKongIM/WuKongIM)
+3. [SMS4j](https://github.com/dromara/SMS4J)
+4. [sensitive-word](https://github.com/houbb/sensitive-word)
+5. [canal](https://github.com/alibaba/canal)
+6. [mybatis-plus](https://github.com/baomidou/mybatis-plus)
+7. [retrofit-spring-boot-starter](https://github.com/LianjiaTech/retrofit-spring-boot-starter)
+8. springboot,mysql,redis,rocketmq.etc
+## timeline
+start 2023/9/1
 
-start 2024/9/1
-
-## 业务点
+## business
 - 用户 y 
 - 群组 y
 - 直播 y
 - 直播弹幕 y
 - 支付 y
 - 直播抽奖 y
+- 钱包 y
+- 订单全局二级索引 y
+- 引入dfa敏感词检测框架 y
 - 直播红包 x
 - 加群付费 x
+- 购物首页推荐 x
+- 直播首页推荐 x
 - 用户等级 x
-- 钱包扣款 y
 - 直播踢人 x
 - 动态线程池 x
 - 支付订单分表 x
 - 直播内容审查 x
 - 直播秒杀问题 x
 - 直播主页问题 x
-- 引入dfa敏感词检测框架 y
-## 版本
-v1 就做单表的项目，主要现在代码都写在 控制器里了，不好升级
-20240915 处理用户关注的逻辑，取消关注需要被关注者同意的逻辑
-## 目标
-v2 水平分表，做做分布式，目前了解到的mp不太好做扩展
+
+## aim
+v2 distribute,micro-service
