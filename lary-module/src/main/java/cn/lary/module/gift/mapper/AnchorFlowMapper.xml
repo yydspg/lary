@@ -8,7 +8,7 @@
         <result column="uid" property="uid" />
         <result column="to_uid" property="toUid" />
         <result column="stream_id" property="streamId" />
-        <result column="income" property="income" />
+        <result column="outcome" property="outcome" />
         <result column="client" property="client" />
         <result column="complete_at" property="completeAt" />
         <result column="gift_id" property="giftId" />

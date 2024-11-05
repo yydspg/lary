@@ -42,20 +42,22 @@ public class Room implements Serializable {
      */
     private Boolean isHot;
 
-    /**
-     * 是否上传封面
-     */
-    private Boolean isUploadCover;
 
     /**
      * 封面地址
      */
-    private String coverUrl;
+    private String cover;
 
     /**
      * 评分
      */
     private Long score;
+
+    private Long behaviorScore;
+
+    private Long contentScore;
+
+    private Long benefitScore;
 
     /**
      * 是否被封禁
@@ -90,9 +92,6 @@ public class Room implements Serializable {
 
     private Boolean isDelete;
 
-    
-
-    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

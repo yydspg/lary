@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -78,7 +79,7 @@ public class StreamRecord implements Serializable {
     /**
      * 礼物花费
      */
-    private Long giftCost;
+    private BigDecimal giftAmount;
     /**
      * 直播状态 1 预开播 2 开播 3 预关播 4 关播
      */

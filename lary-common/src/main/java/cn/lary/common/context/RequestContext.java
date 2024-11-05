@@ -1,16 +1,14 @@
 package cn.lary.common.context;
 
-import java.util.Map;
-
 public class RequestContext {
 
-    private static final ThreadLocal<Map<String, String>> currentRequest = new ThreadLocal<>();
+    private static final ThreadLocal<Pair> currentRequest = new ThreadLocal<>();
 
-    public static void setCurrent(Map<String, String> data) {
+    public static void setCurrent(Pair data) {
         currentRequest.set(data);
     }
 
-    public static Map<String, String> getCurrent() {
+    protected static Pair getCurrent() {
         return currentRequest.get();
     }
 
@@ -22,8 +20,8 @@ public class RequestContext {
      * this method use thread local ,can not return null
      * @return uid
      */
-    public static int getLoginUID() {
-        return  Integer.parseInt(getCurrent().get("uid"));
+    public static long getLoginUID() {
+        return  getCurrent().uid;
     }
 
     /**
@@ -31,6 +29,6 @@ public class RequestContext {
      * @return login username
      */
     public static String getLoginName() {
-        return  getCurrent().get("name");
+        return  getCurrent().name;
     }
 }

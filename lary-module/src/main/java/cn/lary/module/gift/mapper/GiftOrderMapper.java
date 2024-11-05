@@ -18,5 +18,6 @@ import java.util.List;
 public interface GiftOrderMapper extends BaseMapper<GiftOrder> {
 
 
-    List<GiftOrderVO> getGiftOrderVOs(GiftOrderPageQueryDTO dto);
+    List<GiftOrderVO> orders(GiftOrderPageQueryDTO dto);
+
 }

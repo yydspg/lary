@@ -6,19 +6,22 @@
     <resultMap id="BaseResultMap" type="cn.lary.module.wallet.entity.Wallet">
         <id column="id" property="id" />
         <result column="uid" property="uid" />
-        <result column="vc_income" property="vcIncome" />
-        <result column="vc_outcome" property="vcOutcome" />
-        <result column="vc_fee" property="vcFee" />
-        <result column="vc_locked" property="vcLocked" />
-        <result column="is_anchor" property="isAnchor" />
-        <result column="is_block" property="isBlock" />
-        <result column="sec_question" property="secQuestion" />
-        <result column="sec_answer" property="secAnswer" />
+        <result column="outcome" property="outcome" />
+        <result column="outcome" property="outcome" />
+        <result column="amount" property="amount" />
+        <result column="vc_count" property="vcCount" />
+        <result column="role" property="role" />
+        <result column="status" property="status" />
         <result column="is_delete" property="isDelete" />
-        <result column="create_by" property="createBy" />
-        <result column="update_by" property="updateBy" />
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
+
+    <update id="batchOutcomeRandomTransfer" >
+        <foreach item="item" collection="list" separator="," open="(" close=")" index="">
+            update set amount = amount + #{item.amount}
+            where uid = #{item.user}
+        </foreach>
+    </update>
 
 </mapper>

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -58,26 +59,14 @@ public class Follow implements Serializable {
     private String avatar;
 
     /**
-     * 是否是主播
+     * 被关注角色
      */
-    private Boolean isAnchor;
-    /**
-     * 是否拉黑
-     */
-    private Boolean isBlock;
-    /**
-     * 是否取消关注
-     */
-    private Boolean isUnfollow;
-    /**
-     * 是否单向关注
-     */
-    private Boolean isOneWay;
+    private Integer role;
 
     /**
-     * 是否删除
+     * 关注的状态 ,1 正常 2.取消关注 3.拉黑
      */
-    private Boolean isDelete;
+    private Integer status;
 
     /**
      * 粉丝等级
@@ -88,7 +77,11 @@ public class Follow implements Serializable {
     /**
      * 对主播的花费
      */
-    private String cost;
+    private BigDecimal amount;
+    /**
+     * 是否删除
+     */
+    private Boolean isDelete;
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

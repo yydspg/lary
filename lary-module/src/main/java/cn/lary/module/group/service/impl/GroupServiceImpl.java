@@ -83,12 +83,12 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
             groupName = sb.toString();
         }
         User creatorInfo = userService.lambdaQuery()
-                .select(User::getIsAnchor)
+                .select(User::getRole)
                 .eq(User::getUid, creator)
                 .eq(User::getIsDelete, false)
                 .one();
-        if (dto.getCategory() == LARY.Group.Category.stream) {
-            if (creatorInfo == null || !creatorInfo.getIsAnchor()) {
+        if (dto.getCategory() == LARY.GROUP.ROLE.MANAGER) {
+            if (creatorInfo == null || creatorInfo.getRole() == LARY.GROUP.ROLE.MANAGER) {
                 return BusinessKit.fail("inappropriate category");
             }
         }

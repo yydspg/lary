@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -34,12 +35,12 @@ public class AnchorFLow implements Serializable {
     /**
      * 直播流id
      */
-    private Integer streamId;
+    private Long streamId;
 
     /**
      * 单笔收入
      */
-    private Long income;
+    private BigDecimal income;
 
     /**
      * 收入来源web,app
@@ -61,7 +62,7 @@ public class AnchorFLow implements Serializable {
     /**
      * 是否是粉丝
      */
-    private Boolean isFan;
+    private Integer followStatus;
 
     private Boolean isDelete;
 
@@ -72,17 +73,19 @@ public class AnchorFLow implements Serializable {
     @TableField(fill = FieldFill.UPDATE)
     private LocalDateTime updateAt;
 
-    public AnchorFLow of(GiftOrder order){
+    public AnchorFLow() {}
+
+    public AnchorFLow(GiftOrder order){
 
         setUid(order.getAnchorUid());
         setToUid(order.getUid());
         setGiftId(order.getGiftId());
-        setIncome(order.getCost());
+        setIncome(order.getAmount());
         setStreamId(order.getStreamId());
         setGiftNum(order.getGiftNum());
         setClient(order.getClient());
-        setIsFan(order.getIsFan());
+        setFollowStatus(order.getFollowStatus());
         setCompleteAt(LocalDateTime.now());
-        return this;
+
     }
 }

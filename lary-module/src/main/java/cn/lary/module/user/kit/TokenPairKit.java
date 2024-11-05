@@ -1,7 +1,7 @@
 package cn.lary.module.user.kit;
 
 import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.RedisCache;
+import cn.lary.module.common.cache.CacheComponent;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -9,7 +9,7 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TokenPairKit {
 
-    private final RedisCache redisCache;
+    private final CacheComponent cacheComponent;
     private final KVBuilder kvBuilder;
 
 

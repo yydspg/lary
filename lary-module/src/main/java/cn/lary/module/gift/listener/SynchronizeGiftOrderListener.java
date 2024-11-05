@@ -20,7 +20,7 @@ public class SynchronizeGiftOrderListener implements RocketMQListener<Synchroniz
     @Override
     public void onMessage(SynchronizeGiftOrderMessage message) {
         GiftOrder order = message.getGiftOrder();
-        AnchorFLow income = new AnchorFLow().of(order);
-        anchorFlowService.save(income);
+        AnchorFLow outcome = new AnchorFLow(order);
+        anchorFlowService.save(outcome);
     }
 }

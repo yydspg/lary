@@ -20,9 +20,6 @@ public class GiftExecute {
 
 
     private final GiftPayment giftPayment;
-    //component
-    private final HashMap<Integer, GiftCollectionVO> giftCollections = new HashMap<>();
-    private String giftCollectionJSON;
 
     /**
      * 支付
@@ -38,8 +35,8 @@ public class GiftExecute {
      * 返回所有礼物的 VO
      * @return gift collection json
      */
-    public ResponsePair<String> getGifts() {
-        return BusinessKit.ok(giftCollectionJSON);
+    public ResponsePair<String> gifts() {
+            return null;
     }
 
 

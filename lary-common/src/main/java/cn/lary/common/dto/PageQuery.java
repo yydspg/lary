@@ -1,6 +1,7 @@
 package cn.lary.common.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+
+import com.alibaba.fastjson2.annotation.JSONField;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -13,11 +14,11 @@ import lombok.Setter;
 @Setter
 public  class PageQuery  {
 
-    @JsonProperty("page_size")
+    @JSONField(name = "page_size")
     private Long pageSize ;
 
 
-    @JsonProperty("page_index")
+    @JSONField(name = "page_index")
     private Long pageIndex ;
 
 }

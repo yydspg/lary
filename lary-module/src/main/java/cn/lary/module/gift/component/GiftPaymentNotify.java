@@ -1,7 +1,7 @@
 package cn.lary.module.gift.component;
 
 import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.RedisCache;
+import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.gift.entity.AnchorFLow;
 import cn.lary.module.gift.entity.GiftOrder;
@@ -13,7 +13,7 @@ import cn.lary.module.message.service.MessageService;
 import cn.lary.module.pay.component.BusinessPaymentNotify;
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
 import cn.lary.module.pay.vo.PaymentQueryVO;
-import cn.lary.module.stream.dto.JoinLiveCacheDTO;
+import cn.lary.module.cache.dto.JoinLiveCacheDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -28,7 +28,7 @@ import java.util.Map;
 public class GiftPaymentNotify implements BusinessPaymentNotify {
 
     private final AnchorFlowService anchorFlowService;
-    private final RedisCache redisCache;
+    private final CacheComponent cacheComponent;
     private final KVBuilder kvBuilder;
     private final GiftOrderService giftOrderService;
     private final TransactionTemplate transactionTemplate;
@@ -78,13 +78,13 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
                     .set(GiftOrder::getStatus, LARY.PAYMENT.STATUS.FINISH)
                     .set(GiftOrder::getCompleteAt, LocalDateTime.now())
                     .eq(GiftOrder::getId, orderId);
-            anchorFlowService.save(new AnchorFLow().of(temp));
+            anchorFlowService.save(new AnchorFLow(temp));
             return temp;
         });
         if (order == null) {
             return;
         }
-        Map<Object, Object> data = redisCache.getHash(kvBuilder.joinLiveK(order.getUid()));
+        Map<Object, Object> data = cacheComponent.getHash(kvBuilder.joinLiveK(order.getUid()));
         if (data == null) {
             log.error("no user join live data when callback order,orderId{},uid:{}",orderId,order.getUid());
             return;

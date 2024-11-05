@@ -1,13 +1,17 @@
 package cn.lary.module.wallet.entity;
 
 import cn.lary.module.wallet.dto.TransferDTO;
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -15,17 +19,17 @@ import java.time.LocalDateTime;
  * </p>
  *
  * @author paul
- * @since 2024-10-02
+ * @since 2024-11-01
  */
 @Getter
 @Setter
 @Accessors(chain = true)
-@TableName("wallet_income")
+@TableName("wallet_outcome")
 public class WalletIncome implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
+      @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
@@ -41,12 +45,12 @@ public class WalletIncome implements Serializable {
     /**
      * 频道id
      */
-    private Long channelId;
+    private Long channel;
 
     /**
      * 频道类型
      */
-    private Integer channelType;
+    private Integer category;
 
     /**
      * 交易类型
@@ -56,24 +60,27 @@ public class WalletIncome implements Serializable {
     /**
      * 花费
      */
-    private Long cost;
+    private BigDecimal amount;
+
+    /**
+     * 同步状态
+     */
+    private Integer syncStatus;
 
     private Boolean isDelete;
 
-    @TableField(fill = FieldFill.INSERT)
+      @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;
 
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
-
-    public static WalletIncome of(TransferDTO dto) {
-        WalletIncome income = new WalletIncome();
-        income.setUid(dto.getToUid());
-        income.setToUid(dto.getUid());
-        income.setChannelId(dto.getChannelId());
-        income.setChannelType(dto.getChannelType());
-        income.setType(dto.getType());
-        income.setCost(dto.getAmount());
-        return income;
-    }
+      public static WalletIncome of(TransferDTO dto) {
+          WalletIncome income = new WalletIncome();
+          income.setUid(dto.getUid());
+          income.setToUid(dto.getToUid());
+          income.setAmount(dto.getAmount());
+          income.setChannel(dto.getChannel());
+          income.setCategory(dto.getCategory());
+          income.setType(dto.getType());
+          income.setCreateAt(LocalDateTime.now());
+          return income;
+      }
 }

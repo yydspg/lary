@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -56,7 +57,7 @@ public class PaymentLog implements Serializable {
     /**
      * 支付金额
      */
-    private Long amount;
+    private BigDecimal amount;
 
     /**
      * 请求支付状态，1：成功，2：失败

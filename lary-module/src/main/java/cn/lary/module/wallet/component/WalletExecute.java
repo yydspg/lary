@@ -24,34 +24,26 @@ import java.util.List;
 public class WalletExecute {
 
     private final WalletService walletService;
-    private final WalletPayment walletPayment;
     private final WalletIncomeService walletIncomeService;
     private final WalletOutcomeService walletOutcomeService;
+    private final RechargePayment rechargePayment;
     /**
      * 充值业务
      * @param dto {@link RechargeDTO}
      * @return {@link PaymentBuildVO}
      */
     public ResponsePair<PaymentBuildVO> recharge(RechargeDTO dto)  {
-        return walletPayment.executePayment(dto);
+        return rechargePayment.executePayment(dto);
     }
 
     /**
      * 获取余额
      * @return  {@link BalanceVO}
      */
-    public ResponsePair<BalanceVO> getBalance()  {
+    public ResponsePair<BalanceVO> my()  {
         return walletService.my();
     }
 
-    /**
-     * 更新问题
-     * @param dto {@link UpdateSecurityQuestionDTO}
-     * @return ok
-     */
-    public ResponsePair<Void> updateQuestion(UpdateSecurityQuestionDTO dto) {
-        return walletService.updateQuestion(dto);
-    }
 
     /**
      * 分页查询收入

@@ -9,6 +9,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -40,12 +41,12 @@ public class Gift implements Serializable {
     /**
      * virtual currency price
      */
-    private Long vcPrice;
+    private Long vcAmount;
 
     /**
      * real pay price CNY
      */
-    private Long price;
+    private BigDecimal amount;
 
     private String name;
 

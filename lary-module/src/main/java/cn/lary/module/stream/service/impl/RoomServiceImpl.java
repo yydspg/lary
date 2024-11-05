@@ -3,19 +3,17 @@ package cn.lary.module.stream.service.impl;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.*;
-import cn.lary.external.wk.constant.WK;
-import cn.lary.module.app.entity.LaryChannel;
-import cn.lary.module.app.service.EventService;
-import cn.lary.module.app.service.LaryChannelService;
+import cn.lary.module.cache.dto.*;
+import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.RedisCache;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.event.dto.DownLiveEventDTO;
+import cn.lary.module.common.service.EventService;
 import cn.lary.module.event.dto.GoLiveEventDTO;
 import cn.lary.module.gift.service.AnchorFlowService;
 import cn.lary.module.message.dto.stream.*;
 import cn.lary.module.message.service.MessageService;
-import cn.lary.module.stream.dto.*;
+import cn.lary.module.raffle.entity.RaffleEventCache;
+import cn.lary.module.stream.dto.GoLiveDTO;
 import cn.lary.module.stream.entity.Follow;
 import cn.lary.module.stream.entity.Room;
 import cn.lary.module.stream.entity.StreamRecord;
@@ -26,13 +24,13 @@ import cn.lary.module.stream.service.StreamRecordService;
 import cn.lary.module.stream.vo.DownLiveVO;
 import cn.lary.module.stream.vo.GoLiveVO;
 import cn.lary.module.stream.vo.JoinLiveVO;
-import cn.lary.module.user.dto.DeviceLoginCacheDTO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
@@ -54,10 +52,10 @@ import java.util.concurrent.TimeUnit;
 public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements RoomService {
 
     private final KVBuilder kvBuilder;
-    private final RedisCache redisCache;
+    private final CacheComponent cacheComponent;
     private final EventService eventService;
     private final StreamRecordService streamRecordService;
-    private final LaryChannelService laryChannelService;
+
     private final FollowService followService;
     private final MessageService messageService;
     private final TransactionTemplate transactionTemplate;
@@ -76,54 +74,54 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         long uid = RequestContext.getLoginUID();
         String name = RequestContext.getLoginName();
         Follow relation = followService.lambdaQuery()
-                .select(Follow::getIsBlock)
+//                .select(Follow::getIsBlock)
                 .eq(Follow::getUid, uid)
                 .eq(Follow::getUid, toUid)
                 .eq(Follow::getIsDelete,false)
                 .one();
         boolean isFan = false;
-        if(relation != null && relation.getIsBlock()){
+        if(relation != null && relation.getStatus() == LARY.FOLLOW.STATUS.BLOCK){
             return BusinessKit.fail("你已被拉黑");
         }
-        if (relation == null || !relation.getIsUnfollow()) {
-            isFan = true;
-        }
-        Map<Object,Object> args = redisCache.getHash(kvBuilder.goLiveK(toUid));
+//        if (relation == null || relation.getStatus() ) {
+//            isFan = true;
+//        }
+        Map<Object,Object> args = cacheComponent.getHash(kvBuilder.goLiveK(toUid));
         if (args == null) {
             return BusinessKit.fail("no live info");
         }
-        LiveCacheDTO liveCache = LiveCacheDTO.of(args);
-        args = redisCache.getHash(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
+        LiveCache liveCache = LiveCache.of(args);
+        args = cacheComponent.getHash(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
         if (args == null) {
             return BusinessKit.fail("no stream record");
         }
-        redisCache.incrHash(kvBuilder.streamRecordK(toUid, liveCache.getStreamId()),"watchNum");
+        cacheComponent.incrHash(kvBuilder.streamRecordK(toUid, liveCache.getStreamId()),"watchNum");
         if (isFan) {
-            redisCache.incrHash(kvBuilder.streamRecordK(toUid, liveCache.getStreamId()),"watchFanNum");
+            cacheComponent.incrHash(kvBuilder.streamRecordK(toUid, liveCache.getStreamId()),"watchFanNum");
         }
         String authToken = UUIDKit.getUUID();
         // 30 minutes
         long expire = 30;
         JoinLiveCacheDTO dto = new JoinLiveCacheDTO()
                 .setIp(ip)
-                .setStreamId(liveCache.getStreamId())
+//                .setStreamId(liveCache.getStreamId())
                 .setSrsToken(authToken)
                 .setSrsStreamId(liveCache.getSrsStreamId())
                 .setIdentify(liveCache.getIdentify());
-        redisCache.setHash(kvBuilder.joinLiveK(uid),kvBuilder.joinLiveV(dto),expire, TimeUnit.MINUTES);
+        cacheComponent.setHash(kvBuilder.joinLiveK(uid),kvBuilder.joinLiveV(dto),expire, TimeUnit.MINUTES);
         messageService.addSubscriber(new AddSubscribersDTO(liveCache.getDanmakuId(), List.of(uid)));
         messageService.send(new JoinRoomDTO(uid,name,liveCache.getDanmakuId()));
         String specify = liveCache.getIdentify();
         if (StringKit.isEmpty(specify)) {
             return BusinessKit.fail("stream url is empty");
         }
-        RaffleCacheDTO raffle = null;
+        RaffleEventCache raffle = null;
         RedPacketCacheDTO redPacket = null;
-        Map<Object, Object> map = redisCache.getHash(kvBuilder.raffleK(toUid));
+        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.raffleK(toUid));
         if (map != null) {
-            raffle = RaffleCacheDTO.of(map);
+//            raffle = RaffleEventCache.of(map);
         }
-        map = redisCache.getHash(kvBuilder.redPacketK(toUid));
+        map = cacheComponent.getHash(kvBuilder.redPacketK(toUid));
         if (map != null) {
             redPacket = RedPacketCacheDTO.of(map);
         }
@@ -139,11 +137,11 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
     @Override
     public ResponsePair<Void> leave() {
         long uid = RequestContext.getLoginUID();
-        Map<Object, Object> map = redisCache.getHash(kvBuilder.joinLiveK(uid));
+        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.joinLiveK(uid));
         if (map == null) {
             return BusinessKit.fail("no join live info");
         }
-        redisCache.delete(kvBuilder.joinLiveK(uid));
+        cacheComponent.delete(kvBuilder.joinLiveK(uid));
         return BusinessKit.ok();
     }
 
@@ -151,20 +149,20 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
     public ResponsePair<DownLiveVO> end() {
         long uid = RequestContext.getLoginUID();
         Map<Object, Object> coll = null;
-        coll = redisCache.getHash(kvBuilder.raffleK(uid));
+        coll = cacheComponent.getHash(kvBuilder.raffleK(uid));
         if (coll != null) {
             return BusinessKit.fail("存在未完成的抽奖活动");
         }
-        coll = redisCache.getHash(kvBuilder.redPacketK(uid));
+        coll = cacheComponent.getHash(kvBuilder.redPacketK(uid));
         if (coll != null) {
             return BusinessKit.fail("存在未结束的红包活动");
         }
-        coll = redisCache.getHash(kvBuilder.goLiveK(uid));
+        coll = cacheComponent.getHash(kvBuilder.goLiveK(uid));
         if (coll == null) {
             return BusinessKit.fail("no live info");
         }
-        LiveCacheDTO liveCache = LiveCacheDTO.of(coll);
-        Map<Object, Object> record = redisCache.getHash(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
+        LiveCache liveCache = LiveCache.of(coll);
+        Map<Object, Object> record = cacheComponent.getHash(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
         if (record == null) {
             return BusinessKit.fail("stream record not exist");
         }
@@ -179,9 +177,9 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
         }
         StreamRecordCacheDTO recordCache = StreamRecordCacheDTO.of(record);
         String token = UUIDKit.getUUID();
-        DownLiveEventDTO downLiveEventDTO = new DownLiveEventDTO(uid, liveCache.getStreamId(), liveCache.getDanmakuId());
+//        DownLiveEventDTO downLiveEventDTO = new DownLiveEventDTO(uid, liveCache.getStreamId(), liveCache.getDanmakuId());
         Long eventId = transactionTemplate.execute(status -> {
-            long event = eventService.begin(downLiveEventDTO);
+//            long event = eventService.begin(downLiveEventDTO);
             streamRecordService.lambdaUpdate()
                     .eq(StreamRecord::getStreamId, liveCache.getStreamId())
                     .set(StreamRecord::getStatus, LARY.Stream.Status.down)
@@ -192,14 +190,14 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
             streamRecordService.lambdaUpdate()
                     .eq(StreamRecord::getStreamId, liveCache.getStreamId())
                     .set(StreamRecord::getStatus, LARY.Stream.Status.preDown);
-            return event;
+            return 0L;
         });
         String duration = Duration.ofMillis(SystemKit.now() - room.getLastLogin()).toString();
-        redisCache.setHash(kvBuilder.goLiveK(uid),"srsToken",token);
-        redisCache.delete(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
+        cacheComponent.setHash(kvBuilder.goLiveK(uid),"srsToken",token);
+        cacheComponent.delete(kvBuilder.streamRecordK(uid, liveCache.getStreamId()));
         DownLiveVO downLiveVO = new DownLiveVO( recordCache.getWatchNum(), recordCache.getNewFansNum(), recordCache.getStarNum(), recordCache.getWatchFanNum(), duration,token,eventId);
         executor.execute(()->{
-            executeTurnOver(uid,liveCache.getStreamId());
+//            executeTurnOver(uid,liveCache.getStreamId());
         });
         messageService.send(new EndLiveDTO(uid,liveCache.getDanmakuId()));
         return BusinessKit.ok(downLiveVO);
@@ -209,11 +207,11 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
     public ResponsePair<GoLiveVO> go(String ip, GoLiveDTO dto) {
         long uid = RequestContext.getLoginUID();
         String name = RequestContext.getLoginName();
-        Map<Object, Object> liveInfo = redisCache.getHash(kvBuilder.goLiveK(uid));
+        Map<Object, Object> liveInfo = cacheComponent.getHash(kvBuilder.goLiveK(uid));
         if (liveInfo != null) {
             return BusinessKit.fail("you already go live");
         }
-        Map<Object, Object> map = redisCache.getHash(kvBuilder.deviceLoginK(uid, dto.getDeviceId()));
+        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.deviceLoginK(uid, dto.getDeviceId()));
         if (map == null) {
             return BusinessKit.fail("access login device failed");
         }
@@ -257,11 +255,12 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
                     .eq(Room::getUid, uid);
         }
 
-        LaryChannel laryChannel = new LaryChannel()
-                .setUid(uid)
-                .setChannelType(WK.CHANNEL.TYPE.DATA);
-        laryChannelService.save(laryChannel);
-        long danmakuId = laryChannel.getId();
+//        LaryChannel laryChannel = new LaryChannel()
+//                .setUid(uid)
+//                .setChannelType(WK.CHANNEL.TYPE.DATA);
+//        laryChannelService.save(laryChannel);
+//        long danmakuId = laryChannel.getId();
+        long danmakuId = 0;
         messageService.saveOrUpdateChannel(new CreateDanmakuChannelDTO(danmakuId));
         String identify = UUIDKit.uuidToShort(UUIDKit.getUUID());
         StreamRecord streamRecord = new StreamRecord()
@@ -282,14 +281,14 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
             }
         }
         String token = UUIDKit.getUUID();
-        LiveCacheDTO cacheDTO = new LiveCacheDTO()
+        LiveCache cacheDTO = new LiveCache()
                 .setIp(ip)
                 .setDanmakuId(danmakuId)
                 .setStreamId(streamRecord.getStreamId())
                 .setIdentify(identify)
                 .setSrsToken(token);
-        redisCache.setHash(kvBuilder.goLiveK(uid),kvBuilder.goLiveV(cacheDTO));
-        redisCache.setHash(kvBuilder.streamRecordK(uid, streamRecord.getStreamId()),kvBuilder.streamRecordV());
+        cacheComponent.setHash(kvBuilder.goLiveK(uid),kvBuilder.goLiveV(cacheDTO));
+        cacheComponent.setHash(kvBuilder.streamRecordK(uid, streamRecord.getStreamId()),kvBuilder.streamRecordV());
         GoLiveVO goLiveVO = new GoLiveVO(token,identify,event);
         return BusinessKit.ok(goLiveVO);
     }
@@ -300,11 +299,10 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
     }
 
     public void executeTurnOver(long uid,int streamId) {
-        ResponsePair<Long> pair = anchorFlowService.buildTurnover(uid, streamId);
-        Long sum = pair.getData();
+        ResponsePair<BigDecimal> pair = anchorFlowService.buildTurnover(uid, streamId);
+        BigDecimal sum = pair.getData();
         streamRecordService.lambdaUpdate()
                 .eq(StreamRecord::getStreamId, streamId)
-                .eq(StreamRecord::getUid, uid)
-                .set(StreamRecord::getStatus, sum);
+                .set(StreamRecord::getGiftAmount, sum);
     }
 }

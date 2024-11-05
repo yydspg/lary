@@ -1,13 +1,17 @@
 package cn.lary.module.wallet.entity;
 
 import cn.lary.module.wallet.dto.TransferDTO;
-import com.baomidou.mybatisplus.annotation.*;
+import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
+import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
+import com.baomidou.mybatisplus.annotation.TableName;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -15,7 +19,7 @@ import java.time.LocalDateTime;
  * </p>
  *
  * @author paul
- * @since 2024-10-02
+ * @since 2024-11-01
  */
 @Getter
 @Setter
@@ -25,7 +29,7 @@ public class WalletOutcome implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-    @TableId(value = "id", type = IdType.AUTO)
+      @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
     /**
@@ -41,12 +45,12 @@ public class WalletOutcome implements Serializable {
     /**
      * 频道id
      */
-    private Long channelId;
+    private Long channel;
 
     /**
      * 频道类型
      */
-    private Integer channelType;
+    private Integer category;
 
     /**
      * 交易类型
@@ -56,24 +60,28 @@ public class WalletOutcome implements Serializable {
     /**
      * 花费
      */
-    private Long cost;
+    private BigDecimal amount;
+
+    /**
+     * 同步状态
+     */
+    private Integer syncStatus;
 
     private Boolean isDelete;
 
-    @TableField(fill = FieldFill.INSERT)
+      @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;
-
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
-
+      
+      
     public static WalletOutcome of(TransferDTO dto) {
-        WalletOutcome o = new WalletOutcome();
-        o.setUid(dto.getUid());
-        o.setChannelId(dto.getChannelId());
-        o.setChannelType(dto.getChannelType());
-        o.setType(dto.getType());
-        o.setCost(dto.getAmount());
-        o.setToUid(dto.getToUid());
-        return o;
+        WalletOutcome outcome = new WalletOutcome();
+        outcome.setUid(dto.getUid());
+        outcome.setToUid(dto.getToUid());
+        outcome.setAmount(dto.getAmount());
+        outcome.setChannel(dto.getChannel());
+        outcome.setCategory(dto.getCategory());
+        outcome.setType(dto.getType());
+        outcome.setCreateAt(LocalDateTime.now());
+        return outcome;
     }
 }

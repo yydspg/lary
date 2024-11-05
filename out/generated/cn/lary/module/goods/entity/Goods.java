@@ -27,12 +27,7 @@ public class Goods implements Serializable {
     /**
      * id
      */
-    private Long id;
-
-    /**
-     * 审核信息
-     */
-    private String authMessage;
+      private Long id;
 
     /**
      * 品牌ID
@@ -70,14 +65,19 @@ public class Goods implements Serializable {
     private String name;
 
     /**
-     * 计量单位
+     * 商品分类
      */
-    private String goodsUnit;
+    private Integer category;
+
+    /**
+     * 计量单位,克,个,米.etc
+     */
+    private String unit;
 
     /**
      * 商品视频
      */
-    private String goodsVideo;
+    private String video;
 
     /**
      * 商品好评率
@@ -90,9 +90,24 @@ public class Goods implements Serializable {
     private String intro;
 
     /**
+     * 商品价格
+     */
+    private BigDecimal price;
+
+    /**
+     * 商品库存
+     */
+    private Integer quantity;
+
+    /**
      * 审核状态
      */
     private Integer authStatus;
+
+    /**
+     * 审核信息
+     */
+    private String authMessage;
 
     /**
      * 上架状态
@@ -103,21 +118,6 @@ public class Goods implements Serializable {
      * 商品移动端详情
      */
     private String mobileIntro;
-
-    /**
-     * 原图路径
-     */
-    private String original;
-
-    /**
-     * 商品价格
-     */
-    private BigDecimal price;
-
-    /**
-     * 库存
-     */
-    private Integer quantity;
 
     /**
      * 是否为推荐商品
@@ -140,14 +140,19 @@ public class Goods implements Serializable {
     private String storeName;
 
     /**
+     * 店铺分类
+     */
+    private String storeCategory;
+
+    /**
+     * 店铺分类路径
+     */
+    private String storeCategoryPath;
+
+    /**
      * 卖点
      */
     private String sellingPoint;
-
-    /**
-     * 店铺分类
-     */
-    private String shopCategoryPath;
 
     /**
      * 小图路径
@@ -165,9 +170,14 @@ public class Goods implements Serializable {
     private String thumbnail;
 
     /**
-     * 商品编号
+     * 原图路径
      */
-    private String sn;
+    private String original;
+
+    /**
+     * 详情图片
+     */
+    private String detailImages;
 
     /**
      * 运费模板ID
@@ -180,11 +190,9 @@ public class Goods implements Serializable {
     private String underMessage;
 
     /**
-     * 店铺分类路径
+     * 商品参数
      */
-    private String storeCategoryPath;
-
-    private String goodsType;
+    private String params;
 
     private Boolean isDelete;
 

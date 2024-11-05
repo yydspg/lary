@@ -31,10 +31,18 @@ public interface WalletService extends IService<Wallet> {
      * 批量数据转移<br>
      * 一个用户对多个用户转移相同数目的资产 <br>
      * 吊起此接口前对被转移用户状态检查
-     * @param dto {@link BatchOutcomeTransferDTO}
+     * @param dto {@link BatchOutcomeFixTransferDTO}
      * @return {@link ResponsePair}
      */
-    ResponsePair<Void> batchOutcomeTransfer(BatchOutcomeTransferDTO dto);
+    ResponsePair<Void> batchOutcomeFixTransfer(BatchOutcomeFixTransferDTO dto);
+    /**
+     * 批量数据转移<br>
+     * 一个用户对多个用户转不同数目的资产 <br>
+     * 吊起此接口前对被转移用户状态检查
+     * @param dto {@link BatchOutcomeRandomTransferDTO}
+     * @return {@link ResponsePair}
+     */
+    ResponsePair<Void> batchOutcomeRandomTransfer(BatchOutcomeRandomTransferDTO dto);
 
     /**
      * 系统向用户转钱
@@ -55,10 +63,12 @@ public interface WalletService extends IService<Wallet> {
      * @param members 用户
      * @return ok
      */
-    ResponsePair<List<Wallet>> getUserWallets(List<Long> members);
+    ResponsePair<List<Wallet>> getWallets(List<Long> members);
 
 
-    ResponsePair<Void> updateQuestion(UpdateSecurityQuestionDTO dto);
-
+    /**
+     * 查询我的账户
+     * @return {@link BalanceVO}
+     */
     ResponsePair<BalanceVO> my();
 }

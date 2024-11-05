@@ -9,7 +9,7 @@ import org.springframework.web.bind.annotation.RestController;
  * </p>
  *
  * @author paul
- * @since 2024-10-02
+ * @since 2024-11-01
  */
 @RestController
 @RequestMapping("/wallet/wallet-outcome")

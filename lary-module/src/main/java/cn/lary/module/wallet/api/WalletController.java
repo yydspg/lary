@@ -7,7 +7,6 @@ import cn.lary.common.kit.ResponseKit;
 import cn.lary.module.pay.vo.PaymentBuildVO;
 import cn.lary.module.wallet.component.WalletExecute;
 import cn.lary.module.wallet.dto.RechargeDTO;
-import cn.lary.module.wallet.dto.UpdateSecurityQuestionDTO;
 import cn.lary.module.wallet.dto.WalletIncomePageQueryDTO;
 import cn.lary.module.wallet.dto.WalletOutcomePageQueryDTO;
 import cn.lary.module.wallet.vo.BalanceVO;
@@ -56,28 +55,14 @@ public class WalletController {
      * 获取账户钱包信息
      * @return {@link BalanceVO}
      */
-    @PostMapping("/balance")
-    public SingleResponse<BalanceVO> getBalance() {
+    @PostMapping("/my")
+    public SingleResponse<BalanceVO> my() {
 
-        ResponsePair<BalanceVO> response = walletExecute.getBalance();
+        ResponsePair<BalanceVO> response = walletExecute.my();
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok(response.getData());
-    }
-
-    /**
-     * 更新 密保 question
-     * @param req {@link UpdateSecurityQuestionDTO}
-     * @return ok
-     */
-    @PostMapping("/question")
-    public SingleResponse<Void> updatePwd(@RequestBody @Valid UpdateSecurityQuestionDTO req) {
-        ResponsePair<Void> response = walletExecute.updateQuestion(req);
-        if (response.isFail()) {
-            return ResponseKit.fail(response.getMsg());
-        }
-        return ResponseKit.ok();
     }
 
     /**
@@ -86,7 +71,7 @@ public class WalletController {
      * @return {@link WalletIncomeVO}
      */
     @PostMapping("/incomes")
-    public PageResponse<WalletIncomeVO> incomes(@RequestBody @Valid WalletIncomePageQueryDTO req) {
+    public PageResponse<WalletIncomeVO> outcomes(@RequestBody @Valid WalletIncomePageQueryDTO req) {
         ResponsePair<List<WalletIncomeVO>> response = walletExecute.getIncomeVOs(req);
         if (response.isFail()) {
             return ResponseKit.pageFail(response.getMsg());
@@ -96,7 +81,7 @@ public class WalletController {
 
     /**
      * 获取支出
-     * @param req {@link WalletOutcomePageQueryDTO}
+     * @param dto {@link WalletOutcomePageQueryDTO}
      * @return {@link WalletOutcomeVO}
      */
     @PostMapping("/outcomes")

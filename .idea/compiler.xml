@@ -11,6 +11,7 @@
         <module name="lary-starter" />
         <module name="lary-external" />
         <module name="lary-common" />
+        <module name="yutak-cache" />
         <module name="lary-module" />
       </profile>
     </annotationProcessing>
@@ -42,6 +43,7 @@
       <module name="lary-module" options="" />
       <module name="lary-rpc" options="" />
       <module name="lary-starter" options="" />
+      <module name="yutak-cache" options="" />
     </option>
   </component>
 </project>

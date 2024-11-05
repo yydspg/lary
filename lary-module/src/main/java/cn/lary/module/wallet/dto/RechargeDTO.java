@@ -7,13 +7,15 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class RechargeDTO extends BusinessPaymentDTO {
 
     @NotNull
     @Min(value = 0,message = "recharge amount not less than 0")
     @Max(value = Integer.MAX_VALUE,message = "recharge amount over limit")
-    private Long amount;
+    private BigDecimal amount;
 
     @NotNull
     private Integer client;

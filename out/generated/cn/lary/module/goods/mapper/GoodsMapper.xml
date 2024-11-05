@@ -4,8 +4,7 @@
 
     <!-- 通用查询映射结果 -->
     <resultMap id="BaseResultMap" type="cn.lary.module.goods.entity.Goods">
-        <result column="id" property="id" />
-        <result column="auth_message" property="authMessage" />
+        <id column="id" property="id" />
         <result column="brand_id" property="brandId" />
         <result column="brand_name" property="brandName" />
         <result column="buy_count" property="buyCount" />
@@ -13,30 +12,32 @@
         <result column="comment_num" property="commentNum" />
         <result column="cost" property="cost" />
         <result column="name" property="name" />
-        <result column="goods_unit" property="goodsUnit" />
-        <result column="goods_video" property="goodsVideo" />
+        <result column="category" property="category" />
+        <result column="unit" property="unit" />
+        <result column="video" property="video" />
         <result column="grade" property="grade" />
         <result column="intro" property="intro" />
-        <result column="auth_status" property="authStatus" />
-        <result column="market_status" property="marketStatus" />
-        <result column="mobile_intro" property="mobileIntro" />
-        <result column="original" property="original" />
         <result column="price" property="price" />
         <result column="quantity" property="quantity" />
+        <result column="auth_status" property="authStatus" />
+        <result column="auth_message" property="authMessage" />
+        <result column="market_status" property="marketStatus" />
+        <result column="mobile_intro" property="mobileIntro" />
         <result column="is_recommend" property="isRecommend" />
         <result column="sales_model" property="salesModel" />
         <result column="store_id" property="storeId" />
         <result column="store_name" property="storeName" />
+        <result column="store_category" property="storeCategory" />
+        <result column="store_category_path" property="storeCategoryPath" />
         <result column="selling_point" property="sellingPoint" />
-        <result column="shop_category_path" property="shopCategoryPath" />
         <result column="small_avatar" property="smallAvatar" />
         <result column="big_avatar" property="bigAvatar" />
         <result column="thumbnail" property="thumbnail" />
-        <result column="sn" property="sn" />
+        <result column="original" property="original" />
+        <result column="detail_images" property="detailImages" />
         <result column="template_id" property="templateId" />
         <result column="under_message" property="underMessage" />
-        <result column="store_category_path" property="storeCategoryPath" />
-        <result column="goods_type" property="goodsType" />
+        <result column="params" property="params" />
         <result column="is_delete" property="isDelete" />
         <result column="create_by" property="createBy" />
         <result column="update_by" property="updateBy" />

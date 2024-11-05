@@ -11,6 +11,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -29,16 +30,16 @@ public class AnchorFlowServiceImpl extends ServiceImpl<AnchorFlowMapper, AnchorF
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    public ResponsePair<Long> buildTurnover(long uid,int streamId) {
+    public ResponsePair<BigDecimal> buildTurnover(long uid,int streamId) {
         return transactionTemplate.execute(status -> {
             List<AnchorFLow> data = lambdaQuery()
                     .select(AnchorFLow::getIncome)
                     .eq(AnchorFLow::getUid, uid)
                     .eq(AnchorFLow::getStreamId, streamId)
                     .list();
-            Long sum = 0L;
+            BigDecimal sum = BigDecimal.ZERO;
             for (AnchorFLow a : data) {
-                sum += a.getIncome();
+                sum = sum.add(a.getIncome());
             }
             log.info("build turnover sum:{},uid:{}.streamId:{}", sum, uid, streamId);
             return BusinessKit.ok(sum);

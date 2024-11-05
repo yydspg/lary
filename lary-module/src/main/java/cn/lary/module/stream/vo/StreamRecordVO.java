@@ -3,12 +3,13 @@ package cn.lary.module.stream.vo;
 import cn.lary.module.stream.entity.StreamRecord;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Data
 public class StreamRecordVO {
 
-    private Integer streamId;
+    private int streamId;
 
     private LocalDateTime startAt;
 
@@ -23,32 +24,32 @@ public class StreamRecordVO {
     /**
      * 观看人数
      */
-    private Integer watchNum;
+    private int watchNum;
 
     /**
      * 开播时长以s为单位
      */
-    private Integer duration;
+    private int duration;
 
 
-    private Long newFansNum;
+    private long newFansNum;
 
-    private Long starNum;
+    private long starNum;
 
     /**
      * 粉丝观看数量
      */
-    private Long watchFanNum;
+    private long watchFanNum;
 
     /**
      * 礼物数量
      */
-    private Long giftNum;
+    private long giftNum;
 
     /**
      * 礼物花费
      */
-    private Long giftCost;
+    private BigDecimal giftAmount;
 
     /**
      * 是否被封禁
@@ -77,7 +78,7 @@ public class StreamRecordVO {
         vo.setStarNum(record.getStarNum());
         vo.setWatchFanNum(record.getWatchFanNum());
         vo.setGiftNum(record.getGiftNum());
-        vo.setGiftCost(record.getGiftCost());
+        vo.setGiftAmount(record.getGiftAmount());
         vo.setIsBlock(record.getIsBlock());
         vo.setBlockTypeId(record.getBlockTypeId());
         vo.setBlockDescription(record.getBlockDescription());

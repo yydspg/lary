@@ -9,6 +9,7 @@ import java.time.LocalDateTime;
 public class GiftOrderPageQueryDTO extends PageQuery {
 
     private long uid;
+
     private Integer status;
 
     private LocalDateTime startAt;

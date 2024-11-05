@@ -1,10 +1,11 @@
 package cn.lary.module.user.interceptor;
 
+import cn.lary.common.context.Pair;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.kit.ResponseKit;
 import cn.lary.common.kit.StringKit;
 import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.RedisCache;
+import cn.lary.module.common.cache.CacheComponent;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -17,7 +18,7 @@ import java.util.HashMap;
 @Component
 @RequiredArgsConstructor
 public class UserLoginTokenInterceptor implements HandlerInterceptor {
-    private final RedisCache redisCache;
+    private final CacheComponent cacheComponent;
     private final KVBuilder kvBuilder;
 
     @Override
@@ -37,24 +38,23 @@ public class UserLoginTokenInterceptor implements HandlerInterceptor {
             ResponseKit.responseFail(response, "token error");
             return false;
         }
-        HashMap<String, String> map = new HashMap<>();
-        map.put("uid", args[0]);
-        map.put("name", args[1]);
+        Pair pair = new Pair();
+        pair.uid = Long.parseLong(args[0]);
+        pair.name = args[1];
         if (args.length > 2) {
-            map.put("role", args[2]);
+            pair.role = Integer.parseInt(args[2]);
         }
-        RequestContext.setCurrent(map);
+        RequestContext.setCurrent(pair);
         return HandlerInterceptor.super.preHandle(request, response, handler);
     }
 
     @Override
     public void afterCompletion(HttpServletRequest request, HttpServletResponse response, Object handler, Exception ex) throws Exception {
-        RequestContext.getCurrent().clear();
         RequestContext.removeCurrent();
         HandlerInterceptor.super.afterCompletion(request, response, handler, ex);
     }
     private String getLoginTokenV(String token) {
-        return redisCache.get(kvBuilder.userLoginTokenK(token));
+        return cacheComponent.get(kvBuilder.userLoginTokenK(token));
     }
 
 }

@@ -3,6 +3,8 @@ package cn.lary.module.wallet.vo;
 import cn.lary.module.wallet.entity.WalletIncome;
 import lombok.Data;
 
+import java.math.BigDecimal;
+
 @Data
 public class WalletIncomeVO {
 
@@ -16,12 +18,12 @@ public class WalletIncomeVO {
     /**
      * 频道id
      */
-    private long channelId;
+    private long channel;
 
     /**
      * 频道类型
      */
-    private int channelType;
+    private int category;
 
     /**
      * 交易类型
@@ -31,14 +33,14 @@ public class WalletIncomeVO {
     /**
      * 花费
      */
-    private long cost;
+    private BigDecimal amount;
 
-    public WalletIncomeVO(WalletIncome income) {
-        this.id = income.getId();
-        this.toUid = income.getToUid();
-        this.channelId = income.getChannelId();
-        this.channelType = income.getChannelType();
-        this.type = income.getType();
-        this.cost = income.getCost();
+    public WalletIncomeVO(WalletIncome outcome) {
+        this.id = outcome.getId();
+        this.toUid = outcome.getToUid();
+        this.channel = outcome.getChannel();
+        this.category = outcome.getCategory();
+        this.type = outcome.getType();
+        this.amount = outcome.getAmount();
     }
 }

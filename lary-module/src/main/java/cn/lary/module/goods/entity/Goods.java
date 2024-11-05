@@ -1,13 +1,10 @@
 package cn.lary.module.goods.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
-import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import java.io.Serializable;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-
-import com.baomidou.mybatisplus.annotation.TableId;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
@@ -30,13 +27,7 @@ public class Goods implements Serializable {
     /**
      * id
      */
-    @TableId(value = "id",type = IdType.INPUT)
-    private Long id;
-
-    /**
-     * 审核信息
-     */
-    private String authMessage;
+      private Long id;
 
     /**
      * 品牌ID
@@ -74,14 +65,19 @@ public class Goods implements Serializable {
     private String name;
 
     /**
-     * 计量单位
+     * 商品分类
      */
-    private String goodsUnit;
+    private Integer category;
+
+    /**
+     * 计量单位,克,个,米.etc
+     */
+    private String unit;
 
     /**
      * 商品视频
      */
-    private String goodsVideo;
+    private String video;
 
     /**
      * 商品好评率
@@ -94,9 +90,24 @@ public class Goods implements Serializable {
     private String intro;
 
     /**
+     * 商品价格
+     */
+    private BigDecimal price;
+
+    /**
+     * 商品库存
+     */
+    private Integer quantity;
+
+    /**
      * 审核状态
      */
     private Integer authStatus;
+
+    /**
+     * 审核信息
+     */
+    private String authMessage;
 
     /**
      * 上架状态
@@ -107,21 +118,6 @@ public class Goods implements Serializable {
      * 商品移动端详情
      */
     private String mobileIntro;
-
-    /**
-     * 原图路径
-     */
-    private String original;
-
-    /**
-     * 商品价格
-     */
-    private BigDecimal price;
-
-    /**
-     * 库存
-     */
-    private Integer quantity;
 
     /**
      * 是否为推荐商品
@@ -144,14 +140,19 @@ public class Goods implements Serializable {
     private String storeName;
 
     /**
+     * 店铺分类
+     */
+    private String storeCategory;
+
+    /**
+     * 店铺分类路径
+     */
+    private String storeCategoryPath;
+
+    /**
      * 卖点
      */
     private String sellingPoint;
-
-    /**
-     * 店铺分类
-     */
-    private String shopCategoryPath;
 
     /**
      * 小图路径
@@ -169,9 +170,9 @@ public class Goods implements Serializable {
     private String thumbnail;
 
     /**
-     * 商品编号
+     * 原图路径
      */
-    private String sn;
+    private String original;
 
     /**
      * 运费模板ID
@@ -182,13 +183,19 @@ public class Goods implements Serializable {
      * 下架原因
      */
     private String underMessage;
+    /**
+     * 商品参数
+     */
+    private String params;
 
     /**
-     * 店铺分类路径
+     * 详情图片
      */
-    private String storeCategoryPath;
-
-    private String goodsType;
+    private String detailImages;
+    /**
+     * 商品优点标签
+     */
+    private String tags;
 
     private Boolean isDelete;
 

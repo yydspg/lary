@@ -76,7 +76,6 @@ public class User implements Serializable {
 
     private Boolean isDelete;
 
-    private Boolean isAnchor;
 
     private String anchorAnnounce;
 

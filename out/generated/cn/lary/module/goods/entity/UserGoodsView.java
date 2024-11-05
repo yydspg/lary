@@ -1,7 +1,9 @@
 package cn.lary.module.goods.entity;
 
 import com.baomidou.mybatisplus.annotation.FieldFill;
+import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
+import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import java.math.BigDecimal;
@@ -29,7 +31,8 @@ public class UserGoodsView implements Serializable {
     /**
      * id
      */
-      private Long id;
+      @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
 
     /**
      * 库索引
@@ -42,7 +45,7 @@ public class UserGoodsView implements Serializable {
     private Integer idxTable;
 
     /**
-     * id
+     * 商品id
      */
     private Long goodsId;
 
@@ -72,9 +75,9 @@ public class UserGoodsView implements Serializable {
     private BigDecimal price;
 
     /**
-     * 小图路径
+     * 大图路径
      */
-    private String smallAvatar;
+    private String bigAvatar;
 
       @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

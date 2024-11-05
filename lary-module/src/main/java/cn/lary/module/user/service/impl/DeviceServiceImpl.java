@@ -7,12 +7,12 @@ import cn.lary.common.kit.CollectionKit;
 import cn.lary.common.kit.SmsCodeKit;
 import cn.lary.common.kit.StringKit;
 import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.RedisCache;
+import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.common.server.RedisBizConfig;
+import cn.lary.module.common.config.RedisBusinessConfig;
 import cn.lary.module.user.dto.DeviceAddDTO;
-import cn.lary.module.user.dto.DeviceAddResponseCacheDTO;
-import cn.lary.module.user.dto.DeviceLoginCacheDTO;
+import cn.lary.module.cache.dto.DeviceAddResponseCacheDTO;
+import cn.lary.module.cache.dto.DeviceLoginCacheDTO;
 import cn.lary.module.user.entity.Device;
 import cn.lary.module.user.mapper.DeviceMapper;
 import cn.lary.module.user.service.DeviceService;
@@ -39,8 +39,8 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> implements DeviceService {
 
-    private final RedisCache redisCache;
-    private final RedisBizConfig redisBizConfig;
+    private final CacheComponent cacheComponent;
+    private final RedisBusinessConfig redisBusinessConfig;
     private final KVBuilder kvBuilder;
 
     @Override
@@ -63,18 +63,18 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
     @Override
     public void removeDeviceLoginCache(long uid,int flag){
-        redisCache.delete(kvBuilder.deviceLoginK(uid, flag));
+        cacheComponent.delete(kvBuilder.deviceLoginK(uid, flag));
     }
 
     @Override
     public void renewalDeviceLoginCache(long uid, int flag) {
-        redisCache.renewal(kvBuilder.deviceLoginK(uid,flag),redisBizConfig.getLoginDeviceCacheExpire());
+        cacheComponent.renewal(kvBuilder.deviceLoginK(uid,flag), redisBusinessConfig.getLoginDeviceCacheExpire());
     }
 
     @Override
     public void buildDeviceLoginCache(long uid,int flag, DeviceLoginCacheDTO dto) {
-        redisCache.setHash(kvBuilder.deviceLoginK(uid,flag),
-                kvBuilder.deviceLoginV(dto),redisBizConfig.getLoginDeviceCacheExpire());
+        cacheComponent.setHash(kvBuilder.deviceLoginK(uid,flag),
+                kvBuilder.deviceLoginV(dto), redisBusinessConfig.getLoginDeviceCacheExpire());
     }
 
     @Override
@@ -117,8 +117,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             log.error("no devices found,uid:{}",uid);
             return BusinessKit.fail("no devices found");
         }
-        Map<Object, Object> pcLoginData = redisCache.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.PC));
-        Map<Object, Object> appLoginData = redisCache.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.APP));
+        Map<Object, Object> pcLoginData = cacheComponent.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.PC));
+        Map<Object, Object> appLoginData = cacheComponent.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.APP));
         if (pcLoginData == null && appLoginData == null) {
             log.error("no login devices found when search landing device,uid:{}",uid);
             return BusinessKit.fail("no login devices found");
@@ -155,8 +155,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .setCode(token)
                 .setName(dto.getName())
                 .setFlag(dto.getFlag());
-        redisCache.setHash(kvBuilder.addDeviceK(dto.getUid(),dto.getPhone())
-                ,kvBuilder.addDeviceV(data),redisBizConfig.getSmsAddDeviceExpire());
+        cacheComponent.setHash(kvBuilder.addDeviceK(dto.getUid(),dto.getPhone())
+                ,kvBuilder.addDeviceV(data), redisBusinessConfig.getSmsAddDeviceExpire());
         return BusinessKit.ok();
     }
 

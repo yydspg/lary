@@ -12,6 +12,8 @@
         <option value="$PROJECT_DIR$/lary-module/pom.xml" />
         <option value="$PROJECT_DIR$/lary-external/pom.xml" />
         <option value="$PROJECT_DIR$/lary-starter/pom.xml" />
+        <option value="$PROJECT_DIR$/lary-cache/pom.xml" />
+        <option value="$PROJECT_DIR$/yutak-cache/pom.xml" />
       </list>
     </option>
     <option name="ignoredFiles">

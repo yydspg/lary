@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
 import java.util.Map;
 
 @Data
@@ -16,7 +17,7 @@ public  class PaymentParamDTO {
     private long payId;
 
     @NotNull
-    private long amount;
+    private BigDecimal amount;
 
     @NotNull
     private String subject;

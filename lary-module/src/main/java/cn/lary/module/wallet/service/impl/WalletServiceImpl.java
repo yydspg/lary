@@ -4,9 +4,10 @@ import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.CollectionKit;
-import cn.lary.common.kit.StringKit;
+import cn.lary.module.common.constant.LARY;
 import cn.lary.module.user.service.UserService;
 import cn.lary.module.wallet.dto.*;
+import cn.lary.module.wallet.entity.BatchOutcomeRandomTransfer;
 import cn.lary.module.wallet.entity.Wallet;
 import cn.lary.module.wallet.entity.WalletIncome;
 import cn.lary.module.wallet.entity.WalletOutcome;
@@ -19,9 +20,9 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -42,68 +43,136 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
     private final WalletOutcomeService walletOutcomeService;
     private final UserService userService;
     private final TransactionTemplate transactionTemplate;
+    private final WalletMapper walletMapper;
 
     @Override
     public ResponsePair<Void> transfer(TransferDTO dto) {
         return transactionTemplate.execute(status -> {
             Wallet uidWallet = lambdaQuery()
-                    .select(Wallet::getVcFee)
-                    .select(Wallet::getVcLocked)
+                    .select(Wallet::getAmount)
                     .eq(Wallet::getUid, dto.getUid())
-                    .eq(Wallet::getIsBlock, false)
                     .one();
-            if (uidWallet == null) {
+            if (uidWallet == null || uidWallet.getStatus() == LARY.STATUS.BLOCK ) {
                 return BusinessKit.fail("uid wallet not exist");
             }
             Wallet toUidWallet = lambdaQuery()
-                    .select(Wallet::getVcLocked)
-                    .select(Wallet::getVcFee)
+                    .select(Wallet::getAmount)
                     .eq(Wallet::getUid, dto.getToUid())
-                    .eq(Wallet::getIsBlock, false)
                     .one();
-            if (toUidWallet == null) {
+            if (toUidWallet == null  || toUidWallet.getStatus() == LARY.STATUS.BLOCK) {
                 return BusinessKit.fail("to uid wallet not exist");
             }
-            if (uidWallet.getVcFee() - uidWallet.getVcLocked() < dto.getAmount()) {
+            if (uidWallet.getAmount().compareTo(dto.getAmount()) < 0) {
                 return BusinessKit.fail("uid balance not enough");
             }
             //update
             lambdaUpdate()
                     .eq(Wallet::getUid, dto.getUid())
-                    .setIncrBy(Wallet::getVcOutcome, dto.getAmount())
-                    .setDecrBy(Wallet::getVcFee, dto.getAmount());
+                    .setIncrBy(Wallet::getOutcome, dto.getAmount())
+                    .setDecrBy(Wallet::getPocket, dto.getAmount());
             lambdaUpdate()
                     .eq(Wallet::getUid, dto.getToUid())
-                    .setIncrBy(Wallet::getVcFee,dto.getAmount())
-                    .setIncrBy(Wallet::getVcIncome,dto.getAmount());
+                    .setIncrBy(Wallet::getAmount,dto.getAmount())
+                    .setIncrBy(Wallet::getIncome,dto.getAmount());
             walletIncomeService.save(WalletIncome.of(dto));
             walletOutcomeService.save(WalletOutcome.of(dto));
             return BusinessKit.ok();
         });
     }
 
+
     @Override
-    public ResponsePair<Void> batchOutcomeTransfer(BatchOutcomeTransferDTO dto) {
-        return transactionTemplate.execute((status)->{
-            if (dto == null) {
-                return BusinessKit.fail("dto is null");
-            }
-            if (CollectionKit.isEmpty(dto.getRecipients())) {
-                return BusinessKit.fail("recipients is empty");
-            }
-            if (dto.getAmount() == 0 || dto.getTotalAmount() == 0) {
-                return BusinessKit.fail("amount not match");
-            }
-            if (dto.getTotalAmount() != dto.getAmount() * dto.getRecipients().size()) {
-                return BusinessKit.fail("total amount error");
-            }
+    public ResponsePair<Void> batchOutcomeRandomTransfer(BatchOutcomeRandomTransferDTO dto) {
+        if (dto == null) {
+            return BusinessKit.fail("dto is null");
+        }
+        if (CollectionKit.isEmpty(dto.getRecipients())) {
+            return BusinessKit.fail("recipients is empty");
+        }
+        if (CollectionKit.isEmpty(dto.getAmount())) {
+            return BusinessKit.fail("amount is empty");
+        }
+        if (dto.getTotalAmount().compareTo(BigDecimal.ZERO) == 0) {
+            return BusinessKit.fail("total amount is error");
+        }
+        if (dto.getAmount().size() != dto.getRecipients().size()) {
+            return BusinessKit.fail("recipients and amount num not match");
+        }
+
+        return transactionTemplate.execute(status->{
             Wallet uidWallet = lambdaQuery()
-                    .select(Wallet::getVcFee)
+                    .select(Wallet::getAmount)
                     .eq(Wallet::getUid, dto.getUid())
-                    .eq(Wallet::getIsBlock, false)
                     .one();
-            if (uidWallet == null) {
+            if (uidWallet == null || uidWallet.getStatus() == LARY.STATUS.BLOCK) {
                 return BusinessKit.fail("uid wallet not exist");
+            }
+            if (uidWallet.getAmount().compareTo(dto.getTotalAmount()) < 0) {
+                return BusinessKit.fail("total amount not enough");
+            }
+            // outcome
+            List<WalletIncome> walletIncomes = new ArrayList<>();
+            List<WalletOutcome> walletOutcomes = new ArrayList<>();
+            List<BatchOutcomeRandomTransfer> transfers = new ArrayList<>();
+            for (int i = 0;i < dto.getRecipients().size();i++) {
+                WalletOutcome out = new WalletOutcome()
+                        .setUid(dto.getUid())
+                        .setToUid(dto.getRecipients().get(i))
+                        .setAmount(dto.getAmount().get(i))
+                        .setType(dto.getType())
+                        .setChannel(dto.getChannel())
+                        .setCategory(dto.getCategory());
+                walletOutcomes.add(out);
+                WalletIncome in = new WalletIncome()
+                        .setUid(dto.getRecipients().get(i))
+                        .setToUid(dto.getUid())
+                        .setAmount(dto.getAmount().get(i))
+                        .setType(dto.getType())
+                        .setChannel(dto.getChannel())
+                        .setCategory(dto.getCategory());
+                walletIncomes.add(in);
+                transfers.add(new BatchOutcomeRandomTransfer()
+                        .setUser(dto.getRecipients().get(i))
+                        .setAmount(dto.getAmount().get(i)));
+            }
+            walletOutcomeService.saveBatch(walletOutcomes);
+            walletIncomeService.saveBatch(walletIncomes);
+            lambdaUpdate()
+                    .setDecrBy(Wallet::getAmount, dto.getTotalAmount())
+                    .eq(Wallet::getUid,dto.getUid());
+            walletMapper.batchOutcomeRandomTransfer(transfers);
+            return BusinessKit.ok();
+        });
+    }
+
+    @Override
+    public ResponsePair<Void> batchOutcomeFixTransfer(BatchOutcomeFixTransferDTO dto) {
+        if (dto == null) {
+            return BusinessKit.fail("dto is null");
+        }
+        if (CollectionKit.isEmpty(dto.getRecipients())) {
+            return BusinessKit.fail("recipients is empty");
+        }
+        if (dto.getAmount().compareTo(BigDecimal.ZERO) == 0
+                || dto.getTotalAmount().compareTo(BigDecimal.ZERO) == 0) {
+            return BusinessKit.fail("amount not match");
+        }
+        if (dto.getTotalAmount()
+                .compareTo( dto.getAmount()
+                        .multiply(BigDecimal.valueOf(dto.getRecipients().size()))
+                ) != 0) {
+            return BusinessKit.fail("total amount error");
+        }
+        return transactionTemplate.execute((status)->{
+            Wallet uidWallet = lambdaQuery()
+                    .select(Wallet::getPocket)
+                    .eq(Wallet::getUid, dto.getUid())
+                    .one();
+            if (uidWallet == null || uidWallet.getStatus() == LARY.STATUS.BLOCK) {
+                return BusinessKit.fail("uid wallet not exist");
+            }
+            if (uidWallet.getPocket().compareTo(dto.getTotalAmount()) < 0) {
+                return BusinessKit.fail("total amount not enough");
             }
             // outcome
             List<WalletIncome> walletIncomes = new ArrayList<>();
@@ -113,37 +182,85 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
                 WalletOutcome out = new WalletOutcome()
                         .setUid(dto.getUid())
                         .setToUid(uid)
-                        .setCost(dto.getAmount())
+                        .setAmount(dto.getAmount())
                         .setType(dto.getType())
-                        .setChannelId(dto.getChannelId())
-                        .setChannelType(dto.getChannelType());
+                        .setChannel(dto.getChannel())
+                        .setCategory(dto.getCategory());
                 walletOutcomes.add(out);
                 WalletIncome in = new WalletIncome()
                         .setUid(uid)
                         .setToUid(dto.getUid())
-                        .setCost(dto.getAmount())
+                        .setAmount(dto.getAmount())
                         .setType(dto.getType())
-                        .setChannelId(dto.getChannelId())
-                        .setChannelType(dto.getChannelType());
+                        .setChannel(dto.getChannel())
+                        .setCategory(dto.getCategory());
                 walletIncomes.add(in);
             });
             walletOutcomeService.saveBatch(walletOutcomes);
             walletIncomeService.saveBatch(walletIncomes);
-            lambdaUpdate()
-                    .setDecrBy(Wallet::getVcFee, dto.getTotalAmount())
-                    .eq(Wallet::getUid,dto.getUid());
+
+            decr(dto.getUid(),dto.getAmount(),dto.getTransfer());
+            incr(dto.getRecipients(),dto.getAmount(),dto.getTransfer());
             // tip,mp setIncrBy() method  since 3.5.6
-            lambdaUpdate()
-                    .setIncrBy(Wallet::getVcFee,dto.getAmount())
-                    .in(Wallet::getUid,dto.getRecipients());
             return BusinessKit.ok();
         });
     }
+    private void decr(long uid,BigDecimal amount,int transfer) {
+       switch (transfer) {
+           case LARY.WALLET.TRANSFER.AMOUNT -> {
+               lambdaUpdate()
+                       .setDecrBy(Wallet::getAmount, amount)
+                       .setIncrBy(Wallet::getOutcome,amount)
+                       .eq(Wallet::getUid,uid);
 
+           }
+           case LARY.WALLET.TRANSFER.POCKET -> {
+               lambdaUpdate()
+                       .setDecrBy(Wallet::getPocket, amount)
+                       .setIncrBy(Wallet::getOutcome,amount)
+                       .eq(Wallet::getUid,uid);
+           }
+       }
+    }
+    private void incr(long uid,BigDecimal amount,int transfer) {
+        switch (transfer) {
+            case LARY.WALLET.TRANSFER.AMOUNT -> {
+                lambdaUpdate()
+                        .setIncrBy(Wallet::getAmount, amount)
+                        .setIncrBy(Wallet::getIncome,amount)
+                        .eq(Wallet::getUid,uid);
+
+            }
+            case LARY.WALLET.TRANSFER.POCKET -> {
+                lambdaUpdate()
+                        .setIncrBy(Wallet::getPocket, amount)
+                        .setIncrBy(Wallet::getIncome,amount)
+                        .eq(Wallet::getUid,uid);
+            }
+        }
+    }
+    private void incr(List<Long> uid,BigDecimal amount,int transfer) {
+        switch (transfer) {
+            case LARY.WALLET.TRANSFER.AMOUNT -> {
+                lambdaUpdate()
+                        .setIncrBy(Wallet::getAmount, amount)
+                        .setIncrBy(Wallet::getIncome,amount)
+                        .in(Wallet::getUid,uid);
+
+            }
+            case LARY.WALLET.TRANSFER.POCKET -> {
+                lambdaUpdate()
+                        .setIncrBy(Wallet::getPocket, amount)
+                        .setIncrBy(Wallet::getIncome,amount)
+                        .in(Wallet::getUid,uid);
+            }
+        }
+    }
     @Override
     public ResponsePair<Void> systemOutcomeTransfer(SystemOutcomeTransferDTO dto) {
+
         return transactionTemplate.execute(status -> {
-            ResponsePair<List<Wallet>> data = getUserWallets(dto.getMembers());
+            ResponsePair<List<Wallet>> data = getWallets(dto.getMembers());
             if(data.isFail()) {
                 return BusinessKit.fail(data.getMsg());
             }
@@ -152,7 +269,7 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
             userWallets.forEach(user->{
                 WalletIncome out = new WalletIncome()
                         .setUid(user.getUid())
-                        .setCost(dto.getAmount())
+                        .setAmount(dto.getAmount())
                         .setType(dto.getType());
                 walletIncomes.add(out);
             });
@@ -162,7 +279,7 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
                     .toList();
             walletIncomeService.saveBatch(walletIncomes);
             lambdaUpdate()
-                    .setIncrBy(Wallet::getVcFee, dto.getAmount())
+                    .setIncrBy(Wallet::getAmount, dto.getAmount())
                     .in(Wallet::getUid,users);
             return BusinessKit.ok();
         });
@@ -171,14 +288,14 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
     @Override
     public ResponsePair<Void> systemIncomeTransfer(SystemIncomeTransferDTO dto) {
         return transactionTemplate.execute(status -> {
-            ResponsePair<List<Wallet>> data = getUserWallets(dto.getMembers());
+            ResponsePair<List<Wallet>> data = getWallets(dto.getMembers());
             if(data.isFail()) {
                 return BusinessKit.fail(data.getMsg());
             }
             List<Wallet> userWallets = data.getData();
             List<Long> validUsers = userWallets
                     .stream()
-                    .filter(u -> u.getVcFee() - u.getVcLocked() >= dto.getAmount())
+                    .filter(u -> u.getAmount().compareTo( dto.getAmount()) > 0)
                     .map(Wallet::getUid)
                     .toList();
             if(CollectionKit.isEmpty(validUsers)) {
@@ -189,20 +306,20 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
                     .map(u -> {
                         WalletOutcome out = new WalletOutcome();
                         out.setUid(u);
-                        out.setCost(dto.getAmount());
+                        out.setAmount(dto.getAmount());
                         out.setType(dto.getType());
                         return out;
             }).toList();
             walletOutcomeService.saveBatch(walletOutcomes);
             lambdaUpdate()
-                    .setDecrBy(Wallet::getVcFee, dto.getAmount())
+                    .setDecrBy(Wallet::getAmount, dto.getAmount())
                     .in(Wallet::getUid, validUsers);
             return BusinessKit.ok();
         });
     }
 
     @Override
-    public ResponsePair<List<Wallet>> getUserWallets(List<Long> members) {
+    public ResponsePair<List<Wallet>> getWallets(List<Long> members) {
         if (CollectionKit.isEmpty(members)) {
             return BusinessKit.fail("members null");
         }
@@ -211,10 +328,8 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
             return BusinessKit.fail("users empty");
         }
         List<Wallet> userWallets = lambdaQuery()
-                .select(Wallet::getVcFee)
-                .select(Wallet::getVcLocked)
+                .select(Wallet::getAmount)
                 .select(Wallet::getUid)
-                .eq(Wallet::getIsBlock, false)
                 .in(Wallet::getUid, users)
                 .list();
         if (userWallets.isEmpty()) {
@@ -223,32 +338,12 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
         return BusinessKit.ok(userWallets);
     }
 
-    @Override
-    public ResponsePair<Void> updateQuestion(UpdateSecurityQuestionDTO dto) {
-        long uid = RequestContext.getLoginUID();
-        Wallet wallet = lambdaQuery()
-                .select(Wallet::getUid)
-                .eq(Wallet::getUid, uid)
-                .one();
-        if (wallet == null) {
-            return  BusinessKit.fail("wallet status error");
-        }
-        if(StringKit.diff(StringKit.MD5(dto.getBeforeAnswer()),wallet.getSecAnswer())) {
-            return BusinessKit.fail("question answer error");
-        }
-        lambdaUpdate()
-                .set(Wallet::getSecAnswer,dto.getAfterQuestion())
-                .set(Wallet::getSecQuestion,StringKit.MD5(dto.getAfterAnswer()))
-                .eq(Wallet::getUid, uid);
-        return BusinessKit.ok();
-    }
 
     @Override
     public ResponsePair<BalanceVO> my() {
         Wallet wallet = lambdaQuery()
-                .select(Wallet::getVcFee, Wallet::getVcLocked)
-                .select(Wallet::getVcOutcome, Wallet::getVcIncome)
-                .select(Wallet::getIsAnchor, Wallet::getSecQuestion)
+                .select(Wallet::getAmount)
+                .select(Wallet::getOutcome, Wallet::getIncome)
                 .eq(Wallet::getUid, RequestContext.getLoginUID())
                 .one();
         if (wallet == null) {

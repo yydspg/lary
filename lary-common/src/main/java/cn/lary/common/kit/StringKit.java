@@ -1,11 +1,49 @@
 package cn.lary.common.kit;
 
+import jakarta.annotation.PostConstruct;
+
+import javax.crypto.BadPaddingException;
+import javax.crypto.Cipher;
+import javax.crypto.IllegalBlockSizeException;
+import javax.crypto.NoSuchPaddingException;
+import javax.crypto.spec.GCMParameterSpec;
+import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.StandardCharsets;
+import java.security.InvalidAlgorithmParameterException;
+import java.security.InvalidKeyException;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.Random;
 
 public class StringKit {
+
+    private static final String AES_ALGORITHM = "AES";
+    // AES密钥
+    private static final String AES_SECRET_KEY = "4128D9CDAC7E2F82951CBAF7FDFE675B";
+    // AES加密模式为GCM，填充方式为NoPadding
+// AES-GCM 是流加密（Stream cipher）算法，所以对应的填充模式为 NoPadding，即无需填充。
+    private static final String AES_TRANSFORMATION = "AES/GCM/NoPadding";
+    // 加密器
+    private static Cipher encryptionCipher;
+    // 解密器
+    private static Cipher decryptionCipher;
+
+    static {
+        // 将AES密钥转换为SecretKeySpec对象
+        SecretKeySpec secretKeySpec = new SecretKeySpec(AES_SECRET_KEY.getBytes(), AES_ALGORITHM);
+        // 使用指定的AES加密模式和填充方式获取对应的加密器并初始化
+        try {
+            encryptionCipher = Cipher.getInstance(AES_TRANSFORMATION);
+            encryptionCipher.init(Cipher.ENCRYPT_MODE, secretKeySpec);
+            // 使用指定的AES加密模式和填充方式获取对应的解密器并初始化
+            decryptionCipher = Cipher.getInstance(AES_TRANSFORMATION);
+            decryptionCipher.init(Cipher.DECRYPT_MODE, secretKeySpec, new GCMParameterSpec(128, encryptionCipher.getIV()));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     private static final String allowedChars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
@@ -54,5 +92,28 @@ public class StringKit {
             return null;
         }
         return str.split(regex);
+    }
+    /**
+     * 加密
+     */
+    public static String encrypt(String data)  {
+        byte[] dataInBytes = data.getBytes();
+        byte[] encryptedBytes = null;
+        try {
+            encryptedBytes = encryptionCipher.doFinal(dataInBytes);
+        } catch (IllegalBlockSizeException | BadPaddingException e) {
+            throw new RuntimeException(e);
+        }
+        return Base64.getEncoder().encodeToString(encryptedBytes);
+    }
+
+    /**
+     * 解密
+     */
+    public static String decrypt(String encryptedData) throws IllegalBlockSizeException, BadPaddingException {
+        byte[] dataInBytes = Base64.getDecoder().decode(encryptedData);
+        byte[] decryptedBytes = null;
+        decryptedBytes = decryptionCipher.doFinal(dataInBytes);
+        return new String(decryptedBytes, StandardCharsets.UTF_8);
     }
 }

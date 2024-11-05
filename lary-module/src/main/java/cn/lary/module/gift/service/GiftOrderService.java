@@ -17,5 +17,5 @@ import java.util.List;
  */
 public interface GiftOrderService extends IService<GiftOrder> {
 
-   List<GiftOrderVO> queryGiftOrders(GiftOrderPageQueryDTO dto);
+   List<GiftOrderVO> my(GiftOrderPageQueryDTO dto);
 }

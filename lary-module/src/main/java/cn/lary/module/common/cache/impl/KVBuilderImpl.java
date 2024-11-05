@@ -2,13 +2,13 @@ package cn.lary.module.common.cache.impl;
 
 import cn.lary.common.kit.StringKit;
 import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.server.RedisBizConfig;
-import cn.lary.module.stream.dto.JoinLiveCacheDTO;
-import cn.lary.module.stream.dto.LiveCacheDTO;
-import cn.lary.module.stream.dto.RaffleCacheDTO;
-import cn.lary.module.stream.dto.RedPacketCacheDTO;
-import cn.lary.module.user.dto.DeviceAddResponseCacheDTO;
-import cn.lary.module.user.dto.DeviceLoginCacheDTO;
+import cn.lary.module.common.config.RedisBusinessConfig;
+import cn.lary.module.cache.dto.JoinLiveCacheDTO;
+import cn.lary.module.cache.dto.LiveCache;
+import cn.lary.module.raffle.entity.RaffleEventCache;
+import cn.lary.module.cache.dto.RedPacketCacheDTO;
+import cn.lary.module.cache.dto.DeviceAddResponseCacheDTO;
+import cn.lary.module.cache.dto.DeviceLoginCacheDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -21,11 +21,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class KVBuilderImpl implements KVBuilder {
 
-    private final RedisBizConfig redisBizConfig;
+    private final RedisBusinessConfig redisBusinessConfig;
 
     @Override
     public String deviceLoginK(long uid,int flag) {
-        return redisBizConfig.getLoginDeviceCachePrefix()+ uid+"@"+flag;
+        return redisBusinessConfig.getLoginDeviceCachePrefix()+ uid+"@"+flag;
     }
 
     @Override
@@ -43,7 +43,7 @@ public class KVBuilderImpl implements KVBuilder {
 
     @Override
     public String userLoginK(long uid,int deviceFlag) {
-        return redisBizConfig.getTokenCachePrefix() + uid+"@"+deviceFlag;
+        return redisBusinessConfig.getTokenCachePrefix() + uid+"@"+deviceFlag;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class KVBuilderImpl implements KVBuilder {
 
     @Override
     public String userLoginTokenK(String token) {
-        return redisBizConfig.getTokenCachePrefix() + token;
+        return redisBusinessConfig.getTokenCachePrefix() + token;
     }
 
     @Override
@@ -63,7 +63,7 @@ public class KVBuilderImpl implements KVBuilder {
 
     @Override
     public String userRegisterK( String phone) {
-        return redisBizConfig.getRegisterPrefix()+phone;
+        return redisBusinessConfig.getRegisterPrefix()+phone;
     }
 
     @Override
@@ -73,7 +73,7 @@ public class KVBuilderImpl implements KVBuilder {
 
     @Override
     public String userDestroyK(long uid) {
-        return redisBizConfig.getDestroyPrefix()+uid;
+        return redisBusinessConfig.getDestroyPrefix()+uid;
     }
 
     @Override
@@ -81,11 +81,13 @@ public class KVBuilderImpl implements KVBuilder {
         return token;
     }
 
-
     @Override
-    public String streamRecordK(long uid, int streamId) {
-        return redisBizConfig.getStreamRecordPrefix() + uid+":"+streamId;
+    public String streamRecordK(long uid, long streamId) {
+        return "";
     }
+
+
+
 
     @Override
     public Map streamRecordV() {
@@ -100,7 +102,7 @@ public class KVBuilderImpl implements KVBuilder {
 
     @Override
     public String addDeviceK(long uid,String phone) {
-        return redisBizConfig.getSmsAddDevicePrefix()+uid+"@"+phone;
+        return redisBusinessConfig.getSmsAddDevicePrefix()+uid+"@"+phone;
     }
 
     @Override
@@ -114,11 +116,11 @@ public class KVBuilderImpl implements KVBuilder {
 
     @Override
     public String goLiveK(long uid) {
-        return redisBizConfig.getGoLivePrefix() + uid;
+        return redisBusinessConfig.getGoLivePrefix() + uid;
     }
 
     @Override
-    public Map goLiveV(LiveCacheDTO dto) {
+    public Map goLiveV(LiveCache dto) {
         Map<Object, Object> args = new HashMap<>();
         args.put("streamId",dto.getStreamId());
         args.put("danmakuId",dto.getDanmakuId());
@@ -133,7 +135,7 @@ public class KVBuilderImpl implements KVBuilder {
 
     @Override
     public String joinLiveK(long uid) {
-        return redisBizConfig.getJoinLivePrefix() + uid;
+        return redisBusinessConfig.getJoinLivePrefix() + uid;
     }
 
     @Override
@@ -156,11 +158,11 @@ public class KVBuilderImpl implements KVBuilder {
 
     @Override
     public String raffleK(long uid) {
-        return redisBizConfig.getRafflePrefix()+uid;
+        return redisBusinessConfig.getRafflePrefix()+uid;
     }
 
     @Override
-    public Map raffleV(RaffleCacheDTO dto) {
+    public Map raffleV(RaffleEventCache dto) {
         if (dto == null) {
             return null;
         }
@@ -171,19 +173,17 @@ public class KVBuilderImpl implements KVBuilder {
         if (StringKit.isNotEmpty(dto.getContent())) {
             args.put("content", dto.getContent());
         }
-        if (StringKit.isNotEmpty(dto.getMessage())) {
-            args.put("message", dto.getMessage());
-        }
+
         args.put("num",String.valueOf(dto.getNum()));
         args.put("item_num",String.valueOf(dto.getNum()));
         args.put("duration",String.valueOf(dto.getDuration()));
-        args.put("type",String.valueOf(dto.getType()));
+
         return args;
     }
 
     @Override
     public String redPacketK(long uid) {
-        return redisBizConfig.getRedPacketPrefix() + uid;
+        return redisBusinessConfig.getRedPacketPrefix() + uid;
     }
 
     @Override
@@ -203,7 +203,17 @@ public class KVBuilderImpl implements KVBuilder {
 
     @Override
     public String raffleListK(long uid) {
-        return redisBizConfig.getRaffleListPrefix() +uid;
+        return redisBusinessConfig.getRaffleListPrefix() +uid;
+    }
+
+    @Override
+    public String redPacketUidMapK(long uid) {
+        return redisBusinessConfig.getRedPacketUidPrefix()+uid;
+    }
+
+    @Override
+    public String redPacketDataListK(long uid) {
+        return redisBusinessConfig.getRedPacketDataPrefix()+uid;
     }
 
 

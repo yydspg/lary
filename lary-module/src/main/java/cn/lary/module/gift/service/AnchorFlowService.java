@@ -4,6 +4,8 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.module.gift.entity.AnchorFLow;
 import com.baomidou.mybatisplus.extension.service.IService;
 
+import java.math.BigDecimal;
+
 /**
  * <p>
  *  服务类
@@ -21,5 +23,5 @@ public interface AnchorFlowService extends IService<AnchorFLow> {
      * @return 收入
      */
     // TODO  :  使用阿里的ttl优化
-    ResponsePair<Long> buildTurnover(long uid,int streamId);
+    ResponsePair<BigDecimal> buildTurnover(long uid, int streamId);
 }

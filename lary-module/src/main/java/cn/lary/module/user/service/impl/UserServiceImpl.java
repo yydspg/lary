@@ -5,11 +5,13 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.*;
 import cn.lary.external.wk.dto.user.UpdateTokenDTO;
 import cn.lary.external.wk.vo.route.RouteVO;
-import cn.lary.module.app.service.EventService;
+import cn.lary.module.common.service.EventService;
+import cn.lary.module.cache.dto.DeviceAddResponseCacheDTO;
+import cn.lary.module.cache.dto.DeviceLoginCacheDTO;
 import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.RedisCache;
+import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.common.server.RedisBizConfig;
+import cn.lary.module.common.config.RedisBusinessConfig;
 import cn.lary.module.event.dto.UserRegisterEventDTO;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.user.dto.*;
@@ -47,10 +49,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
-    private final RedisCache redisCache;
+    private final CacheComponent cacheComponent;
     private final DeviceService deviceService;
     private final KVBuilder kvBuilder;
-    private final RedisBizConfig redisBizConfig;
+    private final RedisBusinessConfig redisBusinessConfig;
     private final MessageService messageService;
     private final EventService eventService;
     private final UserSettingService userSettingService;
@@ -80,11 +82,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             deviceLevel = LARY.DEVICE.LEVEL.MASTER;
         }
         boolean needRemovePreviousLogged = false;
-        String oldToken = redisCache.get(kvBuilder.userLoginK(user.getUid(), dto.getFlag()));
+        String oldToken = cacheComponent.get(kvBuilder.userLoginK(user.getUid(), dto.getFlag()));
         if (StringKit.isNotEmpty(oldToken)) {
            // Devices with the same flag will be logged in and
             // the previously logged in devices will be removed
-            Map<Object, Object> map = redisCache.getHash(kvBuilder.deviceLoginK(uid, dto.getFlag()));
+            Map<Object, Object> map = cacheComponent.getHash(kvBuilder.deviceLoginK(uid, dto.getFlag()));
             if (map == null) {
                 log.error("user login failed,uid:{},flag:{}", uid, dto.getFlag());
                 return BusinessKit.fail("system error");
@@ -106,7 +108,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                     return BusinessKit.fail("cmd:get sms code when login on new device");
                 }
                 // check code
-                Map<Object, Object> map = redisCache.getHash(kvBuilder.addDeviceK(uid, dto.getPhone()));
+                Map<Object, Object> map = cacheComponent.getHash(kvBuilder.addDeviceK(uid, dto.getPhone()));
                 if (map == null) {
                     log.error("login on new device failed,no verify code found,uid:{}",uid);
                     return BusinessKit.fail("verify code expire");
@@ -124,7 +126,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                         .setName(dto.getName())
                         .setLevel(deviceLevel);
                 deviceService.save(device);
-                redisCache.delete(kvBuilder.addDeviceK(uid,dto.getPhone()));
+                cacheComponent.delete(kvBuilder.addDeviceK(uid,dto.getPhone()));
             }
         }
         DeviceLoginCacheDTO deviceLoginCacheDTO = new DeviceLoginCacheDTO()
@@ -151,11 +153,11 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public ResponsePair<String> register(RegisterDTO dto) {
-        String verifyCode = redisCache.get(kvBuilder.userRegisterK(dto.getPhone()));
+        String verifyCode = cacheComponent.get(kvBuilder.userRegisterK(dto.getPhone()));
         if(StringKit.diff(verifyCode,dto.getCode())) {
             return BusinessKit.fail("verify code error");
         }
-        redisCache.delete(kvBuilder.userRegisterK(dto.getPhone()));
+        cacheComponent.delete(kvBuilder.userRegisterK(dto.getPhone()));
         User user = new User();
         String name = dto.getName();
         if (StringKit.isNotEmpty(name)) {
@@ -239,7 +241,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (LARY.testMode) {
             SmsFactory.getSmsBlend("aliyun-test").sendMessageAsync(phone,token);
         }
-        redisCache.set(kvBuilder.userRegisterK(phone),kvBuilder.userRegisterV(token),redisBizConfig.getRegisterExpire());
+        cacheComponent.set(kvBuilder.userRegisterK(phone),kvBuilder.userRegisterV(token), redisBusinessConfig.getRegisterExpire());
         return BusinessKit.ok();
     }
 
@@ -249,7 +251,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (LARY.testMode) {
             SmsFactory.getSmsBlend("aliyun-test").sendMessageAsync(phone,token);
         }
-        redisCache.set(kvBuilder.userRegisterK(phone),kvBuilder.userRegisterV(token),redisBizConfig.getRegisterExpire());
+        cacheComponent.set(kvBuilder.userRegisterK(phone),kvBuilder.userRegisterV(token), redisBusinessConfig.getRegisterExpire());
         return BusinessKit.ok();
     }
 
@@ -259,8 +261,8 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (pair == null) {
             return BusinessKit.fail("refresh fail");
         }
-        redisCache.renewal(kvBuilder.userLoginTokenK(pair.token),redisBizConfig.getLoginUserTokenExpire());
-        redisCache.renewal(kvBuilder.userLoginK(pair.uid,pair.flag),redisBizConfig.getLoginUserExpire());
+        cacheComponent.renewal(kvBuilder.userLoginTokenK(pair.token), redisBusinessConfig.getLoginUserTokenExpire());
+        cacheComponent.renewal(kvBuilder.userLoginK(pair.uid,pair.flag), redisBusinessConfig.getLoginUserExpire());
         deviceService.renewalDeviceLoginCache(pair.uid,pair.flag);
         return BusinessKit.ok();
     }
@@ -268,12 +270,12 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public ResponsePair<Void> destroy(UserDestroyDTO dto) {
         long uid = RequestContext.getLoginUID();
-        String verifyCode = redisCache.get(kvBuilder.userDestroyK(uid));
+        String verifyCode = cacheComponent.get(kvBuilder.userDestroyK(uid));
         if(StringKit.diff(verifyCode,dto.getCode())){
             return BusinessKit.fail("check verify code error");
         }
-        String appToken = redisCache.get(kvBuilder.userLoginK(uid, LARY.DEVICE.FLAG.APP));
-        String pcToken = redisCache.get(kvBuilder.userLoginK(uid, LARY.DEVICE.FLAG.PC));
+        String appToken = cacheComponent.get(kvBuilder.userLoginK(uid, LARY.DEVICE.FLAG.APP));
+        String pcToken = cacheComponent.get(kvBuilder.userLoginK(uid, LARY.DEVICE.FLAG.PC));
         if (StringKit.isNotEmpty(appToken)){
             forceLogout(uid,LARY.DEVICE.FLAG.APP,appToken);
         }
@@ -330,14 +332,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     private void forceLogout(long uid,int flag,String token) {
-        redisCache.delete(kvBuilder.userLoginK(uid,flag));
-        redisCache.delete(kvBuilder.userLoginTokenK(token));
+        cacheComponent.delete(kvBuilder.userLoginK(uid,flag));
+        cacheComponent.delete(kvBuilder.userLoginTokenK(token));
         deviceService.removeDeviceLoginCache(uid,flag);
     }
     private String buildUserLoginCache(long uid,String name,int flag,int role) {
         String token = UUIDKit.getUUID() + "@" + flag;
-        redisCache.set(kvBuilder.userLoginK(uid,flag),kvBuilder.userLoginV(token),redisBizConfig.getLoginUserExpire());
-        redisCache.set(kvBuilder.userLoginTokenK(token),kvBuilder.userLoginTokenV(uid,name,role),redisBizConfig.getLoginUserTokenExpire());
+        cacheComponent.set(kvBuilder.userLoginK(uid,flag),kvBuilder.userLoginV(token), redisBusinessConfig.getLoginUserExpire());
+        cacheComponent.set(kvBuilder.userLoginTokenK(token),kvBuilder.userLoginTokenV(uid,name,role), redisBusinessConfig.getLoginUserTokenExpire());
         return token;
     }
 
@@ -355,7 +357,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (tmp.length != 2) {
             return null;
         }
-        String userInfo = redisCache.get(kvBuilder.userLoginTokenK(token));
+        String userInfo = cacheComponent.get(kvBuilder.userLoginTokenK(token));
         if(StringKit.isEmpty(userInfo)) {
             return null;
         }

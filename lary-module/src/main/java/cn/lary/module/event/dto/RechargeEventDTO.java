@@ -1,11 +1,11 @@
 package cn.lary.module.event.dto;
 
 import cn.lary.common.kit.JSONKit;
-import cn.lary.module.app.service.AbstractEventData;
 import cn.lary.module.common.constant.LARY;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 
+import java.math.BigDecimal;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -15,7 +15,7 @@ public class RechargeEventDTO extends AbstractEventData {
 
     private long uid;
 
-    private long cost;
+    private BigDecimal amount;
 
     private long rechargeId;
 
@@ -23,7 +23,7 @@ public class RechargeEventDTO extends AbstractEventData {
     public String getData() {
         Map<Object,Object> map = new HashMap<>();
         map.put("uid", uid);
-        map.put("cost", cost);
+        map.put("cost", amount);
         map.put("rechargeId", rechargeId);
         return JSONKit.toJSON(map);
     }

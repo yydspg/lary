@@ -3,7 +3,7 @@ create table `wallet`
 (
     id  bigint      not null primary key auto_increment,
     uid varchar(40) not null default '' comment '用户id',
-    vc_income bigint unsigned not null default 0 comment 'vc 收入总数量',
+    vc_outcome bigint unsigned not null default 0 comment 'vc 收入总数量',
     vc_outcome bigint unsigned not null default 0 comment 'vc 使用总数量',
     vc_fee bigint unsigned not null default 0 comment 'vc 剩余总数量',
     vc_locked bigint not null default 0 comment '被锁定的vc',
@@ -15,13 +15,13 @@ create table `wallet`
     create_at timestamp,
     update_at timestamp
 );
-drop table if exists `wallet_income`;
-create table `wallet_income` (
+drop table if exists `wallet_outcome`;
+create table `wallet_outcome` (
     id bigint unsigned not null primary key auto_increment,
     uid int not null default 0 comment '用户id',
-    to_uid int not null default 0 comment 'id',
-    channel_id int not null default 0 comment '频道id',
-    channel_type smallint not null comment '频道类型',
+    to_uid bigint not null default 0 comment 'id',
+    channel bigint not null default 0 comment '频道id',
+    category smallint not null comment '频道类型',
     type smallint not null comment '交易类型',
     cost long not null default 0 comment '花费',
     is_delete bool ,

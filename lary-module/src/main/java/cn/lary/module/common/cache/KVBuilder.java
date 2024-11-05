@@ -1,11 +1,11 @@
 package cn.lary.module.common.cache;
 
-import cn.lary.module.stream.dto.JoinLiveCacheDTO;
-import cn.lary.module.stream.dto.LiveCacheDTO;
-import cn.lary.module.stream.dto.RaffleCacheDTO;
-import cn.lary.module.stream.dto.RedPacketCacheDTO;
-import cn.lary.module.user.dto.DeviceAddResponseCacheDTO;
-import cn.lary.module.user.dto.DeviceLoginCacheDTO;
+import cn.lary.module.cache.dto.JoinLiveCacheDTO;
+import cn.lary.module.cache.dto.LiveCache;
+import cn.lary.module.raffle.entity.RaffleEventCache;
+import cn.lary.module.cache.dto.RedPacketCacheDTO;
+import cn.lary.module.cache.dto.DeviceAddResponseCacheDTO;
+import cn.lary.module.cache.dto.DeviceLoginCacheDTO;
 
 import java.util.Map;
 
@@ -70,7 +70,7 @@ public interface KVBuilder {
      * @param streamId s
      * @return s
      */
-    String streamRecordK(long uid, int streamId);
+    String streamRecordK(long uid, long streamId);
 
     Map streamRecordV();
 
@@ -91,7 +91,7 @@ public interface KVBuilder {
      */
     String goLiveK(long uid);
 
-    Map goLiveV(LiveCacheDTO dto);
+    Map goLiveV(LiveCache dto);
 
     /**
      * 加入直播  token 验证回调
@@ -108,7 +108,7 @@ public interface KVBuilder {
      * @return s
      */
     String raffleK(long uid);
-    Map raffleV(RaffleCacheDTO dto);
+    Map raffleV(RaffleEventCache dto);
 
     /**
      * 直播红包
@@ -124,4 +124,18 @@ public interface KVBuilder {
      * @return s
      */
     String raffleListK(long uid);
+
+    /**
+     * 直播红包的uid防重
+     * @param uid u
+     * @return ok
+     */
+    String redPacketUidMapK(long uid);
+
+    /**
+     * 直播红包的数据队列
+     * @param uid u
+     * @return ok
+     */
+    String redPacketDataListK(long uid);
 }

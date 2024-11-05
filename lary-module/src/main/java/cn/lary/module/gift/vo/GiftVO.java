@@ -1,7 +1,10 @@
 package cn.lary.module.gift.vo;
 
+import cn.lary.module.gift.entity.GiftCache;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
+
+import java.math.BigDecimal;
 
 @Data
 public class GiftVO {
@@ -10,19 +13,17 @@ public class GiftVO {
      */
     private int typeId;
 
-    private String typeName;
-
     /**
      * virtual currency price
      */
-    @JsonProperty("vc_price")
-    private long vcPrice;
+    @JsonProperty("vc_amount")
+    private long vcAmount;
 
     /**
      * real pay price CNY
      */
-    @JsonProperty("price")
-    private long price;
+    @JsonProperty("amount")
+    private BigDecimal amount;
 
     private String name;
 
@@ -30,4 +31,16 @@ public class GiftVO {
      * gift logo
      */
     private String avatar;
+
+    public GiftVO(){}
+
+    public GiftVO(GiftCache cache) {
+
+        this.amount = cache.getAmount();
+        this.vcAmount = cache.getVcAmount();
+        this.name = cache.getName();
+        this.avatar = cache.getAvatar();
+        this.typeId = cache.getType();
+
+    }
 }

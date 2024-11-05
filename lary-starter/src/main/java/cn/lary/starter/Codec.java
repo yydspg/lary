@@ -17,7 +17,7 @@ import java.util.Arrays;
  */
 
 public class Codec{
-    private static final String SERVICE_NAME = "goods";
+    private static final String SERVICE_NAME = "wallet";
 
     //dataSource config
     private static final String DATA_SOURCE_USER_NAME  = "root";
@@ -27,11 +27,11 @@ public class Codec{
     private static final String XML_PACK_NAME = "mapper";
     private static final String SERVICE_IMPL_PACK_NAME = "serviceImpl";
     private static final String ENTITY_PACK_NAME = "entity";
-    private static final String DATA_SOURCE_URL = "jdbc:mysql://192.168.1.101:3306/lary";
+    private static final String DATA_SOURCE_URL = "jdbc:mysql://192.168.1.102:3306/lary";
     private static final String[] TABLE_NAMES = new String[]{
-        "goods",
-        "store_goods_view",
-        "user_goods_view",
+        "wallet",
+        "wallet_outcome",
+        "wallet_outcome",
     };
     public static void main(String[] args) {
         /* 配置数据源 **/

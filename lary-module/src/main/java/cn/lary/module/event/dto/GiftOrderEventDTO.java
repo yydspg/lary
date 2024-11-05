@@ -1,6 +1,5 @@
 package cn.lary.module.event.dto;
 
-import cn.lary.module.app.service.AbstractEventData;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 

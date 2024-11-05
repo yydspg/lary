@@ -51,9 +51,6 @@ public class GiftType implements Serializable {
 
     private Boolean isDelete;
 
-    
-
-    
 
     @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;

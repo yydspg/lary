@@ -48,7 +48,7 @@ public class GiftController {
      */
     @GetMapping("")
     public SingleResponse<String> gifts() {
-        ResponsePair<String> pair = giftExecute.getGifts();
+        ResponsePair<String> pair = giftExecute.gifts();
         if(pair.isFail()) {
             return ResponseKit.fail(pair.getMsg());
         }
@@ -57,11 +57,11 @@ public class GiftController {
 
     /**
      * 查询礼物购买订单
-     * @param req {@link GiftOrderPageQueryDTO}
+     * @param dto {@link GiftOrderPageQueryDTO}
      * @return {@link GiftOrderVO}
      */
     @PostMapping("/orders")
-    public PageResponse<GiftOrderVO> orders(@RequestBody @Valid GiftOrderPageQueryDTO req) {
+    public PageResponse<GiftOrderVO> orders(@RequestBody @Valid GiftOrderPageQueryDTO dto) {
 //        ResponsePair<List<GiftOrderVO>> response = giftExecute.orders(req);
 //        if(response.isFail()) {
 //            return ResponseKit.pageFail(response.getMsg());

@@ -3,11 +3,14 @@ package cn.lary.module.gift.component;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
+import cn.lary.module.cache.component.GiftCacheComponent;
+import cn.lary.module.cache.component.LiveCacheComponent;
 import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.RedisCache;
+import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.gift.dto.GiftOrderDTO;
 import cn.lary.module.gift.entity.Gift;
+import cn.lary.module.gift.entity.GiftCache;
 import cn.lary.module.gift.entity.GiftOrder;
 import cn.lary.module.gift.listener.SynchronizeGiftOrderMessage;
 import cn.lary.module.gift.service.GiftOrderService;
@@ -20,7 +23,7 @@ import cn.lary.module.pay.dto.PaymentParamDTO;
 import cn.lary.module.pay.listener.gift.GiftOrderActiveDetectionMessage;
 import cn.lary.module.pay.plugin.PaymentPluginManager;
 import cn.lary.module.pay.vo.PaymentBuildVO;
-import cn.lary.module.stream.dto.LiveCacheDTO;
+import cn.lary.module.cache.dto.LiveCache;
 import cn.lary.module.wallet.dto.TransferDTO;
 import cn.lary.module.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
@@ -28,6 +31,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,18 +42,17 @@ import java.util.Map;
 public class GiftPayment extends AbstractBusinessPayment {
 
 
-    private final RedisCache redisCache;
-    private final KVBuilder kvBuilder;
+    private final GiftCacheComponent giftCacheComponent;
+    private final LiveCacheComponent liveCacheComponent;
     private final GiftOrderService giftOrderService;
     private final PaymentPluginManager paymentPluginManager;
     private final WalletService walletService;
-    private final HashMap<Integer, Gift> gifts = new HashMap<>();
     private final MessageService messageService;
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    protected ResponsePair<Void> doCheck(BusinessPaymentDTO dto) {
-        return null;
+    protected ResponsePair<Void> doCheck(BusinessPaymentDTO paymentDTO) {
+        return BusinessKit.ok();
     }
 
     @Override
@@ -57,17 +60,17 @@ public class GiftPayment extends AbstractBusinessPayment {
         GiftOrderDTO dto = (GiftOrderDTO) paymentDTO;
         long uid = RequestContext.getLoginUID();
         String uidName = RequestContext.getLoginName();
-        Gift gift = gifts.get(dto.getId());
+        GiftCache gift = giftCacheComponent.getGift(dto.getId());
         long anchorUid = dto.getToUid();
         if (gift == null) {
             return BusinessKit.fail("gift id error");
         }
-        Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(anchorUid));
-        if (map == null) {
-            return BusinessKit.fail("no live info");
+        LiveCache cache = liveCacheComponent.getLive(dto.getToUid());
+        if (cache == null) {
+            return BusinessKit.fail("live id error");
         }
-        LiveCacheDTO cache = LiveCacheDTO.of(map);
-        long cost = calculate(dto.getNum(),gift.getPrice());
+        BigDecimal amount = calculate(dto.getNum(),gift.getAmount());
+        // no rollback
         GiftOrder order = new GiftOrder()
                 .setUid(uid)
                 .setAnchorUid(anchorUid)
@@ -78,10 +81,11 @@ public class GiftPayment extends AbstractBusinessPayment {
                 .setClient(dto.getClient())
                 .setStatus(LARY.PAYMENT.STATUS.INIT);
         giftOrderService.save(order);
-        // TODO  :  这里加强下这个 判断是否直接充值的逻辑
-        if (isValidPlugin(dto.getPlugin())) {
+
+        if (verifyPlugin(dto.getPlugin())) {
+
             PaymentParamDTO param = new PaymentParamDTO()
-                    .setAmount(cost)
+                    .setAmount(amount)
                     .setClientType(dto.getClient())
                     .setPayId(order.getId())
                     .setBusinessSign(LARY.BUSINESS.PAYMENT.GIFT)
@@ -94,25 +98,28 @@ public class GiftPayment extends AbstractBusinessPayment {
         }
         // try
         ResponsePair<PaymentProcessPair> execute = transactionTemplate.execute(status -> {
+
             ResponsePair<Void> pair = walletService.transfer(new TransferDTO()
-                    .setAmount(cost)
-                    .setChannelId(cache.getStreamId())
+                    .setAmount(amount)
+                    .setChannel(cache.getStreamId())
                     .setUid(uid)
                     .setToUid(anchorUid)
-                    .setChannelType(LARY.CHANNEL.TYPE.PERSON));
+                    .setCategory(LARY.CHANNEL.TYPE.PERSON));
             if (pair.isFail()) {
                 return BusinessKit.fail(pair.getMsg());
             }
             return BusinessKit.ok(new PaymentProcessPair()
                     .setInternal(true));
         });
-        assert execute != null;
-        if (execute.isFail()){
+        if (execute == null ){
+            log.error("system error,execute wallet decr error");
+            return BusinessKit.fail("system error,execute wallet decr error");
+        }
+        if (execute.isFail()) {
             return BusinessKit.fail(execute.getMsg());
         }
         messageService.asyncSendRocketMessage(new SynchronizeGiftOrderMessage().setGiftOrder(order));
-        messageService.send(new GiftSendNotifyDTO(cache.getDanmakuId(),
-                uid,uidName,gift.getId(),dto.getNum()));
+        messageService.send(new GiftSendNotifyDTO(cache.getDanmakuId(), uid,uidName,dto.getId(),dto.getNum()));
         return execute;
     }
 
@@ -149,11 +156,11 @@ public class GiftPayment extends AbstractBusinessPayment {
         return LARY.BUSINESS.PAYMENT.GIFT;
     }
 
-    private long calculate(long giftNum,long giftCost) {
-        return 0;
+    private BigDecimal calculate(long giftNum, BigDecimal giftAmount) {
+        return giftAmount.multiply(BigDecimal.valueOf(giftNum));
     }
 
-    private boolean isValidPlugin(Integer plugin) {
+    private boolean verifyPlugin(Integer plugin) {
         return plugin != null && plugin >= 301 && plugin <= 302;
     }
 

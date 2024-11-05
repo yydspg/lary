@@ -6,12 +6,12 @@ import cn.lary.external.srs.dto.OnPlayDTO;
 import cn.lary.external.srs.dto.OnPublishDTO;
 import cn.lary.external.srs.dto.OnStopDTO;
 import cn.lary.external.srs.dto.OnUnpublishDTO;
-import cn.lary.module.app.service.EventService;
+import cn.lary.module.common.service.EventService;
 import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.RedisCache;
+import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.stream.dto.JoinLiveCacheDTO;
-import cn.lary.module.stream.dto.LiveCacheDTO;
+import cn.lary.module.cache.dto.JoinLiveCacheDTO;
+import cn.lary.module.cache.dto.LiveCache;
 import cn.lary.module.stream.entity.StreamRecord;
 import cn.lary.module.stream.service.StreamRecordService;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
@@ -28,7 +28,7 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class SRSCallbackExecute implements SRSCallback {
 
-    private final RedisCache redisCache;
+    private final CacheComponent cacheComponent;
     private final EventService eventService;
     private final KVBuilder kvBuilder;
     private final StreamRecordService streamRecordService;
@@ -41,11 +41,11 @@ public class SRSCallbackExecute implements SRSCallback {
         long uid = Integer.parseInt( args.get("uid"));
         String eventId = args.get("event");
 
-        Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
+        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.goLiveK(uid));
         if (map == null) {
             return SRS.CallBackStatus.fail;
         }
-        LiveCacheDTO cache = LiveCacheDTO.of(map);
+        LiveCache cache = LiveCache.of(map);
         // check ip
         if (StringKit.diff(dto.getIp(), cache.getIp())) {
             return SRS.CallBackStatus.fail;
@@ -56,13 +56,13 @@ public class SRSCallbackExecute implements SRSCallback {
         }
 
         //update cache
-        LiveCacheDTO updateRecord = new LiveCacheDTO()
+        LiveCache updateRecord = new LiveCache()
                 .setSrsClientId(dto.getClientId())
                 .setSrsStreamId(dto.getStreamId())
                 .setSrsTcUrl(dto.getTcUrl())
                 .setSrsServerId(dto.getServerId())
                 .setSrsStreamUrl(dto.getStreamUrl());
-        redisCache.setHash(kvBuilder.goLiveK(uid),kvBuilder.goLiveV(updateRecord));
+        cacheComponent.setHash(kvBuilder.goLiveK(uid),kvBuilder.goLiveV(updateRecord));
         streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>().eq(StreamRecord::getStreamId,cache.getStreamId()).set(StreamRecord::getStatus, LARY.Stream.Status.up));
         // close event
         eventService.commit(Integer.parseInt(eventId));
@@ -79,8 +79,8 @@ public class SRSCallbackExecute implements SRSCallback {
         String token = args.get("token");
         long uid = Integer.parseInt( args.get("uid"));
         String eventId = args.get("event");
-        Map<Object, Object> map = redisCache.getHash(kvBuilder.goLiveK(uid));
-        LiveCacheDTO cache = LiveCacheDTO.of(map);
+        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.goLiveK(uid));
+        LiveCache cache = LiveCache.of(map);
 
         // check ip
         if (StringKit.diff(dto.getIp(), cache.getIp())) {
@@ -92,7 +92,7 @@ public class SRSCallbackExecute implements SRSCallback {
             log.error("srs unpublish fail when check token:{},uid:{}",token,uid);
             return SRS.CallBackStatus.fail;
         }
-        redisCache.delete(kvBuilder.goLiveK(uid));
+        cacheComponent.delete(kvBuilder.goLiveK(uid));
         // close event
         eventService.commit(Integer.parseInt(eventId));
        return SRS.CallBackStatus.ok;
@@ -103,7 +103,7 @@ public class SRSCallbackExecute implements SRSCallback {
         Map<String, String> args = dto.parseParams(dto.getParam());
         String token = args.get("token");
         long uid = Integer.parseInt( args.get("uid"));
-        Map<Object, Object> map = redisCache.getHash(kvBuilder.joinLiveK(uid));
+        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.joinLiveK(uid));
         if (map == null) {
             return SRS.CallBackStatus.fail;
         }
@@ -121,7 +121,7 @@ public class SRSCallbackExecute implements SRSCallback {
                 .setSrsClientId(dto.getClientId())
                 .setSrsServerId(dto.getServerId());
         long expire = 30;
-        redisCache.setHash(kvBuilder.joinLiveK(uid),kvBuilder.joinLiveV(updateRecord),expire, TimeUnit.MINUTES);
+        cacheComponent.setHash(kvBuilder.joinLiveK(uid),kvBuilder.joinLiveV(updateRecord),expire, TimeUnit.MINUTES);
        return SRS.CallBackStatus.ok;
     }
 

@@ -58,7 +58,7 @@ public class RoomController {
 
     /**
      * 开启直播
-     * @param req {@link GoLiveDTO} 直播请求参数
+     * @param dto {@link GoLiveDTO} 直播请求参数
      * @return {@link GoLiveVO}
      */
     @PostMapping("/go")
@@ -113,31 +113,31 @@ public class RoomController {
         return ResponseKit.ok(response.getData());
     }
 
-    /**
-     * 创建抽奖事件
-     * @param dto {@link RaffleDTO}
-     * @return ok
-     */
-    @PostMapping("/raffle")
-    public SingleResponse<Void> raffle(@RequestBody @Valid RaffleDTO dto) {
-        ResponsePair<Void> response = roomBusinessExecute.raffle(dto);
-        if (response.isFail()) {
-            return ResponseKit.fail(response.getMsg());
-        }
-        return ResponseKit.ok(response.getData());
-    }
+//    /**
+//     * 创建抽奖事件
+//     * @param dto {@link RaffleDTO}
+//     * @return ok
+//     */
+//    @PostMapping("/raffle")
+//    public SingleResponse<Void> raffle(@RequestBody @Valid RaffleDTO dto) {
+//        ResponsePair<Void> response = roomBusinessExecute.raffle(dto);
+//        if (response.isFail()) {
+//            return ResponseKit.fail(response.getMsg());
+//        }
+//        return ResponseKit.ok(response.getData());
+//    }
 
-    /**
-     * 创建红包事件
-     * @param dto {@link RedPacketDTO}
-     * @return ok
-     */
-    @PostMapping("/redpacket")
-    public SingleResponse<Void> redpacket(@RequestBody @Valid RedPacketDTO dto) {
-        ResponsePair<Void> response = roomBusinessExecute.redPacket(dto);
-        if (response.isFail()) {
-            return ResponseKit.fail(response.getMsg());
-        }
-        return ResponseKit.ok(response.getData());
-    }
+//    /**
+//     * 创建红包事件
+//     * @param dto {@link RedPacketDTO}
+//     * @return ok
+//     */
+//    @PostMapping("/redpacket")
+//    public SingleResponse<Void> redpacket(@RequestBody @Valid RedPacketDTO dto) {
+//        ResponsePair<Void> response = roomBusinessExecute.redpacket(dto);
+//        if (response.isFail()) {
+//            return ResponseKit.fail(response.getMsg());
+//        }
+//        return ResponseKit.ok(response.getData());
+//    }
 }

@@ -6,6 +6,7 @@ import lombok.Setter;
 import lombok.experimental.Accessors;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
@@ -54,7 +55,7 @@ public class GiftOrder implements Serializable {
     /**
      * 是否同步用户数据成功
      */
-    private Boolean isSync;
+    private Integer syncStatus;
 
     /**
      * 上游异常原因
@@ -64,7 +65,7 @@ public class GiftOrder implements Serializable {
     /**
      * 直播流id
      */
-    private Integer streamId;
+    private Long streamId;
 
     /**
      * 是否直接向主播支付,不通过wallet或者余额不足
@@ -89,7 +90,7 @@ public class GiftOrder implements Serializable {
     /**
      * 花费
      */
-    private Long cost;
+    private BigDecimal amount;
 
     /**
      * 支付来源
@@ -107,7 +108,7 @@ public class GiftOrder implements Serializable {
      */
     private Integer giftNum;
 
-    private Boolean isFan;
+    private Integer followStatus;
 
     private Boolean isDelete;
 

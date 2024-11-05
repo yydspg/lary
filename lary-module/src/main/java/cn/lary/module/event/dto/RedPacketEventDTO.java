@@ -1,22 +1,22 @@
 package cn.lary.module.event.dto;
 
 import cn.lary.common.kit.JSONKit;
-import cn.lary.module.app.service.AbstractEventData;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.event.convert.EventConvert;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Data
+@NoArgsConstructor
 @AllArgsConstructor
 public class RedPacketEventDTO extends AbstractEventData {
 
     private long uid;
 
-    private int streamId;
+    private long streamId;
 
     private long redpacketId;
 

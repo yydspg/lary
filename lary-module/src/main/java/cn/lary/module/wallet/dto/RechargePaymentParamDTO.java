@@ -7,7 +7,4 @@ import lombok.Data;
 public class RechargePaymentParamDTO extends PaymentParamDTO {
 
 
-    public RechargePaymentParamDTO() {
-        super.setBusinessSign(LARY.PayBiz.recharge);
-    }
 }

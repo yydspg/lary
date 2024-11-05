@@ -87,7 +87,7 @@ public class GroupMember implements Serializable {
     /**
      * 邀请人uid
      */
-    private Integer inviteUid;
+    private Long inviteUid;
 
     private Boolean isDelete;
 

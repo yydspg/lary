@@ -4,45 +4,36 @@ import cn.lary.module.wallet.entity.Wallet;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
+
 @Data
 @Accessors(chain = true)
 public class BalanceVO {
-    /**
-     * vc 收入总数量
-     */
-    private Long vcIncome;
 
     /**
-     * vc 使用总数量
+     * 收入流水总金额
      */
-    private Long vcOutcome;
+    private BigDecimal income;
 
     /**
-     * vc 剩余总数量
+     * 支出流水总金额
      */
-    private Long vcFee;
+    private BigDecimal outcome;
 
     /**
-     * 被锁定的vc
+     * 总金额
      */
-    private Long vcLocked;
+    private BigDecimal amount;
 
     /**
-     * 是否为主播
+     * 虚拟货币数量
      */
-    private Boolean isAnchor;
-
-    /**
-     * 密保问题
-     */
-    private String question;
+    private Long vcCount;
 
     public BalanceVO(Wallet wallet) {
-        this.vcIncome = wallet.getVcIncome();
-        this.vcOutcome = wallet.getVcOutcome();
-        this.vcFee = wallet.getVcFee();
-        this.vcLocked = wallet.getVcLocked();
-        this.question = wallet.getSecQuestion();
-        this.isAnchor = wallet.getIsAnchor();
+        this.income = wallet.getIncome();
+        this.outcome = wallet.getOutcome();
+        this.amount = wallet.getAmount();
+        this.vcCount = wallet.getVcCount();
     }
 }

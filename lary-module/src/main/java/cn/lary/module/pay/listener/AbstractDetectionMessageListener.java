@@ -1,7 +1,8 @@
 package cn.lary.module.pay.listener;
 
-import cn.lary.module.app.entity.Event;
-import cn.lary.module.app.service.EventService;
+
+import cn.lary.module.common.entity.Event;
+import cn.lary.module.common.service.EventService;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.pay.component.PaymentQueryProcessPair;
 import cn.lary.module.pay.plugin.PaymentPluginManager;

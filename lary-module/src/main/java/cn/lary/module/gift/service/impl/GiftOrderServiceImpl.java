@@ -26,11 +26,11 @@ public class GiftOrderServiceImpl extends ServiceImpl<GiftOrderMapper, GiftOrder
     private final GiftOrderMapper giftOrderMapper;
 
     @Override
-    public List<GiftOrderVO> queryGiftOrders(GiftOrderPageQueryDTO dto) {
+    public List<GiftOrderVO> my(GiftOrderPageQueryDTO dto) {
         if (dto == null || dto.getUid() <= 0) {
             return null;
         }
-        return giftOrderMapper.getGiftOrderVOs(dto);
+        return giftOrderMapper.orders(dto);
     }
 
 

@@ -3,13 +3,7 @@ package cn.lary.module.common.constant;
 public interface LARY {
     boolean testMode = false;
 
-    interface CodeType {
-        int Register = 0;
-        int PWd = 1;
-        int ForgetLoginPWD = 2;
-        int CheckMobile = 3;
-        int DestroyCount = 4;
-    }
+
     interface Sex {
         int man = 1;
         int woman = 2;
@@ -23,72 +17,24 @@ public interface LARY {
         int invitation = 6; // 邀请码
         int unknown = 7; // unknown
     }
-    interface Event {
-        String register = "register";
-        String friendApplyAck = "friendApplyAck";
-        String groupCreate = "groupCreate";
-        String groupMemberAdd = "groupMemberAdd";
-        String groupAvatarUpdate = "groupAvatarUpdate";
-        String groupUnableAddDestroyAccount = "groupUnableAddDestroyAccount";
-        String goLive = "goLive";
-        String downLive = "downLive";
-        String recharge = "recharge";
-        String raffle = "raffle";
-        String redpacket = "redpacket";
+    interface STATUS {
+        int BLOCK = 45;
+        int COMMON = 46;
     }
-    interface EventStatus {
-        int init = 0;
-        int commit = 1;
-    }
-    interface EventType {
-        int  none = 0;
-         int message = 1;
-        int  cmd = 2;
-    }
-    interface UserStatus {
-        int ban = 1;
-        int ok = 0;
-    }
+
+
     interface USER {
         interface STATUS {
             int BAN = 1;
             int OK = 2;
         }
     }
-    interface Group {
-        interface Role {
-            int common = 0;
-            long creator = 1;
-            int manager = 2;
-        }
-        interface UserStatus {
-            int common = 1;
-            int block = 2;
-        }
-        interface Category {
-            int common = 1;
-            int stream = 2;
-        }
-    }
-    interface SeqKey {
-        String groupMember = "groupMember";
-        String group = "group";
-        String user = "user";
-        String friend = "friend";
-        String robot = "robot";
-        String userSetting = "userSetting";
-
-    }
-    interface RedDot {
-        String friendApply = "friendApply";
+    interface SYNC_STATUS {
+        int INIT = 1;
+        int FAIL = 2;
+        int SUCCESS = 3;
     }
 
-
-    interface CMD {
-        String friendRequest = "friendRequest";
-        String friendApplyAck = "friendApplyAck";
-        String typing = "typing";
-    }
 
     interface FollowCode {
         int stream = 1;
@@ -118,22 +64,17 @@ public interface LARY {
             int APP = 402;
         }
     }
-    interface OrderStatus {
-        int init = 1;
-        int commit = 2;
-        int stop = 3;
-        int fail = 4;
-    }
-    interface PayBiz {
-        int recharge = 1;
-        int gift = 2;
-    }
-    interface Raffle {
-        int inner = 1;
-        int external = 2;
-    }
-    interface WalletBiz {
-        int stream = 1;
+
+    interface REDPACKET {
+        interface CATEGORY {
+            int SUPER = 101;
+            int COMMON = 102;
+        }
+        interface STATUS {
+            int INIT = 1;
+            int COMMIT = 2;
+            int FAIL = 3;
+        }
     }
     interface DEVICE {
         interface FLAG{
@@ -145,7 +86,11 @@ public interface LARY {
             int MASTER = 2;
         }
     }
-
+    interface RAFFLE {
+        int CUSTOM = 1101;
+        int MONEY_RANDOM = 1103;
+        int MONEY_FIX = 1104;
+    }
     interface BUSINESS {
         interface FILE_UPLOAD {
             int USER_AVATAR = 101;
@@ -155,9 +100,19 @@ public interface LARY {
         interface PAYMENT {
             int RECHARGE = 201;
             int GIFT = 202;
+            int ORDER = 203;
         }
         interface TRANSFER {
             int STREAM_GIFT = 501;
+            int RAFFLE = 502;
+        }
+        interface AUTO_CLOSE{
+            int    RAFFLE = 401;
+            int READ_PACKET = 402;
+        }
+        interface CACHE{
+            int RAFFLE = 1201;
+            int REDPACKET = 1201;
         }
     }
     interface CHANNEL {
@@ -165,6 +120,21 @@ public interface LARY {
             int GROUP = 701;
             int STREAM = 702;
             int PERSON = 703;
+            int TEMP = 704;
+        }
+    }
+    interface FOLLOW {
+        interface STATUS {
+            int COMMON = 1;
+            int UNFOLLOW = 2;
+            int BLOCK = 3;
+        }
+        interface ROLE {
+            int ANCHOR = 1;
+            int COMMON = 2;
+        }
+        interface CODE {
+            int STREAM = 1;
         }
     }
     interface EVENT {
@@ -187,6 +157,17 @@ public interface LARY {
             int FAIL = 903;
         }
     }
+    interface WALLET {
+        interface STATUS {
+            int BLOCK =  1;
+            int COMMON = 2;
+            int DANGER = 3;
+        }
+        interface TRANSFER {
+            int POCKET = 1;
+            int AMOUNT = 2;
+        }
+    }
     interface GROUP {
         interface ROLE {
             int COMMON = 1001;
@@ -194,4 +175,5 @@ public interface LARY {
             int MANAGER = 1003;
         }
     }
+
 }

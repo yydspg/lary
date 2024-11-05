@@ -2,7 +2,7 @@ package cn.lary.module.user.service;
 
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.module.user.dto.DeviceAddDTO;
-import cn.lary.module.user.dto.DeviceLoginCacheDTO;
+import cn.lary.module.cache.dto.DeviceLoginCacheDTO;
 import cn.lary.module.user.entity.Device;
 import cn.lary.module.user.vo.DeviceVO;
 import com.baomidou.mybatisplus.extension.service.IService;

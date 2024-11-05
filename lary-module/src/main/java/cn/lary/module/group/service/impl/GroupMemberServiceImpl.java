@@ -60,7 +60,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         if (member == null) {
             return BusinessKit.fail("not group member");
         }
-        if (member.getRole() == LARY.Group.Role.creator) {
+        if (member.getRole() == LARY.GROUP.ROLE.CREATOR) {
             return BusinessKit.fail("creator can not quit");
         }
         lambdaUpdate()
@@ -112,8 +112,8 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         if (CollectionKit.isEmpty(users)) {
             return BusinessKit.fail("valid users empty");
         }
-        ResponsePair<List<Long>> blockPair = this.getMembersWithStatus(groupId, LARY.Group.UserStatus.block);
-        ResponsePair<List<Long>> exsitsPair = this.getMembersWithStatus(groupId, LARY.Group.UserStatus.common);
+        ResponsePair<List<Long>> blockPair = this.getMembersWithStatus(groupId, LARY.STATUS.BLOCK);
+        ResponsePair<List<Long>> exsitsPair = this.getMembersWithStatus(groupId, LARY.STATUS.COMMON);
 
         if(blockPair.isFail() || CollectionKit.isEmpty(blockPair.getData())){
             return BusinessKit.fail(response.getMsg());
@@ -134,7 +134,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         addUsers.forEach(u -> {
             GroupMember groupMember = new GroupMember()
                     .setUid(u)
-                    .setRole(LARY.Group.Role.common)
+                    .setRole(LARY.GROUP.ROLE.COMMON)
                     .setInviteUid(RequestContext.getLoginUID())
                     .setGroupId(groupId);
             groupMembers.add(groupMember);
@@ -150,7 +150,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
             return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
-                .set(GroupMember::getRole, LARY.Group.Role.manager)
+                .set(GroupMember::getRole, LARY.GROUP.ROLE.MANAGER)
                 .eq(GroupMember::getGroupId,groupId)
                 .eq(GroupMember::getUid,uid);
         return BusinessKit.ok();
@@ -163,7 +163,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
             return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
-                .set(GroupMember::getRole, LARY.Group.Role.common)
+                .set(GroupMember::getRole, LARY.GROUP.ROLE.COMMON)
                 .eq(GroupMember::getGroupId,groupId)
                 .eq(GroupMember::getUid,uid);
         return null;
@@ -176,7 +176,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .eq(GroupMember::getUid, RequestContext.getLoginUID())
                 .one();
         if (operator == null || operator.getIsDelete()
-                || operator.getStatus() == LARY.Group.UserStatus.block) {
+                || operator.getStatus() == LARY.STATUS.BLOCK) {
             return BusinessKit.fail("status error");
         }
         List<GroupMember> data = lambdaQuery()
@@ -206,11 +206,11 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
             return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
-                .set(GroupMember::getRole, LARY.Group.Role.creator)
+                .set(GroupMember::getRole, LARY.GROUP.ROLE.CREATOR)
                 .eq(GroupMember::getGroupId,groupId)
                 .eq(GroupMember::getUid,uid);
         lambdaUpdate()
-                .set(GroupMember::getRole, LARY.Group.Role.manager)
+                .set(GroupMember::getRole, LARY.GROUP.ROLE.MANAGER)
                 .eq(GroupMember::getGroupId,groupId)
                 .eq(GroupMember::getUid, response.getData().getUid());
         return BusinessKit.ok();
@@ -234,14 +234,14 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
                 .eq(GroupMember::getGroupId, groupId)
                 .eq(GroupMember::getUid, uid)
                 .one();
-        if (operator != null && operator.getStatus() == LARY.Group.UserStatus.block) {
+        if (operator != null && operator.getStatus() == LARY.STATUS.BLOCK) {
             return BusinessKit.fail("been blocked");
         }
         if (operator == null) {
             this.save(new GroupMember()
                     .setGroupId(groupId)
                     .setUid(uid)
-                    .setRole(LARY.Group.Role.common)
+                    .setRole(LARY.GROUP.ROLE.COMMON)
                     .setVerifyCode(UUIDKit.getUUID()));
         }else {
             lambdaUpdate()
@@ -254,7 +254,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     public ResponsePair<GroupMember> checkRole(long groupId) {
-        int operator = RequestContext.getLoginUID();
+        long operator = RequestContext.getLoginUID();
         GroupMember admin = lambdaQuery()
                 .select(GroupMember::getUid)
                 .eq(GroupMember::getGroupId, groupId)
@@ -263,7 +263,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
         if (admin == null) {
             return BusinessKit.fail("not group member");
         }
-        if (admin.getRole() == LARY.Group.Role.common) {
+        if (admin.getRole() == LARY.GROUP.ROLE.COMMON) {
             return BusinessKit.fail("no privilege");
         }
         return BusinessKit.ok(admin);
@@ -291,7 +291,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
             return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
-                .set(GroupMember::getStatus, LARY.Group.UserStatus.block)
+                .set(GroupMember::getStatus, LARY.STATUS.BLOCK)
                 .eq(GroupMember::getGroupId, groupId)
                 .eq(GroupMember::getUid, uid);
         return BusinessKit.ok();

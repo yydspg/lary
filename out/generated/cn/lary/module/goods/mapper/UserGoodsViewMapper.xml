@@ -13,7 +13,7 @@
         <result column="brand_name" property="brandName" />
         <result column="buy_count" property="buyCount" />
         <result column="price" property="price" />
-        <result column="small_avatar" property="smallAvatar" />
+        <result column="big_avatar" property="bigAvatar" />
         <result column="create_at" property="createAt" />
     </resultMap>
 

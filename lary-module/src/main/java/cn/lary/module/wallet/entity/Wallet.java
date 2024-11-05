@@ -4,12 +4,12 @@ import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
+import java.io.Serializable;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
-
-import java.io.Serializable;
-import java.time.LocalDateTime;
 
 /**
  * <p>
@@ -17,7 +17,7 @@ import java.time.LocalDateTime;
  * </p>
  *
  * @author paul
- * @since 2024-09-13
+ * @since 2024-11-01
  */
 @Getter
 @Setter
@@ -35,59 +35,45 @@ public class Wallet implements Serializable {
     private Long uid;
 
     /**
-     * vc 收入总数量
+     * 收入流水总金额
      */
-    private Long vcIncome;
+    private BigDecimal income;
 
     /**
-     * vc 使用总数量
+     * 支出流水总金额
      */
-    private Long vcOutcome;
+    private BigDecimal outcome;
+    /**
+     * 零钱
+     */
+    private BigDecimal pocket;
 
     /**
-     * vc 剩余总数量
+     * 总金额
      */
-    private Long vcFee;
+    private BigDecimal amount;
 
     /**
-     * 被锁定的vc
+     * 虚拟货币数量
      */
-    private Long vcLocked;
+    private Long vcCount;
 
     /**
-     * 是否为主播
+     * 用户角色
      */
-    private Boolean isAnchor;
+    private Integer role;
 
     /**
-     * 是否被锁定
+     * 钱包状态
      */
-    private Boolean isBlock;
+    private Integer status;
 
-    /**
-     * 锁定原因
-     *
-     */
-    private Boolean blockReason;
-    /**
-     * 安全问题，用于解锁钱包
-     */
-    private String secQuestion;
-
-    /**
-     * 安全问题答案
-     */
-    private String secAnswer;
 
     private Boolean isDelete;
 
-    
-
-    
-
-    @TableField(fill = FieldFill.INSERT)
+      @TableField(fill = FieldFill.INSERT)
     private LocalDateTime createAt;
 
-    @TableField(fill = FieldFill.UPDATE)
+      @TableField(fill = FieldFill.UPDATE)
     private LocalDateTime updateAt;
 }

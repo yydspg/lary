@@ -1,9 +1,11 @@
 package cn.lary.starter;
 
+import com.alicp.jetcache.anno.config.EnableMethodCache;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.context.annotation.ComponentScan;
 
+
+@EnableMethodCache(basePackages = "cn.lary,module.cache")
 @SpringBootApplication(scanBasePackages = "cn.lary.module")
 public class LaryStarterApplication {
 
