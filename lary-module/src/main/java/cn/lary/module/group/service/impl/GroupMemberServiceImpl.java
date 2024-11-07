@@ -51,7 +51,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
 
     @Override
     public ResponsePair<Void> quit(long groupId) {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         GroupMember member = lambdaQuery()
                 .select(GroupMember::getUid)
                 .eq(GroupMember::getGroupId,groupId)
@@ -85,7 +85,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
 
     @Override
     public ResponsePair<Void> join(long groupId) {
-        return join(RequestContext.getLoginUID(),groupId,0);
+        return join(RequestContext.uid(),groupId,0);
     }
 
     @Override
@@ -135,7 +135,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
             GroupMember groupMember = new GroupMember()
                     .setUid(u)
                     .setRole(LARY.GROUP.ROLE.COMMON)
-                    .setInviteUid(RequestContext.getLoginUID())
+                    .setInviteUid(RequestContext.uid())
                     .setGroupId(groupId);
             groupMembers.add(groupMember);
         });
@@ -173,7 +173,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     public ResponsePair<List<GroupMemberVO>> members(long groupId) {
         GroupMember operator = lambdaQuery()
                 .eq(GroupMember::getGroupId, groupId)
-                .eq(GroupMember::getUid, RequestContext.getLoginUID())
+                .eq(GroupMember::getUid, RequestContext.uid())
                 .one();
         if (operator == null || operator.getIsDelete()
                 || operator.getStatus() == LARY.STATUS.BLOCK) {
@@ -254,7 +254,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
     }
 
     public ResponsePair<GroupMember> checkRole(long groupId) {
-        long operator = RequestContext.getLoginUID();
+        long operator = RequestContext.uid();
         GroupMember admin = lambdaQuery()
                 .select(GroupMember::getUid)
                 .eq(GroupMember::getGroupId, groupId)
@@ -271,7 +271,7 @@ public class GroupMemberServiceImpl extends ServiceImpl<GroupMemberMapper, Group
 
     @Override
     public ResponsePair<List<Long>> my(int role) {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         List<GroupMember> data = lambdaQuery()
                 .select(GroupMember::getGroupId)
                 .eq(GroupMember::getUid, uid)

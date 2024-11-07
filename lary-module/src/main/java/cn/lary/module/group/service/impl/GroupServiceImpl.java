@@ -64,7 +64,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
     @Override
     public ResponsePair<CreateGroupVO> create(CreateGroupDTO dto) {
-        long creator = RequestContext.getLoginUID();
+        long creator = RequestContext.uid();
         if (isReachCreateLimit(creator, LocalDateTime.now())) {
             return BusinessKit.fail("reach create limit");
         }
@@ -112,7 +112,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         groupMemberService.saveBatch(groupMembers);
         CreateGroupVO vo = new CreateGroupVO(group.getGroupId(), groupName, LocalDateTime.now());
         Response<Void> response = wkMessageService.send(new CreateGroupSuccessNotifyDTO()
-                .build(RequestContext.getLoginUID(), group.getGroupId(), users));
+                .build(RequestContext.uid(), group.getGroupId(), users));
         if (!response.isSuccessful()) {
             return BusinessKit.fail(response.message());
         }

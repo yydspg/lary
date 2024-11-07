@@ -30,7 +30,7 @@ public class RaffleInvolvedServiceImpl implements RaffleInvolvedService {
 
     @Override
     public ResponsePair<Void> join(long toUid) {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         RaffleEventCache raffle = raffleCacheComponent.getRaffle(toUid);
         if (raffle == null) {
             return BusinessKit.fail("抽奖活动已过期");

@@ -5,7 +5,7 @@ import lombok.Data;
 import java.util.Map;
 
 @Data
-public class StreamRecordCacheDTO {
+public class StreamRecordCacheDTO extends AbstractCacheDTO {
 
     private Integer watchNum;
     private Integer newFansNum;

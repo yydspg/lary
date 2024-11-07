@@ -9,10 +9,10 @@ spring:
   profiles:
     active: dev
     include: lary
-  data:
-    redis:
-      host: 127.0.0.1
-      database: 0
+  redis:
+    single:
+      address: "redis://127.0.0.1:6379"
+      database: 1
 
 mybatis-plus:
   configuration:
@@ -243,17 +243,17 @@ jetcache:
 #      expireAfterWriteInMillis: 100000
   remote:
     default:
-      type: redis
+      type: redis.lettuce
       keyConvertor: fastjson2 #其他可选：fastjson/jackson
       broadcastChannel: projectA
-      valueEncoder: kryo/kryo5 #其他可选：kryo/kryo5
-      valueDecoder: kryo/kryo5 #其他可选：kryo/kryo5
+      uri: redis://127.0.0.1:6379/
+      valueEncoder: kryo5 #其他可选：kryo/kryo5
+      valueDecoder: kryo5 #其他可选：kryo/kryo5
       poolConfig:
         minIdle: 5
         maxIdle: 20
         maxTotal: 50
-      host: 127.0.0.1
-      port: 6379
+
 #    otherArea:
 #      type: redis
 #      keyConvertor: fastjson2 #其他可选：fastjson/jackson

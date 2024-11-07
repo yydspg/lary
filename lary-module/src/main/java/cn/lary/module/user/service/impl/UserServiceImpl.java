@@ -232,7 +232,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public ResponsePair<RouteVO> getRoute() {
-       return BusinessKit.ok(messageService.getRoute(RequestContext.getLoginUID()));
+       return BusinessKit.ok(messageService.getRoute(RequestContext.uid()));
     }
 
     @Override
@@ -269,7 +269,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public ResponsePair<Void> destroy(UserDestroyDTO dto) {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         String verifyCode = cacheComponent.get(kvBuilder.userDestroyK(uid));
         if(StringKit.diff(verifyCode,dto.getCode())){
             return BusinessKit.fail("check verify code error");
@@ -306,10 +306,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     @Override
     public ResponsePair<UserVO> my() {
         User user = lambdaQuery()
-                .eq(User::getUid, RequestContext.getLoginUID())
+                .eq(User::getUid, RequestContext.uid())
                 .one();
         if (user == null) {
-            log.error("search user error,uid:{}", RequestContext.getLoginUID());
+            log.error("search user error,uid:{}", RequestContext.uid());
             return BusinessKit.fail("query fail");
         }
         return BusinessKit.ok(new UserVO(user));

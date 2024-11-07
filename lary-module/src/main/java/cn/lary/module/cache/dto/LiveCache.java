@@ -7,7 +7,7 @@ import java.util.Map;
 
 @Data
 @Accessors(chain = true)
-public class LiveCache {
+public class LiveCache  extends AbstractCacheDTO{
 
     private long streamId;
     private long danmakuId;

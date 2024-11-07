@@ -32,7 +32,7 @@ public class WalletIncomeServiceImpl extends ServiceImpl<WalletIncomeMapper, Wal
     @Override
     public ResponsePair<List<WalletIncomeVO>> my(WalletIncomePageQueryDTO dto) {
         List<WalletIncome> vos = lambdaQuery()
-                .eq(WalletIncome::getUid, RequestContext.getLoginUID())
+                .eq(WalletIncome::getUid, RequestContext.uid())
                 .page(new Page<>(dto.getPageIndex(), dto.getPageSize()))
                 .getRecords();
         if (CollectionKit.isEmpty(vos)) {

@@ -32,7 +32,7 @@ public class WalletOutcomeServiceImpl extends ServiceImpl<WalletOutcomeMapper, W
     @Override
     public ResponsePair<List<WalletOutcomeVO>> my(WalletOutcomePageQueryDTO dto) {
         List<WalletOutcome> vos = lambdaQuery()
-                .eq(WalletOutcome::getUid, RequestContext.getLoginUID())
+                .eq(WalletOutcome::getUid, RequestContext.uid())
                 .page(new Page<>(dto.getPageIndex(), dto.getPageSize()))
                 .getRecords();
         if (CollectionKit.isEmpty(vos)) {

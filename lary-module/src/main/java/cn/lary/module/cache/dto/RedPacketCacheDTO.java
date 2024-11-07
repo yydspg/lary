@@ -7,7 +7,7 @@ import lombok.Data;
 import java.util.Map;
 
 @Data
-public class RedPacketCacheDTO {
+public class RedPacketCacheDTO extends AbstractCacheDTO {
     /**
      * 开始时间
      */

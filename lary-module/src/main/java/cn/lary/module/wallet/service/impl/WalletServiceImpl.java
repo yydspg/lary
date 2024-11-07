@@ -344,10 +344,10 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
         Wallet wallet = lambdaQuery()
                 .select(Wallet::getAmount)
                 .select(Wallet::getOutcome, Wallet::getIncome)
-                .eq(Wallet::getUid, RequestContext.getLoginUID())
+                .eq(Wallet::getUid, RequestContext.uid())
                 .one();
         if (wallet == null) {
-            log.error("query wallet error,not found,uid :{}",RequestContext.getLoginUID());
+            log.error("query wallet error,not found,uid :{}",RequestContext.uid());
             return BusinessKit.fail("wallet not exist");
         }
         return BusinessKit.ok(new BalanceVO(wallet));

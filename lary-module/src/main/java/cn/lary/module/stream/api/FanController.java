@@ -40,7 +40,7 @@ public class FanController {
     }
     @GetMapping("/redpacket/join")
     public SingleResponse<Void> joinRedPacket(@RequestParam @NotNull Integer toUid) {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         ResponsePair<Void> response = fanExecute.redWars(uid, toUid);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());

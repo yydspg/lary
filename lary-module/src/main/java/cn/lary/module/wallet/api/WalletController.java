@@ -57,7 +57,6 @@ public class WalletController {
      */
     @PostMapping("/my")
     public SingleResponse<BalanceVO> my() {
-
         ResponsePair<BalanceVO> response = walletExecute.my();
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());

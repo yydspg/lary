@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Data
 @Accessors(chain = true)
-public class DeviceLoginCacheDTO extends DTO {
+public class DeviceLoginCacheDTO extends AbstractCacheDTO{
 
     @JsonProperty("id")
     private long id;

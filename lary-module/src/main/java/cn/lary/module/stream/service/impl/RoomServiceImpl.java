@@ -71,21 +71,18 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
 
     @Override
     public ResponsePair<JoinLiveVO> join(long toUid, String ip) {
-        long uid = RequestContext.getLoginUID();
-        String name = RequestContext.getLoginName();
+        long uid = RequestContext.uid();
+        String name = RequestContext.name();
         Follow relation = followService.lambdaQuery()
-//                .select(Follow::getIsBlock)
                 .eq(Follow::getUid, uid)
                 .eq(Follow::getUid, toUid)
-                .eq(Follow::getIsDelete,false)
                 .one();
         boolean isFan = false;
-        if(relation != null && relation.getStatus() == LARY.FOLLOW.STATUS.BLOCK){
+        if(relation != null
+                && relation.getStatus() == LARY.FOLLOW.STATUS.BLOCK
+                && !relation.getIsDelete()){
             return BusinessKit.fail("你已被拉黑");
         }
-//        if (relation == null || relation.getStatus() ) {
-//            isFan = true;
-//        }
         Map<Object,Object> args = cacheComponent.getHash(kvBuilder.goLiveK(toUid));
         if (args == null) {
             return BusinessKit.fail("no live info");
@@ -136,7 +133,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
 
     @Override
     public ResponsePair<Void> leave() {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         Map<Object, Object> map = cacheComponent.getHash(kvBuilder.joinLiveK(uid));
         if (map == null) {
             return BusinessKit.fail("no join live info");
@@ -147,7 +144,7 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
 
     @Override
     public ResponsePair<DownLiveVO> end() {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         Map<Object, Object> coll = null;
         coll = cacheComponent.getHash(kvBuilder.raffleK(uid));
         if (coll != null) {
@@ -205,8 +202,8 @@ public class RoomServiceImpl extends ServiceImpl<RoomMapper, Room> implements Ro
 
     @Override
     public ResponsePair<GoLiveVO> go(String ip, GoLiveDTO dto) {
-        long uid = RequestContext.getLoginUID();
-        String name = RequestContext.getLoginName();
+        long uid = RequestContext.uid();
+        String name = RequestContext.name();
         Map<Object, Object> liveInfo = cacheComponent.getHash(kvBuilder.goLiveK(uid));
         if (liveInfo != null) {
             return BusinessKit.fail("you already go live");

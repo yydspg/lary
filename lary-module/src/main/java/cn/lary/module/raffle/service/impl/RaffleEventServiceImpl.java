@@ -52,7 +52,7 @@ public class RaffleEventServiceImpl extends ServiceImpl<RaffleEventMapper, Raffl
 
     @Override
     public ResponsePair<Void> raffle(RaffleEventDTO dto) {
-        long uid= RequestContext.getLoginUID();
+        long uid= RequestContext.uid();
         LiveCache cache = liveCacheComponent.getLive(uid);
         if (cache == null) {
             log.error("create raffle fail,no live info, uid:{}", uid);
@@ -110,7 +110,7 @@ public class RaffleEventServiceImpl extends ServiceImpl<RaffleEventMapper, Raffl
                 .setUid(uid)
                 .setCategory(dto.getCategory()));
         messageService.asyncSendRocketMessage(new RaffleRuleLocalCacheMessage()
-                .setUid(RequestContext.getLoginUID())
+                .setUid(RequestContext.uid())
                 .setShard(getHeat()));
         messageService.send(new CreateRaffleNotifyDTO(uid, cache.getDanmakuId()));
         return BusinessKit.ok();
@@ -147,7 +147,7 @@ public class RaffleEventServiceImpl extends ServiceImpl<RaffleEventMapper, Raffl
                 .select(Room::getBehaviorScore
                         , Room::getBenefitScore
                         , Room::getContentScore)
-                .eq(Room::getUid, RequestContext.getLoginUID())
+                .eq(Room::getUid, RequestContext.uid())
                 .one();
         long flag = room.getBenefitScore() * 3L
                 + room.getBehaviorScore()* 2L

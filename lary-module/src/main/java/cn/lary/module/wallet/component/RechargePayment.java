@@ -48,7 +48,7 @@ public class RechargePayment extends AbstractBusinessPayment {
     @Override
     protected ResponsePair<PaymentProcessPair> beforePay(BusinessPaymentDTO rechargeDTO) {
         RechargeDTO dto = (RechargeDTO) rechargeDTO;
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         RechargeRecord data = transactionTemplate.execute(status -> {
             Wallet wallet = walletService.lambdaQuery()
                     .select(Wallet::getUid)

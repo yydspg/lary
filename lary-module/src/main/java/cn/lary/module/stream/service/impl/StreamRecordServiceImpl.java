@@ -30,7 +30,7 @@ public class StreamRecordServiceImpl extends ServiceImpl<StreamRecordMapper, Str
     @Override
     public ResponsePair<List<StreamRecordVO>> getPages(int page, int size) {
         List<StreamRecord> records = lambdaQuery()
-                .eq(StreamRecord::getUid, RequestContext.getLoginUID())
+                .eq(StreamRecord::getUid, RequestContext.uid())
                 .eq(StreamRecord::getStatus, LARY.Stream.Status.down)
                 .orderByDesc(StreamRecord::getCreateAt)
                 .page(new Page<>(page, size))

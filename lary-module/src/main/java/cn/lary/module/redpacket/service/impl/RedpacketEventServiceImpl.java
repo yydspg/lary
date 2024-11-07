@@ -53,7 +53,7 @@ public class RedpacketEventServiceImpl extends ServiceImpl<RedpacketEventMapper,
 
     @Override
     public ResponsePair<Void> redpacket(RedpacketEventBuildDTO dto) {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         LiveCache live = liveCacheComponent.getLive(uid);
         if (live == null) {
             return BusinessKit.fail("no live info");

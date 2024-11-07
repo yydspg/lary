@@ -10,7 +10,7 @@ import java.util.Map;
 
 @Data
 @Accessors(chain = true)
-public class DeviceAddResponseCacheDTO extends DTO {
+public class DeviceAddResponseCacheDTO extends AbstractCacheDTO {
 
     @JsonProperty("name")
     private String name;

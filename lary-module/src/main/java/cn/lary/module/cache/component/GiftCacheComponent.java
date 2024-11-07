@@ -8,26 +8,34 @@ import com.alicp.jetcache.anno.CacheUpdate;
 import com.alicp.jetcache.anno.Cached;
 import org.springframework.stereotype.Component;
 
-public interface GiftCacheComponent {
+
+@Component
+public class GiftCacheComponent {
 
     String LARY_GIFT = "lary:gift:";
     String LARY_GIFT_COLLECTION = "lary:gift:collection:";
 
-    @CacheUpdate(name = LARY_GIFT,key = "#giftId",value = "#cache")
-    void setGift(long giftId, GiftCache cache);
+    public void setGift(long giftId, GiftCache cache){
+        
+    }
 
-    @CacheInvalidate(name = LARY_GIFT,key = "#giftId")
-    void dropGift(long giftId);
+    public void dropGift(long giftId){
+        
+    }
 
-    @Cached(name = LARY_GIFT,key = "#giftId",cacheType = CacheType.BOTH)
-    GiftCache getGift(long giftId);
+    public GiftCache getGift(long giftId){
+        return null;
+    }
 
-    @CacheUpdate(name = LARY_GIFT_COLLECTION,key = "#typeId",value = "#cache")
-    void setCollection(int typeId, GiftCollectionCache cache);
+    public void setCollection(int typeId, GiftCollectionCache cache){
+        
+    }
 
-    @CacheInvalidate(name = LARY_GIFT_COLLECTION,key = "#typeId")
-    void dropCollection(int typeId);
+    public void dropCollection(int typeId){
+        
+    }
 
-    @Cached(name = LARY_GIFT_COLLECTION,key = "#typeId")
-    GiftCollectionCache getCollection(int typeId);
+    public GiftCollectionCache getCollection(int typeId){
+        return null;
+    }
 }

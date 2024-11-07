@@ -30,10 +30,10 @@ public class LoginLogServiceImpl extends ServiceImpl<LoginLogMapper, LoginLog> i
     @Override
     public ResponsePair<List<LoginVO>> logins(LoginLogPageQueryDTO dto) {
         List<LoginLog> data = lambdaQuery()
-                .eq(LoginLog::getUid, RequestContext.getLoginUID())
+                .eq(LoginLog::getUid, RequestContext.uid())
                 .list();
         if (CollectionKit.isEmpty(data)) {
-            log.error("search login log error,uid:{}", RequestContext.getLoginUID());
+            log.error("search login log error,uid:{}", RequestContext.uid());
             return BusinessKit.fail("no login log data found");
         }
         return BusinessKit.ok( data.stream()
@@ -45,7 +45,7 @@ public class LoginLogServiceImpl extends ServiceImpl<LoginLogMapper, LoginLog> i
     public ResponsePair<Void> clearHistory() {
         lambdaUpdate()
                 .set(LoginLog::getIsDelete,true)
-                .eq(LoginLog::getUid, RequestContext.getLoginUID());
+                .eq(LoginLog::getUid, RequestContext.uid());
         return BusinessKit.ok();
     }
 }

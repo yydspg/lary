@@ -63,8 +63,8 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
 
     @Override
     public ResponsePair<Void> follow(FollowDTO dto) {
-        long uid = RequestContext.getLoginUID();
-        String name = RequestContext.getLoginName();
+        long uid = RequestContext.uid();
+        String name = RequestContext.name();
         long toUid = dto.getToUid();
 
 
@@ -150,7 +150,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
 
     @Override
     public ResponsePair<Void> block(long toUid) {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         Follow relation = lambdaQuery()
                 .eq(Follow::getUid, uid)
                 .eq(Follow::getToUid, toUid)
@@ -183,7 +183,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
 
     @Override
     public ResponsePair<Void> unblock(long toUid) {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         Follow relation = lambdaQuery()
                 .eq(Follow::getUid, uid)
                 .eq(Follow::getToUid, toUid)
@@ -202,7 +202,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
 
     @Override
     public ResponsePair<Void> unfollow(long toUid) {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         Follow relation = lambdaQuery()
                 .eq(Follow::getUid, uid)
                 .eq(Follow::getToUid, toUid)
@@ -248,7 +248,7 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     public ResponsePair<List<Follow>> follows( FollowPageQueryDTO dto) {
 
         return BusinessKit.ok(lambdaQuery()
-                .eq(Follow::getUid, RequestContext.getLoginUID())
+                .eq(Follow::getUid, RequestContext.uid())
                 .orderByDesc(Follow::getUpdateAt)
                 .page(new Page<>(dto.getPageIndex(), dto.getPageSize()))
                 .getRecords());

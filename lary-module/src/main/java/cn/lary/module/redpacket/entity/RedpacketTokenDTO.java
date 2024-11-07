@@ -9,6 +9,8 @@ import java.math.BigDecimal;
 @Accessors(chain = true)
 public class RedpacketTokenDTO {
 
+    private long id;
+
     /**
      * 用户id
      */

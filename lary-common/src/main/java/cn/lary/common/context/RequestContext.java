@@ -2,33 +2,33 @@ package cn.lary.common.context;
 
 public class RequestContext {
 
-    private static final ThreadLocal<Pair> currentRequest = new ThreadLocal<>();
+    private static final ThreadLocal<Profile> request = new ThreadLocal<>();
 
-    public static void setCurrent(Pair data) {
-        currentRequest.set(data);
+    public static void setCurrent(Profile profile) {
+        request.set(profile);
     }
 
-    protected static Pair getCurrent() {
-        return currentRequest.get();
+    protected static Profile getCurrent() {
+        return request.get();
     }
 
     public static void removeCurrent() {
-        currentRequest.remove();
+        request.remove();
     }
 
     /**
      * this method use thread local ,can not return null
      * @return uid
      */
-    public static long getLoginUID() {
-        return  getCurrent().uid;
+    public static long uid() {
+        return  getCurrent().getUid();
     }
 
     /**
      * this method use thread local ,can not return null
      * @return login username
      */
-    public static String getLoginName() {
-        return  getCurrent().name;
+    public static String name() {
+        return  getCurrent().getName();
     }
 }

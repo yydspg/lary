@@ -1,10 +1,10 @@
 package cn.lary.module.redpacket.listener;
 
-import cn.lary.module.common.constant.LARY;
-import cn.lary.module.message.service.AbstractAsyncRocketMessage;
+
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.apache.rocketmq.client.producer.SendCallback;
+import cn.lary.module.message.service.AbstractAsyncRocketMessage;
 
 @Data
 @Accessors(chain = true)
@@ -15,11 +15,9 @@ public class RedpacketLocalRuleMessage extends AbstractAsyncRocketMessage {
     private long uid;
 
     private int limit;
-
-
     @Override
     public int getBusinessSign() {
-        return LARY.BUSINESS.CACHE.REDPACKET;
+        return 0;
     }
 
     @Override

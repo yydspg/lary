@@ -8,4 +8,5 @@ public class RedpacketEventMessage {
 
     private RedpacketEventCache cache;
 
+
 }

@@ -9,24 +9,19 @@ import cn.lary.common.kit.StringKit;
 import cn.lary.module.cache.component.RedpacketCacheComponent;
 import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
+import cn.lary.module.id.LaryIdGenerator;
+import cn.lary.module.message.service.MessageService;
 import cn.lary.module.redpacket.dto.RedpacketFsyncDTO;
 import cn.lary.module.redpacket.entity.RedpacketEventCache;
 import cn.lary.module.redpacket.entity.RedpacketRuleCache;
 import cn.lary.module.redpacket.entity.RedpacketTokenDTO;
 import cn.lary.module.redpacket.service.RedPacketInvolvedService;
 import cn.lary.module.redpacket.vo.RedpacketTokenVO;
-import jakarta.annotation.PostConstruct;
+import cn.lary.module.wallet.listener.RedpacketRecordMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import javax.crypto.BadPaddingException;
-import javax.crypto.Cipher;
-import javax.crypto.IllegalBlockSizeException;
-import javax.crypto.spec.GCMParameterSpec;
-import javax.crypto.spec.SecretKeySpec;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.List;
 
 @Slf4j
@@ -38,6 +33,8 @@ public class RedPacketInvolvedServiceImpl implements RedPacketInvolvedService {
 
     private final RedpacketCacheComponent redpacketCacheComponent;
     private final CacheComponent cacheComponent;
+    private final MessageService messageService;
+    private final LaryIdGenerator idGenerator;
 
     
     @Override
@@ -50,7 +47,12 @@ public class RedPacketInvolvedServiceImpl implements RedPacketInvolvedService {
         if (rule == null) {
             return BusinessKit.fail("no redpacket rule");
         }
-        return process(event,getRemind(rule,toUid));
+        ResponsePair<RedpacketTokenVO> pair = process(event, getRemind(rule, toUid));
+        if (!pair.isFail()) {
+            messageService.asyncSendRocketMessage(new RedpacketRecordMessage()
+                    .setToken(pair.getData().getToken()));
+        }
+        return pair;
     }
 
     @Override
@@ -68,8 +70,10 @@ public class RedPacketInvolvedServiceImpl implements RedPacketInvolvedService {
                 return null;
             }
         }).filter(StringKit::isNotEmpty).toList();
-        if(CollectionKit.isEmpty(tokens)){
-            return BusinessKit.fail("token decrypt error");
+        if(CollectionKit.isNotEmpty(tokens)){
+            List<RedpacketTokenDTO> data = tokens.stream()
+                    .map(t -> JSONKit.fromJSON(t, RedpacketTokenDTO.class))
+                    .toList();
         }
 
         return BusinessKit.ok();
@@ -90,8 +94,9 @@ public class RedPacketInvolvedServiceImpl implements RedPacketInvolvedService {
         }
         RedpacketTokenDTO dto = new RedpacketTokenDTO()
                 .setAmount(event.getAmount())
-                .setUid(RequestContext.getLoginUID())
-                .setStreamId(event.getStream());
+                .setUid(RequestContext.uid())
+                .setStreamId(event.getStream())
+                .setId(idGenerator.next());
         return BusinessKit.ok(new RedpacketTokenVO()
                 .setStatus(LARY.REDPACKET.STATUS.INIT)
                 .setStreamId(event.getStream())

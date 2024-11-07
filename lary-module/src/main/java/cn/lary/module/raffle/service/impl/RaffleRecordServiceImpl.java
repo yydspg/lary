@@ -13,8 +13,6 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 
@@ -36,7 +34,7 @@ public class RaffleRecordServiceImpl extends ServiceImpl<RaffleRecordMapper, Raf
         List<RaffleRecord> records = lambdaQuery()
                 .select(RaffleRecord::getRaffleId, RaffleRecord::getToUid, RaffleRecord::getStreamId)
                 .select(RaffleRecord::getUid, RaffleRecord::getContent, RaffleRecord::getSyncStatus)
-                .eq(RaffleRecord::getUid, RequestContext.getLoginUID())
+                .eq(RaffleRecord::getUid, RequestContext.uid())
                 .page(new Page<>(dto.getPageIndex(), dto.getPageSize()))
                 .getRecords();
         if (CollectionKit.isEmpty(records)) {

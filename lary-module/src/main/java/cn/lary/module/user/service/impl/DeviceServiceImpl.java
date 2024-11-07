@@ -49,7 +49,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .select(Device::getUid)
                 .select(Device::getId)
                 .eq(Device::getId, deviceId)
-                .eq(Device::getUid, RequestContext.getLoginUID())
+                .eq(Device::getUid, RequestContext.uid())
                 .one();
         if (device == null || device.getIsDelete()) {
             return BusinessKit.ok();
@@ -57,7 +57,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         lambdaUpdate()
                 .set(Device::getIsDelete, true)
                 .eq(Device::getId, deviceId)
-                .eq(Device::getUid, RequestContext.getLoginUID());
+                .eq(Device::getUid, RequestContext.uid());
         return BusinessKit.ok();
     }
 
@@ -93,7 +93,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
                 .select(Device::getUid)
                 .select(Device::getName)
                 .select(Device::getFlag)
-                .eq(Device::getUid, RequestContext.getLoginUID())
+                .eq(Device::getUid, RequestContext.uid())
                 .list();
         if (CollectionKit.isEmpty(devices)) {
             return null;
@@ -106,7 +106,7 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
     @Override
     public ResponsePair<List<DeviceVO>> devices() {
-        long uid = RequestContext.getLoginUID();
+        long uid = RequestContext.uid();
         List<Device> devices = lambdaQuery()
                 .select(Device::getId, Device::getName)
                 .select(Device::getFlag, Device::getLevel)

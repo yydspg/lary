@@ -13,6 +13,8 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 /**
  * <p>
  *  礼物模块
@@ -62,12 +64,11 @@ public class GiftController {
      */
     @PostMapping("/orders")
     public PageResponse<GiftOrderVO> orders(@RequestBody @Valid GiftOrderPageQueryDTO dto) {
-//        ResponsePair<List<GiftOrderVO>> response = giftExecute.orders(req);
-//        if(response.isFail()) {
-//            return ResponseKit.pageFail(response.getMsg());
-//        }
-//        return ResponseKit.pageOk(response.getData(),req.getPageIndex(),req.getPageSize());
-        return null;
+        ResponsePair<List<GiftOrderVO>> response = giftExecute.orders(dto);
+        if(response.isFail()) {
+            return ResponseKit.pageFail(response.getMsg());
+        }
+        return ResponseKit.pageOk(response.getData(),dto.getPageIndex(),dto.getPageSize());
     }
 
 }

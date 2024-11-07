@@ -1,5 +1,8 @@
 package cn.lary.module.gift.service.impl;
 
+import cn.lary.common.dto.ResponsePair;
+import cn.lary.common.kit.BusinessKit;
+import cn.lary.common.kit.ResponseKit;
 import cn.lary.module.gift.dto.GiftOrderPageQueryDTO;
 import cn.lary.module.gift.entity.GiftOrder;
 import cn.lary.module.gift.mapper.GiftOrderMapper;
@@ -26,11 +29,11 @@ public class GiftOrderServiceImpl extends ServiceImpl<GiftOrderMapper, GiftOrder
     private final GiftOrderMapper giftOrderMapper;
 
     @Override
-    public List<GiftOrderVO> my(GiftOrderPageQueryDTO dto) {
+    public ResponsePair<List<GiftOrderVO>> my(GiftOrderPageQueryDTO dto) {
         if (dto == null || dto.getUid() <= 0) {
-            return null;
+            return BusinessKit.fail("invalid param");
         }
-        return giftOrderMapper.orders(dto);
+        return BusinessKit.ok(giftOrderMapper.orders(dto));
     }
 
 

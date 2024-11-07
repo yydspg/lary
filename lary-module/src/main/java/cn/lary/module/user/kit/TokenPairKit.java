@@ -9,8 +9,5 @@ import org.springframework.stereotype.Component;
 @RequiredArgsConstructor
 public class TokenPairKit {
 
-    private final CacheComponent cacheComponent;
-    private final KVBuilder kvBuilder;
-
 
 }

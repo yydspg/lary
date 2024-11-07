@@ -32,10 +32,10 @@ public class UserSettingServiceImpl extends ServiceImpl<UserSettingMapper, UserS
     @Override
     public ResponsePair<UserSettingVO> get() {
         UserSetting setting = lambdaQuery()
-                .eq(UserSetting::getUid, RequestContext.getLoginUID())
+                .eq(UserSetting::getUid, RequestContext.uid())
                 .one();
         if (setting == null) {
-            log.error("search user setting failed,uid:{}",RequestContext.getLoginUID());
+            log.error("search user setting failed,uid:{}",RequestContext.uid());
             return BusinessKit.fail("user setting not found");
         }
         return BusinessKit.ok(new UserSettingVO(setting));

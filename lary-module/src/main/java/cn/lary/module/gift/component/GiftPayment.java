@@ -5,11 +5,8 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.module.cache.component.GiftCacheComponent;
 import cn.lary.module.cache.component.LiveCacheComponent;
-import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.gift.dto.GiftOrderDTO;
-import cn.lary.module.gift.entity.Gift;
 import cn.lary.module.gift.entity.GiftCache;
 import cn.lary.module.gift.entity.GiftOrder;
 import cn.lary.module.gift.listener.SynchronizeGiftOrderMessage;
@@ -33,8 +30,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.HashMap;
-import java.util.Map;
 
 @Slf4j
 @Component
@@ -58,8 +53,8 @@ public class GiftPayment extends AbstractBusinessPayment {
     @Override
     protected ResponsePair<PaymentProcessPair> beforePay(BusinessPaymentDTO paymentDTO) {
         GiftOrderDTO dto = (GiftOrderDTO) paymentDTO;
-        long uid = RequestContext.getLoginUID();
-        String uidName = RequestContext.getLoginName();
+        long uid = RequestContext.uid();
+        String uidName = RequestContext.name();
         GiftCache gift = giftCacheComponent.getGift(dto.getId());
         long anchorUid = dto.getToUid();
         if (gift == null) {

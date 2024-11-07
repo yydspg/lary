@@ -31,11 +31,11 @@ public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRed
     public ResponsePair<List<UserRedDotVO>> redDots() {
         List<UserRedDot> data = lambdaQuery()
                 .select(UserRedDot::getCategory, UserRedDot::getCount, UserRedDot::getIsDot)
-                .eq(UserRedDot::getUid, RequestContext.getLoginUID())
+                .eq(UserRedDot::getUid, RequestContext.uid())
                 .orderByDesc(UserRedDot::getCreateAt)
                 .list();
         if (CollectionKit.isEmpty(data)) {
-            log.error("search red dots failed,uid:{}",RequestContext.getLoginUID());
+            log.error("search red dots failed,uid:{}",RequestContext.uid());
             return BusinessKit.fail("search red dots failed");
         }
         return BusinessKit.ok(data.stream()
@@ -48,7 +48,7 @@ public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRed
         lambdaUpdate()
                 .set(UserRedDot::getCount, 0)
                 .eq(UserRedDot::getCategory, category)
-                .eq(UserRedDot::getUid, RequestContext.getLoginUID());
+                .eq(UserRedDot::getUid, RequestContext.uid());
         return BusinessKit.ok();
     }
 
@@ -57,7 +57,7 @@ public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRed
         lambdaUpdate()
                 .setIncrBy(UserRedDot::getCount, amount)
                 .eq(UserRedDot::getCategory, category)
-                .eq(UserRedDot::getUid, RequestContext.getLoginUID());
+                .eq(UserRedDot::getUid, RequestContext.uid());
         return BusinessKit.ok();
     }
 }
