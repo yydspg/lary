@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.wallet.mapper.WalletMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" category="cn.lary.module.wallet.entity.Wallet">
+    <resultMap id="BaseResultMap" type="cn.lary.module.wallet.entity.Wallet">
         <id column="id" property="id" />
         <result column="uid" property="uid" />
         <result column="outcome" property="outcome" />

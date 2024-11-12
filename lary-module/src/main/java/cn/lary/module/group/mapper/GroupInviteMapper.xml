@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.group.mapper.GroupInviteMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" category="cn.lary.module.group.entity.GroupInvite">
+    <resultMap id="BaseResultMap" type="cn.lary.module.group.entity.GroupInvite">
         <id column="id" property="id" />
         <result column="invite_no" property="inviteNo" />
         <result column="group_no" property="groupNo" />

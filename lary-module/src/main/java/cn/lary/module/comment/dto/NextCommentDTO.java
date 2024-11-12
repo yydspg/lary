@@ -1,5 +1,6 @@
 package cn.lary.module.comment.dto;
 
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Data
@@ -7,15 +8,18 @@ public class NextCommentDTO {
     /**
      * 评论root id
      */
+    @NotNull
     private Long rid;
 
     /**
      * 评论父id
      */
+    @NotNull
     private Long pid;
     /**
      * 评论事件id
      */
+    @NotNull
     private Long eid;
 
     /**

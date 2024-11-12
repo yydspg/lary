@@ -9,12 +9,12 @@ import cn.lary.module.comment.component.CommentCacheComponent;
 import cn.lary.module.comment.dto.CommentEventCacheDTO;
 import cn.lary.module.comment.dto.RootCommentDTO;
 import cn.lary.module.comment.dto.RootCommentPageQueryDTO;
-import cn.lary.module.comment.entity.Comment;
+import cn.lary.module.comment.entity.RootComment;
 import cn.lary.module.comment.entity.CommentEvent;
 import cn.lary.module.comment.entity.MentionNotifyPayload;
-import cn.lary.module.comment.mapper.CommentMapper;
+import cn.lary.module.comment.mapper.RootCommentMapper;
 import cn.lary.module.comment.service.CommentEventService;
-import cn.lary.module.comment.service.CommentService;
+import cn.lary.module.comment.service.RootCommentService;
 import cn.lary.module.comment.vo.RootCommentVO;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.id.LaryIdGenerator;
@@ -45,11 +45,12 @@ import java.util.List;
 @Slf4j
 @Service
 @RequiredArgsConstructor
-public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> implements CommentService {
+public class RootCommentServiceImpl extends ServiceImpl<RootCommentMapper, RootComment> implements RootCommentService {
 
     private final CommentCacheComponent commentCacheComponent;
     private final CommentEventService commentEventService;
     private final MessageService messageService;
+    private final GeneralService generalService;
     private final LaryIdGenerator idGenerator;
     private final UserService userService;
     private final TransactionTemplate transactionTemplate;
@@ -87,7 +88,7 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         if (user == null) {
             return BusinessKit.fail("user not exist");
         }
-        Comment comment = new Comment()
+        RootComment comment = new RootComment()
                 .setUid(uid)
                 .setCid(cid)
                 .setContent(dto.getContent())
@@ -96,28 +97,12 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
         save(comment);
         String mentions = dto.getMentions();
         if (StringKit.isNotEmpty(mentions)) {
-            String[] users = StringKit.split(mentions, ",");
-            if(users == null || users.length == 0){
-                return BusinessKit.fail("mentions invalid");
+            if (StringKit.isNotEmpty(mentions)) {
+                ResponsePair<Void> pair = generalService.processUserMention(mentions, dto.getContent(), dto.getEid());
+                if (pair.isFail()){
+                    return pair;
+                }
             }
-            List<Long> ids = Arrays.stream(users).map(Long::valueOf).distinct().toList();
-            if (CollectionKit.isEmpty(ids)) {
-                return BusinessKit.fail("mentions invalid");
-            }
-            List<Long> mentionUsers = userService.lambdaQuery()
-                    .select(User::getUid)
-                    .select(User::getStatus, User::getIsDelete)
-                    .in(User::getUid, ids)
-                    .list()
-                    .stream()
-                    .filter(t -> t.getStatus() == LARY.STATUS.COMMON && !t.getIsDelete())
-                    .distinct()
-                    .map(User::getUid)
-                    .toList();
-            MentionNotifyPayload payload = new MentionNotifyPayload()
-                    .setEid(eid)
-                    .setTimestamp(SystemClock.now());
-            messageService.send(new CommentMentionMessage(mentionUsers,uid,payload));
         }
         return BusinessKit.ok();
     }
@@ -126,9 +111,9 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
     public ResponsePair<Void> hide(long cid) {
 
         return transactionTemplate.execute(status -> {
-            Comment comment = lambdaQuery()
-                    .select(Comment::getEid, Comment::getUid)
-                    .eq(Comment::getCid, cid)
+            RootComment comment = lambdaQuery()
+                    .select(RootComment::getEid, RootComment::getUid)
+                    .eq(RootComment::getCid, cid)
                     .one();
             if (comment == null) {
                 return BusinessKit.fail("comment not exist");
@@ -137,8 +122,8 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
                 return BusinessKit.fail("comment uid invalid");
             }
             lambdaUpdate()
-                    .set(Comment::getStatus, LARY.COMMENT.STATUS.HIDE)
-                    .eq(Comment::getCid, cid)
+                    .set(RootComment::getStatus, LARY.COMMENT.STATUS.HIDE)
+                    .eq(RootComment::getCid, cid)
                     .update();
             return BusinessKit.ok();
         });
@@ -159,11 +144,11 @@ public class CommentServiceImpl extends ServiceImpl<CommentMapper, Comment> impl
             }
         }
         List<RootCommentVO> vo = lambdaQuery()
-                .select(Comment::getCid, Comment::getUid)
-                .select(Comment::getImages, Comment::getMentions)
-                .select(Comment::getReplyCount, Comment::getStarCount)
-                .select(Comment::getContent, Comment::getStatus)
-                .eq(Comment::getEid, eid)
+                .select(RootComment::getCid, RootComment::getUid)
+                .select(RootComment::getImages, RootComment::getMentions)
+                .select(RootComment::getReplyCount, RootComment::getStarCount)
+                .select(RootComment::getContent, RootComment::getStatus)
+                .eq(RootComment::getEid, eid)
                 .page(new Page<>(dto.getPageIndex(), dto.getPageSize()))
                 .getRecords()
                 .stream()

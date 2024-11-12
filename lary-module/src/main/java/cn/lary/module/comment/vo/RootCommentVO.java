@@ -1,7 +1,7 @@
 package cn.lary.module.comment.vo;
 
 
-import cn.lary.module.comment.entity.Comment;
+import cn.lary.module.comment.entity.RootComment;
 import lombok.Data;
 
 @Data
@@ -79,7 +79,7 @@ public class RootCommentVO {
     public RootCommentVO(){
         
     }
-    public RootCommentVO(Comment comment){
+    public RootCommentVO(RootComment comment){
         
     }
 }

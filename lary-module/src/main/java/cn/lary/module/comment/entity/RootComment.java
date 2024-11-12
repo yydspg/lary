@@ -20,7 +20,7 @@ import lombok.experimental.Accessors;
 @Getter
 @Setter
 @Accessors(chain = true)
-public class Comment implements Serializable {
+public class RootComment implements Serializable {
 
     private static final long serialVersionUID = 1L;
 

@@ -183,5 +183,10 @@ public interface LARY {
             int HIDE = 1;
             int COMMON =2;
         }
+        interface BEHAVIOR {
+            int COMMENT = 1;
+            int STAR = 2;
+            int HIDE = 3;
+        }
     }
 }

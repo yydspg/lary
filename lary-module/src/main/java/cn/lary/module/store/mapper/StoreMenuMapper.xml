@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.store.mapper.StoreMenuMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" category="cn.lary.module.store.entity.StoreMenu">
+    <resultMap id="BaseResultMap" type="cn.lary.module.store.entity.StoreMenu">
         <result column="id" property="id" />
         <result column="description" property="description" />
         <result column="front_route" property="frontRoute" />

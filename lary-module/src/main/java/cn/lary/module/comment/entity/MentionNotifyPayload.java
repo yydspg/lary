@@ -11,5 +11,7 @@ public class MentionNotifyPayload {
 
     private long rid;
 
+    private String content;
+
     private long timestamp;
 }

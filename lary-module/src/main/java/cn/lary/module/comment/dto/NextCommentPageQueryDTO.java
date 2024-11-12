@@ -7,4 +7,6 @@ import lombok.Data;
 public class NextCommentPageQueryDTO extends PageQuery {
 
     private Integer sort;
+
+    private Long rid;
 }

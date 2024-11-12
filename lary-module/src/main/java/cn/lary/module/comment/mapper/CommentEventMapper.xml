@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.comment.mapper.CommentEventMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" category="cn.lary.module.comment.entity.CommentEvent">
+    <resultMap id="BaseResultMap" type="cn.lary.module.comment.entity.CommentEvent">
         <id column="id" property="id" />
         <result column="eid" property="eid" />
         <result column="tid" property="tid" />

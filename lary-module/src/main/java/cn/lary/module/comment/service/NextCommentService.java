@@ -23,5 +23,6 @@ public interface NextCommentService extends IService<NextComment> {
 
     ResponsePair<Void> hide(long cid);
 
+
     ResponsePair<List<NextCommentVO>> show(NextCommentPageQueryDTO dto);
 }

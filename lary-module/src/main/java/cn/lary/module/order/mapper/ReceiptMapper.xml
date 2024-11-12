@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.order.mapper.ReceiptMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" category="cn.lary.module.order.entity.Receipt">
+    <resultMap id="BaseResultMap" type="cn.lary.module.order.entity.Receipt">
         <id column="id" property="id" />
         <result column="order_id" property="orderId" />
         <result column="uid" property="uid" />

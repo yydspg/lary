@@ -9,7 +9,6 @@ import cn.lary.module.comment.component.CommentCacheComponent;
 import cn.lary.module.comment.dto.CommentEventCacheDTO;
 import cn.lary.module.comment.dto.NextCommentDTO;
 import cn.lary.module.comment.dto.NextCommentPageQueryDTO;
-import cn.lary.module.comment.entity.Comment;
 import cn.lary.module.comment.entity.CommentEvent;
 import cn.lary.module.comment.entity.MentionNotifyPayload;
 import cn.lary.module.comment.entity.NextComment;
@@ -17,6 +16,7 @@ import cn.lary.module.comment.mapper.NextCommentMapper;
 import cn.lary.module.comment.service.CommentEventService;
 import cn.lary.module.comment.service.NextCommentService;
 import cn.lary.module.comment.vo.NextCommentVO;
+import cn.lary.module.comment.vo.RootCommentVO;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.id.LaryIdGenerator;
 import cn.lary.module.id.SystemClock;
@@ -24,6 +24,7 @@ import cn.lary.module.message.dto.comment.CommentMentionMessage;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.service.UserService;
+import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import lombok.RequiredArgsConstructor;
@@ -49,9 +50,9 @@ public class NextCommentServiceImpl extends ServiceImpl<NextCommentMapper, NextC
 
     private final CommentEventService commentEventService;
     private final CommentCacheComponent commentCacheComponent;
-    private final MessageService messageService;
     private final LaryIdGenerator idGenerator;
     private final UserService userService;
+    private final GeneralService generalService;
     private final TransactionTemplate transactionTemplate;
     @Override
     public ResponsePair<Void> comment(NextCommentDTO dto) {
@@ -94,41 +95,49 @@ public class NextCommentServiceImpl extends ServiceImpl<NextCommentMapper, NextC
                 .setName(name)
                 .setAvatar(user.getAvatar());
         save(comment);
-        String mentions = dto.getMentions();
-        if (StringKit.isNotEmpty(mentions)) {
-            String[] users = StringKit.split(mentions, ",");
-            if(users == null || users.length == 0){
-                return BusinessKit.fail("mentions invalid");
-            }
-            List<Long> ids = Arrays.stream(users).map(Long::valueOf).distinct().toList();
-            if (CollectionKit.isEmpty(ids)) {
-                return BusinessKit.fail("mentions invalid");
-            }
-            List<Long> mentionUsers = userService.lambdaQuery()
-                    .select(User::getUid)
-                    .select(User::getStatus, User::getIsDelete)
-                    .in(User::getUid, ids)
-                    .list()
-                    .stream()
-                    .filter(t -> t.getStatus() == LARY.STATUS.COMMON && !t.getIsDelete())
-                    .distinct()
-                    .map(User::getUid)
-                    .toList();
-            MentionNotifyPayload payload = new MentionNotifyPayload()
-                    .setEid(eid)
-                    .setTimestamp(SystemClock.now());
-            messageService.send(new CommentMentionMessage(mentionUsers,uid,payload));
+        ResponsePair<Void> pair = generalService.processUserMention(dto.getMentions(), dto.getContent(), dto.getEid());
+        if (pair.isFail()){
+            return pair;
         }
         return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<Void> hide(long cid) {
-        return null;
+        return transactionTemplate.execute(status -> {
+            NextComment comment = lambdaQuery()
+                    .select(NextComment::getUid,NextComment::getCid)
+                    .one();
+            if (comment == null) {
+                return BusinessKit.fail("comment not exist");
+            }
+            if (comment.getUid() != RequestContext.uid()) {
+                return BusinessKit.fail("comment uid invalid");
+            }
+            lambdaUpdate()
+                    .set(NextComment::getStatus, LARY.COMMENT.STATUS.HIDE)
+                    .eq(NextComment::getCid, cid)
+                    .update();
+            return BusinessKit.ok();
+        });
     }
+
+
 
     @Override
     public ResponsePair<List<NextCommentVO>> show(NextCommentPageQueryDTO dto) {
-        return null;
+        long eid = dto.getRid();
+        List<NextCommentVO> vo = lambdaQuery()
+                .select(NextComment::getCid, NextComment::getUid)
+                .select(NextComment::getImages, NextComment::getMentions)
+                .select(NextComment::getReplyCount, NextComment::getStarCount)
+                .select(NextComment::getContent, NextComment::getStatus)
+                .eq(NextComment::getRid, eid)
+                .page(new Page<>(dto.getPageIndex(), dto.getPageSize()))
+                .getRecords()
+                .stream()
+                .map(NextCommentVO::new)
+                .toList();
+        return BusinessKit.ok(vo);
     }
 }

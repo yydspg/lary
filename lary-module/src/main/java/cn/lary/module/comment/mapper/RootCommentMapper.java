@@ -1,6 +1,6 @@
 package cn.lary.module.comment.mapper;
 
-import cn.lary.module.comment.entity.Comment;
+import cn.lary.module.comment.entity.RootComment;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**
@@ -11,6 +11,6 @@ import com.baomidou.mybatisplus.core.mapper.BaseMapper;
  * @author paul
  * @since 2024-11-10
  */
-public interface CommentMapper extends BaseMapper<Comment> {
+public interface RootCommentMapper extends BaseMapper<RootComment> {
 
 }
