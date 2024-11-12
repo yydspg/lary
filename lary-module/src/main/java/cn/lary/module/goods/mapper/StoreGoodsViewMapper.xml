@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.goods.mapper.StoreGoodsViewMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.goods.entity.StoreGoodsView">
+    <resultMap id="BaseResultMap" category="cn.lary.module.goods.entity.StoreGoodsView">
         <id column="id" property="id" />
         <result column="store_id" property="storeId" />
         <result column="idx_db" property="idxDb" />

@@ -3,20 +3,20 @@
 <mapper namespace="cn.lary.module.wallet.mapper.WalletIncomeMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.wallet.entity.WalletIncome">
+    <resultMap id="BaseResultMap" category="cn.lary.module.wallet.entity.WalletIncome">
         <id column="id" property="id" />
         <result column="uid" property="uid" />
         <result column="to_uid" property="toUid" />
         <result column="channel_id" property="channelId" />
         <result column="channel_type" property="channelType" />
-        <result column="type" property="type" />
+        <result column="category" property="category" />
         <result column="cost" property="cost" />
         <result column="is_delete" property="isDelete" />
         <result column="create_at" property="createAt" />
         <result column="update_at" property="updateAt" />
     </resultMap>
     <select id="getIncomes" resultType="cn.lary.module.wallet.vo.WalletIncomeVO">
-        select id,to_uid,channel_id,type from wallet_outcome
+        select id,to_uid,channel_id,category from wallet_outcome
         where
             uid = #{uid}
         <if test="toUid != null and toUid != ''">
@@ -25,8 +25,8 @@
         <if test="channelId != null and channelId != ''">
             and channel_id = #{channelId}
         </if>
-        <if test="type != null and type != ''">
-            and type = #{type}
+        <if test="category != null and category != ''">
+            and category = #{category}
         </if>
         <if test="cost != null and cost != ''">
             and cost >= #{cost}

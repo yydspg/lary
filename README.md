@@ -12,6 +12,12 @@
 ## timeline
 start 2023/9/1
 
+1. 移除jetcache
+2. 移除redisTemplate
+3. 移除kvBuilder
+4. 添加自实现idGenerator
+5. 优化System.currentMills
+6. 使用redis订阅替换mq订阅本地缓存事件
 ## business
 - 用户 y 
 - 群组 y
@@ -21,8 +27,12 @@ start 2023/9/1
 - 直播抽奖 y
 - 钱包 y
 - 订单全局二级索引 y
-- 敏感词检测 y
+- 敏感词 y
 - 直播红包 y
+- 热点检测 x
+- 直播首页 x
+- 付费排行傍 x     
+- 用户帖子 x
 - 加群付费 x
 - 购物首页推荐 x
 - 直播首页推荐 x

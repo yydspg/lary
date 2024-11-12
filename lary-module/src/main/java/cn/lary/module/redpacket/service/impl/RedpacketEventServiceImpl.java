@@ -15,7 +15,6 @@ import cn.lary.module.message.service.MessageService;
 import cn.lary.module.redpacket.dto.RedpacketEventBuildDTO;
 import cn.lary.module.redpacket.entity.RedpacketEvent;
 import cn.lary.module.redpacket.entity.RedpacketEventCache;
-import cn.lary.module.redpacket.listener.RedpacketLocalRuleMessage;
 import cn.lary.module.redpacket.mapper.RedpacketEventMapper;
 import cn.lary.module.redpacket.service.RedpacketEventService;
 import cn.lary.module.redpacket.listener.RedpacketEventAutoCloseMessage;
@@ -122,10 +121,10 @@ public class RedpacketEventServiceImpl extends ServiceImpl<RedpacketEventMapper,
 //                .setStream(live.getStreamId()));
 //        redpacketCacheComponent.setRule(uid,new RedpacketRuleCache()
 //                .setCategory(););
-        messageService.asyncSendRocketMessage(new RedpacketLocalRuleMessage()
-                .setCategory(LARY.REDPACKET.CATEGORY.SUPER)
-                .setLimit(2)
-                .setUid(uid));
+//        messageService.asyncSendRocketMessage(new RedpacketLocalRuleMessage()
+//                .setCategory(LARY.REDPACKET.CATEGORY.SUPER)
+//                .setLimit(2)
+//                .setUid(uid));
         messageService.asyncSendRocketMessage(new RedpacketEventAutoCloseMessage()
                         .setUid(uid)
                         .setEventId(eventId)

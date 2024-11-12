@@ -191,7 +191,7 @@ CREATE TABLE `goods_words`  (
                                    `update_at` datetime(6) NULL DEFAULT NULL,
                                    `abbreviate` varchar(255)NULL DEFAULT NULL,
                                    `sort` int NULL DEFAULT NULL,
-                                   `type` varchar(255)NULL DEFAULT NULL,
+                                   `category` varchar(255)NULL DEFAULT NULL,
                                    `whole_spell` varchar(255)NULL DEFAULT NULL,
                                    `words` varchar(255)NULL DEFAULT NULL,
                                    PRIMARY KEY (`id`) USING BTREE

@@ -20,7 +20,7 @@ import java.util.List;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-@RocketMQMessageListener(consumerGroup = "lary:wallet:redpacket",topic = "lary-wallet:redpacket")
+@RocketMQMessageListener(consumerGroup = "lary-wallet-redpacket",topic = "lary-wallet:redpacket")
 public class RedpacketRecordListener implements RocketMQListener<RedpacketRecordMessage> {
 
     private final RedpacketRecordService redpacketRecordService;

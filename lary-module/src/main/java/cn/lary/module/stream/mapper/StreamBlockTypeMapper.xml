@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.stream.mapper.StreamBlockTypeMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.stream.entity.StreamBlockType">
+    <resultMap id="BaseResultMap" category="cn.lary.module.stream.entity.StreamBlockType">
         <id column="id" property="id" />
         <result column="block_type_id" property="blockTypeId" />
         <result column="description" property="description" />

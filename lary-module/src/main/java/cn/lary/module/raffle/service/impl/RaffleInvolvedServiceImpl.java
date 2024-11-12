@@ -10,7 +10,6 @@ import cn.lary.module.common.constant.LARY;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.raffle.entity.RaffleCachePair;
 import cn.lary.module.raffle.entity.RaffleRuleCache;
-import cn.lary.module.raffle.listener.RaffleRuleLocalCacheMessage;
 import cn.lary.module.raffle.service.RaffleInvolvedService;
 import cn.lary.module.stream.entity.Follow;
 import cn.lary.module.stream.service.FollowService;
@@ -59,10 +58,10 @@ public class RaffleInvolvedServiceImpl implements RaffleInvolvedService {
             cacheComponent.appendInvolvedUsers(toUid,pair.getJoiner());
         }
         if (pair.isOver()) {
-            messageService.asyncSendRocketMessage(new RaffleRuleLocalCacheMessage()
-                    .setUid(toUid)
-                    .setShard(rule.getShard() * 2)
-                    .setLimit(rule.getLimit()));
+//            messageService.asyncSendRocketMessage(new RaffleRuleLocalCacheMessage()
+//                    .setUid(toUid)
+//                    .setShard(rule.getShard() * 2)
+//                    .setLimit(rule.getLimit()));
         }
         return BusinessKit.ok();
     }

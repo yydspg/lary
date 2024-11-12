@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.user.mapper.UserSettingMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.user.entity.UserSetting">
+    <resultMap id="BaseResultMap" category="cn.lary.module.user.entity.UserSetting">
         <id column="id" property="id" />
         <result column="uid" property="uid" />
         <result column="fan_list" property="fanList" />

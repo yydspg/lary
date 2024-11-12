@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.user.mapper.DeviceMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.user.entity.Device">
+    <resultMap id="BaseResultMap" category="cn.lary.module.user.entity.Device">
         <id column="id" property="id" />
         <result column="uid" property="uid" />
         <result column="device_id" property="deviceId" />

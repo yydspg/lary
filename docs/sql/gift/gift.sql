@@ -3,7 +3,7 @@ drop table if exists `gift`;
 create table  `gift` (
     id bigint auto_increment primary key ,
     gift_id bigint not null default 0 comment 'gift id',
-    type bigint not null default 0 comment 'gift type',
+    category bigint not null default 0 comment 'gift category',
     type_name varchar(40) not null ,
     price int not null default 0 comment 'virtual currency price',
     real_price int unsigned default 0 comment 'real pay price CNY',
@@ -17,7 +17,7 @@ create table `gift_type` (
     id bigint primary key auto_increment,
     type_id bigint not null default 0 comment '类型id',
     name varchar(256) not null,
-    count int default 0 comment 'current type gift num',
+    count int default 0 comment 'current category gift num',
     avatar_url varchar(255) not null default '' comment '类别图片地址',
     is_privilege bool default false comment '是否特殊',
     is_delete bool ,

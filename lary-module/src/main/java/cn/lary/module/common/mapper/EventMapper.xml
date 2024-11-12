@@ -3,10 +3,10 @@
 <mapper namespace="cn.lary.module.common.mapper.EventMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.common.entity.Event">
+    <resultMap id="BaseResultMap" category="cn.lary.module.common.entity.Event">
         <id column="id" property="id" />
         <result column="event" property="event" />
-        <result column="type" property="type" />
+        <result column="category" property="category" />
         <result column="data" property="data" />
         <result column="status" property="status" />
         <result column="reason" property="reason" />

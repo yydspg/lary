@@ -1,0 +1,28 @@
+version: '1.0'
+services:
+  redis1:
+    image: redis
+    container_name: redis-1
+    network_mode: "host"
+    volumes:
+      - /home/paul/application/redis-cluster/redis-1/data:/data
+      - /home/paul/application/redis-cluster/redis-1/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis2:
+    image: redis
+    container_name: redis-2
+    network_mode: "host"
+    volumes:
+      - /home/paul/application/redis-cluster/redis-2/data:/data
+      - /home/paul/application/redis-cluster/redis-2/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf
+
+  redis3:
+    image: redis
+    container_name: redis-3
+    network_mode: "host"
+    volumes:
+      - /home/paul/application/redis-cluster/redis-3/data:/data
+      - /home/paul/application/redis-cluster/redis-3/redis.conf:/usr/local/etc/redis/redis.conf
+    command: redis-server /usr/local/etc/redis/redis.conf

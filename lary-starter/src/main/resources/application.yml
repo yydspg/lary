@@ -9,10 +9,6 @@ spring:
   profiles:
     active: dev
     include: lary
-  redis:
-    single:
-      address: "redis://127.0.0.1:6379"
-      database: 1
 
 mybatis-plus:
   configuration:

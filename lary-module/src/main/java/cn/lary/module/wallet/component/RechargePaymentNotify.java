@@ -52,7 +52,8 @@ public class RechargePaymentNotify implements BusinessPaymentNotify {
                     .set(RechargeRecord::getSn, vo.getTradeNo())
                     .set(RechargeRecord::getCompleteAt, LocalDateTime.now())
                     .set(RechargeRecord::getStatus, LARY.PAYMENT.STATUS.FINISH)
-                    .eq(RechargeRecord::getId, rechargeId);
+                    .eq(RechargeRecord::getId, rechargeId)
+                    .update();
             Wallet wallet = walletService.lambdaQuery()
                     .select(Wallet::getUid)
                     .eq(Wallet::getUid, recharge.getUid())
@@ -64,7 +65,8 @@ public class RechargePaymentNotify implements BusinessPaymentNotify {
             walletService.lambdaUpdate()
                     .setIncrBy(Wallet::getPocket, recharge.getAmount())
                     .setIncrBy(Wallet::getIncome,recharge.getAmount())
-                    .eq(Wallet::getUid, recharge.getUid());
+                    .eq(Wallet::getUid, recharge.getUid())
+                    .update();
             eventService.commit(recharge.getEventId());
             return recharge;
         });
@@ -96,7 +98,8 @@ public class RechargePaymentNotify implements BusinessPaymentNotify {
                     .set(RechargeRecord::getStatus, LARY.PAYMENT.STATUS.FAIL)
                     .set(RechargeRecord::getCompleteAt, LocalDateTime.now())
                     .set(RechargeRecord::getFailReason,vo.getFailReason())
-                    .eq(RechargeRecord::getId,vo.getRechargeId());
+                    .eq(RechargeRecord::getId,vo.getRechargeId())
+                    .update();
             eventService.commit(rechargeRecord.getEventId());
         });
     }

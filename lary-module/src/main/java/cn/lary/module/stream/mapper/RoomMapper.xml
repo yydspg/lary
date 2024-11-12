@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.stream.mapper.RoomMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.stream.entity.Room">
+    <resultMap id="BaseResultMap" category="cn.lary.module.stream.entity.Room">
         <id column="id" property="id" />
         <result column="uid" property="uid" />
         <result column="stream_type_id" property="streamTypeId" />

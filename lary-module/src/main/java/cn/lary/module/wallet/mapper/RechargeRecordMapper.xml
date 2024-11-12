@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.wallet.mapper.RechargeRecordMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.wallet.entity.RechargeRecord">
+    <resultMap id="BaseResultMap" category="cn.lary.module.wallet.entity.RechargeRecord">
         <id column="id" property="id" />
         <result column="recharge_id" property="rechargeId" />
         <result column="uid" property="uid" />

@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.pay.mapper.PaymentLogMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.pay.entity.PaymentLog">
+    <resultMap id="BaseResultMap" category="cn.lary.module.pay.entity.PaymentLog">
         <id column="id" property="id" />
         <result column="order_type" property="orderType" />
         <result column="trade_no" property="tradeNo" />

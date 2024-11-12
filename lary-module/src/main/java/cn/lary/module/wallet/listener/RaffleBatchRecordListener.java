@@ -10,7 +10,7 @@ import org.apache.rocketmq.spring.core.RocketMQListener;
 
 @Slf4j
 @RequiredArgsConstructor
-@RocketMQMessageListener(consumerGroup = "lary:wallet:raffle",topic = "lary-wallet-raffle")
+@RocketMQMessageListener(consumerGroup = "lary-wallet-raffle",topic = "lary-wallet-raffle")
 public class RaffleBatchRecordListener implements RocketMQListener<RaffleBatchRecordMessage> {
 
     private final WalletService walletService;

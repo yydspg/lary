@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.user.mapper.UserMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.user.entity.User">
+    <resultMap id="BaseResultMap" category="cn.lary.module.user.entity.User">
         <id column="id" property="uid" />
         <result column="name" property="name" />
         <result column="short_no" property="shortNo" />

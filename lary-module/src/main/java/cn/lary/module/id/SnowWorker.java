@@ -286,7 +286,7 @@ public class SnowWorker implements ISnowWorker {
      * @return 时间差值
      */
     protected long GetCurrentTimeTick() {
-        long millis = System.currentTimeMillis();
+        long millis = SystemClock.now();
         return millis - BaseTime;
     }
 

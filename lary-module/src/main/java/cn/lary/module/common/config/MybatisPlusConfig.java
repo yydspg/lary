@@ -22,6 +22,7 @@ import org.springframework.context.annotation.Configuration;
         "cn.lary.module.order.mapper",
         "cn.lary.module.raffle.mapper",
         "cn.lary.module.redpacket.mapper",
+        "cn.lary.module.comment.mapper",
 })
 public class MybatisPlusConfig {
 

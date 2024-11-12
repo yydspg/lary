@@ -1,4 +1,6 @@
 package cn.lary.module.cache.dto;
 
-public class AbstractCacheDTO {
+import java.io.Serializable;
+
+public class AbstractCacheDTO implements Serializable {
 }

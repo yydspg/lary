@@ -16,6 +16,7 @@
         <module>lary-module</module>
         <module>lary-starter</module>
     </modules>
+
     <properties>
 
         <project.encoding>UTF-8</project.encoding>

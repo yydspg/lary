@@ -674,12 +674,12 @@ INSERT INTO `setting` VALUES ('GOODS_SETTING', 'admin', '2020-12-14 10:48:04.000
 INSERT INTO `setting` VALUES ('IM_SETTING', 'admin', '2021-09-17 12:00:41.085000', b'0', 'admin', '2022-11-18 10:25:16.804000', '{\"httpUrl\":\"https://www.baidu.com\"}');
 INSERT INTO `setting` VALUES ('KUAIDI_SETTING', 'admin', '2021-01-18 03:30:53.430000', b'0', 'admin', '2021-09-15 11:57:07.495000', '{\"ebusinessID\":\"test\",\"appKey\":\"test\",\"reqURL\":\"test\"}');
 INSERT INTO `setting` VALUES ('ORDER_SETTING', 'admin', '2021-02-03 08:16:54.942000', b'0', 'admin', '2021-09-16 16:32:18.050000', '{\"closeComplaint\":\"12\",\"autoCancelAfterSale\":\"7\",\"autoReceive\":\"5\",\"autoAfterSaleComplete\":\"0\",\"closeAfterSale\":\"12\",\"autoAfterSaleReview\":\"0\",\"autoEvaluation\":\"7\",\"autoCancel\":\"35\"}');
-INSERT INTO `setting` VALUES ('OSS_SETTING', 'admin', '2020-12-12 08:44:27.376000', b'0', 'admin', '2022-10-12 19:11:49.244000', '{\"accessKeyId\":\"LTAI5tAw2cz7chK8GEjUuFCs\",\"endPoint\":\"oss-cn-beijing.aliyuncs.com\",\"bucketName\":\"lilishop-oss\",\"picLocation\":\"/template\",\"m_secretKey\":\"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\",\"accessKeySecret\":\"MsnF1RH4TFLIMd0i19DtnOYbAHQWLM\",\"m_bucketName\":\"lilishop\",\"m_endpoint\":\"http://pg2481.com:9000\",\"m_accessKey\":\"AKIAIOSFODNN7EXAMPLE\",\"type\":\"ALI_OSS\",\"m_frontUrl\":\"http://pg2481.com:9000\"}');
+INSERT INTO `setting` VALUES ('OSS_SETTING', 'admin', '2020-12-12 08:44:27.376000', b'0', 'admin', '2022-10-12 19:11:49.244000', '{\"accessKeyId\":\"LTAI5tAw2cz7chK8GEjUuFCs\",\"endPoint\":\"oss-cn-beijing.aliyuncs.com\",\"bucketName\":\"lilishop-oss\",\"picLocation\":\"/template\",\"m_secretKey\":\"wJalrXUtnFEMI/K7MDENG/bPxRfiCYEXAMPLEKEY\",\"accessKeySecret\":\"MsnF1RH4TFLIMd0i19DtnOYbAHQWLM\",\"m_bucketName\":\"lilishop\",\"m_endpoint\":\"http://pg2481.com:9000\",\"m_accessKey\":\"AKIAIOSFODNN7EXAMPLE\",\"category\":\"ALI_OSS\",\"m_frontUrl\":\"http://pg2481.com:9000\"}');
 INSERT INTO `setting` VALUES ('PAYMENT_SUPPORT', 'admin', '2021-03-01 10:07:49.831000', b'0', 'admin', '2021-04-14 03:58:30.726000', '{\"paymentSupportItems\":[{\"client\":\"H5\",\"supports\":[\"WALLET\",\"ALIPAY\",\"WECHAT\"]},{\"client\":\"PC\",\"supports\":[\"WECHAT\",\"ALIPAY\",\"WALLET\"]},{\"client\":\"WECHAT_MP\",\"supports\":[\"WECHAT\",\"WALLET\"]},{\"client\":\"APP\",\"supports\":[\"WECHAT\",\"ALIPAY\",\"WALLET\"]}]}');
 INSERT INTO `setting` VALUES ('POINT_SETTING', 'admin', '2021-02-26 07:57:39.629000', b'0', 'admin', '2021-09-26 16:03:56.043000', '{\"money\":1,\"signIn\":2,\"comment\":24,\"pointSettingItems\":[],\"register\":10}');
 INSERT INTO `setting` VALUES ('QQ_CONNECT', 'admin', '2021-03-02 09:16:44.000000', b'0', 'admin', '2021-03-05 02:25:51.615000', '{\"qqConnectSettingItemList\":[{\"clientType\":\"PC\",\"appId\":\"\",\"appKey\":\"\"},{\"clientType\":\"H5\",\"appId\":\"\",\"appKey\":\"\"}]}');
 INSERT INTO `setting` VALUES ('SECKILL_SETTING', 'admin', '2021-09-27 10:33:38.000000', NULL, 'admin', '2021-09-27 10:30:42.917000', '{\"hours\":\"1,2\",\"seckillRule\":\"秒杀规则\"}');
-INSERT INTO `setting` VALUES ('SMS_SETTING', 'admin', '2021-01-23 02:18:03.299000', b'0', 'admin', '2024-07-07 13:53:44.732000', '{\"accessKeyId\":\"test\",\"tencentSdkAppId\":\"null\",\"registerTemplateCode\":\"SMS_205755298\",\"huaweiSender\":\"null\",\"signName\":\"lili\",\"tencentSecretId\":\"null\",\"huaweiAppKey\":\"null\",\"isTestModel\":\"true\",\"tencentSecretKey\":\"null\",\"type\":\"ALI\",\"accessSecret\":\"test\",\"tencentSignName\":\"null\",\"huaweiSignature\":\"null\",\"payPasswordTemplateCode\":\"SMS_205755301\",\"walletPasswordTemplateCode\":\"SMS_205755297\",\"findPasswordTemplateCode\":\"SMS_205755301\",\"huaweiAppSecret\":\"null\",\"loginTemplateCode\":\"SMS_205755300\"}');
+INSERT INTO `setting` VALUES ('SMS_SETTING', 'admin', '2021-01-23 02:18:03.299000', b'0', 'admin', '2024-07-07 13:53:44.732000', '{\"accessKeyId\":\"test\",\"tencentSdkAppId\":\"null\",\"registerTemplateCode\":\"SMS_205755298\",\"huaweiSender\":\"null\",\"signName\":\"lili\",\"tencentSecretId\":\"null\",\"huaweiAppKey\":\"null\",\"isTestModel\":\"true\",\"tencentSecretKey\":\"null\",\"category\":\"ALI\",\"accessSecret\":\"test\",\"tencentSignName\":\"null\",\"huaweiSignature\":\"null\",\"payPasswordTemplateCode\":\"SMS_205755301\",\"walletPasswordTemplateCode\":\"SMS_205755297\",\"findPasswordTemplateCode\":\"SMS_205755301\",\"huaweiAppSecret\":\"null\",\"loginTemplateCode\":\"SMS_205755300\"}');
 INSERT INTO `setting` VALUES ('WECHAT_CONNECT', 'admin', '2021-03-02 09:17:10.000000', b'0', 'admin', '2021-03-05 02:26:43.348000', '{\"wechatConnectSettingItems\":[{\"clientType\":\"PC\",\"appId\":\"\",\"appSecret\":\"\"},{\"clientType\":\"H5\",\"appId\":\"\",\"appSecret\":\"\"},{\"clientType\":\"WECHAT_MP\",\"appId\":\"\",\"appSecret\":\"\"}]}');
 INSERT INTO `setting` VALUES ('WECHAT_PAYMENT', 'admin', '2021-02-27 07:18:13.767000', b'0', 'admin', '2021-04-27 16:09:19.724000', '{\"nativeAppId\":\"\",\"jsapiAppId\":\"\",\"mchId\":\"\",\"apiclient_key\":\"\",\"serialNumber\":\"\",\"mpAppId\":\"\",\"appAppId\":\"\",\"apiKey3\":\"\",\"apiclient_cert_pem\":\"\",\"apiclient_cert_p12\":\"\",\"h5AppId\":\"\"}');
 INSERT INTO `setting` VALUES ('WITHDRAWAL_SETTING', 'admin', '2021-02-21 09:34:41.153000', b'0', 'admin', '2021-02-26 08:54:01.267000', '{\"apply\":true}');
@@ -939,7 +939,7 @@ CREATE TABLE `verification_source`  (
                                            `update_at` datetime(6) COMMENT '更新时间',
                                            `name` varchar(255)  COMMENT '名称',
                                            `resource` varchar(255)  COMMENT '资源地址',
-                                           `type` varchar(30)  COMMENT '验证码资源类型',
+                                           `category` varchar(30)  COMMENT '验证码资源类型',
                                            PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_bin ROW_FORMAT = DYNAMIC;
 
@@ -1497,7 +1497,7 @@ CREATE TABLE `app_version`  (
                                    `content` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '更新内容',
                                    `download_url` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '下载地址',
                                    `force_update` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '是否强制更新',
-                                   `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '类型',
+                                   `category` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '类型',
                                    `version` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '版本号',
                                    `version_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '版本名称',
                                    `version_update_date` datetime COMMENT '版本更新时间',
@@ -1524,7 +1524,7 @@ CREATE TABLE `article`  (
                                `content` text CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL COMMENT '文章内容',
                                `sort` int COMMENT '文章排序',
                                `title` varchar(30) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '文章标题',
-                               `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '文章类型',
+                               `category` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '文章类型',
                                `open_status` bit(1) NULL DEFAULT NULL,
                                PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = COMPACT;
@@ -1607,7 +1607,7 @@ CREATE TABLE `article_category`  (
                                         `parent_id` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '父分类ID',
                                         `sort` int COMMENT '排序',
                                         `article_category_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '分类名称',
-                                        `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '分类类型',
+                                        `category` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci COMMENT '分类类型',
                                         PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = COMPACT;
 
@@ -2187,7 +2187,7 @@ CREATE TABLE `feedback`  (
                                 `context` varchar(500) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '反馈内容',
                                 `images` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '图片，多个图片使用：(，)分割',
                                 `mobile` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '手机号',
-                                `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '类型',
+                                `category` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '类型',
                                 `user_name` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '会员名称',
                                 PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
@@ -2719,7 +2719,7 @@ CREATE TABLE `message`  (
                                `message_range` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '发送范围',
                                `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '标题',
                                `create_send` bit(1) NULL DEFAULT NULL,
-                               `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
+                               `category` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL,
                                `message_client` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '发送客户端',
                                PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;
@@ -2765,7 +2765,7 @@ CREATE TABLE `notice_message_template`  (
                                                `message_code` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '消息CODE',
                                                `notice_content` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '站内信内容',
                                                `notice_state` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '站内信是否开启',
-                                               `type` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '类型',
+                                               `category` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '类型',
                                                `title` varchar(255) CHARACTER SET utf8mb4 COLLATE utf8mb4_0900_ai_ci NULL DEFAULT NULL COMMENT '模板名称',
                                                PRIMARY KEY (`id`) USING BTREE
 ) ENGINE = InnoDB CHARACTER SET = utf8mb4 COLLATE = utf8mb4_0900_ai_ci ROW_FORMAT = DYNAMIC;

@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.order.mapper.UserFlowMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.order.entity.UserFlow">
+    <resultMap id="BaseResultMap" category="cn.lary.module.order.entity.UserFlow">
         <id column="id" property="id" />
         <result column="uid" property="uid" />
         <result column="idx_db" property="idxDb" />

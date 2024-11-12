@@ -14,6 +14,7 @@ public class RaffleRuleCache {
 
     private int shard;
 
+
     private AtomicInteger stage = new AtomicInteger(0);
 
     private int limit;

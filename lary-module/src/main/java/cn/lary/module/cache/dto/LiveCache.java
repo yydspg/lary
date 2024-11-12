@@ -12,7 +12,6 @@ public class LiveCache  extends AbstractCacheDTO{
     private long streamId;
     private long danmakuId;
     private int level;
-
     private String ip;
     private String srsTcUrl;
     private String srsToken;

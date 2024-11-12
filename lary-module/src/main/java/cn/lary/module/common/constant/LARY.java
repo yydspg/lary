@@ -175,5 +175,13 @@ public interface LARY {
             int MANAGER = 1003;
         }
     }
-
+    interface COMMENT {
+        interface EVENT{
+            int POST = 1;
+        }
+        interface STATUS {
+            int HIDE = 1;
+            int COMMON =2;
+        }
+    }
 }

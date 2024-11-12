@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.module.group.mapper.GroupMemberSettingMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.module.group.entity.GroupMemberSetting">
+    <resultMap id="BaseResultMap" category="cn.lary.module.group.entity.GroupMemberSetting">
         <id column="id" property="id" />
         <result column="uid" property="uid" />
         <result column="group_no" property="groupNo" />

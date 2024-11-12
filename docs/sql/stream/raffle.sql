@@ -3,7 +3,7 @@ create table `raffle` (
     id bigint unsigned not null auto_increment primary key ,
     uid int unsigned not null comment '用户id',
     stream_id int unsigned not null  comment '直播id',
-    type smallint unsigned not null comment '抽奖类型',
+    category smallint unsigned not null comment '抽奖类型',
     param json not null comment '抽奖条件参数',
     num int unsigned not null  comment '抽奖人数',
     is_sync bool not null  comment '是否同步成功',
