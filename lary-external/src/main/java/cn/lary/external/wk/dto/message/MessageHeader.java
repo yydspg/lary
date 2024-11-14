@@ -7,10 +7,10 @@ import lombok.experimental.Accessors;
 @Data
 @Accessors(chain = true)
 public class MessageHeader {
-    @JsonProperty("red_dot")
+    @JSONField(format="red_dot")
     private int redDot;
-    @JsonProperty("sync_once")
+    @JSONField(format="sync_once")
     private int syncOnce;
-    @JsonProperty("no_persist")
+    @JSONField(format="no_persist")
     private int noPersist;
 }

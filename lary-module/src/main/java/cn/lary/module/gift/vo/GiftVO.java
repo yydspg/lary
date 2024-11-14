@@ -16,13 +16,13 @@ public class GiftVO {
     /**
      * virtual currency price
      */
-    @JsonProperty("vc_amount")
+    @JSONField(format="vc_amount")
     private long vcAmount;
 
     /**
      * real pay price CNY
      */
-    @JsonProperty("amount")
+    @JSONField(format="amount")
     private BigDecimal amount;
 
     private String name;

@@ -4,11 +4,14 @@ import cn.lary.external.wk.api.WKChannelService;
 import cn.lary.external.wk.api.WKMessageService;
 import cn.lary.external.wk.api.WKUserService;
 import cn.lary.external.wk.api.WkRouteService;
-import cn.lary.external.wk.dto.channel.ChannelCreateDTO;
+import cn.lary.external.wk.dto.channel.WKChannelCreateDTO;
 import cn.lary.external.wk.dto.channel.SubscribersAddDTO;
 import cn.lary.external.wk.dto.message.MessageSendDTO;
 import cn.lary.external.wk.dto.user.UpdateTokenDTO;
 import cn.lary.external.wk.vo.route.RouteVO;
+import cn.lary.module.channel.dto.ChannelBuildDTO;
+import cn.lary.module.channel.entity.LaryChannel;
+import cn.lary.module.channel.service.LaryChannelService;
 import cn.lary.module.message.service.AbstractAsyncRocketMessage;
 import cn.lary.module.message.service.AbstractSyncRocketMessage;
 import cn.lary.module.message.service.MessageService;
@@ -17,6 +20,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;
 import org.springframework.messaging.support.GenericMessage;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 @Slf4j
 @Service
@@ -28,6 +32,8 @@ public class MessageServiceImpl implements MessageService {
     private final WKUserService wkUserService;
     private final WkRouteService wkRouteService;
     private final RocketMQTemplate rocketMQTemplate;
+    private final LaryChannelService laryChannelService;
+    private final TransactionTemplate transactionTemplate;
 
     @Override
     public void send(MessageSendDTO dto) {
@@ -40,13 +46,24 @@ public class MessageServiceImpl implements MessageService {
     }
 
     @Override
-    public void saveOrUpdateChannel(ChannelCreateDTO dto) {
+    public LaryChannel saveOrUpdateChannel(ChannelBuildDTO dto) {
+
+        LaryChannel channel = new LaryChannel()
+                .setType(dto.getType())
+                .setRid(dto.getRid())
+                .setUid(dto.getUid());
+        LaryChannel data = laryChannelService.build(channel);
         try{
-            wkChannelService.createOrUpdate(dto);
+            WKChannelCreateDTO wkChannel = new WKChannelCreateDTO()
+                    .setType(dto.getType())
+                    .setCid(data.getCid())
+                    .setSubscribers(dto.getSubscribers());
+            wkChannelService.createOrUpdate(wkChannel);
         }catch (Exception e){
-            log.error("create or update channel error,channelId:{},type:{}",dto.getChannelId(),dto.getChannelType());
+            log.error("create or update channel error,channelId:{},type:{}",channel.getCid(),channel.getType());
         }
-        log.info("create or update channel success,channelId:{},type:{}", dto.getChannelId(),dto.getChannelType());
+        log.info("create or update channel success,channelId:{},type:{}", channel.getCid(),channel.getType());
+        return channel;
     }
 
     @Override

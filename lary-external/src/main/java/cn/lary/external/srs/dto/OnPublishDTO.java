@@ -1,5 +1,6 @@
 package cn.lary.external.srs.dto;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -22,13 +23,13 @@ import lombok.Data;
 @Data
 public class OnPublishDTO extends SrsDTO {
 
-    @JsonProperty("server_id")
+    @JSONField(format="server_id")
     private String serverId;
 
-    @JsonProperty("action")
+    @JSONField(format="action")
     private String action;
 
-    @JsonProperty("client_id")
+    @JSONField(format="client_id")
     private String clientId;
 
     private String ip;
@@ -43,9 +44,9 @@ public class OnPublishDTO extends SrsDTO {
 
     private String param;
 
-    @JsonProperty("stream_url")
+    @JSONField(format="stream_url")
     private String streamUrl;
 
-    @JsonProperty("stream_id")
+    @JSONField(format="stream_id")
     private String streamId;
 }

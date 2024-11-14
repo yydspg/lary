@@ -24,7 +24,7 @@ public class GroupMemberBusinessExecute {
      * 修改群成员对群聊的设置<br>
      * 区别于群管理员对群本身的设置<br>
      * @param dto {@link GroupMemberSettingDTO}
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> setting(GroupMemberSettingDTO dto){
         return groupMemberSettingService.saveOrUpdate(dto);
@@ -42,7 +42,7 @@ public class GroupMemberBusinessExecute {
      * 查询某种状态的用户
      * @param groupNo g
      * @param status s
-     * @return ok
+     * @return OK
      */
     public ResponsePair<List<Long>> getMembersWithStatus(long groupNo, int status){
         return groupMemberService.getMembersWithStatus(groupNo, status);
@@ -50,7 +50,7 @@ public class GroupMemberBusinessExecute {
     /**
      * 退出群聊
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> quit(long groupId) {
         return groupMemberService.quit(groupId);
@@ -60,7 +60,7 @@ public class GroupMemberBusinessExecute {
      * 管理员强退
      * @param groupId g
      * @param uid u
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> quitByAdmin(long groupId, long uid){
         return groupMemberService.quitByAdmin(groupId,uid);
@@ -69,7 +69,7 @@ public class GroupMemberBusinessExecute {
     /**
      * 加入群聊
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> join(long groupId) {
         return groupMemberService.join(groupId);
@@ -78,7 +78,7 @@ public class GroupMemberBusinessExecute {
      * 管理员邀请加入群聊
      * @param groupId g
      * @param uid  u
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> joinByAdmin(long groupId, long uid) {
         return groupMemberService.joinByAdmin(groupId,uid);
@@ -98,7 +98,7 @@ public class GroupMemberBusinessExecute {
      * 设置用户为管理员
      * @param groupId g
      * @param uid 被设置的用户
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> setAdmin(long groupId, long uid){
         return groupMemberService.setAdmin(groupId,uid);
@@ -108,7 +108,7 @@ public class GroupMemberBusinessExecute {
      * 移除管理员
      * @param groupId g
      * @param uid u
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> removeAdmin(long groupId, long uid){
         return groupMemberService.removeAdmin(groupId,uid);
@@ -126,7 +126,7 @@ public class GroupMemberBusinessExecute {
      * 转移群主
      * @param groupId g
      * @param uid 被转移用户
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> changeOwner(long groupId, long uid) {
         return groupMemberService.changeOwner(groupId, uid);
@@ -136,7 +136,7 @@ public class GroupMemberBusinessExecute {
      * 封禁用户
      * @param groupId g
      * @param uid u
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> block(long groupId, long uid){
         return groupMemberService.block(groupId,uid);

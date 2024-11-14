@@ -1,15 +1,11 @@
 package cn.lary.module.stream.component;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.common.kit.BusinessKit;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.CacheComponent;
-import cn.lary.module.cache.dto.RedPacketCacheDTO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.Map;
 
 @Slf4j
 @Service
@@ -22,26 +18,26 @@ public class FanExecute {
     /**
      * 查询红包信息
      * @param toUid anchor
-     * @return {@link RedPacketCacheDTO}
+     * @return {@link RedpacketCacheDTO}
      */
-    public ResponsePair<RedPacketCacheDTO> getRedPacketInfo(long toUid) {
-        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.redPacketK(toUid));
-        if (map == null) {
-            return BusinessKit.fail("no red packet info");
-        }
-        return BusinessKit.ok(RedPacketCacheDTO.of(map));
-    }
+//    public ResponsePair<RedpacketCacheDTO> getRedPacketInfo(long toUid) {
+//        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.redPacketK(toUid));
+//        if (map == null) {
+//            return BusinessKit.fail("no red packet info");
+//        }
+//        return BusinessKit.ok(RedpacketCacheDTO.of(map));
+//    }
 
     /**
      * 参与红包
      * @param uid u
      * @param toUid anchor
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> redWars(long uid, long toUid) {
 //        String redpacketData = cacheComponent.execute(uid, toUid);
 //        if (StringKit.isNotEmpty(redpacketData)) {
-//            return BusinessKit.fail("手速慢了欧");
+//            return BusinessKit.FAIL("手速慢了欧");
 //        }
         return null;
     }

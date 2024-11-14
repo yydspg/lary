@@ -8,9 +8,9 @@ import java.util.List;
 
 @Data
 public class SyncMessageVO {
-    @JsonProperty("start_message_seq")
+    @JSONField(format="start_message_seq")
     private long startMessageSeq;
-    @JsonProperty("end_message_seq")
+    @JSONField(format="end_message_seq")
     private long endMessageSeq;
     private int more;
     private List<Message> messages;

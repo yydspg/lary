@@ -18,13 +18,15 @@ import java.util.List;
  */
 public interface FollowService extends IService<Follow> {
 
-    /**
-     * 获取被关注关系<br>
-     * 请
-     * @param uid uid
-     * @return uid
-     */
-    ResponsePair<List<Integer>> getFollows(long uid);
+    Follow build(Follow dto);
+
+//    /**
+//     * 获取被关注关系<br>
+//     * 请
+//     * @param uid uid
+//     * @return uid
+//     */
+//    ResponsePair<List<Long>> getFollows(long uid);
 
     /**
      * 主动关注系统账户
@@ -35,23 +37,23 @@ public interface FollowService extends IService<Follow> {
     /**
      * 关注用户
      * @param dto {@link FollowDTO}
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> follow(FollowDTO dto);
 
     /**
      * 拉黑
-     * @return ok
+     * @return OK
      */
      ResponsePair<Void> block(long toUid);
     /**
      * 取消拉黑
-     * @return ok
+     * @return OK
      */
      ResponsePair<Void> unblock(long toUid);
     /**
      * 取消关注
-     * @return ok
+     * @return OK
      */
      ResponsePair<Void> unfollow(long toUid);
     /**

@@ -30,6 +30,11 @@ public class Wallet implements Serializable {
     private Long id;
 
     /**
+     * 钱包id
+     */
+    private Long wid;
+
+    /**
      * 用户id
      */
     private Long uid;
@@ -69,11 +74,5 @@ public class Wallet implements Serializable {
     private Integer status;
 
 
-    private Boolean isDelete;
-
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
-
-      @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
+    
 }

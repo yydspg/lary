@@ -2,35 +2,39 @@ package cn.lary.module.event.dto;
 
 import cn.lary.common.kit.JSONKit;
 import cn.lary.module.common.constant.LARY;
-import com.fasterxml.jackson.annotation.JsonProperty;
-import lombok.AllArgsConstructor;
+import com.alibaba.fastjson2.annotation.JSONField;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 import java.util.HashMap;
 import java.util.Map;
 
 @Data
-@AllArgsConstructor
+@Accessors(chain = true)
 public class GoLiveEventDTO extends AbstractEventData {
 
     private long uid;
 
-    @JsonProperty("device_id")
-    private int deviceId;
+    @JSONField(format="device_id")
+    private long did;
 
-    @JsonProperty("stream_id")
-    private int streamId;
+    @JSONField(format="stream_id")
+    private long sid;
 
-    @JsonProperty("channel_id")
-    private long channelId;
+    @JSONField(format="channel_id")
+    private long cid;
+
+    public GoLiveEventDTO() {
+
+    }
 
 
     public String getData() {
         Map<Object,Object> map = new HashMap<>();
         map.put("uid", uid);
-        map.put("streamId", streamId);
-        map.put("channelId", channelId);
-        map.put("deviceId", deviceId);
+        map.put("streamId", sid);
+        map.put("channelId", cid);
+        map.put("deviceId", did);
         return JSONKit.toJSON(map);
     }
 

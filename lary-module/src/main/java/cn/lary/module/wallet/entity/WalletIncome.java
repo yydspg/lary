@@ -33,6 +33,10 @@ public class WalletIncome implements Serializable {
     private Long id;
 
     /**
+     * 收入id
+     */
+    private Long oid;
+    /**
      * 用户id
      */
     private Long uid;
@@ -65,14 +69,9 @@ public class WalletIncome implements Serializable {
     /**
      * 同步状态
      */
-    private Integer syncStatus;
+    private Integer sync;
 
-    private Boolean isDelete;
-
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
-
-      public static WalletIncome of(TransferDTO dto) {
+    public static WalletIncome of(TransferDTO dto) {
           WalletIncome income = new WalletIncome();
           income.setUid(dto.getUid());
           income.setToUid(dto.getToUid());
@@ -80,7 +79,6 @@ public class WalletIncome implements Serializable {
           income.setChannel(dto.getChannel());
           income.setCategory(dto.getCategory());
           income.setType(dto.getType());
-          income.setCreateAt(LocalDateTime.now());
           return income;
       }
 }

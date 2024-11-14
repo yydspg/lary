@@ -20,13 +20,13 @@ public class RaffleBatchRecordListener implements RocketMQListener<RaffleBatchRe
         if (message.getCategory() == LARY.RAFFLE.MONEY_FIX) {
             ResponsePair<Void> pair = walletService.batchOutcomeFixTransfer(message.getFixTransferDTO());
             if (pair.isFail()){
-                log.error("process raffle fix transfer fail,message:{}",pair.getMsg());
+                log.error("process raffle fix transfer FAIL,message:{}",pair.getMsg());
             }
         }
         if (message.getCategory() == LARY.RAFFLE.MONEY_RANDOM) {
             ResponsePair<Void> pair = walletService.batchOutcomeRandomTransfer(message.getRandomTransfer());
             if (pair.isFail()){
-                log.error("process raffle random transfer fail,message:{}",pair.getMsg());
+                log.error("process raffle random transfer FAIL,message:{}",pair.getMsg());
             }
         }
     }

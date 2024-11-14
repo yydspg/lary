@@ -22,7 +22,7 @@ public class RegisterDTO extends DTO {
      */
     @NotNull(message = "code is null")
     private String code;
-    @JsonProperty("invite_code")
+    @JSONField(format="invite_code")
     private String inviteCode;
 
     private String bio;
@@ -31,14 +31,14 @@ public class RegisterDTO extends DTO {
 
     private String birthday;
 
-    @JsonProperty("id")
+    @JSONField(format="id")
     private int id;
 
     @NotNull(message = "device_name is null")
-    @JsonProperty("name")
+    @JSONField(format="name")
     private String deviceName;
 
-    @JsonProperty("flag")
+    @JSONField(format="flag")
     @NotNull(message = "device flag is null")
     private int flag;
 

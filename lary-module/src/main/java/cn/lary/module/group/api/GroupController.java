@@ -44,7 +44,7 @@ public class GroupController {
     /**
      * 解散群聊
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     @GetMapping("/disband")
     public SingleResponse<Void> disband(long groupId) {
@@ -58,7 +58,7 @@ public class GroupController {
     /**
      * 全体成员禁言
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     @GetMapping("/forbidden")
     public SingleResponse<Void> forbidden( @RequestParam @NotNull long groupId) {

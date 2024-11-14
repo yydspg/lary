@@ -10,7 +10,7 @@ import java.util.List;
 public class SyncUserConversationDTO extends WKChannel {
     private Long uid;
     // 会话消息数量
-    @JsonProperty("msg_count")
+    @JSONField(format="msg_count")
     private long msgCount;
     private List<WKChannel> larges;
 }

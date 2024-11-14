@@ -16,6 +16,9 @@ import java.util.List;
  * @since 2024-07-29
  */
 public interface UserRedDotService extends IService<UserRedDot> {
+
+
+    UserRedDot build(UserRedDot dto);
     /**
      * 查询用户红点
      * @return {@link UserRedDotVO}
@@ -23,9 +26,9 @@ public interface UserRedDotService extends IService<UserRedDot> {
     ResponsePair<List<UserRedDotVO>> redDots();
 
     /**
-     * 清除某个策略下红点
+     * 清除某个策略红点
      * @param category c
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> clear(int category);
 
@@ -33,7 +36,7 @@ public interface UserRedDotService extends IService<UserRedDot> {
      * 增加用户红点数量
      * @param category c
      * @param amount a
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> increment(int category,int amount);
 }

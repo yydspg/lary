@@ -133,12 +133,12 @@ public class AliPayPaymentPlugin extends AbstractPaymentPlugin {
 
     @Override
     protected void whenVerificationSignFail(PaymentNotifyProcessPair pair) {
-        log.error("alipay payment verify sign fail,params:{}",JSONKit.toJSON(pair.getParams()));
+        log.error("alipay payment verify sign FAIL,params:{}",JSONKit.toJSON(pair.getParams()));
     }
 
     @Override
     protected void whenConvertParamsFail(PaymentNotifyProcessPair pair) {
-        log.error("alipay convert params fail,params:{}", JSONKit.toJSON(pair.getParams()));
+        log.error("alipay convert params FAIL,params:{}", JSONKit.toJSON(pair.getParams()));
     }
 
     @Override
@@ -218,7 +218,7 @@ public class AliPayPaymentPlugin extends AbstractPaymentPlugin {
 
     @Override
     protected void processQueryExecuteFail(PaymentQueryVO pair) {
-        log.error("payment query execute fail,params:{}", JSONKit.toJSON(pair));
+        log.error("payment query execute FAIL,params:{}", JSONKit.toJSON(pair));
     }
 
 

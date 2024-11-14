@@ -79,6 +79,5 @@ public class UserGoodsView implements Serializable {
      */
     private String bigAvatar;
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 }

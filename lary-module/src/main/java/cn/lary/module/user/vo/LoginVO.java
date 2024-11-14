@@ -31,7 +31,7 @@ public class LoginVO {
     /**
      * 创建时间
      */
-    private LocalDateTime createAt;
+    private long createAt;
 
 
     public LoginVO(LoginLog log) {

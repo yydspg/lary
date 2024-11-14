@@ -15,10 +15,10 @@ public class DownLiveEventDTO extends AbstractEventData {
 
     private long uid;
 
-    @JsonProperty("stream_id")
+    @JSONField(format="stream_id")
     private int streamId;
 
-    @JsonProperty("channel_id")
+    @JSONField(format="channel_id")
     private long channelId;
 
     public String getData() {

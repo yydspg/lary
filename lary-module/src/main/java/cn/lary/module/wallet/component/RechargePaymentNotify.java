@@ -67,7 +67,7 @@ public class RechargePaymentNotify implements BusinessPaymentNotify {
                     .setIncrBy(Wallet::getIncome,recharge.getAmount())
                     .eq(Wallet::getUid, recharge.getUid())
                     .update();
-            eventService.commit(recharge.getEventId());
+            eventService.commit(recharge.getEid());
             return recharge;
         });
         if (rechargeRecord != null) {
@@ -90,7 +90,7 @@ public class RechargePaymentNotify implements BusinessPaymentNotify {
                     .eq(RechargeRecord::getId, rechargeId)
                     .one();
             if (rechargeRecord == null) {
-                log.error("callback recharge fail error, rechargeId no exists:{}", rechargeId);
+                log.error("callback recharge FAIL error, rechargeId no exists:{}", rechargeId);
                 return;
             }
             rechargeRecordService.lambdaUpdate()
@@ -100,7 +100,7 @@ public class RechargePaymentNotify implements BusinessPaymentNotify {
                     .set(RechargeRecord::getFailReason,vo.getFailReason())
                     .eq(RechargeRecord::getId,vo.getRechargeId())
                     .update();
-            eventService.commit(rechargeRecord.getEventId());
+            eventService.commit(rechargeRecord.getEid());
         });
     }
 

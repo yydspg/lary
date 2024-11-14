@@ -5,8 +5,10 @@ import lombok.Data;
 @Data
 public class RaffleRuleNotifyDTO {
     private int shard;
-
-    private long uid;
+    /**
+     * 抽奖事件id
+     */
+    private long eid;
 
     private int limit;
 }

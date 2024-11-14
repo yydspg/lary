@@ -57,7 +57,7 @@ public class UserExecute {
     /**
      * 用户注册时的手机验证
      * @param phone 手机号
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> registerCode(String phone) {
         return userService.registerCode(phone);
@@ -66,7 +66,7 @@ public class UserExecute {
     /**
      * 用户注销时的手机验证
      * @param phone 手机号
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> destroyCode(String phone) {
         return userService.destroyCode(phone);
@@ -83,7 +83,7 @@ public class UserExecute {
     /**
      * 退出登陆<br>
      * 清理 redis 缓存
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> logout(HttpServletRequest request) {
        return userService.logout(request);

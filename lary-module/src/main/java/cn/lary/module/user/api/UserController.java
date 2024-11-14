@@ -91,7 +91,7 @@ public class UserController {
     /**
      * 退出登陆
      * @param request {@link HttpServletRequest}
-     * @return ok
+     * @return OK
      */
     @GetMapping("/logout")
     public SingleResponse<Void> logout(HttpServletRequest request) {
@@ -105,7 +105,7 @@ public class UserController {
     /**
      * 刷新token
      * @param request {@link HttpServletRequest}
-     * @return ok
+     * @return OK
      */
     @GetMapping("/refresh")
     public SingleResponse<Void> refresh(HttpServletRequest request) {

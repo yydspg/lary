@@ -21,7 +21,7 @@ public class RechargeDTO extends BusinessPaymentDTO {
     private Integer client;
 
     @NotNull
-    @JsonProperty("plugin")
+    @JSONField(format="plugin")
     private Integer plugin;
 
 }

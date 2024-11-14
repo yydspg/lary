@@ -20,10 +20,6 @@
         <result column="block_type_id" property="blockTypeId" />
         <result column="block_description" property="blockDescription" />
         <result column="is_delete" property="isDelete" />
-        <result column="create_by" property="createBy" />
-        <result column="update_by" property="updateBy" />
-        <result column="create_at" property="createAt" />
-        <result column="update_at" property="updateAt" />
     </resultMap>
 
 </mapper>

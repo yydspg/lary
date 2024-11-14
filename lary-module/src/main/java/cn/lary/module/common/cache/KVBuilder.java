@@ -2,8 +2,7 @@ package cn.lary.module.common.cache;
 
 import cn.lary.module.cache.dto.JoinLiveCacheDTO;
 import cn.lary.module.cache.dto.LiveCache;
-import cn.lary.module.raffle.entity.RaffleEventCache;
-import cn.lary.module.cache.dto.RedPacketCacheDTO;
+import cn.lary.module.raffle.dto.RaffleEventCache;
 import cn.lary.module.cache.dto.DeviceAddResponseCacheDTO;
 import cn.lary.module.cache.dto.DeviceLoginCacheDTO;
 
@@ -113,10 +112,10 @@ public interface KVBuilder {
     /**
      * 直播红包
      * @param uid u
-     * @return ok
+     * @return OK
      */
     String redPacketK(long uid);
-    Map redPacketV(RedPacketCacheDTO dto);
+    Map redPacketV(RedpacketCacheDTO dto);
 
     /**
      * 直播抽奖集合
@@ -128,14 +127,14 @@ public interface KVBuilder {
     /**
      * 直播红包的uid防重
      * @param uid u
-     * @return ok
+     * @return OK
      */
     String redPacketUidMapK(long uid);
 
     /**
      * 直播红包的数据队列
      * @param uid u
-     * @return ok
+     * @return OK
      */
     String redPacketDataListK(long uid);
 }

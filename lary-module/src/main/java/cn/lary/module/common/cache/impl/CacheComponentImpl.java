@@ -1,7 +1,6 @@
 package cn.lary.module.common.cache.impl;
 
 import cn.lary.module.common.cache.CacheComponent;
-import cn.lary.module.raffle.entity.RaffleRuleCache;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.StringRedisTemplate;

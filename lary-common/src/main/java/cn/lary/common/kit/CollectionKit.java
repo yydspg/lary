@@ -32,4 +32,11 @@ public class CollectionKit {
     public static boolean isNotEmpty(Collection collection) {
         return collection != null && collection.size() > 0;
     }
+    public static boolean isEmpty(Map<?, ?> map) {
+        return !isNotEmpty(map);
+    }
+
+    public static boolean isNotEmpty(Map<?, ?> map) {
+        return map != null && !map.isEmpty();
+    }
 }

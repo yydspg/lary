@@ -106,7 +106,7 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
                     .eq(GiftOrder::getId, orderId)
                     .one();
             if (order == null) {
-                log.error("callback on fail error,order not exists,order id:{}",orderId);
+                log.error("callback on FAIL error,order not exists,order id:{}",orderId);
                 return;
             }
             giftOrderService.lambdaUpdate()

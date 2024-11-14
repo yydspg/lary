@@ -21,7 +21,7 @@ public interface RedpacketEventService extends IService<RedpacketEvent> {
     /**
      * 创建红包活动
      * @param dto {@link RedPacketDTO}
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> redpacket(RedpacketEventBuildDTO dto);
 

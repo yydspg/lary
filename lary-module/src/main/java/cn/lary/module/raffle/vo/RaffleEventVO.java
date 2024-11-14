@@ -1,14 +1,16 @@
 package cn.lary.module.raffle.vo;
 
-import cn.lary.module.raffle.entity.RaffleEventCache;
+import cn.lary.module.raffle.dto.RaffleEventCache;
+import lombok.Data;
 
 import java.math.BigDecimal;
 
+@Data
 public class RaffleEventVO {
     /**
      * 直播id
      */
-    private long streamId;
+    private long sid;
 
 
     /**
@@ -34,7 +36,7 @@ public class RaffleEventVO {
     /**
      * 同步状态
      */
-    private int syncStatus;
+    private int sync;
 
     /**
      * 抽奖标题
@@ -66,12 +68,12 @@ public class RaffleEventVO {
     public RaffleEventVO() {}
 
     public RaffleEventVO(RaffleEventCache event) {
-        this.streamId = event.getStreamId();
+        this.sid = event.getSid();
         this.uid = event.getUid();
         this.category = event.getCategory();
         this.param = event.getParam();
         this.num = event.getNum();
-        this.syncStatus = event.getSyncStatus();
+        this.sync = event.getSync();
         this.title = event.getTitle();
         this.content = event.getContent();
         this.itemNum = event.getItemNum();
@@ -80,6 +82,5 @@ public class RaffleEventVO {
         this.amount = event.getAmount();
         this.fan = event.getFan();
         this.level = event.getLevel();
-
     }
 }

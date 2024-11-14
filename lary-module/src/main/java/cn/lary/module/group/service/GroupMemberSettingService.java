@@ -22,7 +22,7 @@ public interface GroupMemberSettingService extends IService<GroupMemberSetting> 
      * 修改群成员对群聊的设置<br>
      * 区别于群管理员对群本身的设置<br>
      * @param dto {@link GroupMemberSettingDTO}
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> saveOrUpdate(GroupMemberSettingDTO dto);
 

@@ -81,11 +81,9 @@ public class Receipt implements Serializable {
      */
     private String taxpayerId;
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 
-      @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
+      
 
-    private Boolean isDelete;
+    
 }

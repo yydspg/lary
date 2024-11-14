@@ -7,6 +7,8 @@ public  class YutakEntry {
 
     private byte policy;
 
+    private int amount;
+
     public byte getPolicy() {
         return policy;
     }

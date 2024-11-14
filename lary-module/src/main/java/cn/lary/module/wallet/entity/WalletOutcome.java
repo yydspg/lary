@@ -33,6 +33,11 @@ public class WalletOutcome implements Serializable {
     private Long id;
 
     /**
+     * 支出id
+     */
+    private Long oid;
+
+    /**
      * 用户id
      */
     private Long uid;
@@ -65,12 +70,11 @@ public class WalletOutcome implements Serializable {
     /**
      * 同步状态
      */
-    private Integer syncStatus;
+    private Integer sync;
 
-    private Boolean isDelete;
+    
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
       
       
     public static WalletOutcome of(TransferDTO dto) {
@@ -81,7 +85,6 @@ public class WalletOutcome implements Serializable {
         outcome.setChannel(dto.getChannel());
         outcome.setCategory(dto.getCategory());
         outcome.setType(dto.getType());
-        outcome.setCreateAt(LocalDateTime.now());
         return outcome;
     }
 }

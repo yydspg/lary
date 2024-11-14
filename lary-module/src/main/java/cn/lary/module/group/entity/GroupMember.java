@@ -28,15 +28,19 @@ public class GroupMember implements Serializable {
     private Long id;
 
     /**
+     * 独立id
+     */
+    private Long mid;
+
+    /**
      * 群聊id
      */
-    private Long groupId;
+    private Long gid;
 
     /**
      * 用户id
      */
     private Long uid;
-
 
 
     /**
@@ -89,11 +93,7 @@ public class GroupMember implements Serializable {
      */
     private Long inviteUid;
 
-    private Boolean isDelete;
+    
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
 
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

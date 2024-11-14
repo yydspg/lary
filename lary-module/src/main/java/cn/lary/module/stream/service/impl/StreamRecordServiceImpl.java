@@ -5,12 +5,15 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.CollectionKit;
 import cn.lary.module.common.constant.LARY;
+import cn.lary.module.id.LaryIDBuilder;
 import cn.lary.module.stream.entity.StreamRecord;
 import cn.lary.module.stream.mapper.StreamRecordMapper;
 import cn.lary.module.stream.service.StreamRecordService;
 import cn.lary.module.stream.vo.StreamRecordVO;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
@@ -24,8 +27,19 @@ import java.util.List;
  * @author paul
  * @since 2024-08-16
  */
+@Slf4j
 @Service
+@RequiredArgsConstructor
 public class StreamRecordServiceImpl extends ServiceImpl<StreamRecordMapper, StreamRecord> implements StreamRecordService {
+
+    private final LaryIDBuilder builder;
+
+    @Override
+    public StreamRecord build(StreamRecord dto) {
+        dto.setSid(builder.next());
+        save(dto);
+        return dto;
+    }
 
     @Override
     public ResponsePair<List<StreamRecordVO>> getPages(int page, int size) {
@@ -38,10 +52,8 @@ public class StreamRecordServiceImpl extends ServiceImpl<StreamRecordMapper, Str
         if(CollectionKit.isEmpty(records)) {
             return BusinessKit.fail("no records");
         }
-        List<StreamRecordVO> vos = new ArrayList<>();
-        records.forEach(record -> {
-            vos.add(new StreamRecordVO().of(record));
-        });
-        return BusinessKit.ok(vos);
+        return BusinessKit.ok(records.stream()
+                .map(StreamRecordVO::new)
+                .toList());
     }
 }

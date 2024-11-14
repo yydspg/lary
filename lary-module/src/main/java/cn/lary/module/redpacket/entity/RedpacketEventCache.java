@@ -4,15 +4,25 @@ import lombok.Data;
 import lombok.experimental.Accessors;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 @Data
 @Accessors(chain = true)
 public class RedpacketEventCache {
+
     /**
      * 直播id
      */
-    private long stream;
+    private long sid;
+
+    /**
+     * 事件id
+     */
+    private long eid;
+
+    /**
+     * 直播间id
+     */
+    private long rid;
 
     /**
      * 用户uid
@@ -38,7 +48,7 @@ public class RedpacketEventCache {
     /**
      * 开启时间
      */
-    private LocalDateTime startAt;
+    private long startAt;
 
     /**
      * 持续时间

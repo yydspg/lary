@@ -238,8 +238,7 @@ public class Order implements Serializable {
      */
     private Integer status;
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 
     private LocalDateTime paymentAt;
 
@@ -247,8 +246,7 @@ public class Order implements Serializable {
 
     private LocalDateTime completeAt;
 
-      @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
+      
 
-    private Boolean isDelete;
+    
 }

@@ -30,11 +30,21 @@ public class RaffleEvent implements Serializable {
 
       @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-
+    /**
+     * 事件id
+     */
+    private Long eid;
     /**
      * 直播id
      */
-    private Long streamId;
+    private Long sid;
+
+    /**
+     * 直播间id
+     */
+    private Long rid;
+
+
 
     /**
      * 用户id
@@ -59,7 +69,7 @@ public class RaffleEvent implements Serializable {
     /**
      * 同步状态
      */
-    private Integer syncStatus;
+    private Integer sync;
 
     /**
      * 抽奖标题
@@ -85,12 +95,9 @@ public class RaffleEvent implements Serializable {
     private String recipients;
 
     private BigDecimal totalAmount;
+
     private BigDecimal amount;
 
+    private long createAt;
 
-
-    private Boolean isDelete;
-
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
 }

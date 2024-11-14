@@ -4,11 +4,14 @@ import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.CollectionKit;
+import cn.lary.module.common.constant.LARY;
+import cn.lary.module.id.LaryIDBuilder;
 import cn.lary.module.user.entity.UserRedDot;
 import cn.lary.module.user.mapper.UserRedDotMapper;
 import cn.lary.module.user.service.UserRedDotService;
 import cn.lary.module.user.vo.UserRedDotVO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -24,8 +27,17 @@ import java.util.List;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRedDot> implements UserRedDotService {
 
+    private final LaryIDBuilder builder;
+
+    @Override
+    public UserRedDot build(UserRedDot dto) {
+        dto.setRid(builder.next());
+        save(dto);
+        return dto;
+    }
 
     @Override
     public ResponsePair<List<UserRedDotVO>> redDots() {
@@ -48,7 +60,8 @@ public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRed
         lambdaUpdate()
                 .set(UserRedDot::getCount, 0)
                 .eq(UserRedDot::getCategory, category)
-                .eq(UserRedDot::getUid, RequestContext.uid());
+                .eq(UserRedDot::getUid, RequestContext.uid())
+                .update();
         return BusinessKit.ok();
     }
 
@@ -57,7 +70,8 @@ public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRed
         lambdaUpdate()
                 .setIncrBy(UserRedDot::getCount, amount)
                 .eq(UserRedDot::getCategory, category)
-                .eq(UserRedDot::getUid, RequestContext.uid());
+                .eq(UserRedDot::getUid, RequestContext.uid())
+                .update();
         return BusinessKit.ok();
     }
 }

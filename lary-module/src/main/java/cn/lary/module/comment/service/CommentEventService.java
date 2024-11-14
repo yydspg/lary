@@ -18,7 +18,7 @@ public interface CommentEventService extends IService<CommentEvent> {
     /**
      * 创建评论事件
      * @param dto {@link CommentEventDTO}
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> event(CommentEventDTO dto);
 }

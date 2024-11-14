@@ -18,6 +18,7 @@ import cn.lary.module.group.vo.CreateGroupVO;
 import cn.lary.module.group.vo.GroupDetailVO;
 import cn.lary.module.group.vo.GroupVO;
 import cn.lary.module.message.dto.group.CreateGroupSuccessNotifyDTO;
+import cn.lary.module.message.service.MessageService;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.service.UserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
@@ -44,26 +45,17 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
 
     private final GroupMemberService groupMemberService;
     private final UserService userService;
+    private final MessageService messageService;
 
-    // component
-
-    // external
-    private final WKMessageService wkMessageService;
 
     @Override
     public boolean isReachCreateLimit(long uid, LocalDateTime now) {
-        LocalDateTime startOfDay = DateKit.getStartOfDay(now);
-        LocalDateTime endOfDay = DateKit.getEndOfDay(now);
-        // TODO  :  这里需要实现动态配置
-        return Math.toIntExact(lambdaQuery()
-                .eq(Group::getCreator, uid)
-                .ge(Group::getCreateAt, startOfDay)
-                .le(Group::getCreateAt, endOfDay)
-                .count()) > 0;
+        // TODO  :
+        return false;
     }
 
     @Override
-    public ResponsePair<CreateGroupVO> create(CreateGroupDTO dto) {
+    public ResponsePair<CreateGroupVO> build(CreateGroupDTO dto) {
         long creator = RequestContext.uid();
         if (isReachCreateLimit(creator, LocalDateTime.now())) {
             return BusinessKit.fail("reach create limit");
@@ -85,7 +77,6 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         User creatorInfo = userService.lambdaQuery()
                 .select(User::getRole)
                 .eq(User::getUid, creator)
-                .eq(User::getIsDelete, false)
                 .one();
         if (dto.getCategory() == LARY.GROUP.ROLE.MANAGER) {
             if (creatorInfo == null || creatorInfo.getRole() == LARY.GROUP.ROLE.MANAGER) {
@@ -106,16 +97,12 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
             GroupMember groupMember = new GroupMember()
                     .setUid(u)
                     .setRole(role)
-                    .setGroupId(group.getGroupId());
+                    .setGid(group.getGid());
             groupMembers.add(groupMember);
         });
         groupMemberService.saveBatch(groupMembers);
-        CreateGroupVO vo = new CreateGroupVO(group.getGroupId(), groupName, LocalDateTime.now());
-        Response<Void> response = wkMessageService.send(new CreateGroupSuccessNotifyDTO()
-                .build(RequestContext.uid(), group.getGroupId(), users));
-        if (!response.isSuccessful()) {
-            return BusinessKit.fail(response.message());
-        }
+        CreateGroupVO vo = new CreateGroupVO(group.getGid(), groupName, LocalDateTime.now());
+        messageService.send(new CreateGroupSuccessNotifyDTO(RequestContext.uid(), group.getGid(), users));
         return BusinessKit.ok(vo);
     }
 
@@ -126,8 +113,9 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
             return BusinessKit.fail(response.getMsg());
         }
         lambdaUpdate()
-                .eq(Group::getGroupId,groupId)
-                .set(Group::getIsDelete,true);
+                .eq(Group::getGid,groupId)
+                .set(Group::getStatus,LARY.GROUP.STATUS.DISBAND)
+                .update();
         return BusinessKit.ok();
     }
 
@@ -137,17 +125,21 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
         if (response.isFail()){
             return BusinessKit.fail(response.getMsg());
         }
-        lambdaUpdate().set(Group::getIsForbidden,true);
+        lambdaUpdate()
+                .set(Group::getIsForbidden,true)
+                .update();
         return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<GroupDetailVO> getGroup(long groupId) {
-        Group group = lambdaQuery().eq(Group::getGroupId, groupId).one();
+        Group group = lambdaQuery()
+                .eq(Group::getGid, groupId)
+                .one();
         if (group == null){
             return BusinessKit.fail("group not exist");
         }
-        return BusinessKit.ok(new GroupDetailVO().of(group));
+        return BusinessKit.ok(new GroupDetailVO(group));
     }
 
     @Override
@@ -157,19 +149,16 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
             return BusinessKit.fail(response.getMsg());
         }
         List<Group> data = lambdaQuery()
-                .select(Group::getGroupId)
-                .select(Group::getName)
-                .select(Group::getGroupNum)
-                .select(Group::getGroupAvatar)
-                .in(Group::getGroupId,response.getData())
+                .select(Group::getGid,Group::getGroupAvatar
+                        ,Group::getGroupNum,Group::getName)
+                .in(Group::getGid,response.getData())
                 .list();
         if (data.isEmpty()){
             return BusinessKit.fail("data empty");
         }
-        List<GroupVO> vos = new ArrayList<>();
-        data.forEach(d ->{
-            vos.add(new GroupVO().of(d));
-        });
+        List<GroupVO> vos = data.stream()
+                .map(GroupVO::new)
+                .toList();
         return BusinessKit.ok(vos);
     }
 

@@ -6,7 +6,7 @@ import lombok.Data;
 
 @Data
 public class FollowDTO {
-    @JsonProperty("to_uid")
+    @JSONField(format="to_uid")
     @NotNull
     private Long toUid;
     @NotNull

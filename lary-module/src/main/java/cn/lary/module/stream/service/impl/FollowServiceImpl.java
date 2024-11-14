@@ -6,6 +6,7 @@ import cn.lary.common.kit.BusinessKit;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
+import cn.lary.module.id.LaryIDBuilder;
 import cn.lary.module.message.dto.follow.ActiveFollowResponseDTO;
 import cn.lary.module.message.dto.follow.OneWayActiveFollowResponseDTO;
 import cn.lary.module.message.dto.follow.PassiveFollowResponseDTO;
@@ -46,6 +47,14 @@ public class FollowServiceImpl extends ServiceImpl<FollowMapper, Follow> impleme
     private final UserService userService;
     private final MessageService messageService;
     private final TransactionTemplate transactionTemplate;
+    private final LaryIDBuilder builder;
+
+    @Override
+    public Follow build(Follow dto) {
+        dto.setRid(builder.next());
+        save(dto);
+        return dto;
+    }
 
     @Override
     public ResponsePair<List<Integer>> getFollows(long uid) {

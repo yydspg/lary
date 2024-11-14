@@ -16,7 +16,6 @@ public class NettyServerEventHandler extends SimpleChannelInboundHandler<YutakPu
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, YutakPushMessage message) throws Exception {
         switch (message.getCategory()) {
-            case  YUTAK.PING :
 
         }
     }

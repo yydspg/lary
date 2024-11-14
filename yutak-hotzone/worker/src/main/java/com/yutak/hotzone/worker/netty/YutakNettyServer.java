@@ -11,28 +11,48 @@ import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.codec.DelimiterBasedFrameDecoder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
 
 public class YutakNettyServer {
 
     private final static int MAX_LENGTH = 2 *1024;
-    public Bootstrap build() {
+    private static final Logger log = LoggerFactory.getLogger(YutakNettyServer.class);
+    private  static ServerBootstrap bootstrap ;
+
+    public void build(int port) throws Exception {
         NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
         NioEventLoopGroup workerGroup = new NioEventLoopGroup(3);
-
-        ServerBootstrap bootstrap = new ServerBootstrap();
-        bootstrap.group(bossGroup, workerGroup)
-                .channel(NioServerSocketChannel.class)
-                .childOption(ChannelOption.SO_KEEPALIVE, true);
-        return null;
+        try {
+            ServerBootstrap bootstrap = new ServerBootstrap();
+            bootstrap.group(bossGroup, workerGroup)
+                    .channel(NioServerSocketChannel.class)
+                    .childOption(ChannelOption.SO_KEEPALIVE, true)
+                    .childHandler(new YutakChannelHandler());
+            ChannelFuture future = bootstrap.bind(port).sync();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                bossGroup.shutdownGracefully(1000, 3000, TimeUnit.MILLISECONDS);
+                workerGroup.shutdownGracefully(1000, 3000, TimeUnit.MILLISECONDS);
+            }));
+            future.channel().closeFuture().sync();
+        }catch (Exception e) {
+            log.error("yutak server start error:{}",e.getMessage());
+        }finally {
+            bossGroup.shutdownGracefully();
+            workerGroup.shutdownGracefully();
+        }
     }
 
-    private class YutakChannelHandler extends ChannelInitializer<Channel> {
+    private static class YutakChannelHandler extends ChannelInitializer<Channel> {
         private final KryoComponent<YutakProcessMessage> processMessageComponent;
         private final KryoComponent<YutakPushMessage> pushMessageComponent;
 
@@ -48,7 +68,7 @@ public class YutakNettyServer {
                     .addLast(new DelimiterBasedFrameDecoder(MAX_LENGTH,buffer))
                     .addLast(new PushMessageDecode(pushMessageComponent))
                     .addLast(new ProcessorMessageEncode(processMessageComponent))
-                    .addLast(new YutakChannelHandler());
+                    .addLast(new NettyServerEventHandler());
         }
     }
 }

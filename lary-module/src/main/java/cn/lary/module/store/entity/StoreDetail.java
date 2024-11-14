@@ -214,11 +214,9 @@ public class StoreDetail implements Serializable {
 
     private String appMerchantKey;
 
-    private Boolean isDelete;
+    
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 
-      @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
+      
 }

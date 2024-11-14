@@ -3,25 +3,18 @@ package cn.lary.module.comment.service.impl;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
-import cn.lary.common.kit.CollectionKit;
-import cn.lary.common.kit.StringKit;
 import cn.lary.module.comment.component.CommentCacheComponent;
 import cn.lary.module.comment.dto.CommentEventCacheDTO;
 import cn.lary.module.comment.dto.NextCommentDTO;
 import cn.lary.module.comment.dto.NextCommentPageQueryDTO;
 import cn.lary.module.comment.entity.CommentEvent;
-import cn.lary.module.comment.entity.MentionNotifyPayload;
 import cn.lary.module.comment.entity.NextComment;
 import cn.lary.module.comment.mapper.NextCommentMapper;
 import cn.lary.module.comment.service.CommentEventService;
 import cn.lary.module.comment.service.NextCommentService;
 import cn.lary.module.comment.vo.NextCommentVO;
-import cn.lary.module.comment.vo.RootCommentVO;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.id.LaryIdGenerator;
-import cn.lary.module.id.SystemClock;
-import cn.lary.module.message.dto.comment.CommentMentionMessage;
-import cn.lary.module.message.service.MessageService;
+import cn.lary.module.id.LaryIDBuilder;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.service.UserService;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
@@ -32,7 +25,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -50,7 +42,7 @@ public class NextCommentServiceImpl extends ServiceImpl<NextCommentMapper, NextC
 
     private final CommentEventService commentEventService;
     private final CommentCacheComponent commentCacheComponent;
-    private final LaryIdGenerator idGenerator;
+    private final LaryIDBuilder idGenerator;
     private final UserService userService;
     private final GeneralService generalService;
     private final TransactionTemplate transactionTemplate;

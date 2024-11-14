@@ -74,14 +74,10 @@ public class User implements Serializable {
 
     private Integer status;
 
-    private Boolean isDelete;
+    
 
 
     private String anchorAnnounce;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
 
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

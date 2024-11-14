@@ -29,8 +29,10 @@ public class Group implements Serializable {
     /**
      * 群id
      */
-    @TableId(value = "group_id", type = IdType.AUTO)
-    private Long groupId;
+    @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+
+    private Long gid;
 
     /**
      * 群名字
@@ -92,11 +94,7 @@ public class Group implements Serializable {
      */
     private Boolean isAllowViewHistoryMsg;
 
-    private Boolean isDelete;
+    private Long createAt;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
 
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

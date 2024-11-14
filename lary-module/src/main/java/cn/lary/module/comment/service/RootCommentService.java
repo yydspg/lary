@@ -21,14 +21,14 @@ public interface RootCommentService extends IService<RootComment> {
     /**
      * 评论root
      * @param dto {@link RootCommentDTO}
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> comment(RootCommentDTO dto);
 
     /**
      * 隐藏评论
      * @param cid c
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> hide(long cid);
 

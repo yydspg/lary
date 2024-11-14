@@ -26,35 +26,35 @@ public class UserSetting implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-
+    /**
+     * setting id
+     */
+    private Long sid;
+    /**
+     * uid
+     */
     private Long uid;
 
     /**
      * 粉丝列表是否展示
      */
-    private Boolean fanList;
+    private Integer fanList;
 
     /**
      * 勋章是否展示
      */
-    private Boolean medal;
+    private Integer medal;
 
     /**
      * 动态是否展示
      */
-    private Boolean dynamic;
+    private Integer dynamic;
 
     /**
      * 新消息提醒
      */
-    private Boolean newMessageNotice;
-
-    private Boolean isDelete;
+    private Integer newMessageNotice;
 
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
 
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

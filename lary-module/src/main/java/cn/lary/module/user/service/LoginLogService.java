@@ -26,7 +26,14 @@ public interface LoginLogService extends IService<LoginLog> {
 
     /**
      * 删除历史登录记录
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> clearHistory();
+
+    /**
+     * 创建 LoginLog,无需手动分配id
+     * @param log {@link LoginLog}
+     * @return OK
+     */
+    LoginLog build(LoginLog log);
 }

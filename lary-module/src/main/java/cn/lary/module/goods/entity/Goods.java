@@ -197,15 +197,13 @@ public class Goods implements Serializable {
      */
     private String tags;
 
-    private Boolean isDelete;
+    
 
     private String createBy;
 
     private String updateBy;
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 
-      @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
+      
 }

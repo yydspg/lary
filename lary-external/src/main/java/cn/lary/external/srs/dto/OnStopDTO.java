@@ -19,13 +19,13 @@ import lombok.Data;
  */
 @Data
 public class OnStopDTO {
-    @JsonProperty("server_id")
+    @JSONField(format="server_id")
     private String serverId;
 
-    @JsonProperty("client_id")
+    @JSONField(format="client_id")
     private String clientId;
 
-    @JsonProperty("action")
+    @JSONField(format="action")
     private String action;
 
     private String ip;
@@ -38,9 +38,9 @@ public class OnStopDTO {
 
     private String param;
 
-    @JsonProperty("stream_url")
+    @JSONField(format="stream_url")
     private String streamUrl;
 
-    @JsonProperty("stream_id")
+    @JSONField(format="stream_id")
     private String streamId;
 }

@@ -12,13 +12,13 @@ import java.util.Map;
 @Accessors(chain = true)
 public class DeviceAddResponseCacheDTO extends AbstractCacheDTO {
 
-    @JsonProperty("name")
+    @JSONField(format="name")
     private String name;
 
     private int flag;
 
     @NotNull
-    @JsonProperty("code")
+    @JSONField(format="code")
     private String code;
 
     public static DeviceAddResponseCacheDTO of(Map map) {

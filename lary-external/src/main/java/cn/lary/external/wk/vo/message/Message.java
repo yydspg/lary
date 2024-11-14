@@ -8,26 +8,26 @@ import lombok.Data;
 public class Message {
     private MessageHeader header;
     private byte setting;
-    @JsonProperty("message_id")
+    @JSONField(format="message_id")
     private long messageID;
     // 服务端消息 ID 全局唯一
-    @JsonProperty("message_idstr")
+    @JSONField(format="message_idstr")
     private String messageIDStr;
-    @JsonProperty("client_msg_no")
+    @JSONField(format="client_msg_no")
     private String clientMsgNo;
-    @JsonProperty("stream_no")
+    @JSONField(format="stream_no")
     private String streamNo;
-    @JsonProperty("stream_seq")
+    @JSONField(format="stream_seq")
     private int streamSeq;
-    @JsonProperty("stream_flag")
+    @JSONField(format="stream_flag")
     private byte streamFlag;
-    @JsonProperty("message_seq")
+    @JSONField(format="message_seq")
     private long messageSeq;
-    @JsonProperty("from_uid")
+    @JSONField(format="from_uid")
     private String fromUID;
-    @JsonProperty("channel_id")
+    @JSONField(format="channel_id")
     private String channelID;
-    @JsonProperty("channel_type")
+    @JSONField(format="channel_type")
     private byte channelType;
     private String topic;
     private int expire;

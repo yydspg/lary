@@ -19,18 +19,18 @@ import java.util.List;
 public interface GroupMemberService extends IService<GroupMember> {
 
 
-
+    GroupMember build(GroupMember dto);
     /**
      * 查询某种状态的用户
      * @param groupNo g
      * @param status s
-     * @return ok
+     * @return OK
      */
     ResponsePair<List<Long>> getMembersWithStatus(long groupNo, int status);
     /**
      * 退出群聊
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> quit(long groupId) ;
 
@@ -38,21 +38,21 @@ public interface GroupMemberService extends IService<GroupMember> {
      * 管理员强退
      * @param groupId g
      * @param uid u
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> quitByAdmin(long groupId, long uid);
 
     /**
      * 加入群聊
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> join(long groupId) ;
     /**
      * 管理员邀请加入群聊
      * @param groupId g
      * @param uid  u
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> joinByAdmin(long groupId, long uid) ;
 
@@ -68,7 +68,7 @@ public interface GroupMemberService extends IService<GroupMember> {
      * 设置用户为管理员
      * @param groupId g
      * @param uid 被设置的用户
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> setAdmin(long groupId, long uid);
 
@@ -76,7 +76,7 @@ public interface GroupMemberService extends IService<GroupMember> {
      * 移除管理员
      * @param groupId g
      * @param uid u
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> removeAdmin(long groupId, long uid);
 
@@ -90,14 +90,14 @@ public interface GroupMemberService extends IService<GroupMember> {
      * 转移群主
      * @param groupId g
      * @param uid 被转移用户
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> changeOwner(long groupId, long uid) ;
 
     /**
      * 移除成员
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> disband(long groupId) ;
 
@@ -119,7 +119,7 @@ public interface GroupMemberService extends IService<GroupMember> {
      * 封禁用户
      * @param groupId g
      * @param uid u
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> block(long groupId, long uid);
 }

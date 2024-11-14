@@ -6,7 +6,7 @@ import lombok.Data;
 @Data
 public class GroupDetailVO {
     
-    private Long groupId;
+    private long gid;
 
     /**
      * 群名字
@@ -16,12 +16,12 @@ public class GroupDetailVO {
     /**
      * 群主uid
      */
-    private Long creator;
+    private long creator;
 
     /**
      * 群状态
      */
-    private Integer status;
+    private int status;
 
     /**
      * 群禁言
@@ -36,12 +36,12 @@ public class GroupDetailVO {
     /**
      * 群人数
      */
-    private Integer groupNum;
+    private int groupNum;
 
     /**
      * 群类型 0. 普通群，1.超大群
      */
-    private Integer groupType;
+    private int groupType;
 
     /**
      * 群分类
@@ -63,20 +63,19 @@ public class GroupDetailVO {
      */
     private Boolean isAllowViewHistoryMsg;
     
-    public GroupDetailVO of(Group group) {
-        GroupDetailVO vo = new GroupDetailVO();
-        vo.setGroupId(group.getGroupId());
-        vo.setName(group.getName());
-        vo.setCreator(group.getCreator());
-        vo.setStatus(group.getStatus());
-        vo.setIsForbidden(group.getIsForbidden());
-        vo.setGroupAvatar(group.getGroupAvatar());
-        vo.setGroupNum(group.getGroupNum());
-        vo.setGroupType(group.getGroupType());
-        vo.setCategory(group.getCategory());
-        vo.setIsEnableInvite(group.getIsEnableInvite());
-        vo.setIsForbiddenAddFriend(group.getIsForbiddenAddFriend());
-        vo.setIsAllowViewHistoryMsg(group.getIsAllowViewHistoryMsg());
-        return vo;
+    public GroupDetailVO(Group group) {
+        setGid(group.getGid());
+        setName(group.getName());
+        setCreator(group.getCreator());
+        setStatus(group.getStatus());
+        setIsForbidden(group.getIsForbidden());
+        setGroupAvatar(group.getGroupAvatar());
+        setGroupNum(group.getGroupNum());
+        setGroupType(group.getGroupType());
+        setCategory(group.getCategory());
+        setIsEnableInvite(group.getIsEnableInvite());
+        setIsForbiddenAddFriend(group.getIsForbiddenAddFriend());
+        setIsAllowViewHistoryMsg(group.getIsAllowViewHistoryMsg());
+
     }
 }

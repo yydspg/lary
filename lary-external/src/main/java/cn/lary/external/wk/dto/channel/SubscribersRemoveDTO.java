@@ -7,7 +7,7 @@ import lombok.Data;
 import java.util.List;
 @Data
 public class SubscribersRemoveDTO extends WKChannel {
-    @JsonProperty("temp_subscriber")
+    @JSONField(format="temp_subscriber")
     private int tempSubscribers;
     private List<String> subscribers;
 }

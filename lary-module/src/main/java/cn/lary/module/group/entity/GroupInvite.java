@@ -66,6 +66,5 @@ public class GroupInvite implements Serializable {
     /**
      * 更新时间
      */
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
+    
 }

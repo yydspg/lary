@@ -22,6 +22,8 @@ import java.util.List;
  * @since 2024-07-29
  */
 public interface UserService extends IService<User> {
+
+
     /**
      * 登陆接口<br>
      * 如果从设备登陆,且为新设备,需要请求<br>
@@ -40,7 +42,7 @@ public interface UserService extends IService<User> {
     /**
      * 退出登陆<br>
      * 清理redis缓存
-     * @return ok
+     * @return OK
      */
      ResponsePair<Void> logout(HttpServletRequest request);
 
@@ -54,26 +56,26 @@ public interface UserService extends IService<User> {
     /**
      * 用户注册时的手机验证
      * @param phone 手机号
-     * @return ok
+     * @return OK
      */
      ResponsePair<Void> registerCode(String phone);
     /**
      * 用户注销时的手机验证
      * @param phone 手机号
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> destroyCode(String phone);
 
     /**
      * 刷新login的token<br>
      * 客户端的token刷新必须大于过期时间
-     * @return ok
+     * @return OK
      */
      ResponsePair<Void> refresh(HttpServletRequest request);
 
     /**
      * 注销用户
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> destroy(UserDestroyDTO dto);
 

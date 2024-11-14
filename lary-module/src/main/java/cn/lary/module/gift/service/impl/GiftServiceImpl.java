@@ -2,7 +2,7 @@ package cn.lary.module.gift.service.impl;
 
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
-import cn.lary.module.cache.component.GiftCacheComponent;
+import cn.lary.module.gift.component.GiftCacheComponent;
 import cn.lary.module.gift.entity.Gift;
 import cn.lary.module.gift.mapper.GiftMapper;
 import cn.lary.module.gift.service.GiftService;
@@ -11,7 +11,6 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import retrofit2.http.POST;
 
 import java.util.ArrayList;
 import java.util.List;

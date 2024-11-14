@@ -29,9 +29,5 @@ public class Event {
 
     private Integer version;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
 
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

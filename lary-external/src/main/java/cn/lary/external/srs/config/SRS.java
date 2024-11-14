@@ -2,8 +2,8 @@ package cn.lary.external.srs.config;
 
 public interface SRS {
 
-    interface CallBackStatus {
-        int ok = 0;
-        int fail = 1;
+    interface CALLBACK_STATS {
+        int OK = 0;
+        int FAIL = 1;
     }
 }

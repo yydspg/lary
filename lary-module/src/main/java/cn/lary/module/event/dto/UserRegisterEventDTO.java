@@ -18,7 +18,7 @@ public class UserRegisterEventDTO extends AbstractEventData {
 
     private String phone;
 
-    @JsonProperty("invite_code")
+    @JSONField(format="invite_code")
     private String inviteCode;
 
 

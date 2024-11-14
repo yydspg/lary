@@ -15,7 +15,7 @@ import retrofit2.http.Query;
 @RetrofitClient(baseUrl = "${wk.base.url}/channel")
 public interface WKChannelService {
     @POST
-    Response<Void> createOrUpdate(@Body ChannelCreateDTO channelCreateDTO);
+    Response<Void> createOrUpdate(@Body WKChannelCreateDTO WKChannelCreateDTO);
     @POST("info")
     Response<Void> updateOrAddInfo(@Body WKChannelInfoDTO channelInfoReq);
     @POST("delete")

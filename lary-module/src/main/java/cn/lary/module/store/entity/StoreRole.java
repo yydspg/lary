@@ -53,11 +53,5 @@ public class StoreRole implements Serializable {
      */
     private String description;
 
-    private Boolean isDelete;
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
-
-      @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

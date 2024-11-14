@@ -16,6 +16,10 @@ import java.util.List;
  * @since 2024-08-16
  */
 public interface StreamRecordService extends IService<StreamRecord> {
+
+
+    StreamRecord build(StreamRecord dto);
+
     /**
      * 分页查询
      * @param page 页码

@@ -6,10 +6,10 @@ import lombok.Data;
 @Data
 public class DeviceAddDTO {
 
-    @JsonProperty("name")
+    @JSONField(format="name")
     private String name;
 
-    @JsonProperty("flag")
+    @JSONField(format="flag")
     private int flag;
 
     private long uid;

@@ -17,7 +17,7 @@ public class GiftCollectionVO {
 
     private String avatar;
 
-    @JsonProperty("item")
+    @JSONField(format="item")
     private List<GiftVO> gifts;
 
 

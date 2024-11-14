@@ -28,6 +28,11 @@ public class LoginLog implements Serializable {
     private Long id;
 
     /**
+     * login id
+     */
+    private Long lid;
+
+    /**
      * 用户id
      */
     private Long uid;
@@ -48,14 +53,13 @@ public class LoginLog implements Serializable {
     private Integer flag;
 
     private Integer level;
-
-    private Boolean isDelete;
-
-
     /**
-     * 创建时间
+     * 状态
      */
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+    private Integer status;
+    /**
+     * create time
+     */
+    private Long createAt;
 
 }

@@ -26,7 +26,7 @@ public class RaffleDTO {
     /**
      * 每份奖品物品数目，如果为vc,此项无意义
      */
-    @JsonProperty("item_num")
+    @JSONField(format="item_num")
     private Integer itemNum;
 
     /**
@@ -42,10 +42,10 @@ public class RaffleDTO {
      */
     private Long duration;
 
-    @JsonProperty("is_fan")
+    @JSONField(format="is_fan")
     private Boolean isFan;
 
-    @JsonProperty("fan_level")
+    @JSONField(format="fan_level")
     private Integer fanLevel;
     /**
      * 发送消息，如果为null 表示不发送

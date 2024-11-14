@@ -27,7 +27,7 @@ public class GroupMemberController {
      * 查询某种状态的用户
      * @param groupNo g
      * @param status s
-     * @return ok
+     * @return OK
      */
     @GetMapping("/members/status")
     public SingleResponse<List<Long>> getMembersWithStatus(long groupNo, int status){
@@ -40,7 +40,7 @@ public class GroupMemberController {
     /**
      * 退出群聊
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     @GetMapping("/quit")
     public SingleResponse<Void> quit(@RequestParam @NotNull long groupId) {
@@ -55,7 +55,7 @@ public class GroupMemberController {
      * 管理员强退
      * @param groupId g
      * @param uid u
-     * @return ok
+     * @return OK
      */
     @GetMapping("/admin/quit")
     public SingleResponse<Void> quitByAdmin(@RequestParam @NotNull long groupId,
@@ -70,7 +70,7 @@ public class GroupMemberController {
     /**
      * 加入群聊
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     @GetMapping("/join")
     public SingleResponse<Void> join(@RequestParam @NotNull long groupId) {
@@ -84,7 +84,7 @@ public class GroupMemberController {
      * 管理员邀请加入群聊
      * @param groupId g
      * @param uid  u
-     * @return ok
+     * @return OK
      */
     @GetMapping("/admin/join")
     public SingleResponse<Void> joinByAdmin(@RequestParam @NotNull long groupId,
@@ -116,7 +116,7 @@ public class GroupMemberController {
      * 设置用户为管理员
      * @param groupId g
      * @param uid 被设置的用户
-     * @return ok
+     * @return OK
      */
     @GetMapping("/admin/set")
     public SingleResponse<Void> setAdmin(@RequestParam @NotNull long groupId,
@@ -132,7 +132,7 @@ public class GroupMemberController {
      * 移除管理员
      * @param groupId g
      * @param uid u
-     * @return ok
+     * @return OK
      */
     @GetMapping("/admin/remove")
     public SingleResponse<Void> removeAdmin(@RequestParam @NotNull long groupId,
@@ -161,7 +161,7 @@ public class GroupMemberController {
      * 转移群主
      * @param groupId g
      * @param uid 被转移用户
-     * @return ok
+     * @return OK
      */
     @GetMapping("/owner")
     public SingleResponse<Void> changeOwner(@RequestParam @NotNull long groupId,
@@ -178,7 +178,7 @@ public class GroupMemberController {
      * 封禁用户
      * @param groupId g
      * @param uid u
-     * @return ok
+     * @return OK
      */
     @GetMapping("/block")
     public SingleResponse<Void> block(@RequestParam @NotNull long groupId,
@@ -193,7 +193,7 @@ public class GroupMemberController {
      * 修改群成员对群聊的设置<br>
      * 区别于群管理员对群本身的设置<br>
      * @param dto {@link GroupMemberSettingDTO}
-     * @return ok
+     * @return OK
      */
     @PostMapping("/setting")
     public SingleResponse<Void> setMemberGroupSetting(@RequestBody @Valid GroupMemberSettingDTO dto){

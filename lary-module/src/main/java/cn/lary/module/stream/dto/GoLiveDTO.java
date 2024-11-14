@@ -11,17 +11,20 @@ public class GoLiveDTO {
 
     @NotNull
     private String province;
-
-    @JsonProperty("device_id")
-    private Integer deviceId;
+    /**
+     * 设备id
+     */
+    private Long did;
 
     @NotNull(message = "device_flag is null")
-    @JsonProperty("device_flag")
-    private int deviceFlag;
+    private int flag;
 
-    @JsonProperty("type")
     @NotNull
-    private Integer type;
+    private Integer tag;
 
     private String remark;
+    /*
+    直播间id
+     */
+    private Long rid;
 }

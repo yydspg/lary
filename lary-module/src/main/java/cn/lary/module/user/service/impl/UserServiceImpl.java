@@ -49,24 +49,20 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
-    private final CacheComponent cacheComponent;
     private final DeviceService deviceService;
-    private final KVBuilder kvBuilder;
-    private final RedisBusinessConfig redisBusinessConfig;
     private final MessageService messageService;
     private final EventService eventService;
     private final UserSettingService userSettingService;
-//    private final WalletService walletService;
     private final TransactionTemplate transactionTemplate;
 
     @Override
     public ResponsePair<String> login(LoginDTO dto) {
         String password = StringKit.MD5(StringKit.MD5(dto.getPassword()));
         User user = lambdaQuery()
+                .select(User::getUid)
                 .eq(User::getUid,dto.getUid())
-                .eq(User::getIsDelete,false)
                 .one();
-        if (user == null) {
+        if (user == null ) {
             return BusinessKit.fail("user not exist,please register first");
         }
         long uid = user.getUid();
@@ -92,14 +88,14 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 return BusinessKit.fail("system error");
             }
             DeviceLoginCacheDTO cache = DeviceLoginCacheDTO.of(map);
-           if (cache.getId() == dto.getId()
+           if (cache.getId() == dto.getDid()
                 || StringKit.same(cache.getName(),dto.getName())
                 || cache.getFlag() == dto.getFlag()) {
                return BusinessKit.fail("login repeated");
            }
             needRemovePreviousLogged = true;
         }
-        Device device = deviceService.getDevice(dto.getUid(), dto.getId(), dto.getName(), dto.getFlag());
+        Device device = deviceService.getDevice(dto.getDid(), dto.getName(), dto.getFlag());
         if (device == null) {
             if (StringKit.isEmpty(dto.getCode()) && deviceLevel == LARY.DEVICE.LEVEL.SLAVE) {
                 return BusinessKit.fail("cmd:[login on new device],phone:"+user.getPhone());
@@ -126,7 +122,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                         .setName(dto.getName())
                         .setLevel(deviceLevel);
                 deviceService.save(device);
-                cacheComponent.delete(kvBuilder.addDeviceK(uid,dto.getPhone()));
+//                cacheComponent.delete(kvBuilder.addDeviceK(uid,dto.getPhone()));
             }
         }
         DeviceLoginCacheDTO deviceLoginCacheDTO = new DeviceLoginCacheDTO()
@@ -137,7 +133,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         if (needRemovePreviousLogged) {
             forceLogout(uid, dto.getFlag(),oldToken);
         }
-        deviceService.buildDeviceLoginCache(uid,device.getFlag(),deviceLoginCacheDTO);
+//        deviceService.buildDeviceLoginCache(uid,device.getFlag(),deviceLoginCacheDTO);
         String token = buildUserLoginCache(user.getUid(),user.getName(), user.getRole(), device.getFlag());
         messageService.updateToken(new UserLoginUpdateTokenDTO()
                 .setUid(uid)
@@ -147,17 +143,18 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
         deviceService.lambdaUpdate()
                 .set(Device::getLastLogin, LocalDateTime.now())
                 .eq(Device::getUid, uid)
-                .eq(Device::getId,device.getId());
+                .eq(Device::getId,device.getId())
+                .update();
         return BusinessKit.ok(token);
     }
 
     @Override
     public ResponsePair<String> register(RegisterDTO dto) {
-        String verifyCode = cacheComponent.get(kvBuilder.userRegisterK(dto.getPhone()));
-        if(StringKit.diff(verifyCode,dto.getCode())) {
-            return BusinessKit.fail("verify code error");
-        }
-        cacheComponent.delete(kvBuilder.userRegisterK(dto.getPhone()));
+//        String verifyCode = cacheComponent.get(kvBuilder.userRegisterK(dto.getPhone()));
+//        if(StringKit.diff(verifyCode,dto.getCode())) {
+//            return BusinessKit.FAIL("verify code error");
+//        }
+//        cacheComponent.delete(kvBuilder.userRegisterK(dto.getPhone()));
         User user = new User();
         String name = dto.getName();
         if (StringKit.isNotEmpty(name)) {
@@ -224,7 +221,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public ResponsePair<Void> logout(HttpServletRequest request) {
         TokenPair pair = of(request);
         if (pair == null) {
-            return BusinessKit.fail("logout fail");
+            return BusinessKit.fail("logout FAIL");
         }
         forceLogout(pair.uid,pair.flag,pair.token);
         return BusinessKit.ok();
@@ -259,7 +256,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public ResponsePair<Void> refresh(HttpServletRequest request) {
         TokenPair pair = of(request);
         if (pair == null) {
-            return BusinessKit.fail("refresh fail");
+            return BusinessKit.fail("refresh FAIL");
         }
         cacheComponent.renewal(kvBuilder.userLoginTokenK(pair.token), redisBusinessConfig.getLoginUserTokenExpire());
         cacheComponent.renewal(kvBuilder.userLoginK(pair.uid,pair.flag), redisBusinessConfig.getLoginUserExpire());
@@ -288,7 +285,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 //                    .set(Wallet::getIsDelete,true)
 //                    .eq(Wallet::getUid,uid);
             userSettingService.lambdaUpdate()
-                    .set(UserSetting::getIsDelete,true)
+                    .set(UserSetting::get,true)
                     .eq(UserSetting::getUid,uid);
             lambdaUpdate()
                     .set(User::getIsDelete,true)
@@ -310,7 +307,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
                 .one();
         if (user == null) {
             log.error("search user error,uid:{}", RequestContext.uid());
-            return BusinessKit.fail("query fail");
+            return BusinessKit.fail("query FAIL");
         }
         return BusinessKit.ok(new UserVO(user));
     }

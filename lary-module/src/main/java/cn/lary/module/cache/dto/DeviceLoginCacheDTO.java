@@ -12,14 +12,14 @@ import java.util.Map;
 @Accessors(chain = true)
 public class DeviceLoginCacheDTO extends AbstractCacheDTO{
 
-    @JsonProperty("id")
+    @JSONField(format="id")
     private long id;
 
     @NotNull(message = "device_name is null")
-    @JsonProperty("name")
+    @JSONField(format="name")
     private String name;
 
-    @JsonProperty("flag")
+    @JSONField(format="flag")
     @NotNull(message = "device flag is null")
     private int flag;
 

@@ -37,7 +37,7 @@ public class StoreGoodsView implements Serializable {
     /**
      * 店铺ID
      */
-    private Long storeId;
+    private Long sid;
 
     /**
      * 库索引
@@ -84,6 +84,5 @@ public class StoreGoodsView implements Serializable {
      */
     private String smallAvatar;
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 }

@@ -5,8 +5,8 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.JSONKit;
 import cn.lary.common.kit.StringKit;
-import cn.lary.module.cache.component.LiveCacheComponent;
-import cn.lary.module.cache.component.RaffleCacheComponent;
+import cn.lary.module.stream.component.LiveCacheComponent;
+import cn.lary.module.raffle.component.RaffleCacheComponent;
 import cn.lary.module.cache.dto.LiveCache;
 import cn.lary.module.common.service.EventService;
 import cn.lary.module.event.dto.RafflePublishEventDTO;
@@ -14,7 +14,7 @@ import cn.lary.module.message.dto.stream.CreateRaffleNotifyDTO;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.raffle.dto.RaffleEventDTO;
 import cn.lary.module.raffle.entity.RaffleEvent;
-import cn.lary.module.raffle.entity.RaffleEventCache;
+import cn.lary.module.raffle.dto.RaffleEventCache;
 import cn.lary.module.raffle.mapper.RaffleEventMapper;
 import cn.lary.module.raffle.service.RaffleEventService;
 import cn.lary.module.raffle.vo.RaffleEventVO;
@@ -53,7 +53,7 @@ public class RaffleEventServiceImpl extends ServiceImpl<RaffleEventMapper, Raffl
         long uid= RequestContext.uid();
         LiveCache cache = liveCacheComponent.getLive(uid);
         if (cache == null) {
-            log.error("create raffle fail,no live info, uid:{}", uid);
+            log.error("create raffle FAIL,no live info, uid:{}", uid);
             return BusinessKit.fail("no live info");
         }
         RaffleEventCache raffleCache = raffleCacheComponent.getRaffle(uid);

@@ -16,6 +16,8 @@ import com.baomidou.mybatisplus.extension.service.IService;
  */
 public interface UserSettingService extends IService<UserSetting> {
 
+    UserSetting build(UserSetting dto);
+
     /**
      * 更新用户设置
      * @param dto {@link UserSettingUpdateDTO}

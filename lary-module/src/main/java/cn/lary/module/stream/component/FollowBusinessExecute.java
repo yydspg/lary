@@ -22,7 +22,7 @@ public class FollowBusinessExecute {
     /**
      * 关注用户
      * @param dto {@link FollowDTO}
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> follow( FollowDTO dto) {
         return followService.follow(dto);
@@ -31,7 +31,7 @@ public class FollowBusinessExecute {
     /**
      * 取消关注
      * @param toUid t
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> unfollow( long toUid) {
         return followService.unfollow(toUid);
@@ -49,7 +49,7 @@ public class FollowBusinessExecute {
     /**
      * 拉黑
      * @param toUid t
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> block( long toUid) {
         return followService.block(toUid);
@@ -58,7 +58,7 @@ public class FollowBusinessExecute {
     /**
      * 取消拉黑
      * @param toUid t
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> unblock( long toUid) {
        return followService.unblock(toUid);

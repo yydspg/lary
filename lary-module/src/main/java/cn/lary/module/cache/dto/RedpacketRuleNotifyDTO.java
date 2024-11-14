@@ -7,7 +7,7 @@ public class RedpacketRuleNotifyDTO {
 
     private int category;
 
-    private long uid;
+    private long eid;
 
     private int limit;
 }

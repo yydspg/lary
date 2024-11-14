@@ -26,7 +26,7 @@ public class RaffleExecute {
     /**
      * 创建直播抽奖事件
      * @param dto {@link RaffleEventDTO}
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> raffle(RaffleEventDTO dto) {
         return raffleEventService.raffle(dto);
@@ -44,7 +44,7 @@ public class RaffleExecute {
     /**
      * 参加抽奖活动
      * @param toUid anchor uid
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> join(long toUid) {
         return raffleInvolvedService.join(toUid);

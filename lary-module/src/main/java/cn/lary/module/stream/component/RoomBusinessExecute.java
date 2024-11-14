@@ -26,8 +26,8 @@ public class RoomBusinessExecute {
      * @param ip ip
      * @return {@link JoinLiveVO}
      */
-    public ResponsePair<JoinLiveVO> join( long toUid, String ip){
-            return roomService.join(toUid,ip);
+    public ResponsePair<JoinLiveVO> join( long toUid,long sid, String ip){
+            return roomService.join(toUid,sid,ip);
     }
 
     /**
@@ -50,7 +50,7 @@ public class RoomBusinessExecute {
 
     /**
      * 离开直播间
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> leave() {
         return roomService.leave();
@@ -63,7 +63,7 @@ public class RoomBusinessExecute {
      * 就要维护srs节点，所以现在的情况是在 mq检查连接的时候，判断用户关系
      * todo : 存在直接封掉用户问题，必须要将控制权反转，所以必须要维护这个关系
      * @param toUid 被封禁用户
-     * @return ok
+     * @return OK
      */
     @Deprecated
     public ResponsePair<Void> block(long uid, long toUid) {

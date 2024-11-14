@@ -12,7 +12,8 @@ import java.util.List;
 @Data
 public class CreateGroupSuccessNotifyDTO extends MessageSendDTO {
 
-    public CreateGroupSuccessNotifyDTO build(long creator,long groupId, List<Long> members) {
+    public CreateGroupSuccessNotifyDTO() {}
+    public CreateGroupSuccessNotifyDTO(long creator,long groupId, List<Long> members) {
         setHeader(new MessageHeader()
                 .setNoPersist(1)
                 .setRedDot(0));
@@ -22,6 +23,5 @@ public class CreateGroupSuccessNotifyDTO extends MessageSendDTO {
         String content = "你加入了";
         setPayload(content.getBytes(StandardCharsets.UTF_8));
         setSubscribers(members);
-        return this;
     }
 }

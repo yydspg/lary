@@ -12,13 +12,17 @@ import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.cache.dto.JoinLiveCacheDTO;
 import cn.lary.module.cache.dto.LiveCache;
+import cn.lary.module.stream.component.LiveCacheComponent;
 import cn.lary.module.stream.entity.StreamRecord;
 import cn.lary.module.stream.service.StreamRecordService;
+import cn.lary.module.user.component.UserCache;
+import cn.lary.module.user.component.UserCacheComponent;
 import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -28,46 +32,51 @@ import java.util.concurrent.TimeUnit;
 @RequiredArgsConstructor
 public class SRSCallbackExecute implements SRSCallback {
 
-    private final CacheComponent cacheComponent;
+
     private final EventService eventService;
-    private final KVBuilder kvBuilder;
     private final StreamRecordService streamRecordService;
-    //external
+    private final LiveCacheComponent liveCacheComponent;
+    private final TransactionTemplate transactionTemplate;
+    private final UserCacheComponent userCacheComponent;
 
     @Override
     public int onPublish(OnPublishDTO dto) {
         Map<String, String> args = dto.parseParams(dto.getParam());
         String token = args.get("token");
-        long uid = Integer.parseInt( args.get("uid"));
+        long sid = Long.parseLong( args.get("sid"));
         String eventId = args.get("event");
-
-        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.goLiveK(uid));
-        if (map == null) {
-            return SRS.CallBackStatus.fail;
+        LiveCache cache = liveCacheComponent.getLive(sid);
+        if (cache == null) {
+            return SRS.CALLBACK_STATS.FAIL;
         }
-        LiveCache cache = LiveCache.of(map);
-        // check ip
         if (StringKit.diff(dto.getIp(), cache.getIp())) {
-            return SRS.CallBackStatus.fail;
+            return SRS.CALLBACK_STATS.FAIL;
         }
-        // check token
         if (StringKit.diff(token, cache.getSrsToken())) {
-            return SRS.CallBackStatus.fail;
+            return SRS.CALLBACK_STATS.FAIL;
         }
-
-        //update cache
         LiveCache updateRecord = new LiveCache()
+                .setIp(cache.getIp())
+                .setSrsToken(token)
+                .setSid(cache.getSid())
+                .setRid(cache.getRid())
+                .setCid(cache.getCid())
+                .setLevel(cache.getLevel())
+                .setIdentify(cache.getIdentify())
                 .setSrsClientId(dto.getClientId())
-                .setSrsStreamId(dto.getStreamId())
+                .setSrsSid(dto.getStreamId())
                 .setSrsTcUrl(dto.getTcUrl())
                 .setSrsServerId(dto.getServerId())
                 .setSrsStreamUrl(dto.getStreamUrl());
-        cacheComponent.setHash(kvBuilder.goLiveK(uid),kvBuilder.goLiveV(updateRecord));
-        streamRecordService.update(new LambdaUpdateWrapper<StreamRecord>().eq(StreamRecord::getStreamId,cache.getStreamId()).set(StreamRecord::getStatus, LARY.Stream.Status.up));
-        // close event
-        eventService.commit(Integer.parseInt(eventId));
-        // update stream record status
-        return SRS.CallBackStatus.ok;
+        liveCacheComponent.setLive(sid, updateRecord);
+        transactionTemplate.executeWithoutResult(status -> {
+            streamRecordService.lambdaUpdate()
+                    .set(StreamRecord::getStatus, LARY.STREAM.STATUS.UP)
+                    .eq(StreamRecord::getSid,cache.getSid())
+                    .update();
+            eventService.commit(Integer.parseInt(eventId));
+        });
+        return SRS.CALLBACK_STATS.OK;
     }
 
     @Override
@@ -77,61 +86,54 @@ public class SRSCallbackExecute implements SRSCallback {
         Map<String, String> args = dto.parseParams(dto.getParam());
 
         String token = args.get("token");
-        long uid = Integer.parseInt( args.get("uid"));
+        long sid = Integer.parseInt( args.get("sid"));
         String eventId = args.get("event");
-        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.goLiveK(uid));
-        LiveCache cache = LiveCache.of(map);
-
-        // check ip
+        LiveCache cache = liveCacheComponent.getLive(sid);
         if (StringKit.diff(dto.getIp(), cache.getIp())) {
-            log.error("srs unpublish fail when check ip:{},uid:{}",dto.getIp(),uid);
-            return SRS.CallBackStatus.fail;
+            log.error("srs unpublish FAIL when check ip:{},uid:{}",dto.getIp(),sid);
+            return SRS.CALLBACK_STATS.FAIL;
         }
-        // check token
         if (StringKit.diff(token, cache.getSrsToken())) {
-            log.error("srs unpublish fail when check token:{},uid:{}",token,uid);
-            return SRS.CallBackStatus.fail;
+            log.error("srs unpublish FAIL when check token:{},uid:{}",token,sid);
+            return SRS.CALLBACK_STATS.FAIL;
         }
-        cacheComponent.delete(kvBuilder.goLiveK(uid));
-        // close event
-        eventService.commit(Integer.parseInt(eventId));
-       return SRS.CallBackStatus.ok;
+        eventService.commit(Long.parseLong(eventId));
+       return SRS.CALLBACK_STATS.OK;
     }
 
     @Override
     public int onPlay(OnPlayDTO dto) {
         Map<String, String> args = dto.parseParams(dto.getParam());
         String token = args.get("token");
-        long uid = Integer.parseInt( args.get("uid"));
-        Map<Object, Object> map = cacheComponent.getHash(kvBuilder.joinLiveK(uid));
-        if (map == null) {
-            return SRS.CallBackStatus.fail;
+        long sid = Long.parseLong( args.get("sid"));
+        long uid = Long.parseLong( args.get("uid"));
+        LiveCache live = liveCacheComponent.getLive(sid);
+        if (live == null) {
+            return SRS.CALLBACK_STATS.FAIL;
         }
-        JoinLiveCacheDTO cache = JoinLiveCacheDTO.of(map);
-        // check ip
+        UserCache cache = userCacheComponent.getData(uid);
+
         if (StringKit.diff(dto.getIp(), cache.getIp())) {
-            return SRS.CallBackStatus.fail;
+            return SRS.CALLBACK_STATS.FAIL;
         }
-        // check token
-        if (StringKit.diff(token, cache.getSrsToken())) {
-            return SRS.CallBackStatus.fail;
+        if (StringKit.diff(token, cache.getToken())) {
+            return SRS.CALLBACK_STATS.FAIL;
         }
-        // set data to cache
-        JoinLiveCacheDTO updateRecord = new JoinLiveCacheDTO()
+        UserCache updateRecord = new UserCache(cache)
+                .setSrsStreamId(dto.getStreamId())
                 .setSrsClientId(dto.getClientId())
                 .setSrsServerId(dto.getServerId());
-        long expire = 30;
-        cacheComponent.setHash(kvBuilder.joinLiveK(uid),kvBuilder.joinLiveV(updateRecord),expire, TimeUnit.MINUTES);
-       return SRS.CallBackStatus.ok;
+        userCacheComponent.setData(uid, updateRecord);
+        return SRS.CALLBACK_STATS.OK;
     }
 
     /**
      * 直接返回，对redis内存的清理都在 业务上，不然还要维护这个长事件
      * @param dto {@link OnStopDTO}
-     * @return ok
+     * @return OK
      */
     @Override
     public int onStop(OnStopDTO dto) {
-        return SRS.CallBackStatus.ok;
+        return SRS.CALLBACK_STATS.OK;
     }
 }

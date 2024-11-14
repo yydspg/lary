@@ -1,8 +1,8 @@
 package cn.lary.module.stream.vo;
 
-import cn.lary.module.raffle.entity.RaffleEventCache;
-import cn.lary.module.cache.dto.RedPacketCacheDTO;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import cn.lary.module.raffle.dto.RaffleEventCache;
+import cn.lary.module.redpacket.entity.RedpacketEventCache;
+import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
@@ -18,9 +18,11 @@ public class JoinLiveVO {
      */
     private String token;
 
-    @JsonProperty("raffle")
+    @JSONField(format="raffle")
     private RaffleEventCache raffle;
-    @JsonProperty("redpacket")
-    private RedPacketCacheDTO redPacket;
+
+
+    @JSONField(format="redpacket")
+    private RedpacketEventCache redPacket;
 
 }

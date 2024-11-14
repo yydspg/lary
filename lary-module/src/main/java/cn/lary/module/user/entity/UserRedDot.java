@@ -26,6 +26,10 @@ public class UserRedDot implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
+    /**
+     * red dot id
+     */
+    private Long rid;
 
     private Long uid;
 
@@ -35,12 +39,7 @@ public class UserRedDot implements Serializable {
 
     private Boolean isDot;
 
-    private Boolean isDelete;
+    private Long createAt;
 
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
-
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

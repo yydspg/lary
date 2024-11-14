@@ -28,6 +28,10 @@ public class FollowSetting implements Serializable {
     private Long id;
 
     /**
+     * 设置id
+     */
+    private Long fid;
+    /**
      * 用户id
      */
     private Long uid;
@@ -50,11 +54,7 @@ public class FollowSetting implements Serializable {
     /**
      * 是否删除
      */
-    private Boolean isDelete;
+    
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
 
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

@@ -80,11 +80,9 @@ public class StoreMenu implements Serializable {
      */
     private String permission;
 
-    private Boolean isDelete;
+    
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 
-      @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
+      
 }

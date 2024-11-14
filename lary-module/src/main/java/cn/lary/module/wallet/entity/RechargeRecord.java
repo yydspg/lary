@@ -27,10 +27,15 @@ public class RechargeRecord implements Serializable {
 
 
     /**
-     * 充值id，充值编号
+     *
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
+
+    /**
+     * 充值id
+     */
+    private Long cid;
 
     /**
      * 用户uid
@@ -80,18 +85,12 @@ public class RechargeRecord implements Serializable {
     /**
      * 充值事件id
      */
-    private Long eventId;
+    private Long eid;
     /**
      * 支付来源
      */
     private Integer payway;
 
-    private Boolean isDelete;
 
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
-
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

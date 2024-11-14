@@ -10,6 +10,7 @@ import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.common.config.RedisBusinessConfig;
+import cn.lary.module.id.LaryIDBuilder;
 import cn.lary.module.user.dto.DeviceAddDTO;
 import cn.lary.module.cache.dto.DeviceAddResponseCacheDTO;
 import cn.lary.module.cache.dto.DeviceLoginCacheDTO;
@@ -21,6 +22,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -39,59 +41,72 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> implements DeviceService {
 
-    private final CacheComponent cacheComponent;
-    private final RedisBusinessConfig redisBusinessConfig;
-    private final KVBuilder kvBuilder;
+
+    private final LaryIDBuilder builder;
+    private final TransactionTemplate transactionTemplate;
+
+    @Override
+    public Device build(Device dto) {
+        dto.setDid(builder.next());
+        save(dto);
+        return dto;
+    }
 
     @Override
     public ResponsePair<Void> removeDevice(int deviceId) {
+        return transactionTemplate.execute(status -> {
+            Device device = lambdaQuery()
+                    .select(Device::getUid)
+                    .select(Device::getId)
+                    .eq(Device::getDid, deviceId)
+                    .eq(Device::getUid, RequestContext.uid())
+                    .one();
+            if (device == null || device.getStatus() == LARY.CORE.STATUS.REMOVE) {
+                return BusinessKit.ok();
+            }
+            lambdaUpdate()
+                    .set(Device::getStatus, LARY.CORE.STATUS.REMOVE)
+                    .eq(Device::getId, deviceId)
+                    .eq(Device::getUid, RequestContext.uid());
+            return BusinessKit.ok();
+        });
+    }
+
+//    @Override
+//    public void removeDeviceLoginCache(long uid,int flag){
+//        cacheComponent.delete(kvBuilder.deviceLoginK(uid, flag));
+//    }
+//
+//    @Override
+//    public void renewalDeviceLoginCache(long uid, int flag) {
+//        cacheComponent.renewal(kvBuilder.deviceLoginK(uid,flag), redisBusinessConfig.getLoginDeviceCacheExpire());
+//    }
+//
+//    @Override
+//    public void buildDeviceLoginCache(long uid,int flag, DeviceLoginCacheDTO dto) {
+//        cacheComponent.setHash(kvBuilder.deviceLoginK(uid,flag),
+//                kvBuilder.deviceLoginV(dto), redisBusinessConfig.getLoginDeviceCacheExpire());
+//    }
+
+    @Override
+    public Device getDevice(long deviceId, String name, int flag) {
+        long uid = RequestContext.uid();
         Device device = lambdaQuery()
                 .select(Device::getUid)
-                .select(Device::getId)
-                .eq(Device::getId, deviceId)
-                .eq(Device::getUid, RequestContext.uid())
-                .one();
-        if (device == null || device.getIsDelete()) {
-            return BusinessKit.ok();
-        }
-        lambdaUpdate()
-                .set(Device::getIsDelete, true)
-                .eq(Device::getId, deviceId)
-                .eq(Device::getUid, RequestContext.uid());
-        return BusinessKit.ok();
-    }
-
-    @Override
-    public void removeDeviceLoginCache(long uid,int flag){
-        cacheComponent.delete(kvBuilder.deviceLoginK(uid, flag));
-    }
-
-    @Override
-    public void renewalDeviceLoginCache(long uid, int flag) {
-        cacheComponent.renewal(kvBuilder.deviceLoginK(uid,flag), redisBusinessConfig.getLoginDeviceCacheExpire());
-    }
-
-    @Override
-    public void buildDeviceLoginCache(long uid,int flag, DeviceLoginCacheDTO dto) {
-        cacheComponent.setHash(kvBuilder.deviceLoginK(uid,flag),
-                kvBuilder.deviceLoginV(dto), redisBusinessConfig.getLoginDeviceCacheExpire());
-    }
-
-    @Override
-    public Device getDevice(long uid,long deviceId, String name, int flag) {
-        Device device = lambdaQuery()
-                .select(Device::getId)
-                .eq(Device::getUid, uid)
                 .eq(Device::getId, deviceId)
                 .one();
-        if (device != null) {
+
+        if (device != null && device.getUid() == uid) {
             return device;
+        }
+        if (device != null) {
+            return null;
         }
         // deep search
         List<Device> devices = lambdaQuery()
-                .select(Device::getId)
+                .select(Device::getId,Device::getName)
                 .select(Device::getUid)
-                .select(Device::getName)
+                .select()
                 .select(Device::getFlag)
                 .eq(Device::getUid, RequestContext.uid())
                 .list();
@@ -117,8 +132,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             log.error("no devices found,uid:{}",uid);
             return BusinessKit.fail("no devices found");
         }
-        Map<Object, Object> pcLoginData = cacheComponent.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.PC));
-        Map<Object, Object> appLoginData = cacheComponent.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.APP));
+//        Map<Object, Object> pcLoginData = cacheComponent.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.PC));
+//        Map<Object, Object> appLoginData = cacheComponent.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.APP));
         if (pcLoginData == null && appLoginData == null) {
             log.error("no login devices found when search landing device,uid:{}",uid);
             return BusinessKit.fail("no login devices found");
@@ -148,16 +163,16 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         return BusinessKit.ok(vos);
     }
 
-    @Override
-    public ResponsePair<Void> getAddDeviceSmsCode(DeviceAddDTO dto) {
-        String token = SmsCodeKit.getToken();
-        DeviceAddResponseCacheDTO data = new DeviceAddResponseCacheDTO()
-                .setCode(token)
-                .setName(dto.getName())
-                .setFlag(dto.getFlag());
-        cacheComponent.setHash(kvBuilder.addDeviceK(dto.getUid(),dto.getPhone())
-                ,kvBuilder.addDeviceV(data), redisBusinessConfig.getSmsAddDeviceExpire());
-        return BusinessKit.ok();
-    }
+//    @Override
+//    public ResponsePair<Void> getAddDeviceSmsCode(DeviceAddDTO dto) {
+//        String token = SmsCodeKit.getToken();
+//        DeviceAddResponseCacheDTO data = new DeviceAddResponseCacheDTO()
+//                .setCode(token)
+//                .setName(dto.getName())
+//                .setFlag(dto.getFlag());
+//        cacheComponent.setHash(kvBuilder.addDeviceK(dto.getUid(),dto.getPhone())
+//                ,kvBuilder.addDeviceV(data), redisBusinessConfig.getSmsAddDeviceExpire());
+//        return BusinessKit.OK();
+//    }
 
 }

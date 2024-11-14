@@ -12,9 +12,9 @@ public class UpdateTokenDTO {
 
     private String token;
 
-    @JsonProperty("device_flag")
+    @JSONField(format="device_flag")
     private int flag;
 
-    @JsonProperty("device_level")
+    @JSONField(format="device_level")
     private int level;
 }

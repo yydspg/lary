@@ -106,8 +106,7 @@ public class RedpacketEvent implements Serializable {
      */
     private Long duration;
 
-    private Boolean isDelete;
+    
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 }

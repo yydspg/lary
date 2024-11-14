@@ -26,7 +26,7 @@ public interface GroupService extends IService<Group> {
      * 检查是否达到最大创建值
      * @param uid u
      * @param now n
-     * @return ok
+     * @return OK
      */
     boolean  isReachCreateLimit(long uid, LocalDateTime now) ;
 
@@ -36,20 +36,20 @@ public interface GroupService extends IService<Group> {
      * @param dto {@link CreateGroupDTO}
      * @return {@link CreateGroupVO}
      */
-    ResponsePair<CreateGroupVO> create(CreateGroupDTO dto) ;
+    ResponsePair<CreateGroupVO> build(CreateGroupDTO dto) ;
 
 
     /**
      * 解散群聊
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> disband(long groupId) ;
 
     /**
      * 全体成员禁言
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> forbidden(long groupId) ;
 

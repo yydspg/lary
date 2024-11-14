@@ -67,7 +67,7 @@ public class RechargePayment extends AbstractBusinessPayment {
             RechargeEventDTO eventDTO = new RechargeEventDTO(uid, amount, rechargeRecord.getId());
             long eventId = eventService.begin(eventDTO);
             rechargeRecordService.lambdaUpdate()
-                    .set(RechargeRecord::getEventId, eventId)
+                    .set(RechargeRecord::getEid, eventId)
                     .eq(RechargeRecord::getId, rechargeRecord.getId());
             return rechargeRecord;
         });

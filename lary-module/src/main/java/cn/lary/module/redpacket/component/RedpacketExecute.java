@@ -28,7 +28,7 @@ public class RedpacketExecute {
     /**
      * 创建直播红包事件
      * @param dto {@link RedpacketEventBuildDTO}
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> redpacket(RedpacketEventBuildDTO dto) {
         return redpacketEventService.redpacket(dto);
@@ -46,7 +46,7 @@ public class RedpacketExecute {
     /**
      * 参加红包活动
      * @param toUid anchor uid
-     * @return ok
+     * @return OK
      */
     public ResponsePair<RedpacketTokenVO> join(long toUid) {
         return redpacketInvolvedService.join(toUid);
@@ -64,7 +64,7 @@ public class RedpacketExecute {
     /**
      * 强制红包同步
      * @param dto {@link RedpacketFsyncDTO }
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> fsync(RedpacketFsyncDTO dto) {
         return redpacketInvolvedService.fsync(dto);

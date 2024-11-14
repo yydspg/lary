@@ -12,7 +12,7 @@ public class ReportDTO {
     /**
      * 举报类型id
      */
-    @JsonProperty(value = "type_id")
+    @JSONField(format=value = "type_id")
     private Integer typeId;
     /**
      * 举报备注

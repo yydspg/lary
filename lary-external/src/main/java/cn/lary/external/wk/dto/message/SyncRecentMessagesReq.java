@@ -9,8 +9,8 @@ import java.util.List;
 public class SyncRecentMessagesReq {
     private Long uid;
     private List<WKChannelRecentMessage> channels;
-    @JsonProperty("msg_count")
+    @JSONField(format="msg_count")
     private int msgCount;
-    @JsonProperty("order_by_last")
+    @JSONField(format="order_by_last")
     private int orderByLast;
 }

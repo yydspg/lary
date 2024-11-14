@@ -28,15 +28,27 @@ public class StreamRecord implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
-    private Integer streamId;
+    /**
+     * 直播id
+     */
+    private Long sid;
 
+    /**
+     * room id
+     */
+    private Long rid;
+    /**
+     * 用户id
+     */
     private Long uid;
+    /**
+     * 频道id
+     */
+    private Long cid;
 
-    private Long channelId;
+    private Long startAt;
 
-    private LocalDateTime startAt;
-
-    private LocalDateTime endAt;
+    private Long endAt;
 
     /**
      * 直播简介
@@ -45,7 +57,7 @@ public class StreamRecord implements Serializable {
     /**
      * 直播地址
      */
-    private String streamUrl;
+    private String stream;
     /**
      * 唯一辨识符
      */
@@ -54,16 +66,20 @@ public class StreamRecord implements Serializable {
     /**
      * 观看人数
      */
-    private Integer watchNum;
+    private Long watchNum;
 
     /**
      * 开播时长以s为单位
      */
-    private Integer duration;
+    private Long duration;
 
-
+    /**
+     * 新增粉丝
+     */
     private Long newFansNum;
-
+    /**
+     * 点赞数目
+     */
     private Long starNum;
 
     /**
@@ -81,30 +97,22 @@ public class StreamRecord implements Serializable {
      */
     private BigDecimal giftAmount;
     /**
-     * 直播状态 1 预开播 2 开播 3 预关播 4 关播
+     * 直播状态 1 预开播 2 开播 3 预关播 4 关播 5 封禁
      */
     private Integer status;
-    /**
-     * 是否被封禁
-     */
-    private Boolean isBlock;
+
 
     /**
      * 封禁类型
      */
-    private String blockTypeId;
+    private String tid;
 
     /**
      * 封禁详情
      */
-    private String blockDescription;
+    private String description;
 
-    private Boolean isDelete;
+    private Long createAt;
 
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
-
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

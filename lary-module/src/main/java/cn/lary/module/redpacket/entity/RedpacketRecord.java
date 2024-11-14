@@ -55,8 +55,7 @@ public class RedpacketRecord implements Serializable {
      */
     private Integer syncStatus;
 
-    private Boolean isDelete;
+    
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 }

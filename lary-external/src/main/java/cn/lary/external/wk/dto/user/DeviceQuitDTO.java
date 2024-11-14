@@ -8,6 +8,6 @@ public class DeviceQuitDTO {
 
     private long uid;
 
-    @JsonProperty("device_flag")
+    @JSONField(format="device_flag")
     private int deviceFlag;
 }

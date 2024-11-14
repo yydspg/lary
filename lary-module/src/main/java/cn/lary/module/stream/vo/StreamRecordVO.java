@@ -9,11 +9,11 @@ import java.time.LocalDateTime;
 @Data
 public class StreamRecordVO {
 
-    private int streamId;
+    private long sid;
 
-    private LocalDateTime startAt;
+    private long startAt;
 
-    private LocalDateTime endAt;
+    private long endAt;
 
     /**
      * 直播简介
@@ -24,12 +24,12 @@ public class StreamRecordVO {
     /**
      * 观看人数
      */
-    private int watchNum;
+    private long watchNum;
 
     /**
      * 开播时长以s为单位
      */
-    private int duration;
+    private long duration;
 
 
     private long newFansNum;
@@ -51,10 +51,6 @@ public class StreamRecordVO {
      */
     private BigDecimal giftAmount;
 
-    /**
-     * 是否被封禁
-     */
-    private Boolean isBlock;
 
     /**
      * 封禁类型
@@ -64,24 +60,25 @@ public class StreamRecordVO {
     /**
      * 封禁详情
      */
-    private String blockDescription;
+    private String description;
 
-    public StreamRecordVO of(StreamRecord record) {
-        StreamRecordVO vo = new StreamRecordVO();
-        vo.setStreamId(record.getStreamId());
-        vo.setStartAt(record.getStartAt());
-        vo.setEndAt(record.getEndAt());
-        vo.setRemark(record.getRemark());
-        vo.setWatchNum(record.getWatchNum());
-        vo.setDuration(record.getDuration());
-        vo.setNewFansNum(record.getNewFansNum());
-        vo.setStarNum(record.getStarNum());
-        vo.setWatchFanNum(record.getWatchFanNum());
-        vo.setGiftNum(record.getGiftNum());
-        vo.setGiftAmount(record.getGiftAmount());
-        vo.setIsBlock(record.getIsBlock());
-        vo.setBlockTypeId(record.getBlockTypeId());
-        vo.setBlockDescription(record.getBlockDescription());
-        return vo;
+    private int status;
+
+    public StreamRecordVO() {}
+    public StreamRecordVO(StreamRecord record) {
+       setSid(record.getSid());
+       setStartAt(record.getStartAt());
+       setEndAt(record.getEndAt());
+       setRemark(record.getRemark());
+       setWatchNum(record.getWatchNum());
+       setDuration(record.getDuration());
+       setNewFansNum(record.getNewFansNum());
+       setStarNum(record.getStarNum());
+       setWatchFanNum(record.getWatchFanNum());
+       setGiftNum(record.getGiftNum());
+       setGiftAmount(record.getGiftAmount());
+       setStatus(record.getStatus());
+       setBlockTypeId(record.getTid());
+       setDescription(record.getDescription());
     }
 }

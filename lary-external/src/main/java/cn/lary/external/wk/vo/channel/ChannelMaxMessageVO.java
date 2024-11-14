@@ -5,6 +5,6 @@ import lombok.Data;
 
 @Data
 public class ChannelMaxMessageVO {
-    @JsonProperty("message_seq")
+    @JSONField(format="message_seq")
     private long msgSeq;
 }

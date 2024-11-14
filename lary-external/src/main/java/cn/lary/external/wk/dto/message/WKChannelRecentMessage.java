@@ -7,6 +7,6 @@ import lombok.Data;
 @Data
 public class WKChannelRecentMessage extends WKChannel {
     // 最后一次同步的 message_seq ,
-    @JsonProperty("last_message_seq")
+    @JSONField(format="last_message_seq")
     private long lastMessageSeq;
 }

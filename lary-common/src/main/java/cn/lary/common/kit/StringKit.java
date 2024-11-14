@@ -5,6 +5,7 @@ import javax.crypto.Cipher;
 import javax.crypto.IllegalBlockSizeException;
 import javax.crypto.spec.GCMParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
@@ -110,5 +111,47 @@ public class StringKit {
         byte[] decryptedBytes = null;
         decryptedBytes = decryptionCipher.doFinal(dataInBytes);
         return new String(decryptedBytes, StandardCharsets.UTF_8);
+    }
+    /**
+     * 如果给定字符串{@code str}中不包含{@code appendStr}<br>
+     * 则在{@code str}后追加{@code appendStr}<br>
+    * 如果已包含{@code appendStr}，则在{@code str}后追加{@code otherwise}
+    */
+    public static String appendIfNotContain(String str, String appendStr, String otherwise) {
+        if (isEmpty(str) || isEmpty(appendStr)) {
+            return str;
+        }
+        if (str.contains(appendStr)) {
+            return str.concat(otherwise);
+        }
+        return str.concat(appendStr);
+    }
+
+    /**
+     *  编码
+     */
+    public static byte[] bytes(CharSequence str, Charset charset) {
+        if (str == null) {
+            return null;
+        }
+
+        if (null == charset) {
+            return str.toString().getBytes();
+        }
+        return str.toString().getBytes(charset);
+    }
+
+    /**
+     *解码
+     */
+    public static String str(byte[] data, Charset charset) {
+        if (data == null) {
+            return null;
+        }
+
+        if (null == charset) {
+            return new String(data);
+        }
+        return new String(data, charset);
     }
 }

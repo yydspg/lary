@@ -33,7 +33,7 @@ public class GroupBusinessExecute {
     /**
      * 全体成员禁言
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> forbidden(long groupId) {
         return groupService.forbidden(groupId);
@@ -60,7 +60,7 @@ public class GroupBusinessExecute {
     /**
      * 移除成员
      * @param groupId g
-     * @return ok
+     * @return OK
      */
     public ResponsePair<Void> disband(long groupId) {
         return groupService.disband(groupId);

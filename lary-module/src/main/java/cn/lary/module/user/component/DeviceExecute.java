@@ -17,14 +17,14 @@ public class DeviceExecute {
 
     private final DeviceService deviceService;
 
-    /**
-     * 新设备登陆的验证码
-     * @param dto {@link DeviceAddDTO}
-     * @return ok
-     */
-    public ResponsePair<Void> addDeviceCode(DeviceAddDTO dto) {
-        return deviceService.getAddDeviceSmsCode(dto);
-    }
+//    /**
+//     * 新设备登陆的验证码
+//     * @param dto {@link DeviceAddDTO}
+//     * @return OK
+//     */
+//    public ResponsePair<Void> addDeviceCode(DeviceAddDTO dto) {
+//        return deviceService.getAddDeviceSmsCode(dto);
+//    }
 
 
     /**

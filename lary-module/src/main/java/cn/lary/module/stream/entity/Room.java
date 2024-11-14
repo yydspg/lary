@@ -28,20 +28,24 @@ public class Room implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-
     /**
-     * uid 等同于 room id
+     *
+     */
+    private Long rid;
+    /**
+     * 用户id
      */
     private Long uid;
 
-    private Integer category;
-
+    /**
+     * 直播标签
+     */
+    private Integer tag;
 
     /**
-     * 是否是著名主播
+     * 主播级别
      */
-    private Boolean isHot;
-
+   private Integer level;
 
     /**
      * 封面地址
@@ -52,35 +56,37 @@ public class Room implements Serializable {
      * 评分
      */
     private Long score;
-
+    /**
+     * 行为侧评分
+     */
     private Long behaviorScore;
-
+    /**
+     * 内容评分
+     */
     private Long contentScore;
-
+    /**
+     *效益评分
+     */
     private Long benefitScore;
 
     /**
-     * 是否被封禁
+     * 直播状态,是否被封禁
      */
-    private Boolean isBlock;
-
-    /**
-     * 封禁类型
-     */
-    private Integer blockCategory;
+    private Integer status;
 
     /**
      * 封禁详情
      */
     private String blockDescription;
+
     /**
      * 被拉黑数目
      */
-    private Integer blockNum;
+    private Long blockNum;
     /**
      * 被关注数目
      */
-    private Integer followNum;
+    private Long followNum;
     /**
      * 介绍
      */
@@ -90,12 +96,6 @@ public class Room implements Serializable {
      */
     private Long lastLogin;
 
-    private Boolean isDelete;
+    
 
-
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
-
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

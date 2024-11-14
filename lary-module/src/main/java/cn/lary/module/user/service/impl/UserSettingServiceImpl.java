@@ -3,12 +3,14 @@ package cn.lary.module.user.service.impl;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
+import cn.lary.module.id.LaryIDBuilder;
 import cn.lary.module.user.dto.UserSettingUpdateDTO;
 import cn.lary.module.user.entity.UserSetting;
 import cn.lary.module.user.mapper.UserSettingMapper;
 import cn.lary.module.user.service.UserSettingService;
 import cn.lary.module.user.vo.UserSettingVO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
@@ -22,8 +24,18 @@ import org.springframework.stereotype.Service;
  */
 @Slf4j
 @Service
+@RequiredArgsConstructor
 public class UserSettingServiceImpl extends ServiceImpl<UserSettingMapper, UserSetting> implements UserSettingService {
 
+    private final LaryIDBuilder builder;
+
+    @Override
+    public UserSetting build(UserSetting dto) {
+        dto.setSid(builder.next());
+        save(dto);
+        return dto;
+    }
+    //todo impl
     @Override
     public ResponsePair<UserSettingVO> update(UserSettingUpdateDTO dto) {
         return null;
@@ -32,6 +44,8 @@ public class UserSettingServiceImpl extends ServiceImpl<UserSettingMapper, UserS
     @Override
     public ResponsePair<UserSettingVO> get() {
         UserSetting setting = lambdaQuery()
+                .select(UserSetting::getMedal,UserSetting::getDynamic)
+                .select(UserSetting::getFanList,UserSetting::getNewMessageNotice)
                 .eq(UserSetting::getUid, RequestContext.uid())
                 .one();
         if (setting == null) {

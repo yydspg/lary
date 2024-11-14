@@ -10,3 +10,16 @@ create table `user_setting`(
                                create_at timestamp ,
                                update_at timestamp
 );
+
+drop table if exists `user_index`;
+create table `user_index` (
+    id bigint unsigned not null auto_increment primary key ,
+    phone char(11) not null comment '手机号',
+    username varchar(11) not null comment '用户名',
+    external varchar(256) not null comment 'Oauth',
+    oid int not null comment 'Oauth id',
+    create_at bigint not null default unix_timestamp()
+);
+create unique index phone_idx on `user_index` (phone);
+create unique index username_idx on `user_index` (username);
+create unique index external_idx on `user_index` (external);

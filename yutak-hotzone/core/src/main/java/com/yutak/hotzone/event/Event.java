@@ -11,4 +11,9 @@ public abstract class Event {
     }
 
     private int identify;
+
+    public static void main(String[] args) {
+        String event = new String("lary:event:channel:189005123424239401");
+        System.out.println(event.getBytes().length);
+    }
 }

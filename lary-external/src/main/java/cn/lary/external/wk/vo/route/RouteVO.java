@@ -6,12 +6,12 @@ import lombok.Data;
 @Data
 public class RouteVO {
 
-    @JsonProperty("tcp_addr")
+    @JSONField(format="tcp_addr")
     private String tcpAddr;
 
-    @JsonProperty("ws_addr")
+    @JSONField(format="ws_addr")
     private String wsAddr;
 
-    @JsonProperty("wss_addr")
+    @JSONField(format="wss_addr")
     private String wssAddr;
 }

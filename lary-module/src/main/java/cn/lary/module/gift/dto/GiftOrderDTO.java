@@ -13,7 +13,7 @@ public class GiftOrderDTO  extends BusinessPaymentDTO {
      * gift id
      */
     @NotNull
-    @JsonProperty("id")
+    @JSONField(format="id")
     private Integer id;
 
     /**
@@ -21,24 +21,24 @@ public class GiftOrderDTO  extends BusinessPaymentDTO {
      */
     @Min(value = 0,message = "gift num can not less than 0")
     @Max(value = Integer.MAX_VALUE,message = "gift num can not bigger than integer.Max")
-    @JsonProperty("num")
+    @JSONField(format="num")
     private Integer num;
 
     /**
      * anchor uid
      */
     @NotNull
-    @JsonProperty("to_uid")
+    @JSONField(format="to_uid")
     private Long toUid;
 
     @NotNull
-    @JsonProperty("client")
+    @JSONField(format="client")
     private Integer client;
 
     /**
      * 支付方式可以为空，若为空，即尝试从钱包扣款
      */
-    @JsonProperty("plugin")
+    @JSONField(format="plugin")
     private Integer plugin;
 
 

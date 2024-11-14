@@ -42,12 +42,11 @@ public class GeneralService {
             return BusinessKit.fail("mentions invalid");
         }
         List<Long> mentionUsers = userService.lambdaQuery()
-                .select(User::getUid)
-                .select(User::getStatus, User::getIsDelete)
+                .select(User::getUid,User::getStatus)
                 .in(User::getUid, ids)
                 .list()
                 .stream()
-                .filter(t -> t.getStatus() == LARY.STATUS.COMMON && !t.getIsDelete())
+                .filter(t -> t.getStatus() == LARY.USER.STATUS.OK)
                 .distinct()
                 .map(User::getUid)
                 .toList();

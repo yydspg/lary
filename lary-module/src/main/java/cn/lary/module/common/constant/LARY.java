@@ -2,7 +2,12 @@ package cn.lary.module.common.constant;
 
 public interface LARY {
     boolean testMode = false;
-
+    interface  CORE {
+        interface STATUS {
+            int COMMON = 1;
+            int REMOVE = 2;
+        }
+    }
 
     interface Sex {
         int man = 1;
@@ -21,8 +26,6 @@ public interface LARY {
         int BLOCK = 45;
         int COMMON = 46;
     }
-
-
     interface USER {
         interface STATUS {
             int BAN = 1;
@@ -34,7 +37,14 @@ public interface LARY {
         int FAIL = 2;
         int SUCCESS = 3;
     }
-
+    interface STREAM {
+        interface STATUS {
+            int ING = 1;
+            int BLOCK = 2;
+            int COMMON = 3;
+            int UP =4;
+        }
+    }
 
     interface FollowCode {
         int stream = 1;
@@ -85,6 +95,7 @@ public interface LARY {
             int SLAVE = 1;
             int MASTER = 2;
         }
+
     }
     interface RAFFLE {
         int CUSTOM = 1101;
@@ -174,6 +185,19 @@ public interface LARY {
             int CREATOR = 1002;
             int MANAGER = 1003;
         }
+        interface STATUS {
+            int DISBAND = 1;
+            int COMMON = 2;
+        }
+    }
+    interface MEMBER {
+        interface STATUS {
+            int INIT = 1001;
+            int COMMON = 1002;
+            int QUIT = 1003;
+            int BLOCK = 1004;
+            int DISBAND = 1005;
+        }
     }
     interface COMMENT {
         interface EVENT{
@@ -189,4 +213,5 @@ public interface LARY {
             int HIDE = 3;
         }
     }
+
 }

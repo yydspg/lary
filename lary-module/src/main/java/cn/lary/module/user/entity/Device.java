@@ -28,7 +28,13 @@ public class Device implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-
+    /**
+     * device id
+     */
+    private Long did;
+    /**
+     * uid
+     */
     private Long uid;
 
 
@@ -41,11 +47,6 @@ public class Device implements Serializable {
 
     private Long lastLogin;
 
-    private Boolean isDelete;
+    private Integer status;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
-
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

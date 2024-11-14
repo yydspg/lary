@@ -9,6 +9,6 @@ import lombok.Data;
 public class ConversationVO extends WKChannel {
     private int unread;
     private long timestamp;
-    @JsonProperty("last_message")
+    @JSONField(format="last_message")
     private Message lastMessage;
 }

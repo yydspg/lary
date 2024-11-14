@@ -1,11 +1,13 @@
 package cn.lary.module.message.service;
 
 
-import cn.lary.external.wk.dto.channel.ChannelCreateDTO;
+import cn.lary.external.wk.dto.channel.WKChannelCreateDTO;
 import cn.lary.external.wk.dto.channel.SubscribersAddDTO;
 import cn.lary.external.wk.dto.message.MessageSendDTO;
 import cn.lary.external.wk.dto.user.UpdateTokenDTO;
 import cn.lary.external.wk.vo.route.RouteVO;
+import cn.lary.module.channel.dto.ChannelBuildDTO;
+import cn.lary.module.channel.entity.LaryChannel;
 
 public interface MessageService {
     /**
@@ -13,16 +15,14 @@ public interface MessageService {
      * wukongIM支持临时消息发送<br>
      * 临时消息无需channelId,IM自动生成
      * @param dto {@link MessageSendDTO}
-     * @return ok
      */
     void  send(MessageSendDTO dto);
 
     /**
      * 创建频道
-     * @param dto {@link ChannelCreateDTO}
-     * @return ok
+     * @param dto {@link WKChannelCreateDTO}
      */
-    void saveOrUpdateChannel(ChannelCreateDTO dto);
+    LaryChannel saveOrUpdateChannel(ChannelBuildDTO dto);
 
     /**
      * 添加订阅者
@@ -39,7 +39,7 @@ public interface MessageService {
     /**
      * 获取IM的节点
      * @param uid U
-     * @return ok
+     * @return OK
      */
     RouteVO getRoute(long uid);
 

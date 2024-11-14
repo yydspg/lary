@@ -49,12 +49,8 @@ public class GiftType implements Serializable {
      */
     private Boolean isPrivilege;
 
-    private Boolean isDelete;
+    
 
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
 
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

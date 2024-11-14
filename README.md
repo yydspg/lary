@@ -17,7 +17,7 @@ start 2023/9/1
 3. 移除kvBuilder
 4. 添加自实现idGenerator
 5. 优化System.currentMills
-6. 使用redis订阅替换mq订阅本地缓存事件
+6. redis订阅替换mq订阅本地缓存事件
 ## business
 - 用户 y 
 - 群组 y

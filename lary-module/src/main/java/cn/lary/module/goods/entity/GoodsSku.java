@@ -74,15 +74,13 @@ public class GoodsSku implements Serializable {
      */
     private String point;
 
-    private Boolean isDelete;
+    
 
     private String createBy;
 
     private String updateBy;
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 
-      @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
+      
 }

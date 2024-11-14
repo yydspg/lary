@@ -17,7 +17,7 @@ import java.util.Arrays;
  */
 
 public class Codec{
-    private static final String SERVICE_NAME = "comment";
+    private static final String SERVICE_NAME = "channel";
 
     //dataSource config
     private static final String DATA_SOURCE_USER_NAME  = "root";
@@ -29,9 +29,7 @@ public class Codec{
     private static final String ENTITY_PACK_NAME = "entity";
     private static final String DATA_SOURCE_URL = "jdbc:mysql://192.168.1.102:3306/lary";
     private static final String[] TABLE_NAMES = new String[]{
-        "comment_event",
-            "comment",
-            "next_comment"
+        "lary_channel",
     };
     public static void main(String[] args) {
         /* 配置数据源 **/

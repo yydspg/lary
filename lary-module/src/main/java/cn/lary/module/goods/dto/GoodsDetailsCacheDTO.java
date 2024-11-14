@@ -61,7 +61,7 @@ public class GoodsDetailsCacheDTO {
      */
     private String detailImages;
 
-    @JsonProperty("sku")
+    @JSONField(format="sku")
     private List<GoodsSkuCacheDTO> sku;
 
 }

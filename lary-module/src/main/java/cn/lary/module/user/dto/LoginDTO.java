@@ -16,20 +16,20 @@ public class LoginDTO {
      * 如果为空,表示新设备登陆<br>
      * 如果是新设备登陆name和model一定不为空
      */
-    @JsonProperty("id")
+    @JSONField(format="id")
     @NotNull(message = "device id is null")
-    private Long id;
+    private Long did;
     /**
      * 登陆设备名称
      */
     @NotNull(message = "device_name is null")
-    @JsonProperty("name")
+    @JSONField(format="name")
     private String name;
 
     @NotNull(message = "phone is null")
     private String phone;
 
-    @JsonProperty("flag")
+    @JSONField(format="flag")
     @NotNull(message = "device flag is null")
     private Integer flag;
 

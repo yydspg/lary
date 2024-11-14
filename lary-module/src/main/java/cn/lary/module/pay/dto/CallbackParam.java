@@ -16,7 +16,7 @@ public abstract class CallbackParam {
 
     /**
      * 自定义实现时，使用以下code
-     super.setOk(ok);
+     super.setOk(OK);
      super.setCode(args.get("code"));
      super.setMsg(args.get("msg"));
      super.setSubCode(args.get("subCode"));

@@ -39,9 +39,5 @@ public class UserOnline implements Serializable {
 
     private Long version;
 
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
 
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
 }

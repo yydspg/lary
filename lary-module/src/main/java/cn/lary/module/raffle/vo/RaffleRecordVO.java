@@ -3,8 +3,6 @@ package cn.lary.module.raffle.vo;
 import cn.lary.module.raffle.entity.RaffleRecord;
 import lombok.Data;
 
-import java.time.LocalDateTime;
-
 @Data
 public class RaffleRecordVO {
     /**
@@ -15,11 +13,11 @@ public class RaffleRecordVO {
     /**
      * 直播id
      */
-    private long streamId;
+    private long sid;
     /**
      * 抽奖id
      */
-    private long raffleId;
+    private long rid;
     /**
      * 用户id
      */
@@ -33,17 +31,17 @@ public class RaffleRecordVO {
     /**
      * 同步状态
      */
-    private int syncStatus;
+    private int sync;
 
-    private LocalDateTime createAt;
+    private long createAt;
 
     public RaffleRecordVO(RaffleRecord data) {
         this.uid = data.getUid();
-        this.streamId = data.getStreamId();
-        this.raffleId = data.getRaffleId();
+        this.sid = data.getSid();
+        this.rid = data.getRid();
         this.toUid = data.getToUid();
         this.content= data.getContent();
-        this.syncStatus = data.getSyncStatus();
+        this.sync = data.getSync();
         this.createAt = data.getCreateAt();
     }
 }

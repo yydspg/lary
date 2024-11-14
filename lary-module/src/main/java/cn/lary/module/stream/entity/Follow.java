@@ -28,6 +28,10 @@ public class Follow implements Serializable {
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
 
+    private Long rid;
+    /**
+     * uid
+     */
     private Long uid;
 
     /**
@@ -73,23 +77,9 @@ public class Follow implements Serializable {
      */
     private Integer level;
 
-
     /**
      * 对主播的花费
      */
     private BigDecimal amount;
-    /**
-     * 是否删除
-     */
-    private Boolean isDelete;
-
-    @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
-
-    @TableField(fill = FieldFill.UPDATE)
-    private LocalDateTime updateAt;
-
-
-
 
 }

@@ -1,5 +1,6 @@
 package cn.lary.module.stream.api;
 
+import cn.lary.common.dto.MultiResponse;
 import cn.lary.common.dto.PageResponse;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.dto.SingleResponse;
@@ -8,12 +9,7 @@ import cn.lary.common.kit.ResponseKit;
 import cn.lary.module.stream.component.RoomBusinessExecute;
 import cn.lary.module.stream.component.StreamBusinessExecute;
 import cn.lary.module.stream.dto.GoLiveDTO;
-import cn.lary.module.stream.dto.RaffleDTO;
-import cn.lary.module.stream.dto.RedPacketDTO;
-import cn.lary.module.stream.vo.DownLiveVO;
-import cn.lary.module.stream.vo.GoLiveVO;
-import cn.lary.module.stream.vo.JoinLiveVO;
-import cn.lary.module.stream.vo.StreamRecordVO;
+import cn.lary.module.stream.vo.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
@@ -21,6 +17,8 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 
 /**
@@ -57,6 +55,15 @@ public class RoomController {
     }
 
     /**
+     * 直播首页
+     * @return {@link RoomVO}
+     */
+    @GetMapping
+    public MultiResponse<RoomVO> rooms(){
+        ArrayList<String> data = new ArrayList<>();
+        return null;
+    }
+    /**
      * 开启直播
      * @param dto {@link GoLiveDTO} 直播请求参数
      * @return {@link GoLiveVO}
@@ -78,9 +85,11 @@ public class RoomController {
      * @return {@link JoinLiveVO}
      */
     @GetMapping("/join")
-    public SingleResponse<JoinLiveVO> join(@RequestParam(value = "toUid") @NotNull Integer toUid, HttpServletRequest req) {
-        String ip = IPKit.getIp(req);
-        ResponsePair<JoinLiveVO> response = roomBusinessExecute.join( toUid,ip);
+    public SingleResponse<JoinLiveVO> join(@RequestParam(value = "toUid") @NotNull Long toUid,
+                                           @RequestParam(value = "sid") @NotNull Long sid,
+                                           HttpServletRequest dto) {
+        String ip = IPKit.getIp(dto);
+        ResponsePair<JoinLiveVO> response = roomBusinessExecute.join( toUid,sid,ip);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
@@ -89,7 +98,7 @@ public class RoomController {
 
     /**
      * 结束直播
-     * @return ok
+     * @return OK
      */
     @GetMapping("/end")
     public SingleResponse<DownLiveVO> end() {
@@ -102,7 +111,7 @@ public class RoomController {
 
     /**
      * 离开直播间
-     * @return ok
+     * @return OK
      */
     @GetMapping("/leave")
     public SingleResponse<Void> leave() {
@@ -113,31 +122,4 @@ public class RoomController {
         return ResponseKit.ok(response.getData());
     }
 
-//    /**
-//     * 创建抽奖事件
-//     * @param dto {@link RaffleDTO}
-//     * @return ok
-//     */
-//    @PostMapping("/raffle")
-//    public SingleResponse<Void> raffle(@RequestBody @Valid RaffleDTO dto) {
-//        ResponsePair<Void> response = roomBusinessExecute.raffle(dto);
-//        if (response.isFail()) {
-//            return ResponseKit.fail(response.getMsg());
-//        }
-//        return ResponseKit.ok(response.getData());
-//    }
-
-//    /**
-//     * 创建红包事件
-//     * @param dto {@link RedPacketDTO}
-//     * @return ok
-//     */
-//    @PostMapping("/redpacket")
-//    public SingleResponse<Void> redpacket(@RequestBody @Valid RedPacketDTO dto) {
-//        ResponsePair<Void> response = roomBusinessExecute.redpacket(dto);
-//        if (response.isFail()) {
-//            return ResponseKit.fail(response.getMsg());
-//        }
-//        return ResponseKit.ok(response.getData());
-//    }
 }

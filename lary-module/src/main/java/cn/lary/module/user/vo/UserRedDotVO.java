@@ -15,7 +15,7 @@ public class UserRedDotVO {
     /**
      * 是否显示
      */
-    @JsonProperty("is_dot")
+    @JSONField(format="is_dot")
     private boolean isDot;
 
     public UserRedDotVO(UserRedDot redDot) {

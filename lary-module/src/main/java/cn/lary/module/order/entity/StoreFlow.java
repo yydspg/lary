@@ -94,6 +94,5 @@ public class StoreFlow implements Serializable {
      */
     private Integer status;
 
-      @TableField(fill = FieldFill.INSERT)
-    private LocalDateTime createAt;
+ 
 }

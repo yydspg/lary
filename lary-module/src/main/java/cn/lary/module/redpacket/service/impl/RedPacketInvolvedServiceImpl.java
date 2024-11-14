@@ -6,10 +6,10 @@ import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.CollectionKit;
 import cn.lary.common.kit.JSONKit;
 import cn.lary.common.kit.StringKit;
-import cn.lary.module.cache.component.RedpacketCacheComponent;
+import cn.lary.module.redpacket.component.RedpacketCacheComponent;
 import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.id.LaryIdGenerator;
+import cn.lary.module.id.LaryIDBuilder;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.redpacket.dto.RedpacketFsyncDTO;
 import cn.lary.module.redpacket.entity.RedpacketEventCache;
@@ -34,7 +34,7 @@ public class RedPacketInvolvedServiceImpl implements RedPacketInvolvedService {
     private final RedpacketCacheComponent redpacketCacheComponent;
     private final CacheComponent cacheComponent;
     private final MessageService messageService;
-    private final LaryIdGenerator idGenerator;
+    private final LaryIDBuilder idGenerator;
 
     
     @Override

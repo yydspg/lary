@@ -47,13 +47,13 @@ public interface WalletService extends IService<Wallet> {
     /**
      * 系统向用户转钱
      * @param dto {@link SystemOutcomeTransferDTO}
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> systemOutcomeTransfer(SystemOutcomeTransferDTO dto);
     /**
      * 用户向系统转钱
      * @param dto {@link SystemIncomeTransferDTO}
-     * @return ok
+     * @return OK
      */
     ResponsePair<Void> systemIncomeTransfer(SystemIncomeTransferDTO dto);
 
@@ -61,7 +61,7 @@ public interface WalletService extends IService<Wallet> {
      * 获取用户钱包<br>
      * 此方法不会返回null
      * @param members 用户
-     * @return ok
+     * @return OK
      */
     ResponsePair<List<Wallet>> getWallets(List<Long> members);
 

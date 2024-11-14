@@ -24,13 +24,11 @@ public class GroupVO {
 
     private Integer num;
 
-    public GroupVO of(Group group) {
-        GroupVO vo = new GroupVO();
-        vo.name = group.getName();
-        vo.avatar = group.getGroupAvatar();
-        vo.id = group.getGroupId();
-        vo.num = group.getGroupNum();
-        return vo;
+    public GroupVO(Group group) {
+        name = group.getName();
+        avatar = group.getGroupAvatar();
+        id = group.getGroupId();
+        num = group.getGroupNum();
     }
 
 }

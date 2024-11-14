@@ -6,7 +6,10 @@ import cn.lary.module.stream.entity.Room;
 import cn.lary.module.stream.vo.DownLiveVO;
 import cn.lary.module.stream.vo.GoLiveVO;
 import cn.lary.module.stream.vo.JoinLiveVO;
+import cn.lary.module.stream.vo.RoomVO;
 import com.baomidou.mybatisplus.extension.service.IService;
+
+import java.util.List;
 
 /**
  * <p>
@@ -24,11 +27,11 @@ public interface RoomService extends IService<Room> {
      * @param ip 用户ip
      * @return {@link JoinLiveVO}
      */
-     ResponsePair<JoinLiveVO> join( long toUid, String ip);
+     ResponsePair<JoinLiveVO> join( long toUid,long sid, String ip);
 
     /**
      * 离开直播间
-     * @return ok
+     * @return OK
      */
      ResponsePair<Void> leave();
     /**
@@ -50,9 +53,10 @@ public interface RoomService extends IService<Room> {
     /**
      * 判断是否是热门主播
      * @param room {@link Room}
-     * @return ok
+     * @return OK
      */
     boolean isHot(Room room) ;
 
 
+    ResponsePair<List<RoomVO>> show();
 }
