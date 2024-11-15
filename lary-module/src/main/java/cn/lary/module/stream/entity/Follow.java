@@ -27,8 +27,10 @@ public class Follow implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-
-    private Long rid;
+//    /**
+//     * relation id
+//     */
+//    private Long sid;
     /**
      * uid
      */
@@ -82,4 +84,5 @@ public class Follow implements Serializable {
      */
     private BigDecimal amount;
 
+    private long createAt;
 }

@@ -4,7 +4,7 @@ import cn.lary.common.kit.JSONKit;
 import cn.lary.common.kit.StringKit;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.redpacket.entity.RedpacketRecord;
-import cn.lary.module.redpacket.entity.RedpacketTokenDTO;
+import cn.lary.module.redpacket.dto.RedpacketTokenDTO;
 import cn.lary.module.redpacket.service.RedpacketRecordService;
 import cn.lary.module.wallet.dto.SystemOutcomeTransferDTO;
 import cn.lary.module.wallet.service.WalletService;
@@ -35,18 +35,18 @@ public class RedpacketRecordListener implements RocketMQListener<RedpacketRecord
             RedpacketTokenDTO dto = JSONKit.fromJSON(data, RedpacketTokenDTO.class);
             transactionTemplate.executeWithoutResult(status -> {
                 RedpacketRecord record = redpacketRecordService.lambdaQuery()
-                        .select(RedpacketRecord::getSyncStatus)
-                        .eq(RedpacketRecord::getRid, dto.getId())
+                        .select(RedpacketRecord::getSync)
+                        .eq(RedpacketRecord::getRid, dto.getRid())
                         .one();
-                if (record != null && record.getSyncStatus() == LARY.SYNC_STATUS.SUCCESS) {
+                if (record != null && record.getSync() == LARY.SYNC_STATUS.SUCCESS) {
                     return ;
                 }
                 redpacketRecordService.save(new RedpacketRecord()
-                        .setRid(dto.getId())
+                        .setRid(dto.getRid())
                         .setAmount(dto.getAmount())
                         .setUid(dto.getUid())
-                        .setStreamId(dto.getStreamId())
-                        .setSyncStatus(LARY.SYNC_STATUS.SUCCESS));
+                        .setSid(dto.getSid())
+                        .setSync(LARY.SYNC_STATUS.SUCCESS));
                 walletService.systemOutcomeTransfer(new SystemOutcomeTransferDTO()
                         .setAmount(dto.getAmount())
                         .setTransfer(LARY.WALLET.TRANSFER.POCKET)

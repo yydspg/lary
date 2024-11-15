@@ -9,7 +9,8 @@ public  class Profile {
 
     private String name;
 
-    private int role;
-
+    /**
+     * device flag
+     */
     private int flag;
 }

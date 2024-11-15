@@ -10,7 +10,7 @@ public class RedpacketRecordVO {
     /**
      * 直播id
      */
-    private Long streamId;
+    private long sid;
 
     /**
      * 红包金额
@@ -20,13 +20,13 @@ public class RedpacketRecordVO {
     /**
      * 同步状态
      */
-    private Integer syncStatus;
+    private int sync;
 
     public RedpacketRecordVO() {}
 
     public RedpacketRecordVO(RedpacketRecord record) {
-        this.streamId = record.getStreamId();
+        this.sid = record.getSid();
         this.amount = record.getAmount();
-        this.syncStatus = record.getSyncStatus();
+        this.sync = record.getSync();
     }
 }

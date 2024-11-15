@@ -6,14 +6,12 @@ import cn.lary.common.kit.*;
 import cn.lary.external.wk.dto.user.UpdateTokenDTO;
 import cn.lary.external.wk.vo.route.RouteVO;
 import cn.lary.module.common.service.EventService;
-import cn.lary.module.cache.dto.DeviceAddResponseCacheDTO;
-import cn.lary.module.cache.dto.DeviceLoginCacheDTO;
-import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.common.config.RedisBusinessConfig;
 import cn.lary.module.event.dto.UserRegisterEventDTO;
+import cn.lary.module.id.LaryIDBuilder;
 import cn.lary.module.message.service.MessageService;
+import cn.lary.module.user.component.UserCache;
+import cn.lary.module.user.component.UserCacheComponent;
 import cn.lary.module.user.dto.*;
 import cn.lary.module.user.entity.Device;
 import cn.lary.module.user.entity.User;
@@ -23,6 +21,8 @@ import cn.lary.module.user.service.DeviceService;
 import cn.lary.module.user.service.UserService;
 import cn.lary.module.user.service.UserSettingService;
 import cn.lary.module.user.vo.UserVO;
+import cn.lary.module.wallet.entity.Wallet;
+import cn.lary.module.wallet.service.WalletService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import jakarta.servlet.http.HttpServletRequest;
@@ -51,13 +51,15 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     private final DeviceService deviceService;
     private final MessageService messageService;
-    private final EventService eventService;
+    private final WalletService walletService;
     private final UserSettingService userSettingService;
     private final TransactionTemplate transactionTemplate;
+    private final UserCacheComponent userCacheComponent;
+    private final LaryIDBuilder builder;
 
     @Override
     public ResponsePair<String> login(LoginDTO dto) {
-        String password = StringKit.MD5(StringKit.MD5(dto.getPassword()));
+        String password = StringKit.encrypt(dto.getPassword());
         User user = lambdaQuery()
                 .select(User::getUid)
                 .eq(User::getUid,dto.getUid())
@@ -66,78 +68,56 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             return BusinessKit.fail("user not exist,please register first");
         }
         long uid = user.getUid();
-
+        int flag = dto.getFlag();
         if(user.getStatus() == LARY.USER.STATUS.BAN) {
-            return BusinessKit.fail("user was banned");
+            return BusinessKit.fail("u been banned");
         }
         if (StringKit.diff(user.getPassword(), password)) {
             return BusinessKit.fail("password error");
         }
         int deviceLevel = LARY.DEVICE.LEVEL.SLAVE;
-        if (LARY.DEVICE.FLAG.APP == dto.getFlag()) {
+        if (LARY.DEVICE.FLAG.APP == flag) {
             deviceLevel = LARY.DEVICE.LEVEL.MASTER;
         }
-        boolean needRemovePreviousLogged = false;
-        String oldToken = cacheComponent.get(kvBuilder.userLoginK(user.getUid(), dto.getFlag()));
-        if (StringKit.isNotEmpty(oldToken)) {
+        UserCache data = userCacheComponent.getData(uid,flag);
+        if (data != null) {
            // Devices with the same flag will be logged in and
             // the previously logged in devices will be removed
-            Map<Object, Object> map = cacheComponent.getHash(kvBuilder.deviceLoginK(uid, dto.getFlag()));
-            if (map == null) {
-                log.error("user login failed,uid:{},flag:{}", uid, dto.getFlag());
-                return BusinessKit.fail("system error");
+            long did = data.getDid();
+            Device device = deviceService.getDevice(dto.getDid(), dto.getName(), flag);
+            if (device != null && device.getDid() == did) {
+                log.error("same device when login,uid:{},did:{}", uid, did);
+                return BusinessKit.fail("login repeated");
             }
-            DeviceLoginCacheDTO cache = DeviceLoginCacheDTO.of(map);
-           if (cache.getId() == dto.getDid()
-                || StringKit.same(cache.getName(),dto.getName())
-                || cache.getFlag() == dto.getFlag()) {
-               return BusinessKit.fail("login repeated");
-           }
-            needRemovePreviousLogged = true;
         }
-        Device device = deviceService.getDevice(dto.getDid(), dto.getName(), dto.getFlag());
+        Device device = deviceService.getDevice(dto.getDid(), dto.getName(), flag);
         if (device == null) {
             if (StringKit.isEmpty(dto.getCode()) && deviceLevel == LARY.DEVICE.LEVEL.SLAVE) {
                 return BusinessKit.fail("cmd:[login on new device],phone:"+user.getPhone());
             }else {
-                if (dto.getCode() == null) {
-                    return BusinessKit.fail("cmd:get sms code when login on new device");
-                }
                 // check code
-                Map<Object, Object> map = cacheComponent.getHash(kvBuilder.addDeviceK(uid, dto.getPhone()));
-                if (map == null) {
-                    log.error("login on new device failed,no verify code found,uid:{}",uid);
-                    return BusinessKit.fail("verify code expire");
-                }
-                DeviceAddResponseCacheDTO cache = DeviceAddResponseCacheDTO.of(map);
-                if(StringKit.diff(dto.getCode(),cache.getCode())
-                    || StringKit.diff(dto.getName(),cache.getName())
-                    || dto.getFlag() != cache.getFlag()){
-                    log.error("verify code not match,uid:{}",uid);
-                    return BusinessKit.fail("verify code not match");
+                ResponsePair<Void> pair = userCacheComponent.verifyLoginSMS(dto.getPhone(), dto.getCode(), dto.getName(), flag);
+                if (pair.isFail()) {
+                    return BusinessKit.fail(pair.getMsg());
                 }
                 device = new Device()
                         .setUid(uid)
-                        .setFlag(dto.getFlag())
+                        .setFlag(flag)
                         .setName(dto.getName())
                         .setLevel(deviceLevel);
-                deviceService.save(device);
-//                cacheComponent.delete(kvBuilder.addDeviceK(uid,dto.getPhone()));
+                deviceService.build(device);
             }
         }
-        DeviceLoginCacheDTO deviceLoginCacheDTO = new DeviceLoginCacheDTO()
-                .setFlag(dto.getFlag())
-                .setId(device.getId())
-                .setLevel(device.getLevel())
-                .setName(device.getName());
-        if (needRemovePreviousLogged) {
-            forceLogout(uid, dto.getFlag(),oldToken);
-        }
-//        deviceService.buildDeviceLoginCache(uid,device.getFlag(),deviceLoginCacheDTO);
-        String token = buildUserLoginCache(user.getUid(),user.getName(), user.getRole(), device.getFlag());
+        UserCache cache = new UserCache()
+                .setIp(dto.getIp())
+                .setFlag(flag)
+                .setDid(device.getDid())
+                .setUid(uid);
+        userCacheComponent.setData(uid, flag, cache);
+        String token = null;
         messageService.updateToken(new UserLoginUpdateTokenDTO()
                 .setUid(uid)
-                .setToken(token)
+//                .setToken(token)
                 .setFlag(device.getFlag())
                 .setLevel(device.getLevel()));
         deviceService.lambdaUpdate()
@@ -150,66 +130,47 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public ResponsePair<String> register(RegisterDTO dto) {
-//        String verifyCode = cacheComponent.get(kvBuilder.userRegisterK(dto.getPhone()));
-//        if(StringKit.diff(verifyCode,dto.getCode())) {
-//            return BusinessKit.FAIL("verify code error");
-//        }
-//        cacheComponent.delete(kvBuilder.userRegisterK(dto.getPhone()));
+        ResponsePair<Void> pair = userCacheComponent.verifyRegisterSMS(dto.getPhone(), dto.getCode(), dto.getName(), dto.getFlag());
+        if (pair.isFail()) {
+            return BusinessKit.fail(pair.getMsg());
+        }
         User user = new User();
         String name = dto.getName();
-        if (StringKit.isNotEmpty(name)) {
-            String badWord = SensitiveWordHelper.findFirst(name);
-            if (StringKit.isNotEmpty(badWord)) {
-                return BusinessKit.fail("username contains sensitive word");
-            }
-            user.setName(name);
+        if (StringKit.isNotEmpty(name) && !SensitiveWordHelper.contains(name)) {
+            return BusinessKit.fail("username contains sensitive word");
         }else {
-            user.setName(StringKit.random(6));
+            name = StringKit.random(6);
         }
+        user.setUsername(name);
         int flag = dto.getFlag();
         int deviceLevel = LARY.DEVICE.LEVEL.SLAVE;
         if (LARY.DEVICE.FLAG.APP == flag) {
             deviceLevel = LARY.DEVICE.LEVEL.MASTER;
         }
         int finalDeviceLevel = deviceLevel;
-        User savedUser = transactionTemplate.execute(status -> {
-            user.setQrVercode(UUIDKit.getUUID() + "@" + LARY.VerifyCode.QR)
-                    .setVercode(UUIDKit.getUUID() + "@" + LARY.VerifyCode.user)
+        long uid = builder.next();
+         transactionTemplate.executeWithoutResult(status -> {
+             Device device = new Device()
+                     .setUid(uid)
+                     .setName(dto.getDeviceName())
+                     .setFlag(flag)
+                     .setLevel(finalDeviceLevel);
+             deviceService.save(device);
+             userSettingService.save(new UserSetting().setUid(uid));
+            user.setQrVercode(UUIDKit.getUUID() + "@" + LARY.USER.VERIFY_CODE.QR)
+                    .setVercode(UUIDKit.getUUID() + "@" + LARY.USER.VERIFY_CODE.USER)
                     .setEmail(dto.getEmail())
                     .setPhone(dto.getPhone())
                     .setZone(dto.getZone())
-                    .setIsRobot(false)
-                    .setSex(LARY.Sex.man)
+                    .setSex(LARY.USER.SEX.MAN)
                     .setBio(dto.getBio())
                     .setBirthday(dto.getBirthday())
-                    .setPassword(StringKit.MD5(StringKit.MD5(dto.getPassword())));
+                    .setPassword(StringKit.encrypt(dto.getPassword()));
             save(user);
-            long uid = user.getUid();
-            long eventId = eventService.begin(new UserRegisterEventDTO()
-                    .setUid(uid)
-                    .setPhone(dto.getPhone()));
-            userSettingService.save(new UserSetting().setUid(uid));
-//            walletService.save(new Wallet().setUid(uid));
-//            followService.addSystemHelper(uid);
-            eventService.commit(eventId);
-            return user;
         });
-        Device device = new Device()
-                .setUid(user.getUid())
-                .setName(dto.getDeviceName())
-                .setFlag(flag)
-                .setLevel(finalDeviceLevel);
-        deviceService.save(device);
-        DeviceLoginCacheDTO deviceLoginCacheDTO = new DeviceLoginCacheDTO()
-                .setId(device.getId())
-                .setName(device.getName())
-                .setLevel(finalDeviceLevel)
-                .setFlag(flag);
-        assert savedUser != null;
-        deviceService.buildDeviceLoginCache(savedUser.getUid(),flag, deviceLoginCacheDTO);
-        String token = buildUserLoginCache(savedUser.getUid(), name, user.getRole(),flag);
+         String token = null;
         UpdateTokenDTO tokenDTO = new UpdateTokenDTO()
-                .setUid(user.getUid())
+                .setUid(uid)
                 .setToken(token)
                 .setFlag(flag)
                 .setLevel(deviceLevel);
@@ -219,11 +180,6 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public ResponsePair<Void> logout(HttpServletRequest request) {
-        TokenPair pair = of(request);
-        if (pair == null) {
-            return BusinessKit.fail("logout FAIL");
-        }
-        forceLogout(pair.uid,pair.flag,pair.token);
         return BusinessKit.ok();
     }
 
@@ -233,63 +189,54 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     }
 
     @Override
-    public ResponsePair<Void> registerCode(String phone) {
-        String token = SmsCodeKit.getToken();
-        if (LARY.testMode) {
-            SmsFactory.getSmsBlend("aliyun-test").sendMessageAsync(phone,token);
-        }
-        cacheComponent.set(kvBuilder.userRegisterK(phone),kvBuilder.userRegisterV(token), redisBusinessConfig.getRegisterExpire());
+    public ResponsePair<Void> registerCode(String phone,String name,int flag) {
+        userCacheComponent.registerSMS(phone, name, flag);
         return BusinessKit.ok();
     }
 
     @Override
-    public ResponsePair<Void> destroyCode(String phone) {
-        String token = SmsCodeKit.getToken();
-        if (LARY.testMode) {
-            SmsFactory.getSmsBlend("aliyun-test").sendMessageAsync(phone,token);
-        }
-        cacheComponent.set(kvBuilder.userRegisterK(phone),kvBuilder.userRegisterV(token), redisBusinessConfig.getRegisterExpire());
-        return BusinessKit.ok();
+    public ResponsePair<Void> destroyCode(String phone,String name,int flag)  {
+        userCacheComponent.destroySMS(phone, name, flag);
+        return  BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<Void> refresh(HttpServletRequest request) {
-        TokenPair pair = of(request);
-        if (pair == null) {
-            return BusinessKit.fail("refresh FAIL");
-        }
-        cacheComponent.renewal(kvBuilder.userLoginTokenK(pair.token), redisBusinessConfig.getLoginUserTokenExpire());
-        cacheComponent.renewal(kvBuilder.userLoginK(pair.uid,pair.flag), redisBusinessConfig.getLoginUserExpire());
-        deviceService.renewalDeviceLoginCache(pair.uid,pair.flag);
         return BusinessKit.ok();
     }
 
     @Override
     public ResponsePair<Void> destroy(UserDestroyDTO dto) {
         long uid = RequestContext.uid();
-        String verifyCode = cacheComponent.get(kvBuilder.userDestroyK(uid));
-        if(StringKit.diff(verifyCode,dto.getCode())){
-            return BusinessKit.fail("check verify code error");
+        int flag = RequestContext.flag();
+        if (flag != dto.getFlag()) {
+            return BusinessKit.fail("not support");
         }
-        String appToken = cacheComponent.get(kvBuilder.userLoginK(uid, LARY.DEVICE.FLAG.APP));
-        String pcToken = cacheComponent.get(kvBuilder.userLoginK(uid, LARY.DEVICE.FLAG.PC));
-        if (StringKit.isNotEmpty(appToken)){
-            forceLogout(uid,LARY.DEVICE.FLAG.APP,appToken);
+        User user = lambdaQuery()
+                .select(User::getPhone,User::getSid,
+                        User::getRid,User::getWid)
+                .eq(User::getUid, uid)
+                .one();
+        if (user == null) {
+            return BusinessKit.fail("user not exist");
         }
-        if (StringKit.isNotEmpty(pcToken)){
-            forceLogout(uid,LARY.DEVICE.FLAG.PC,pcToken);
+        UserCache appData = userCacheComponent.getData(uid, LARY.DEVICE.FLAG.APP);
+        UserCache pcData = userCacheComponent.getData(uid, LARY.DEVICE.FLAG.PC);
+        if (appData != null){
+            forceLogout(uid,LARY.DEVICE.FLAG.APP);
+        }
+        if (pcData != null){
+            forceLogout(uid,LARY.DEVICE.FLAG.PC);
         }
         transactionTemplate.executeWithoutResult(status -> {
-//            walletService.lambdaUpdate()
-//                    .set(Wallet::getIsBlock,true)
-//                    .set(Wallet::getIsDelete,true)
-//                    .eq(Wallet::getUid,uid);
-            userSettingService.lambdaUpdate()
-                    .set(UserSetting::get,true)
-                    .eq(UserSetting::getUid,uid);
+            walletService.lambdaUpdate()
+                    .set(Wallet::getStatus,LARY.WALLET.STATUS.DESTROY)
+                    .eq(Wallet::getWid,uid)
+                    .update();
             lambdaUpdate()
-                    .set(User::getIsDelete,true)
-                    .eq(User::getUid,uid);
+                    .set(User::getStatus,LARY.USER.STATUS.DESTROY)
+                    .eq(User::getUid,uid)
+                    .update();
         });
         return BusinessKit.ok();
     }
@@ -297,6 +244,7 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     @Override
     public ResponsePair<UserVO> update(UserUpdateDTO dto) {
+        // TODO  :  impl
         return null;
     }
 
@@ -316,52 +264,49 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
     public List<Long> getValidUsers(List<Long> members) {
         List<User> data = lambdaQuery()
                 .select(User::getUid)
-                .eq(User::getStatus, LARY.USER.STATUS.OK)
-                .eq(User::getIsDelete, false)
                 .in(User::getUid, members)
                 .list();
         if (CollectionKit.isEmpty(data)) {
             return null;
         }
         return  data.stream()
+                .filter(u->u.getStatus() == LARY.USER.STATUS.OK)
                 .map(User::getUid)
                 .toList();
     }
 
-    private void forceLogout(long uid,int flag,String token) {
-        cacheComponent.delete(kvBuilder.userLoginK(uid,flag));
-        cacheComponent.delete(kvBuilder.userLoginTokenK(token));
-        deviceService.removeDeviceLoginCache(uid,flag);
+    private void forceLogout(long uid,int flag) {
+        userCacheComponent.dropData(uid,flag);
     }
-    private String buildUserLoginCache(long uid,String name,int flag,int role) {
-        String token = UUIDKit.getUUID() + "@" + flag;
-        cacheComponent.set(kvBuilder.userLoginK(uid,flag),kvBuilder.userLoginV(token), redisBusinessConfig.getLoginUserExpire());
-        cacheComponent.set(kvBuilder.userLoginTokenK(token),kvBuilder.userLoginTokenV(uid,name,role), redisBusinessConfig.getLoginUserTokenExpire());
-        return token;
-    }
+//    private String buildUserLoginCache(long uid,String name,int flag,int role) {
+//        String token = UUIDKit.getUUID() + "@" + flag;
+//        cacheComponent.set(kvBuilder.userLoginK(uid,flag),kvBuilder.userLoginV(token), redisBusinessConfig.getLoginUserExpire());
+//        cacheComponent.set(kvBuilder.userLoginTokenK(token),kvBuilder.userLoginTokenV(uid,name,role), redisBusinessConfig.getLoginUserTokenExpire());
+//        return token;
+//    }
 
-    /**
-     * 获取token pair
-     * @param request {@link HttpServletRequest}
-     * @return {@link TokenPair}
-     */
-    private  TokenPair of(HttpServletRequest request) {
-        String token = String.valueOf(request.getHeader("token"));
-        if (token == null) {
-            return null;
-        }
-        String[] tmp = token.split("@");
-        if (tmp.length != 2) {
-            return null;
-        }
-        String userInfo = cacheComponent.get(kvBuilder.userLoginTokenK(token));
-        if(StringKit.isEmpty(userInfo)) {
-            return null;
-        }
-        String[] args = userInfo.split("@");
-        if (args.length <= 2) {
-            return null;
-        }
-        return new TokenPair(Integer.parseInt(args[0]),token,Integer.parseInt(tmp[1]));
-    }
+//    /**
+//     * 获取token pair
+//     * @param request {@link HttpServletRequest}
+//     * @return {@link TokenPair}
+//     */
+//    private  TokenPair of(HttpServletRequest request) {
+//        String token = String.valueOf(request.getHeader("srsToken"));
+//        if (token == null) {
+//            return null;
+//        }
+//        String[] tmp = token.split("@");
+//        if (tmp.length != 2) {
+//            return null;
+//        }
+//        String userInfo = cacheComponent.get(kvBuilder.userLoginTokenK(token));
+//        if(StringKit.isEmpty(userInfo)) {
+//            return null;
+//        }
+//        String[] args = userInfo.split("@");
+//        if (args.length <= 2) {
+//            return null;
+//        }
+//        return new TokenPair(Integer.parseInt(args[0]),token,Integer.parseInt(tmp[1]));
+//    }
 }

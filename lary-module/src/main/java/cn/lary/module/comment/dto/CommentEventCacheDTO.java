@@ -1,12 +1,12 @@
 package cn.lary.module.comment.dto;
 
-import cn.lary.module.cache.dto.AbstractCacheDTO;
+import cn.lary.module.cache.dto.CacheDTO;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
 @Data
 @Accessors(chain = true)
-public class CommentEventCacheDTO extends AbstractCacheDTO{
+public class CommentEventCacheDTO extends CacheDTO {
     /**
      * 评论事件id
      */

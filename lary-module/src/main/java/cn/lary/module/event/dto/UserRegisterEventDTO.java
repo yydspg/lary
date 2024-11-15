@@ -2,6 +2,7 @@ package cn.lary.module.event.dto;
 
 import cn.lary.common.kit.JSONKit;
 import cn.lary.module.common.constant.LARY;
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 import lombok.experimental.Accessors;

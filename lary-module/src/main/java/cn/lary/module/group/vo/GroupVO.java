@@ -20,14 +20,14 @@ public class GroupVO {
     /**
      * 群Id
      */
-    private Long id;
+    private Long gid;
 
     private Integer num;
 
     public GroupVO(Group group) {
         name = group.getName();
         avatar = group.getGroupAvatar();
-        id = group.getGroupId();
+        gid = group.getGid();
         num = group.getGroupNum();
     }
 

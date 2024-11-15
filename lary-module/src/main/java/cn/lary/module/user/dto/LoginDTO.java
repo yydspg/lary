@@ -1,5 +1,6 @@
 package cn.lary.module.user.dto;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
@@ -40,4 +41,6 @@ public class LoginDTO {
      * 需要手机验证码验证,此项必填
      */
     private String code;
+
+    private String ip;
 }

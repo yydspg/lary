@@ -30,6 +30,15 @@ public interface LARY {
         interface STATUS {
             int BAN = 1;
             int OK = 2;
+            int DESTROY = 3;
+        }
+        interface SEX {
+            int MAN = 1;
+            int WOMAN = 2;
+        }
+        interface VERIFY_CODE {
+            int QR = 12;
+            int USER = 13;
         }
     }
     interface SYNC_STATUS {
@@ -43,6 +52,7 @@ public interface LARY {
             int BLOCK = 2;
             int COMMON = 3;
             int UP =4;
+            int DOWN =5;
         }
     }
 
@@ -173,6 +183,7 @@ public interface LARY {
             int BLOCK =  1;
             int COMMON = 2;
             int DANGER = 3;
+            int DESTROY =  4;
         }
         interface TRANSFER {
             int POCKET = 1;

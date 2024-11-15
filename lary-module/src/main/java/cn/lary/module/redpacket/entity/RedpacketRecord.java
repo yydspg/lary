@@ -43,7 +43,7 @@ public class RedpacketRecord implements Serializable {
     /**
      * 直播id
      */
-    private Long streamId;
+    private Long sid;
 
     /**
      * 红包金额
@@ -53,9 +53,9 @@ public class RedpacketRecord implements Serializable {
     /**
      * 同步状态
      */
-    private Integer syncStatus;
+    private Integer sync;
 
-    
+    private Long createAt;
 
  
 }

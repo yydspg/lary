@@ -1,6 +1,7 @@
 package cn.lary.module.user.dto;
 
 import cn.lary.common.dto.DTO;
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -22,6 +23,7 @@ public class RegisterDTO extends DTO {
      */
     @NotNull(message = "code is null")
     private String code;
+
     @JSONField(format="invite_code")
     private String inviteCode;
 

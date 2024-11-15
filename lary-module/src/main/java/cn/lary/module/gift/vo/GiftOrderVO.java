@@ -12,12 +12,12 @@ public class GiftOrderVO {
     /**
      * 主播uid
      */
-    private long anchorUid;
+    private long aid;
 
     /**
      * 直播流id
      */
-    private long streamId;
+    private long sid;
 
     /**
      * 购买状态 0 未支付，1 已支付 2 取消支付 3 支付失败
@@ -32,7 +32,7 @@ public class GiftOrderVO {
     /**
      * 完成时间
      */
-    private LocalDateTime completeAt;
+    private long completeAt;
 
     /**
      * 花费
@@ -48,22 +48,22 @@ public class GiftOrderVO {
     /**
      * 礼物id
      */
-    private int giftId;
+    private int gid;
 
     /**
      * 礼物购买数量
      */
-    private int giftNum;
+    private int num;
 
     public GiftOrderVO() {}
 
     public GiftOrderVO(GiftOrder order) {
-        this.anchorUid = order.getAnchorUid();
-        this.streamId = order.getStreamId();
+        this.aid = order.getAid();
+        this.sid = order.getSid();
         this.status = order.getStatus();
         this.sn = order.getSn();
         this.completeAt = order.getCompleteAt();
         this.amount = order.getAmount();
-        this.giftId = order.getGiftId();
+        this.gid = order.getGid();
     }
 }

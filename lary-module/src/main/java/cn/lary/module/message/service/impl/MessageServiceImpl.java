@@ -81,9 +81,9 @@ public class MessageServiceImpl implements MessageService {
         try {
             wkUserService.updateToken(dto);
         }catch (Exception e){
-            log.error("update token error,uid:{},flag:{}",dto.getUid(),dto.getFlag());
+            log.error("update srsToken error,uid:{},flag:{}",dto.getUid(),dto.getFlag());
         }
-        log.info("update token success,uid:{}", dto.getUid());
+        log.info("update srsToken success,uid:{}", dto.getUid());
     }
 
     @Override

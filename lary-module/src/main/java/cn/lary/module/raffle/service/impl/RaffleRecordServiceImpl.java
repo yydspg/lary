@@ -32,8 +32,9 @@ public class RaffleRecordServiceImpl extends ServiceImpl<RaffleRecordMapper, Raf
     @Override
     public ResponsePair<List<RaffleRecordVO>> my(RaffleRecordPageQueryDTO dto) {
         List<RaffleRecord> records = lambdaQuery()
-                .select(RaffleRecord::getRaffleId, RaffleRecord::getToUid, RaffleRecord::getStreamId)
-                .select(RaffleRecord::getUid, RaffleRecord::getContent, RaffleRecord::getSyncStatus)
+                .select(RaffleRecord::getEid, RaffleRecord::getToUid,
+                        RaffleRecord::getSid,RaffleRecord::getUid,
+                        RaffleRecord::getContent, RaffleRecord::getSync)
                 .eq(RaffleRecord::getUid, RequestContext.uid())
                 .page(new Page<>(dto.getPageIndex(), dto.getPageSize()))
                 .getRecords();

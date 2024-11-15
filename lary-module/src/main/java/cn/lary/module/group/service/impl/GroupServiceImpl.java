@@ -4,11 +4,9 @@ import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.CollectionKit;
-import cn.lary.common.kit.DateKit;
 import cn.lary.common.kit.StringKit;
-import cn.lary.external.wk.api.WKMessageService;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.group.dto.CreateGroupDTO;
+import cn.lary.module.group.dto.GroupBuildDTO;
 import cn.lary.module.group.entity.Group;
 import cn.lary.module.group.entity.GroupMember;
 import cn.lary.module.group.mapper.GroupMapper;
@@ -24,7 +22,6 @@ import cn.lary.module.user.service.UserService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import retrofit2.Response;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -55,7 +52,7 @@ public class GroupServiceImpl extends ServiceImpl<GroupMapper, Group> implements
     }
 
     @Override
-    public ResponsePair<CreateGroupVO> build(CreateGroupDTO dto) {
+    public ResponsePair<CreateGroupVO> build(GroupBuildDTO dto) {
         long creator = RequestContext.uid();
         if (isReachCreateLimit(creator, LocalDateTime.now())) {
             return BusinessKit.fail("reach create limit");

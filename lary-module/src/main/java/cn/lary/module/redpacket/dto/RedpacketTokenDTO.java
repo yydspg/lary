@@ -1,4 +1,4 @@
-package cn.lary.module.redpacket.entity;
+package cn.lary.module.redpacket.dto;
 
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -8,8 +8,10 @@ import java.math.BigDecimal;
 @Data
 @Accessors(chain = true)
 public class RedpacketTokenDTO {
-
-    private long id;
+    /**
+     * record id
+     */
+    private long rid;
 
     /**
      * 用户id
@@ -19,7 +21,7 @@ public class RedpacketTokenDTO {
     /**
      * 直播id
      */
-    private long streamId;
+    private long sid;
 
     /**
      * 红包金额

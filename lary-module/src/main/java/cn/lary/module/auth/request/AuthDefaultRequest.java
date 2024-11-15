@@ -31,10 +31,10 @@ public abstract class AuthDefaultRequest implements AuthRequest {
     }
 
     /**
-     * 获取access token
+     * 获取access srsToken
      *
      * @param authCallback 授权成功后的回调参数
-     * @return token
+     * @return srsToken
      * @see AuthDefaultRequest#authorize(String)
      */
     protected abstract AuthToken getAccessToken(AuthCallback authCallback);
@@ -147,7 +147,7 @@ public abstract class AuthDefaultRequest implements AuthRequest {
     /**
      * 返回获取userInfo的url
      *
-     * @param authToken token
+     * @param authToken srsToken
      * @return 返回获取userInfo的url
      */
     protected String userInfoUrl(AuthToken authToken) {
@@ -157,7 +157,7 @@ public abstract class AuthDefaultRequest implements AuthRequest {
     /**
      * 返回获取revoke authorization的url
      *
-     * @param authToken token
+     * @param authToken srsToken
      * @return 返回获取revoke authorization的url
      */
     protected String revokeUrl(AuthToken authToken) {

@@ -42,7 +42,8 @@ public class UserRedDotServiceImpl extends ServiceImpl<UserRedDotMapper, UserRed
     @Override
     public ResponsePair<List<UserRedDotVO>> redDots() {
         List<UserRedDot> data = lambdaQuery()
-                .select(UserRedDot::getCategory, UserRedDot::getCount, UserRedDot::getIsDot)
+                .select(UserRedDot::getCategory, UserRedDot::getCount,
+                        UserRedDot::getIsDot)
                 .eq(UserRedDot::getUid, RequestContext.uid())
                 .orderByDesc(UserRedDot::getCreateAt)
                 .list();

@@ -7,7 +7,7 @@ import java.util.Map;
 
 @Data
 @Accessors(chain = true)
-public class JoinLiveCacheDTO extends AbstractCacheDTO {
+public class JoinLiveCacheDTO extends CacheDTO {
 
     private String ip;
     private String name;

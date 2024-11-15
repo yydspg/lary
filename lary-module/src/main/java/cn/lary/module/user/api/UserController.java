@@ -34,7 +34,7 @@ public class UserController {
     /**
      * 注册
      * @param dto {@link RegisterDTO}
-     * @return token
+     * @return srsToken
      */
     @PostMapping("/register")
     public SingleResponse<String> register(@Valid @RequestBody RegisterDTO dto) {
@@ -48,7 +48,7 @@ public class UserController {
     /**
      *登陆
      * @param dto {@link LoginDTO}
-     * @return token
+     * @return srsToken
      */
     @PostMapping("/login")
     public SingleResponse<String> login(@Validated @RequestBody LoginDTO dto) {
@@ -61,7 +61,7 @@ public class UserController {
     /**
      *注销
      * @param dto {@link UserDestroyDTO}
-     * @return token
+     * @return srsToken
      */
     @PostMapping("/destroy")
     public SingleResponse<Void> login(@Validated @RequestBody UserDestroyDTO dto) {
@@ -72,16 +72,20 @@ public class UserController {
         return ResponseKit.ok(response.getData());
     }
     @GetMapping("/register/code")
-    public SingleResponse<Void> registerCode(@RequestParam(value = "phone") String phone) {
-        ResponsePair<Void> response = userExecute.registerCode(phone);
+    public SingleResponse<Void> registerCode(@RequestParam(value = "phone") String phone,
+                                             @RequestParam(value = "name") String name,
+                                             @RequestParam(value = "flag") Integer flag) {
+        ResponsePair<Void> response = userExecute.registerCode(phone,name,flag);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
         return ResponseKit.ok();
     }
     @GetMapping("/destroy/code")
-    public SingleResponse<Void> destroyCode(@RequestParam(value = "phone") String phone) {
-        ResponsePair<Void> response = userExecute.destroyCode(phone);
+    public SingleResponse<Void> destroyCode(@RequestParam(value = "phone") String phone,
+                                            @RequestParam(value = "name") String name,
+                                            @RequestParam(value = "flag") Integer flag) {
+        ResponsePair<Void> response = userExecute.destroyCode(phone,name,flag);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }

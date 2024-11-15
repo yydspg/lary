@@ -22,7 +22,7 @@ public class RedisTokenOperation implements Operation {
 
     @Override
     public String getTokenFromRequest(HttpServletRequest request) {
-        return request.getHeader("token");
+        return request.getHeader("srsToken");
     }
 
     @Override
@@ -33,20 +33,18 @@ public class RedisTokenOperation implements Operation {
         }
         String value = getLoginTokenV(token);
         if(StringKit.isEmpty(value)) {
-            ResponseKit.responseFail(response, "token empty");
+            ResponseKit.responseFail(response, "srsToken empty");
             return null;
         }
         String[] args = StringKit.split(value, "@");
         if(args == null || args.length < 2) {
-            ResponseKit.responseFail(response, "token error");
+            ResponseKit.responseFail(response, "srsToken error");
             return null;
         }
         Profile pair = new Profile();
         pair.setUid(Long.parseLong(args[0]));
         pair.setName(args[1]);
-        if (args.length > 2) {
-            pair.setRole( Integer.parseInt(args[2]));
-        }
+
         return pair;
     }
 

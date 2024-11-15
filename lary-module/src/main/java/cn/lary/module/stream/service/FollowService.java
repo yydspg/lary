@@ -4,6 +4,7 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.module.stream.dto.FollowDTO;
 import cn.lary.module.stream.dto.FollowPageQueryDTO;
 import cn.lary.module.stream.entity.Follow;
+import cn.lary.module.stream.vo.FollowVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
@@ -18,7 +19,7 @@ import java.util.List;
  */
 public interface FollowService extends IService<Follow> {
 
-    Follow build(Follow dto);
+//    Follow build(Follow dto);
 
 //    /**
 //     * 获取被关注关系<br>
@@ -61,5 +62,5 @@ public interface FollowService extends IService<Follow> {
      * @param dto {@link FollowPageQueryDTO}
      * @return {@link Follow}
      */
-     ResponsePair<List<Follow>> follows( FollowPageQueryDTO dto);
+     ResponsePair<List<FollowVO>> follows(FollowPageQueryDTO dto);
 }

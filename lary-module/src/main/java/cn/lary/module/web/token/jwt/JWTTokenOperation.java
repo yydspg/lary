@@ -10,7 +10,7 @@ public class JWTTokenOperation implements Operation {
 
     @Override
     public String getTokenFromRequest(HttpServletRequest request) {
-        return request.getHeader("token");
+        return request.getHeader("srsToken");
     }
 
     @Override

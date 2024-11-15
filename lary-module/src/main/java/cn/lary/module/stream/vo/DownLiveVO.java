@@ -2,9 +2,10 @@ package cn.lary.module.stream.vo;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.experimental.Accessors;
 
 @Data
-@AllArgsConstructor
+@Accessors(chain = true)
 public class DownLiveVO {
 
     private int watchNum;
@@ -14,4 +15,8 @@ public class DownLiveVO {
     private String duration;
     private String token;
     private long event;
+
+    public DownLiveVO() {}
+
+
 }

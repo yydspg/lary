@@ -26,7 +26,7 @@ public class PubSubComponent {
         }
     }
 
-    // 发布消息到频道
+
     public <T> void publishToTopic(String topicName, T message) {
         RTopic topic = redisson.getTopic(topicName);
         topic.publish(message);

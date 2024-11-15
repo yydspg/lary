@@ -8,6 +8,7 @@ import cn.lary.module.stream.component.FollowBusinessExecute;
 import cn.lary.module.stream.dto.FollowDTO;
 import cn.lary.module.stream.dto.FollowPageQueryDTO;
 import cn.lary.module.stream.entity.Follow;
+import cn.lary.module.stream.vo.FollowVO;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
@@ -41,8 +42,8 @@ public class FollowController {
     }
 
     @PostMapping("/follows")
-    public PageResponse<Follow> page(@RequestBody @Valid FollowPageQueryDTO dto) {
-        ResponsePair<List<Follow>> response = followBusinessExecute.follows(dto);
+    public PageResponse<FollowVO> page(@RequestBody @Valid FollowPageQueryDTO dto) {
+        ResponsePair<List<FollowVO>> response = followBusinessExecute.follows(dto);
         if (response.isFail()) {
             return ResponseKit.pageFail(response.getMsg());
         }

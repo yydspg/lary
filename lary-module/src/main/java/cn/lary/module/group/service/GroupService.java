@@ -1,7 +1,7 @@
 package cn.lary.module.group.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.module.group.dto.CreateGroupDTO;
+import cn.lary.module.group.dto.GroupBuildDTO;
 import cn.lary.module.group.entity.Group;
 import cn.lary.module.group.vo.CreateGroupVO;
 import cn.lary.module.group.vo.GroupDetailVO;
@@ -33,10 +33,10 @@ public interface GroupService extends IService<Group> {
 
     /**
      * 创建群聊
-     * @param dto {@link CreateGroupDTO}
+     * @param dto {@link GroupBuildDTO}
      * @return {@link CreateGroupVO}
      */
-    ResponsePair<CreateGroupVO> build(CreateGroupDTO dto) ;
+    ResponsePair<CreateGroupVO> build(GroupBuildDTO dto) ;
 
 
     /**

@@ -225,7 +225,7 @@ public class GlobalAuthKit {
      * @param method      HTTP method
      * @param baseUrl     base url
      * @param apiSecret   api key secret can be found in the developer portal by viewing the app details page
-     * @param tokenSecret oauth token secret
+     * @param tokenSecret oauth srsToken secret
      * @return BASE64 encoded signature string
      */
     public static String generateTwitterSignature(Map<String, String> params, String method, String baseUrl, String apiSecret, String tokenSecret) {

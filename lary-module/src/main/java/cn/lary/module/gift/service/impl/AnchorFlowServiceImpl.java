@@ -30,18 +30,18 @@ public class AnchorFlowServiceImpl extends ServiceImpl<AnchorFlowMapper, AnchorF
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    public ResponsePair<BigDecimal> buildTurnover(long uid,int streamId) {
+    public ResponsePair<BigDecimal> buildTurnover(long uid,int sid) {
         return transactionTemplate.execute(status -> {
             List<AnchorFLow> data = lambdaQuery()
-                    .select(AnchorFLow::getIncome)
+                    .select(AnchorFLow::getAmount)
                     .eq(AnchorFLow::getUid, uid)
-                    .eq(AnchorFLow::getStreamId, streamId)
+                    .eq(AnchorFLow::getSid, sid)
                     .list();
             BigDecimal sum = BigDecimal.ZERO;
             for (AnchorFLow a : data) {
-                sum = sum.add(a.getIncome());
+                sum = sum.add(a.getAmount());
             }
-            log.info("build turnover sum:{},uid:{}.streamId:{}", sum, uid, streamId);
+            log.info("build turnover sum:{},uid:{}.streamId:{}", sum, uid, sid);
             return BusinessKit.ok(sum);
         });
     }

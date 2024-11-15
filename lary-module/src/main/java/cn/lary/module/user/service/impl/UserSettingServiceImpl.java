@@ -44,8 +44,8 @@ public class UserSettingServiceImpl extends ServiceImpl<UserSettingMapper, UserS
     @Override
     public ResponsePair<UserSettingVO> get() {
         UserSetting setting = lambdaQuery()
-                .select(UserSetting::getMedal,UserSetting::getDynamic)
-                .select(UserSetting::getFanList,UserSetting::getNewMessageNotice)
+                .select(UserSetting::getMedal,UserSetting::getDynamic,
+                        UserSetting::getFanList,UserSetting::getNewMessageNotice)
                 .eq(UserSetting::getUid, RequestContext.uid())
                 .one();
         if (setting == null) {

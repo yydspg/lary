@@ -3,7 +3,7 @@ drop table if exists `comment`;
 create table `comment`(
                           id bigint unsigned not null auto_increment primary key ,
                           cid bigint unsigned not null comment '评论id',
-#     rid bigint unsigned not null  comment '评论root id',
+#     sid bigint unsigned not null  comment '评论root id',
 #     pid bigint unsigned not null comment '评论父id',
                           eid bigint unsigned not null comment '评论事件id',
                           uid bigint unsigned not null comment '用户uid',

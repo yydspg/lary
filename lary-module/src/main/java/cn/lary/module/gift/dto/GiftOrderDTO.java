@@ -1,6 +1,7 @@
 package cn.lary.module.gift.dto;
 
 import cn.lary.module.pay.dto.BusinessPaymentDTO;
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;

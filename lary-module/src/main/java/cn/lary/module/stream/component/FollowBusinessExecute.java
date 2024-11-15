@@ -5,6 +5,7 @@ import cn.lary.module.stream.dto.FollowDTO;
 import cn.lary.module.stream.dto.FollowPageQueryDTO;
 import cn.lary.module.stream.entity.Follow;
 import cn.lary.module.stream.service.FollowService;
+import cn.lary.module.stream.vo.FollowVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -40,9 +41,9 @@ public class FollowBusinessExecute {
     /**
      * 关注列表
      * @param dto {@link FollowPageQueryDTO}
-     * @return {@link Follow}
+     * @return {@link FollowVO}
      */
-    public ResponsePair<List<Follow>> follows( FollowPageQueryDTO dto) {
+    public ResponsePair<List<FollowVO>> follows(FollowPageQueryDTO dto) {
         return followService.follows(dto);
     }
 

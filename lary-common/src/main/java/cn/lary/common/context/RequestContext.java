@@ -20,7 +20,7 @@ public class RequestContext {
      * this method use thread local ,can not return null
      * @return uid
      */
-    public static long uid() {
+    public  static long uid() {
         return  getCurrent().getUid();
     }
 
@@ -30,5 +30,13 @@ public class RequestContext {
      */
     public static String name() {
         return  getCurrent().getName();
+    }
+
+    /**
+     * this method use thread local ,can not return null
+     * @return device flag
+     */
+    public static int flag() {
+        return  getCurrent().getFlag();
     }
 }

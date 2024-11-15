@@ -1,8 +1,6 @@
 package cn.lary.module.order.component;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.pay.component.AbstractBusinessPayment;
@@ -20,8 +18,6 @@ import org.springframework.transaction.support.TransactionTemplate;
 @RequiredArgsConstructor
 public class GoodsOrderPayment extends AbstractBusinessPayment {
 
-    private final CacheComponent cacheComponent;
-    private final KVBuilder kvBuilder;
     private final PaymentPluginManager paymentPluginManager;
     private final TransactionTemplate transactionTemplate;
     private final MessageService messageService;

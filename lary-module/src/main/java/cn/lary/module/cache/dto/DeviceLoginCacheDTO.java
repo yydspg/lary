@@ -1,16 +1,13 @@
 package cn.lary.module.cache.dto;
 
-import cn.lary.common.dto.DTO;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.alibaba.fastjson2.annotation.JSONField;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
-import java.util.Map;
-
 @Data
 @Accessors(chain = true)
-public class DeviceLoginCacheDTO extends AbstractCacheDTO{
+public class DeviceLoginCacheDTO extends CacheDTO {
 
     @JSONField(format="id")
     private long id;
@@ -25,12 +22,4 @@ public class DeviceLoginCacheDTO extends AbstractCacheDTO{
 
     private int level;
 
-    public static DeviceLoginCacheDTO of(Map map) {
-        DeviceLoginCacheDTO dto = new DeviceLoginCacheDTO();
-        dto.setId((Integer) map.get("id"));
-        dto.setName((String) map.get("name"));
-        dto.setFlag((Integer) map.get("flag"));
-        dto.setLevel((Integer) map.get("level"));
-        return dto;
-    }
 }

@@ -4,16 +4,11 @@ import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.CollectionKit;
-import cn.lary.common.kit.SmsCodeKit;
 import cn.lary.common.kit.StringKit;
-import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.common.config.RedisBusinessConfig;
 import cn.lary.module.id.LaryIDBuilder;
-import cn.lary.module.user.dto.DeviceAddDTO;
-import cn.lary.module.cache.dto.DeviceAddResponseCacheDTO;
-import cn.lary.module.cache.dto.DeviceLoginCacheDTO;
+import cn.lary.module.user.component.UserCache;
+import cn.lary.module.user.component.UserCacheComponent;
 import cn.lary.module.user.entity.Device;
 import cn.lary.module.user.mapper.DeviceMapper;
 import cn.lary.module.user.service.DeviceService;
@@ -43,22 +38,22 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
 
 
     private final LaryIDBuilder builder;
+    private final UserCacheComponent userCacheComponent;
     private final TransactionTemplate transactionTemplate;
 
     @Override
-    public Device build(Device dto) {
+    public final Device build(Device dto) {
         dto.setDid(builder.next());
         save(dto);
         return dto;
     }
 
     @Override
-    public ResponsePair<Void> removeDevice(int deviceId) {
+    public ResponsePair<Void> removeDevice(int did) {
         return transactionTemplate.execute(status -> {
             Device device = lambdaQuery()
-                    .select(Device::getUid)
-                    .select(Device::getId)
-                    .eq(Device::getDid, deviceId)
+                    .select(Device::getUid,Device::getDid)
+                    .eq(Device::getDid, did)
                     .eq(Device::getUid, RequestContext.uid())
                     .one();
             if (device == null || device.getStatus() == LARY.CORE.STATUS.REMOVE) {
@@ -66,27 +61,13 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
             }
             lambdaUpdate()
                     .set(Device::getStatus, LARY.CORE.STATUS.REMOVE)
-                    .eq(Device::getId, deviceId)
-                    .eq(Device::getUid, RequestContext.uid());
+                    .eq(Device::getId, did)
+                    .eq(Device::getUid, RequestContext.uid())
+                    .update();
             return BusinessKit.ok();
         });
     }
 
-//    @Override
-//    public void removeDeviceLoginCache(long uid,int flag){
-//        cacheComponent.delete(kvBuilder.deviceLoginK(uid, flag));
-//    }
-//
-//    @Override
-//    public void renewalDeviceLoginCache(long uid, int flag) {
-//        cacheComponent.renewal(kvBuilder.deviceLoginK(uid,flag), redisBusinessConfig.getLoginDeviceCacheExpire());
-//    }
-//
-//    @Override
-//    public void buildDeviceLoginCache(long uid,int flag, DeviceLoginCacheDTO dto) {
-//        cacheComponent.setHash(kvBuilder.deviceLoginK(uid,flag),
-//                kvBuilder.deviceLoginV(dto), redisBusinessConfig.getLoginDeviceCacheExpire());
-//    }
 
     @Override
     public Device getDevice(long deviceId, String name, int flag) {
@@ -104,10 +85,8 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
         }
         // deep search
         List<Device> devices = lambdaQuery()
-                .select(Device::getId,Device::getName)
-                .select(Device::getUid)
-                .select()
-                .select(Device::getFlag)
+                .select(Device::getId,Device::getName,
+                        Device::getFlag,Device::getUid)
                 .eq(Device::getUid, RequestContext.uid())
                 .list();
         if (CollectionKit.isEmpty(devices)) {
@@ -123,51 +102,52 @@ public class DeviceServiceImpl extends ServiceImpl<DeviceMapper, Device> impleme
     public ResponsePair<List<DeviceVO>> devices() {
         long uid = RequestContext.uid();
         List<Device> devices = lambdaQuery()
-                .select(Device::getId, Device::getName)
-                .select(Device::getFlag, Device::getLevel)
-                .select(Device::getLastLogin)
+                .select(Device::getId, Device::getName,
+                        Device::getFlag, Device::getLevel,
+                        Device::getLastLogin)
                 .eq(Device::getUid, uid)
                 .list();
         if (CollectionKit.isEmpty(devices)) {
             log.error("no devices found,uid:{}",uid);
             return BusinessKit.fail("no devices found");
         }
-//        Map<Object, Object> pcLoginData = cacheComponent.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.PC));
-//        Map<Object, Object> appLoginData = cacheComponent.getHash(kvBuilder.deviceLoginK(uid,LARY.DEVICE.FLAG.APP));
+        UserCache pcLoginData = userCacheComponent.getData(uid, LARY.DEVICE.FLAG.PC);
+        UserCache appLoginData = userCacheComponent.getData(uid, LARY.DEVICE.FLAG.APP);
         if (pcLoginData == null && appLoginData == null) {
             log.error("no login devices found when search landing device,uid:{}",uid);
             return BusinessKit.fail("no login devices found");
         }
-        DeviceLoginCacheDTO pcLoginDTO = null;
-        DeviceLoginCacheDTO appLoginDTO= null;
+        long pcDid;
+        long appDid;
         if (pcLoginData != null) {
-            appLoginDTO = DeviceLoginCacheDTO.of(pcLoginData);
+            pcDid = pcLoginData.getDid();
+        } else {
+            pcDid = 0;
         }
         if (appLoginData != null) {
-            pcLoginDTO = DeviceLoginCacheDTO.of(appLoginData);
+            appDid = appLoginData.getDid();
+        } else {
+            appDid = 0;
         }
-        List<DeviceVO> vos = new ArrayList<>();
-        for (Device device : devices) {
-            DeviceVO vo = new DeviceVO(device);
+        return BusinessKit.ok( devices.stream().map(d->{
+            DeviceVO vo = new DeviceVO(d);
             if (vo.getFlag() == LARY.DEVICE.FLAG.APP
-                && appLoginDTO != null
-                && appLoginDTO.getId() == device.getId()){
+                    && appDid == d.getId()){
                 vo.setLanding(true);
             }
             if (vo.getFlag() == LARY.DEVICE.FLAG.PC
-                && pcLoginDTO != null
-                && pcLoginDTO.getId() == device.getId()){
+                    && pcDid == d.getId()){
                 vo.setLanding(true);
             }
-        }
-        return BusinessKit.ok(vos);
+            return vo;
+        }).toList());
     }
 
 //    @Override
 //    public ResponsePair<Void> getAddDeviceSmsCode(DeviceAddDTO dto) {
-//        String token = SmsCodeKit.getToken();
+//        String srsToken = SmsCodeKit.getSrsToken();
 //        DeviceAddResponseCacheDTO data = new DeviceAddResponseCacheDTO()
-//                .setCode(token)
+//                .setCode(srsToken)
 //                .setName(dto.getName())
 //                .setFlag(dto.getFlag());
 //        cacheComponent.setHash(kvBuilder.addDeviceK(dto.getUid(),dto.getPhone())

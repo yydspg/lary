@@ -104,7 +104,7 @@ public class AuthAlipayRequest extends AuthDefaultRequest {
     }
 
     /**
-     * 刷新access token （续期）
+     * 刷新access srsToken （续期）
      *
      * @param authToken 登录成功后返回的Token信息
      * @return AuthResponse

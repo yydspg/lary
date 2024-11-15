@@ -30,7 +30,7 @@ public class UserExecute {
      * 如果从设备登陆,且为新设备,需要请求{@link DeviceExecute} <br>
      * 获取code重新请求
      * @param dto {@link LoginDTO}
-     * @return login token
+     * @return login srsToken
      */
     public ResponsePair<String> login(LoginDTO dto) {
         return userService.login(dto);
@@ -40,7 +40,7 @@ public class UserExecute {
      * 注册接口<br>
      * 通过验证码校验后,直接执行登陆的逻辑
      * @param dto {@link RegisterDTO}
-     * @return token
+     * @return srsToken
      */
     public ResponsePair<String> register(RegisterDTO dto) {
         return userService.register(dto);
@@ -49,7 +49,7 @@ public class UserExecute {
      * 注销接口<br>
      * 通过验证码校验后
      * @param dto {@link RegisterDTO}
-     * @return token
+     * @return srsToken
      */
     public ResponsePair<Void> destroy(UserDestroyDTO dto) {
         return userService.destroy(dto);
@@ -59,8 +59,8 @@ public class UserExecute {
      * @param phone 手机号
      * @return OK
      */
-    public ResponsePair<Void> registerCode(String phone) {
-        return userService.registerCode(phone);
+    public ResponsePair<Void> registerCode(String phone,String name,int flag) {
+        return userService.registerCode(phone, name, flag);
     }
 
     /**
@@ -68,13 +68,13 @@ public class UserExecute {
      * @param phone 手机号
      * @return OK
      */
-    public ResponsePair<Void> destroyCode(String phone) {
-        return userService.destroyCode(phone);
+    public ResponsePair<Void> destroyCode(String phone,String name,int flag) {
+        return userService.destroyCode(phone,name, flag);
     }
 
     /**
      * 刷新token
-     * @return token
+     * @return srsToken
      */
     public ResponsePair<Void> refreshToken(HttpServletRequest request) {
        return userService.refresh(request);

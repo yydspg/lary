@@ -31,8 +31,6 @@ public class AuthTaobaoRequest extends AuthDefaultRequest {
         return AuthToken.builder()
             .accessToken(object.getString("access_token"))
             .expireIn(object.getIntValue("expires_in"))
-            .tokenType(object.getString("token_type"))
-            .idToken(object.getString("id_token"))
             .refreshToken(object.getString("refresh_token"))
             .uid(object.getString("taobao_user_id"))
             .openId(object.getString("taobao_open_uid"))

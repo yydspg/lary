@@ -1,6 +1,7 @@
 package cn.lary.module.goods.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+
+import com.alibaba.fastjson2.annotation.JSONField;
 import lombok.Data;
 
 import java.math.BigDecimal;

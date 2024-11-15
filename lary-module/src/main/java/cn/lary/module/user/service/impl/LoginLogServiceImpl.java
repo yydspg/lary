@@ -36,16 +36,15 @@ public class LoginLogServiceImpl extends ServiceImpl<LoginLogMapper, LoginLog> i
     @Override
     public ResponsePair<List<LoginVO>> logins(LoginLogPageQueryDTO dto) {
         List<LoginLog> data = lambdaQuery()
-                .select(LoginLog::getLevel,LoginLog::getIp)
-                .select(LoginLog::getFlag,LoginLog::getName)
-                .select(LoginLog::getName)
+                .select(LoginLog::getLevel,LoginLog::getIp,
+                        LoginLog::getFlag,LoginLog::getName)
                 .eq(LoginLog::getUid, RequestContext.uid())
                 .list();
         if (CollectionKit.isEmpty(data)) {
             log.error("search login log error,uid:{}", RequestContext.uid());
             return BusinessKit.fail("no login log data found");
         }
-        return BusinessKit.ok( data.stream()
+        return BusinessKit.ok(data.stream()
                 .map(LoginVO::new)
                 .toList());
     }

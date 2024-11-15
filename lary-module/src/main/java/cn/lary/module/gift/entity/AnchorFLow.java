@@ -27,7 +27,13 @@ public class AnchorFLow implements Serializable {
 
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
-
+    /**
+     * flow id
+     */
+    private Long fid;
+    /**
+     * uid
+     */
     private Long uid;
 
     private Long toUid;
@@ -35,12 +41,12 @@ public class AnchorFLow implements Serializable {
     /**
      * 直播流id
      */
-    private Long streamId;
+    private Long sid;
 
     /**
      * 单笔收入
      */
-    private BigDecimal income;
+    private BigDecimal amount;
 
     /**
      * 收入来源web,app
@@ -55,33 +61,24 @@ public class AnchorFLow implements Serializable {
     /**
      * 礼物uid
      */
-    private Integer giftId;
+    private Integer gid;
 
-    private Integer giftNum;
+    private Integer num;
 
-    /**
-     * 是否是粉丝
-     */
-    private Integer followStatus;
-
-    
-
-
+    private Long createAt;
 
 
     public AnchorFLow() {}
 
     public AnchorFLow(GiftOrder order){
 
-        setUid(order.getAnchorUid());
+        setUid(order.getAid());
         setToUid(order.getUid());
-        setGiftId(order.getGiftId());
-        setIncome(order.getAmount());
-        setStreamId(order.getStreamId());
-        setGiftNum(order.getGiftNum());
+        setGid(order.getGid());
+        setAmount(order.getAmount());
+        setSid(order.getSid());
+        setNum(order.getNum());
         setClient(order.getClient());
-        setFollowStatus(order.getFollowStatus());
         setCompleteAt(LocalDateTime.now());
-
     }
 }

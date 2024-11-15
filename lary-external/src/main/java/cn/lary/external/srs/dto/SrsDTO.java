@@ -7,7 +7,7 @@ import java.util.Map;
 
 public class SrsDTO {
     /**
-     * 处理srs返回的 param 类型： ？token=xxx?uid=xxx
+     * 处理srs返回的 param 类型： ？srsToken=xxx?uid=xxx
      * @param paramStr 参数
      * @return map
      */

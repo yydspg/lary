@@ -1,7 +1,6 @@
 package cn.lary.module.redpacket.vo;
 
-import cn.lary.module.redpacket.entity.RedpacketEvent;
-import cn.lary.module.redpacket.entity.RedpacketEventCache;
+import cn.lary.module.redpacket.dto.RedpacketEventCache;
 import lombok.Data;
 
 import java.math.BigDecimal;
@@ -12,7 +11,7 @@ public class RedpacketEventVO {
     /**
      * 直播id
      */
-    private long stream;
+    private long sid;
 
     /**
      * 用户uid
@@ -48,7 +47,7 @@ public class RedpacketEventVO {
     public RedpacketEventVO() {}
 
     public RedpacketEventVO(RedpacketEventCache event) {
-        this.stream = event.getStream();
+        this.sid = event.getSid();
         this.uid = event.getUid();
         this.amount = event.getAmount();
         this.title = event.getTitle();

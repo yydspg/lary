@@ -1,6 +1,7 @@
 package cn.lary.module.user.dto;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
+
+import com.alibaba.fastjson2.annotation.JSONField;
 import lombok.Data;
 
 @Data

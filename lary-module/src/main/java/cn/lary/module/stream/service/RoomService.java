@@ -50,12 +50,12 @@ public interface RoomService extends IService<Room> {
      */
     ResponsePair<GoLiveVO> go(String ip, GoLiveDTO dto);
 
-    /**
-     * 判断是否是热门主播
-     * @param room {@link Room}
-     * @return OK
-     */
-    boolean isHot(Room room) ;
+//    /**
+//     * 判断是否是热门主播
+//     * @param room {@link Room}
+//     * @return OK
+//     */
+//    boolean isHot(Room room) ;
 
 
     ResponsePair<List<RoomVO>> show();

@@ -1,7 +1,7 @@
 package cn.lary.module.group.component;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.module.group.dto.CreateGroupDTO;
+import cn.lary.module.group.dto.GroupBuildDTO;
 import cn.lary.module.group.service.GroupService;
 import cn.lary.module.group.vo.CreateGroupVO;
 import cn.lary.module.group.vo.GroupDetailVO;
@@ -22,11 +22,11 @@ public class GroupBusinessExecute {
     /**
      * 创建群聊
      *
-     * @param dto {@link CreateGroupDTO}
+     * @param dto {@link GroupBuildDTO}
      * @return {@link CreateGroupVO}
      */
-    public ResponsePair<CreateGroupVO> create(CreateGroupDTO dto) {
-        return groupService.create(dto);
+    public ResponsePair<CreateGroupVO> build(GroupBuildDTO dto) {
+        return groupService.build(dto);
     }
  
 

@@ -24,8 +24,8 @@ public enum AuthResponseStatus {
     ILLEGAL_REQUEST(5007, "Illegal request"),
     ILLEGAL_CODE(5008, "Illegal code"),
     ILLEGAL_STATUS(5009, "Illegal state"),
-    REQUIRED_REFRESH_TOKEN(5010, "The refresh token is required; it must not be null"),
-    ILLEGAL_TOKEN(5011, "Invalid token"),
+    REQUIRED_REFRESH_TOKEN(5010, "The refresh srsToken is required; it must not be null"),
+    ILLEGAL_TOKEN(5011, "Invalid srsToken"),
     ;
 
     private final int code;

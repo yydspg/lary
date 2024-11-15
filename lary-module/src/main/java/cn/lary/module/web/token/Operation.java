@@ -8,7 +8,6 @@ import jakarta.servlet.http.HttpServletResponse;
 public interface Operation {
 
 
-
      String getTokenFromRequest(HttpServletRequest request);
 
      Profile process(String token, HttpServletResponse response);

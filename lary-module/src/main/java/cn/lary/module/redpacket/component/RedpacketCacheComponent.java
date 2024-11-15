@@ -2,8 +2,8 @@ package cn.lary.module.redpacket.component;
 
 import cn.lary.module.cache.component.PubSubComponent;
 import cn.lary.module.cache.dto.RedpacketRuleNotifyDTO;
-import cn.lary.module.redpacket.entity.RedpacketEventCache;
-import cn.lary.module.redpacket.entity.RedpacketRuleCache;
+import cn.lary.module.redpacket.dto.RedpacketEventCache;
+import cn.lary.module.redpacket.dto.RedpacketRuleCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import jakarta.annotation.PostConstruct;

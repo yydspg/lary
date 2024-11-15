@@ -1,6 +1,7 @@
 package cn.lary.module.gift.vo;
 
 import cn.lary.module.gift.entity.GiftCache;
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 

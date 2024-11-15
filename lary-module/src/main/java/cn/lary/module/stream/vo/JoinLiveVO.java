@@ -1,7 +1,7 @@
 package cn.lary.module.stream.vo;
 
 import cn.lary.module.raffle.dto.RaffleEventCache;
-import cn.lary.module.redpacket.entity.RedpacketEventCache;
+import cn.lary.module.redpacket.dto.RedpacketEventCache;
 import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -14,7 +14,7 @@ public class JoinLiveVO {
 
     private String specify;
     /**
-     * 回调 token
+     * 回调 srsToken
      */
     private String token;
 

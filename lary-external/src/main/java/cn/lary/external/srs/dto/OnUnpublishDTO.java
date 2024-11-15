@@ -1,5 +1,6 @@
 package cn.lary.external.srs.dto;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
@@ -11,7 +12,7 @@ import lombok.Data;
  *           "vhost": "video.test.com",
  *           "app": "live",
  *           "stream": "livestream",
- *           "param":"?token=xxx&eventId=xxx",
+ *           "param":"?srsToken=xxx&eventId=xxx",
  *           "server_id": "vid-werty",
  *           "stream_url": "video.test.com/live/livestream",
  *           "stream_id": "vid-124q9y3"

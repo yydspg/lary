@@ -13,21 +13,22 @@ public class UserCache {
     /**
      * room id
      */
-    private long rid;
+    private long sid;
+    /**
+     * danmaku id
+     */
+    private long cid;
     /**
      * device id
      */
     private long did;
-
     /**
-     * srs token
+     * device flag
      */
-    private String token;
+    private int flag;
 
-    /**
-     * srs stream id
-     */
-    private long ssid;
+    private String username;
+
 
     /**
      * identify
@@ -38,18 +39,24 @@ public class UserCache {
      * ip
      */
     private String ip;
+    /**
+     * srs srsToken
+     */
+    private String srsToken;
+
     private String srsStreamId;
+
     private String srsServerId;
+
     private String srsClientId;
 
     public UserCache() {}
 
     public UserCache(UserCache cache) {
         this.uid = cache.uid;
-        this.rid = cache.rid;
+        this.sid = cache.sid;
         this.did = cache.did;
-        this.token = cache.token;
-        this.ssid = cache.ssid;
+        this.srsToken = cache.srsToken;
         this.identify = cache.identify;
         this.ip = cache.ip;
         this.srsStreamId = cache.srsStreamId;

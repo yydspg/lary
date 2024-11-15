@@ -1,4 +1,4 @@
-package cn.lary.module.redpacket.entity;
+package cn.lary.module.redpacket.dto;
 
 import lombok.Data;
 import lombok.experimental.Accessors;

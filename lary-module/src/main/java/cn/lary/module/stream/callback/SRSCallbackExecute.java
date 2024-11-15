@@ -7,17 +7,13 @@ import cn.lary.external.srs.dto.OnPublishDTO;
 import cn.lary.external.srs.dto.OnStopDTO;
 import cn.lary.external.srs.dto.OnUnpublishDTO;
 import cn.lary.module.common.service.EventService;
-import cn.lary.module.common.cache.KVBuilder;
-import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.cache.dto.JoinLiveCacheDTO;
-import cn.lary.module.cache.dto.LiveCache;
+import cn.lary.module.stream.dto.LiveCache;
 import cn.lary.module.stream.component.LiveCacheComponent;
 import cn.lary.module.stream.entity.StreamRecord;
 import cn.lary.module.stream.service.StreamRecordService;
 import cn.lary.module.user.component.UserCache;
 import cn.lary.module.user.component.UserCacheComponent;
-import com.baomidou.mybatisplus.core.conditions.update.LambdaUpdateWrapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
@@ -25,7 +21,6 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.Map;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 @Service
@@ -42,7 +37,7 @@ public class SRSCallbackExecute implements SRSCallback {
     @Override
     public int onPublish(OnPublishDTO dto) {
         Map<String, String> args = dto.parseParams(dto.getParam());
-        String token = args.get("token");
+        String token = args.get("srsToken");
         long sid = Long.parseLong( args.get("sid"));
         String eventId = args.get("event");
         LiveCache cache = liveCacheComponent.getLive(sid);
@@ -64,7 +59,7 @@ public class SRSCallbackExecute implements SRSCallback {
                 .setLevel(cache.getLevel())
                 .setIdentify(cache.getIdentify())
                 .setSrsClientId(dto.getClientId())
-                .setSrsSid(dto.getStreamId())
+                .setSrsStreamId(dto.getStreamId())
                 .setSrsTcUrl(dto.getTcUrl())
                 .setSrsServerId(dto.getServerId())
                 .setSrsStreamUrl(dto.getStreamUrl());
@@ -85,7 +80,7 @@ public class SRSCallbackExecute implements SRSCallback {
 
         Map<String, String> args = dto.parseParams(dto.getParam());
 
-        String token = args.get("token");
+        String token = args.get("srsToken");
         long sid = Integer.parseInt( args.get("sid"));
         String eventId = args.get("event");
         LiveCache cache = liveCacheComponent.getLive(sid);
@@ -94,7 +89,7 @@ public class SRSCallbackExecute implements SRSCallback {
             return SRS.CALLBACK_STATS.FAIL;
         }
         if (StringKit.diff(token, cache.getSrsToken())) {
-            log.error("srs unpublish FAIL when check token:{},uid:{}",token,sid);
+            log.error("srs unpublish FAIL when check srsToken:{},uid:{}",token,sid);
             return SRS.CALLBACK_STATS.FAIL;
         }
         eventService.commit(Long.parseLong(eventId));
@@ -104,26 +99,27 @@ public class SRSCallbackExecute implements SRSCallback {
     @Override
     public int onPlay(OnPlayDTO dto) {
         Map<String, String> args = dto.parseParams(dto.getParam());
-        String token = args.get("token");
+        String token = args.get("srsToken");
         long sid = Long.parseLong( args.get("sid"));
         long uid = Long.parseLong( args.get("uid"));
+        int  flag = Integer.parseInt( args.get("flag"));
         LiveCache live = liveCacheComponent.getLive(sid);
         if (live == null) {
             return SRS.CALLBACK_STATS.FAIL;
         }
-        UserCache cache = userCacheComponent.getData(uid);
+        UserCache cache = userCacheComponent.getData(uid,flag);
 
         if (StringKit.diff(dto.getIp(), cache.getIp())) {
             return SRS.CALLBACK_STATS.FAIL;
         }
-        if (StringKit.diff(token, cache.getToken())) {
+        if (StringKit.diff(token, cache.getSrsToken())) {
             return SRS.CALLBACK_STATS.FAIL;
         }
         UserCache updateRecord = new UserCache(cache)
                 .setSrsStreamId(dto.getStreamId())
                 .setSrsClientId(dto.getClientId())
                 .setSrsServerId(dto.getServerId());
-        userCacheComponent.setData(uid, updateRecord);
+        userCacheComponent.setData(uid,flag, updateRecord);
         return SRS.CALLBACK_STATS.OK;
     }
 

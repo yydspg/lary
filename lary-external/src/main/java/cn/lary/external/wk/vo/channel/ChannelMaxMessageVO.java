@@ -1,5 +1,6 @@
 package cn.lary.external.wk.vo.channel;
 
+import com.alibaba.fastjson2.annotation.JSONField;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 

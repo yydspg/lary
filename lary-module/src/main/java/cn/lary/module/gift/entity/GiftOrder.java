@@ -25,12 +25,15 @@ public class GiftOrder implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
-
     /**
      * 记录id
      */
     @TableId(value = "id", type = IdType.AUTO)
     private Long id;
+    /**
+     * 订单id
+     */
+    private Long oid;
 
     /**
      * 用户id
@@ -40,37 +43,48 @@ public class GiftOrder implements Serializable {
     /**
      * 主播uid
      */
-    private Long anchorUid;
+    private Long aid;
 
     /**
      * wk 弹幕流id
      */
-    private Long danmakuId;
+    private Long cid;
+    /**
+     * 直播流id
+     */
+    private Long sid;
+    /**
+     * 礼物uid
+     */
+    private Integer gid;
+
+
+    /**
+     * 礼物购买数量
+     */
+    private Integer num;
 
     /**
      * 异步通知地址
      */
-    private String notifyUrl;
+    private String notify;
 
     /**
      * 是否同步用户数据成功
      */
-    private Integer syncStatus;
+    private Integer sync;
 
     /**
      * 上游异常原因
      */
-    private String failReason;
+    private String reason;
 
-    /**
-     * 直播流id
-     */
-    private Long streamId;
+
 
     /**
      * 是否直接向主播支付,不通过wallet或者余额不足
      */
-    private Boolean isToAnchor;
+    private Boolean direct;
 
     /**
      * 购买状态 0 未支付，1 已支付 2 取消支付 3 支付失败
@@ -85,7 +99,7 @@ public class GiftOrder implements Serializable {
     /**
      * 完成时间
      */
-    private LocalDateTime completeAt;
+    private Long completeAt;
 
     /**
      * 花费
@@ -97,22 +111,12 @@ public class GiftOrder implements Serializable {
      */
     private Integer client;
 
-    /**
-     * 礼物uid
-     */
-    private Integer giftId;
 
 
-    /**
-     * 礼物购买数量
-     */
-    private Integer giftNum;
+    private Long creatAt;
 
-    private Integer followStatus;
-
+    private Long updateAt;
     
-
-
 
 
 }

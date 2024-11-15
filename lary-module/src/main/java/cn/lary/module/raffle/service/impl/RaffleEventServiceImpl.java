@@ -7,7 +7,7 @@ import cn.lary.common.kit.JSONKit;
 import cn.lary.common.kit.StringKit;
 import cn.lary.module.stream.component.LiveCacheComponent;
 import cn.lary.module.raffle.component.RaffleCacheComponent;
-import cn.lary.module.cache.dto.LiveCache;
+import cn.lary.module.stream.dto.LiveCache;
 import cn.lary.module.common.service.EventService;
 import cn.lary.module.event.dto.RafflePublishEventDTO;
 import cn.lary.module.message.dto.stream.CreateRaffleNotifyDTO;
@@ -58,7 +58,7 @@ public class RaffleEventServiceImpl extends ServiceImpl<RaffleEventMapper, Raffl
         }
         RaffleEventCache raffleCache = raffleCacheComponent.getRaffle(uid);
         if (raffleCache != null) {
-            log.error("have unfinished raffle,uid:{},streamId:{}", uid,cache.getStreamId());
+            log.error("have unfinished raffle,uid:{},streamId:{}", uid,cache.getSid());
             return BusinessKit.fail("have unfinished raffle");
         }
 
@@ -81,7 +81,7 @@ public class RaffleEventServiceImpl extends ServiceImpl<RaffleEventMapper, Raffl
         }
         Map param = getThreshold(dto);
         RaffleEvent raffle = new RaffleEvent()
-                .setStreamId(cache.getStreamId())
+                .setSid(cache.getSid())
                 .setDuration(dto.getDuration())
                 .setNum(dto.getNum())
                 .setParam(JSONKit.toJSON(param))
@@ -91,7 +91,7 @@ public class RaffleEventServiceImpl extends ServiceImpl<RaffleEventMapper, Raffl
                 .setTitle(title)
                 .setCategory(dto.getCategory());
         this.save(raffle);
-        long eventId = eventService.begin(new RafflePublishEventDTO(uid, cache.getStreamId(), raffle.getId()));
+        long eventId = eventService.begin(new RafflePublishEventDTO(uid, cache.getSid(), raffle.getId()));
         RaffleEventCache cacheDTO = new RaffleEventCache()
                 .setDuration(dto.getDuration())
                 .setContent(dto.getContent())
@@ -104,13 +104,13 @@ public class RaffleEventServiceImpl extends ServiceImpl<RaffleEventMapper, Raffl
 //        messageService.asyncSendRocketMessage(new RaffleEventAutoCloseMessage()
 //                .setEventId(eventId)
 //                .setRaffleId(raffle.getId())
-//                .setStreamId(raffle.getStreamId())
+//                .setStreamId(raffle.getSid())
 //                .setUid(uid)
 //                .setCategory(dto.getCategory()));
 //        messageService.asyncSendRocketMessage(new RaffleRuleLocalCacheMessage()
 //                .setUid(RequestContext.uid())
 //                .setShard(getHeat()));
-        messageService.send(new CreateRaffleNotifyDTO(uid, cache.getDanmakuId()));
+        messageService.send(new CreateRaffleNotifyDTO(uid, cache.getCid()));
         return BusinessKit.ok();
     }
 

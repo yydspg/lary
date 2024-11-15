@@ -1,7 +1,6 @@
 package cn.lary.module.cache.dto;
 
-import cn.lary.common.dto.DTO;
-import com.fasterxml.jackson.annotation.JsonProperty;
+import com.alibaba.fastjson2.annotation.JSONField;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 import lombok.experimental.Accessors;
@@ -10,7 +9,7 @@ import java.util.Map;
 
 @Data
 @Accessors(chain = true)
-public class DeviceAddResponseCacheDTO extends AbstractCacheDTO {
+public class DeviceAddResponseCacheDTO extends CacheDTO {
 
     @JSONField(format="name")
     private String name;

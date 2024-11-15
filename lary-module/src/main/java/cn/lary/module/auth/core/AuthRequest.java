@@ -24,7 +24,7 @@ public interface AuthRequest {
     }
 
     /**
-     * 刷新access token （续期）
+     * 刷新access srsToken （续期）
      */
     default AuthResponse refresh(AuthToken authToken) {
         throw new AuthException(AuthResponseStatus.NOT_IMPLEMENTED);

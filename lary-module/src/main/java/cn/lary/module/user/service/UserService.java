@@ -29,7 +29,7 @@ public interface UserService extends IService<User> {
      * 如果从设备登陆,且为新设备,需要请求<br>
      * 获取code重新请求
      * @param dto {@link LoginDTO}
-     * @return login token
+     * @return login srsToken
      */
     ResponsePair<String> login(LoginDTO dto);
 
@@ -58,13 +58,13 @@ public interface UserService extends IService<User> {
      * @param phone 手机号
      * @return OK
      */
-     ResponsePair<Void> registerCode(String phone);
+     ResponsePair<Void> registerCode(String phone,String name,int flag);
     /**
      * 用户注销时的手机验证
      * @param phone 手机号
      * @return OK
      */
-    ResponsePair<Void> destroyCode(String phone);
+    ResponsePair<Void> destroyCode(String phone,String name,int flag);
 
     /**
      * 刷新login的token<br>

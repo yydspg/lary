@@ -15,7 +15,7 @@ import lombok.Data;
  *   "app": "live",
  *   "tcUrl": "rtmp://127.0.0.1:1935/live?vhost=__defaultVhost__",
  *   "stream": "livestream",
- *   "param": "?token=xxx&uid=xxx&event=xxx",
+ *   "param": "?srsToken=xxx&uid=xxx&event=xxx",
  *   "stream_url": "video.test.com/live/livestream",
  *   "stream_id": "vid-124q9y3"
  * }

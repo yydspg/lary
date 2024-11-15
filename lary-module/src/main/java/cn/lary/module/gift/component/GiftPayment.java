@@ -19,7 +19,7 @@ import cn.lary.module.pay.dto.PaymentParamDTO;
 import cn.lary.module.pay.listener.gift.GiftOrderActiveDetectionMessage;
 import cn.lary.module.pay.plugin.PaymentPluginManager;
 import cn.lary.module.pay.vo.PaymentBuildVO;
-import cn.lary.module.cache.dto.LiveCache;
+import cn.lary.module.stream.dto.LiveCache;
 import cn.lary.module.wallet.dto.TransferDTO;
 import cn.lary.module.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
@@ -67,11 +67,11 @@ public class GiftPayment extends AbstractBusinessPayment {
         // no rollback
         GiftOrder order = new GiftOrder()
                 .setUid(uid)
-                .setAnchorUid(anchorUid)
-                .setDanmakuId(cache.getDanmakuId())
-                .setStreamId(cache.getStreamId())
-                .setGiftNum(dto.getNum())
-                .setGiftId(dto.getId())
+                .setAid(anchorUid)
+                .setCid(cache.getCid())
+                .setSid(cache.getSid())
+                .setNum(dto.getNum())
+                .setGid(dto.getId())
                 .setClient(dto.getClient())
                 .setStatus(LARY.PAYMENT.STATUS.INIT);
         giftOrderService.save(order);
@@ -95,7 +95,7 @@ public class GiftPayment extends AbstractBusinessPayment {
 
             ResponsePair<Void> pair = walletService.transfer(new TransferDTO()
                     .setAmount(amount)
-                    .setChannel(cache.getStreamId())
+                    .setChannel(cache.getSid())
                     .setUid(uid)
                     .setToUid(anchorUid)
                     .setCategory(LARY.CHANNEL.TYPE.PERSON));
@@ -113,7 +113,7 @@ public class GiftPayment extends AbstractBusinessPayment {
             return BusinessKit.fail(execute.getMsg());
         }
         messageService.asyncSendRocketMessage(new SynchronizeGiftOrderMessage().setGiftOrder(order));
-        messageService.send(new GiftSendNotifyDTO(cache.getDanmakuId(), uid,uidName,dto.getId(),dto.getNum()));
+        messageService.send(new GiftSendNotifyDTO(cache.getCid(), uid,uidName,dto.getId(),dto.getNum()));
         return execute;
     }
 
@@ -131,7 +131,7 @@ public class GiftPayment extends AbstractBusinessPayment {
     protected void processWhenPaymentFail(PaymentBuildVO vo) {
         giftOrderService.lambdaUpdate()
                 .set(GiftOrder::getStatus, LARY.PAYMENT.STATUS.FAIL)
-                .set(GiftOrder::getFailReason, vo.getErrMsg())
+                .set(GiftOrder::getReason, vo.getErrMsg())
                 .set(GiftOrder::getCompleteAt, LocalDateTime.now())
                 .eq(GiftOrder::getId, vo.getPaymentId());
     }

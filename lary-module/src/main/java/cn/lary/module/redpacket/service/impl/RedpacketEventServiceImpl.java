@@ -7,14 +7,14 @@ import cn.lary.common.kit.StringKit;
 import cn.lary.module.common.service.EventService;
 import cn.lary.module.stream.component.LiveCacheComponent;
 import cn.lary.module.redpacket.component.RedpacketCacheComponent;
-import cn.lary.module.cache.dto.LiveCache;
+import cn.lary.module.stream.dto.LiveCache;
 import cn.lary.module.common.constant.LARY;
 import cn.lary.module.event.dto.RedPacketEventDTO;
 import cn.lary.module.redpacket.dto.RedpacketBuildNotifyDTO;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.redpacket.dto.RedpacketEventBuildDTO;
 import cn.lary.module.redpacket.entity.RedpacketEvent;
-import cn.lary.module.redpacket.entity.RedpacketEventCache;
+import cn.lary.module.redpacket.dto.RedpacketEventCache;
 import cn.lary.module.redpacket.mapper.RedpacketEventMapper;
 import cn.lary.module.redpacket.service.RedpacketEventService;
 import cn.lary.module.redpacket.listener.RedpacketEventAutoCloseMessage;
@@ -108,17 +108,17 @@ public class RedpacketEventServiceImpl extends ServiceImpl<RedpacketEventMapper,
                 .setUid(uid)
                 .setTitle(dto.getTitle())
                 .setDuration(dto.getDuration())
-                .setStream(live.getStreamId())
+                .setStream(live.getSid())
                 .setStartAt(dto.getStartAt());
         save(event);
-        long eventId = eventService.begin(new RedPacketEventDTO(uid, live.getStreamId(), event.getId()));
+        long eventId = eventService.begin(new RedPacketEventDTO(uid, live.getSid(), event.getId()));
 //        redpacketCacheComponent.setRedpacket(uid,new RedpacketEventCache()
 //                .setAmount(dto.getAmount())
 //                .setAmount(amount)
 //                .setTitle(dto.getTitle())
 //                .setNum(dto.getNum())
 //                .setStartAt(dto.getStartAt())
-//                .setStream(live.getStreamId()));
+//                .setStream(live.getSid()));
 //        redpacketCacheComponent.setRule(uid,new RedpacketRuleCache()
 //                .setCategory(););
 //        messageService.asyncSendRocketMessage(new RedpacketLocalRuleMessage()
@@ -128,9 +128,9 @@ public class RedpacketEventServiceImpl extends ServiceImpl<RedpacketEventMapper,
         messageService.asyncSendRocketMessage(new RedpacketEventAutoCloseMessage()
                         .setUid(uid)
                         .setEventId(eventId)
-                        .setStreamId(live.getStreamId())
+                        .setStreamId(live.getSid())
                         .setRedPacketId(event.getId()));
-        messageService.send(new RedpacketBuildNotifyDTO(uid, live.getStreamId(), eventId));
+        messageService.send(new RedpacketBuildNotifyDTO(uid, live.getSid(), eventId));
         return BusinessKit.ok();
     }
 

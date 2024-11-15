@@ -27,36 +27,51 @@ public class User implements Serializable {
     private static final long serialVersionUID = 1L;
 
     @TableId(value = "id", type = IdType.AUTO)
+    private Long id;
+    /**
+     * uid
+     */
     private Long uid;
-
-    private String name;
+    /**
+     * setting id
+     */
+    private Long sid;
+    /**
+     * 直播间id
+     */
+    private Long rid;
+    /**
+     * 钱包id
+     */
+    private Long wid;
 
     /**
-     * 短编码
+     * 用户名
      */
-    private String shortNo;
+    private String username;
+
+    private String phone;
 
     /**
-     * 0 is man,1 is woman
+     * Oath 登陆
      */
-    private Integer sex;
-
-//    private String username;
+    private String eid;
 
     private String password;
 
+    /**
+     * 1 is man,2 is woman
+     */
+    private Integer sex;
 
-    private Boolean isUploadAvatar;
 
     private String birthday;
 
     private String zone;
 
-    private String phone;
+    private String avatar;
 
     private String regin;
-
-    private Boolean isRobot;
 
     private String bio;
 
@@ -68,16 +83,15 @@ public class User implements Serializable {
 
     private String email;
 
-    private String avatar;
-
     private Integer role;
 
     private Integer status;
 
-    
+    private String home;
+    /**
+     * 短编码
+     */
+    private String shortNo;
 
-
-    private String anchorAnnounce;
-
-
+    private long createAt;
 }

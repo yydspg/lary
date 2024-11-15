@@ -6,7 +6,7 @@ import lombok.Data;
 import java.util.List;
 
 @Data
-public class CreateGroupDTO {
+public class GroupBuildDTO {
     @NotNull
     private Integer category;
 

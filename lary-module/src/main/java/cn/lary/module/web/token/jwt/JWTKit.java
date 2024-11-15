@@ -40,7 +40,7 @@ public class JWTKit {
     }
 
     /**
-     * 判断 token 是否过期
+     * 判断 srsToken 是否过期
      */
     public static boolean isTokenExpired(Date expiration){
         return expiration.before(new Date());

@@ -12,9 +12,9 @@ import cn.lary.module.common.constant.LARY;
 import cn.lary.module.id.LaryIDBuilder;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.redpacket.dto.RedpacketFsyncDTO;
-import cn.lary.module.redpacket.entity.RedpacketEventCache;
-import cn.lary.module.redpacket.entity.RedpacketRuleCache;
-import cn.lary.module.redpacket.entity.RedpacketTokenDTO;
+import cn.lary.module.redpacket.dto.RedpacketEventCache;
+import cn.lary.module.redpacket.dto.RedpacketRuleCache;
+import cn.lary.module.redpacket.dto.RedpacketTokenDTO;
 import cn.lary.module.redpacket.service.RedPacketInvolvedService;
 import cn.lary.module.redpacket.vo.RedpacketTokenVO;
 import cn.lary.module.wallet.listener.RedpacketRecordMessage;
@@ -34,7 +34,7 @@ public class RedPacketInvolvedServiceImpl implements RedPacketInvolvedService {
     private final RedpacketCacheComponent redpacketCacheComponent;
     private final CacheComponent cacheComponent;
     private final MessageService messageService;
-    private final LaryIDBuilder idGenerator;
+    private final LaryIDBuilder builder;
 
     
     @Override
@@ -75,7 +75,7 @@ public class RedPacketInvolvedServiceImpl implements RedPacketInvolvedService {
                     .map(t -> JSONKit.fromJSON(t, RedpacketTokenDTO.class))
                     .toList();
         }
-
+        // TODO  : impl !!
         return BusinessKit.ok();
     }
 
@@ -90,16 +90,16 @@ public class RedPacketInvolvedServiceImpl implements RedPacketInvolvedService {
         if (remind <= 0) {
             return BusinessKit.ok(new RedpacketTokenVO()
                     .setStatus(LARY.REDPACKET.STATUS.FAIL)
-                    .setStreamId(event.getStream()));
+                    .setStreamId(event.getSid()));
         }
         RedpacketTokenDTO dto = new RedpacketTokenDTO()
                 .setAmount(event.getAmount())
                 .setUid(RequestContext.uid())
-                .setStreamId(event.getStream())
-                .setId(idGenerator.next());
+                .setSid(event.getSid())
+                .setRid(builder.next());
         return BusinessKit.ok(new RedpacketTokenVO()
                 .setStatus(LARY.REDPACKET.STATUS.INIT)
-                .setStreamId(event.getStream())
+                .setStreamId(event.getSid())
                 .setToken(token(dto)));
     }
     private String token(RedpacketTokenDTO dto) {

@@ -12,7 +12,7 @@ import lombok.Data;
  *          "vhost": "video.test.com",
  *          "app": "live",
  *          "stream": "livestream",
- *          "param":"?token=xxx&uid=xxx",
+ *          "param":"?srsToken=xxx&uid=xxx",
  *          "pageUrl": "http://www.test.com/live.html",
  *          "server_id": "vid-werty",
  *          "stream_url": "video.test.com/live/livestream",

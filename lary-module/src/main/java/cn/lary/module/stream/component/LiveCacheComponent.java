@@ -1,6 +1,6 @@
 package cn.lary.module.stream.component;
 
-import cn.lary.module.cache.dto.LiveCache;
+import cn.lary.module.stream.dto.LiveCache;
 import com.github.benmanes.caffeine.cache.CacheLoader;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import com.github.benmanes.caffeine.cache.LoadingCache;
@@ -40,6 +40,11 @@ public class LiveCacheComponent {
     public void incrWatchNum(long rid) {
 
     }
+
+    public void setStream(long sid){
+
+    }
+
     private CacheLoader<Long,LiveCache>  loader() {
         return new CacheLoader<Long, LiveCache>() {
 

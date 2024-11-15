@@ -1,7 +1,7 @@
 package cn.lary.module.user.interceptor;
 
 import cn.lary.common.context.Profile;
-import cn.lary.module.web.token.redis.RedisTokenOperation;
+import cn.lary.module.web.token.Operation;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
@@ -14,7 +14,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @RequiredArgsConstructor
 public class UserLoginTokenInterceptor implements HandlerInterceptor {
 
-    private final RedisTokenOperation operation;
+    private final Operation operation;
 
 
     @Override

@@ -4,7 +4,7 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.dto.SingleResponse;
 import cn.lary.common.kit.ResponseKit;
 import cn.lary.module.group.component.GroupBusinessExecute;
-import cn.lary.module.group.dto.CreateGroupDTO;
+import cn.lary.module.group.dto.GroupBuildDTO;
 import cn.lary.module.group.dto.GroupAvatarUploadDTO;
 import cn.lary.module.group.file.GroupAvatarUploadProcessor;
 import cn.lary.module.group.vo.CreateGroupVO;
@@ -29,12 +29,12 @@ public class GroupController {
 
     /**
      * 创建群聊
-     * @param dto {@link CreateGroupDTO}
+     * @param dto {@link GroupBuildDTO}
      * @return {@link CreateGroupVO}
      */
     @PostMapping("/create")
-    public SingleResponse<CreateGroupVO> create(@RequestBody @Valid CreateGroupDTO dto) {
-        ResponsePair<CreateGroupVO> response = groupBusinessExecute.create(dto);
+    public SingleResponse<CreateGroupVO> create(@RequestBody @Valid GroupBuildDTO dto) {
+        ResponsePair<CreateGroupVO> response = groupBusinessExecute.build(dto);
         if (response.isFail()) {
             return ResponseKit.fail(response.getMsg());
         }
