@@ -15,26 +15,30 @@ import cn.lary.module.redpacket.dto.RedpacketFsyncDTO;
 import cn.lary.module.redpacket.dto.RedpacketEventCache;
 import cn.lary.module.redpacket.dto.RedpacketRuleCache;
 import cn.lary.module.redpacket.dto.RedpacketTokenDTO;
+import cn.lary.module.redpacket.entity.RedpacketRecord;
 import cn.lary.module.redpacket.service.RedPacketInvolvedService;
+import cn.lary.module.redpacket.service.RedpacketRecordService;
 import cn.lary.module.redpacket.vo.RedpacketTokenVO;
 import cn.lary.module.wallet.listener.RedpacketRecordMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
+import java.util.Optional;
 
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class RedPacketInvolvedServiceImpl implements RedPacketInvolvedService {
 
-
-
     private final RedpacketCacheComponent redpacketCacheComponent;
     private final CacheComponent cacheComponent;
     private final MessageService messageService;
     private final LaryIDBuilder builder;
+    private final RedpacketRecordService redpacketRecordService;
+    private final TransactionTemplate transactionTemplate;
 
     
     @Override
@@ -74,8 +78,15 @@ public class RedPacketInvolvedServiceImpl implements RedPacketInvolvedService {
             List<RedpacketTokenDTO> data = tokens.stream()
                     .map(t -> JSONKit.fromJSON(t, RedpacketTokenDTO.class))
                     .toList();
+            if (CollectionKit.isNotEmpty(data)) {
+                List<RedpacketRecord> store = data.stream().map(RedpacketRecord::new).toList();
+                if (CollectionKit.isNotEmpty(store)) {
+                    transactionTemplate.executeWithoutResult(status -> {
+                        redpacketRecordService.saveBatch(store);
+                    });
+                }
+            }
         }
-        // TODO  : impl !!
         return BusinessKit.ok();
     }
 

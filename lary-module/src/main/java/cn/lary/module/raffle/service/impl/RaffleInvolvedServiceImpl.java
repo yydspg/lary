@@ -28,16 +28,15 @@ public class RaffleInvolvedServiceImpl implements RaffleInvolvedService {
     private final CacheComponent cacheComponent;
 
     @Override
-    public ResponsePair<Void> join(long toUid) {
+    public ResponsePair<Void> join(long eid) {
         long uid = RequestContext.uid();
-        RaffleEventCache raffle = raffleCacheComponent.getRaffle(toUid);
+        RaffleEventCache raffle = raffleCacheComponent.getRaffle(eid);
         if (raffle == null) {
             return BusinessKit.fail("抽奖活动已过期");
         }
         if (raffle.getFan()) {
             Follow follow = followService.lambdaQuery()
-                    .select(Follow::getUid, Follow::getToUid)
-                    .select(Follow::getLevel, Follow::getAmount)
+                    .select(Follow::getUid, Follow::getToUid,Follow::getLevel, Follow::getAmount)
                     .eq(Follow::getUid, uid)
                     .one();
             if (follow == null || follow.getStatus() != LARY.FOLLOW.STATUS.COMMON) {
@@ -51,11 +50,12 @@ public class RaffleInvolvedServiceImpl implements RaffleInvolvedService {
                 return BusinessKit.fail("送礼不足");
             }
         }
-        RaffleRuleCache rule = raffleCacheComponent.getRule(toUid);
+        // TODO  :  impl
+        RaffleRuleCache rule = raffleCacheComponent.getRule(eid);
         RaffleCachePair pair = rule.add(uid);
         if (pair.isSend()) {
             //sync
-            cacheComponent.appendInvolvedUsers(toUid,pair.getJoiner());
+            cacheComponent.appendInvolvedUsers(uid,pair.getJoiner());
         }
         if (pair.isOver()) {
 //            messageService.asyncSendRocketMessage(new RaffleRuleLocalCacheMessage()

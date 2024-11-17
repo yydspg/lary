@@ -6,8 +6,12 @@ import cn.lary.module.redpacket.vo.RedpacketTokenVO;
 
 public interface RedPacketInvolvedService {
 
-
-    ResponsePair<RedpacketTokenVO> join(long toUid);
+    /**
+     * 参与事件
+     * @param eid 事件id
+     * @return {@link RedpacketTokenVO}
+     */
+    ResponsePair<RedpacketTokenVO> join(long eid);
 
     ResponsePair<Void> fsync(RedpacketFsyncDTO dto);
 }

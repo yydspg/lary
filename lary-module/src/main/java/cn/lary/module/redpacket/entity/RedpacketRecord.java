@@ -1,5 +1,8 @@
 package cn.lary.module.redpacket.entity;
 
+import cn.lary.module.common.constant.LARY;
+import cn.lary.module.id.SystemClock;
+import cn.lary.module.redpacket.dto.RedpacketTokenDTO;
 import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
 import com.baomidou.mybatisplus.annotation.TableField;
@@ -57,5 +60,14 @@ public class RedpacketRecord implements Serializable {
 
     private Long createAt;
 
- 
+    public RedpacketRecord(){}
+
+    public RedpacketRecord(RedpacketTokenDTO dto){
+        rid = dto.getRid();
+        uid = dto.getUid();
+        sid=  dto.getSid();
+        amount = dto.getAmount();
+        sync = LARY.REDPACKET.STATUS.COMMIT;
+        createAt = SystemClock.now();
+    }
 }
