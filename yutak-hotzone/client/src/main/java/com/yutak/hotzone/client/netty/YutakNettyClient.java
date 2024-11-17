@@ -32,14 +32,14 @@ public class YutakNettyClient {
     private final  Bootstrap bootstrap;
 
     private YutakNettyClient() {
-        bootstrap = new Bootstrap();
+        bootstrap = build();
     }
     public static YutakNettyClient getInstance() {
         return INSTANCE;
     }
 
     private Bootstrap build(){
-        NioEventLoopGroup group = new NioEventLoopGroup(2);
+        NioEventLoopGroup group = new NioEventLoopGroup(1);
         Bootstrap bootstrap = new Bootstrap();
         KryoComponent<YutakProcessMessage> processMessageComponent = new KryoComponent<>(YutakProcessMessage.class);
         KryoComponent<YutakPushMessage> pushMessageComponent = new KryoComponent<>(YutakPushMessage.class);

@@ -38,7 +38,7 @@ create table `stream_record` (
     id bigint not null primary key auto_increment,
     stream_id varchar(40) not null ,
     uid varchar(40) not null default '' comment '主播id',
-    channel_id  varchar(40)  not null default '' comment 'wk 弹幕id',
+    channel_id  varchar(40)  not null default '' comment '弹幕id',
     buy_channel_id varchar(40) not null default '' comment 'gift 购买通道',
     start_at timestamp,
     end_at timestamp,

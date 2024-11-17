@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Configuration;
         "cn.lary.module.raffle.mapper",
         "cn.lary.module.redpacket.mapper",
         "cn.lary.module.comment.mapper",
+        "cn.lary.module.channel.mapper",
 })
 public class MybatisPlusConfig {
 

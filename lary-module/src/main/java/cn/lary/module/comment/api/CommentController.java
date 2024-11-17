@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
  * @since 2024-11-10
  */
 @RestController
-@RequestMapping("/comment/comment")
+@RequestMapping("/v1/comment")
 public class CommentController {
 
 }

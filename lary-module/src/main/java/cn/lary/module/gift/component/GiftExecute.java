@@ -33,7 +33,6 @@ public class GiftExecute {
      * @param dto {@link GiftOrderDTO}
      * @return {@link PaymentBuildVO}
      */
-    @Transactional(rollbackFor = Exception.class)
     public ResponsePair<PaymentBuildVO> pay(GiftOrderDTO dto) {
         return giftPayment.executePayment(dto);
     }

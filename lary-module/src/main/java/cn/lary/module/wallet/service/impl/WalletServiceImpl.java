@@ -5,6 +5,7 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.CollectionKit;
 import cn.lary.module.common.constant.LARY;
+import cn.lary.module.common.handler.LaryMetaObjectHandler;
 import cn.lary.module.user.service.UserService;
 import cn.lary.module.wallet.dto.*;
 import cn.lary.module.wallet.entity.BatchOutcomeRandomTransfer;
@@ -41,9 +42,9 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
 
     private final WalletIncomeService walletIncomeService;
     private final WalletOutcomeService walletOutcomeService;
-    private final UserService userService;
     private final TransactionTemplate transactionTemplate;
     private final WalletMapper walletMapper;
+
 
     @Override
     public ResponsePair<Void> transfer(TransferDTO dto) {
@@ -323,13 +324,9 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
         if (CollectionKit.isEmpty(members)) {
             return BusinessKit.fail("members null");
         }
-        List<Long> users = userService.getValidUsers(members);
-        if (CollectionKit.isEmpty(users)) {
-            return BusinessKit.fail("users empty");
-        }
+        List<Long> users = CollectionKit.removeRepeat(members);
         List<Wallet> userWallets = lambdaQuery()
-                .select(Wallet::getAmount)
-                .select(Wallet::getUid)
+                .select(Wallet::getAmount,Wallet::getUid)
                 .in(Wallet::getUid, users)
                 .list();
         if (userWallets.isEmpty()) {
@@ -342,8 +339,7 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
     @Override
     public ResponsePair<BalanceVO> my() {
         Wallet wallet = lambdaQuery()
-                .select(Wallet::getAmount)
-                .select(Wallet::getOutcome, Wallet::getIncome)
+                .select(Wallet::getAmount,Wallet::getOutcome, Wallet::getIncome)
                 .eq(Wallet::getUid, RequestContext.uid())
                 .one();
         if (wallet == null) {

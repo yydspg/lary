@@ -4,9 +4,14 @@ import lombok.Data;
 
 @Data
 public  class Profile {
-
+    /**
+     * uid
+     */
     private long uid;
 
+    /**
+     * username
+     */
     private String name;
 
     /**

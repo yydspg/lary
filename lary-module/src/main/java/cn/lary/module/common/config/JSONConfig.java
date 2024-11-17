@@ -1,8 +1,8 @@
 package cn.lary.module.common.config;
 
-import com.alibaba.fastjson2.support.config.FastJsonConfig;
 import com.alibaba.fastjson2.JSONReader;
 import com.alibaba.fastjson2.JSONWriter;
+import com.alibaba.fastjson2.support.config.FastJsonConfig;
 import com.alibaba.fastjson2.support.spring6.http.converter.FastJsonHttpMessageConverter;
 import com.alibaba.fastjson2.support.spring6.webservlet.view.FastJsonJsonView;
 import org.springframework.context.annotation.Configuration;
@@ -31,14 +31,17 @@ public class JSONConfig implements WebMvcConfigurer {
         converter.setSupportedMediaTypes(Collections.singletonList(MediaType.APPLICATION_JSON));
         converters.add(0, converter);
     }
-    @Override
-    public void configureViewResolvers(ViewResolverRegistry registry) {
-        FastJsonJsonView fastJsonJsonView = new FastJsonJsonView();
-        FastJsonConfig config = new FastJsonConfig();
-        config.setDateFormat("yyyy-MM-dd HH:mm:ss");
-        config.setReaderFeatures(JSONReader.Feature.FieldBased, JSONReader.Feature.SupportArrayToBean);
-        config.setWriterFeatures(JSONWriter.Feature.WriteMapNullValue, JSONWriter.Feature.PrettyFormat);
-        fastJsonJsonView.setFastJsonConfig(config);
-        registry.enableContentNegotiation(fastJsonJsonView);
-    }
+
+//    @Override
+//    public void configureViewResolvers(ViewResolverRegistry registry) {
+//        FastJsonJsonView fastJsonJsonView = new FastJsonJsonView();
+//        FastJsonConfig config = new FastJsonConfig();
+//        config.setDateFormat("yyyy-MM-dd HH:mm:ss");
+//        config.setReaderFeatures(JSONReader.Feature.FieldBased, JSONReader.Feature.SupportArrayToBean);
+//        config.setWriterFeatures(JSONWriter.Feature.WriteMapNullValue, JSONWriter.Feature.PrettyFormat);
+//        fastJsonJsonView.setFastJsonConfig(config);
+//        registry.enableContentNegotiation(fastJsonJsonView);
+//    }
+
+
 }

@@ -9,19 +9,6 @@ public interface LARY {
         }
     }
 
-    interface Sex {
-        int man = 1;
-        int woman = 2;
-    }
-    interface VerifyCode {
-        int user = 1; //用户搜素
-        int groupMember = 2; // 群成员
-        int QR = 3; //二维码
-        int friend = 4; // 好友
-        int mailList = 5; //手机联系人
-        int invitation = 6; // 邀请码
-        int unknown = 7; // unknown
-    }
     interface STATUS {
         int BLOCK = 45;
         int COMMON = 46;
@@ -40,6 +27,11 @@ public interface LARY {
             int QR = 12;
             int USER = 13;
         }
+        interface ROLE {
+            int ADMIN = 14;
+            int COMMON = 15;
+            int VC = 16;
+        }
     }
     interface SYNC_STATUS {
         int INIT = 1;
@@ -56,17 +48,6 @@ public interface LARY {
         }
     }
 
-    interface FollowCode {
-        int stream = 1;
-    }
-    interface Stream {
-        interface Status {
-            int preUp = 1;
-            int up = 2;
-            int preDown = 3;
-            int down = 4;
-        }
-    }
     interface PAYMENT {
         interface STATUS {
             int INIT = 1;
@@ -122,6 +103,8 @@ public interface LARY {
             int RECHARGE = 201;
             int GIFT = 202;
             int ORDER = 203;
+            int AD = 204;
+            int INVEST = 205;
         }
         interface TRANSFER {
             int STREAM_GIFT = 501;
@@ -224,5 +207,29 @@ public interface LARY {
             int HIDE = 3;
         }
     }
-
+    interface AD {
+        interface STATUS {
+            int INIT = 1001;
+            int COMMON = 1002;
+            int FINISH = 1003;
+            int FAIL = 1004;
+        }
+        interface PROVIDER {
+            int COMMON = 1004;
+            int BLOCK  = 1005;
+            int DISBAND = 1006;
+            int SUPER = 1007;
+        }
+        interface LEVEL {
+            int COMMON = 1;
+            int SUPER = 2;
+        }
+    }
+    interface INVEST {
+        interface STATUS {
+            int INIT = 1001;
+            int ING = 1002;
+            int FINISH = 1003;
+        }
+    }
 }

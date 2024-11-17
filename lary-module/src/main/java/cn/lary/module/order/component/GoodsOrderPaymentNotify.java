@@ -10,26 +10,22 @@ import org.springframework.stereotype.Component;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class GoodsOrderPaymentNotify implements BusinessPaymentNotify {
+public class GoodsOrderPaymentNotify extends BusinessPaymentNotify {
+
 
     @Override
-    public void onSuccess(PaymentNotifyProcessPair pair) {
+    public void whenSuccess(Object data) {
 
     }
 
     @Override
-    public void onFail(PaymentNotifyProcessPair pair) {
+    public void whenFail(Object data) {
 
     }
 
     @Override
-    public void onQuerySuccess(PaymentQueryVO pair) {
-
-    }
-
-    @Override
-    public void onQueryFail(PaymentQueryVO pair) {
-
+    public Object getPaymentNotify(PaymentNotifyProcessPair pair, PaymentQueryVO data) {
+        return null;
     }
 
     @Override

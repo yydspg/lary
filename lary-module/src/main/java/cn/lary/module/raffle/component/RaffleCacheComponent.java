@@ -21,6 +21,7 @@ public class RaffleCacheComponent {
     String LARY_RAFFLE_RULE = "lary:raffle:rule";
     String LARY_RAFFLE_RULE_TOPIC = "lary:raffle:rule:topic";
     String LARY_RAFFLE_EVENT_TOPIC = "lary:raffle:event:topic";
+
     private final Cache<Long , RaffleEventCache> cache = Caffeine.newBuilder()
             .maximumSize(1000)
             .expireAfterWrite(1, TimeUnit.MINUTES)

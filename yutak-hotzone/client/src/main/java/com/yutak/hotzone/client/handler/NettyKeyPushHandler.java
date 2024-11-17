@@ -17,6 +17,10 @@ public class NettyKeyPushHandler {
     private static final Logger log = LoggerFactory.getLogger(NettyKeyPushHandler.class);
 
     public void send(List<YutakEntry> data) {
+        if (data == null || data.isEmpty()) {
+            return;
+        }
+
         Map<Channel,List<YutakEntry>> map = new HashMap<>();
         for (YutakEntry entry : data) {
             Channel channel = WorkerManager.getChannel(entry.getK());

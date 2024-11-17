@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lary.module.advertisement.mapper.AdvertisementMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.lary.module.advertisement.entity.Advertisement">
+        <id column="id" property="id" />
+        <result column="aid" property="aid" />
+        <result column="pid" property="pid" />
+        <result column="startAt" property="startAt" />
+        <result column="endAt" property="endAt" />
+        <result column="begin" property="begin" />
+        <result column="off" property="off" />
+        <result column="policy" property="policy" />
+        <result column="remark" property="remark" />
+        <result column="source" property="source" />
+        <result column="image" property="image" />
+        <result column="vid" property="vid" />
+        <result column="username" property="username" />
+        <result column="avatar" property="avatar" />
+        <result column="amount" property="amount" />
+        <result column="click" property="click" />
+        <result column="create_at" property="createAt" />
+    </resultMap>
+
+</mapper>

@@ -1,5 +1,5 @@
-## stream project
-直播，购物,聊天项目
+## lary
+stream project based  on srs ,wukongIM
 ### structure
 1. [SRS](https://github.com/ossrs/srs)
 2. [WuKongIM](https://github.com/WuKongIM/WuKongIM)
@@ -29,7 +29,7 @@ start 2023/9/1
 - 订单全局二级索引 y
 - 敏感词 y
 - 直播红包 y
-- 热点检测 x
+- 热点检测 y
 - 直播首页 x
 - 付费排行傍 x     
 - 用户帖子 x

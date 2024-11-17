@@ -99,6 +99,7 @@ public class NextCommentServiceImpl extends ServiceImpl<NextCommentMapper, NextC
         return transactionTemplate.execute(status -> {
             NextComment comment = lambdaQuery()
                     .select(NextComment::getUid,NextComment::getCid)
+                    .eq(NextComment::getCid, cid)
                     .one();
             if (comment == null) {
                 return BusinessKit.fail("comment not exist");
@@ -118,18 +119,17 @@ public class NextCommentServiceImpl extends ServiceImpl<NextCommentMapper, NextC
 
     @Override
     public ResponsePair<List<NextCommentVO>> show(NextCommentPageQueryDTO dto) {
-        long eid = dto.getRid();
-        List<NextCommentVO> vo = lambdaQuery()
-                .select(NextComment::getCid, NextComment::getUid)
-                .select(NextComment::getImages, NextComment::getMentions)
-                .select(NextComment::getReplyCount, NextComment::getStarCount)
-                .select(NextComment::getContent, NextComment::getStatus)
-                .eq(NextComment::getRid, eid)
+        long rid = dto.getRid();
+        return BusinessKit.ok(lambdaQuery()
+                .select(NextComment::getCid, NextComment::getUid,
+                        NextComment::getContent, NextComment::getStatus,
+                        NextComment::getReplyCount, NextComment::getStarCount,
+                        NextComment::getImages, NextComment::getMentions)
+                .eq(NextComment::getRid, rid)
                 .page(new Page<>(dto.getPageIndex(), dto.getPageSize()))
                 .getRecords()
                 .stream()
                 .map(NextCommentVO::new)
-                .toList();
-        return BusinessKit.ok(vo);
+                .toList());
     }
 }

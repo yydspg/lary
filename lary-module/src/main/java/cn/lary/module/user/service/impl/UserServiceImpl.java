@@ -51,11 +51,17 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
 
     private final DeviceService deviceService;
     private final MessageService messageService;
-    private final WalletService walletService;
     private final UserSettingService userSettingService;
     private final TransactionTemplate transactionTemplate;
     private final UserCacheComponent userCacheComponent;
     private final LaryIDBuilder builder;
+
+    @Override
+    public User virtual(User user) {
+        user.setUid(builder.next());
+        save(user);
+        return user;
+    }
 
     @Override
     public ResponsePair<String> login(LoginDTO dto) {
@@ -229,10 +235,10 @@ public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements Us
             forceLogout(uid,LARY.DEVICE.FLAG.PC);
         }
         transactionTemplate.executeWithoutResult(status -> {
-            walletService.lambdaUpdate()
-                    .set(Wallet::getStatus,LARY.WALLET.STATUS.DESTROY)
-                    .eq(Wallet::getWid,uid)
-                    .update();
+//            walletService.lambdaUpdate()
+//                    .set(Wallet::getStatus,LARY.WALLET.STATUS.DESTROY)
+//                    .eq(Wallet::getWid,uid)
+//                    .update();
             lambdaUpdate()
                     .set(User::getStatus,LARY.USER.STATUS.DESTROY)
                     .eq(User::getUid,uid)

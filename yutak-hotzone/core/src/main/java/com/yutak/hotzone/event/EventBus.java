@@ -25,8 +25,8 @@ public class EventBus {
                 log.info("yutak event bus subscribers empty");
                 return;
             }
-            subscribers.forEach(subscriber -> {
-                subscriber.register(reactor);
+            subscribers.forEach(sub -> {
+                sub.register(reactor);
             });
     }
 

@@ -18,7 +18,7 @@ public class ChannelInactiveSubscriber extends Subscriber<ChannelInactiveEvent> 
         Channel channel = event.getChannel();
         InetSocketAddress socketAddress = (InetSocketAddress) channel.remoteAddress();
         String address = socketAddress.getHostName() + ":" + socketAddress.getPort();
-        log.warn("current channel inactive address:{},remove the connection",address);
+        log.warn("yutak : current channel inactive address:{},remove the connection",address);
         WorkerManager.unregister(address);
     }
 

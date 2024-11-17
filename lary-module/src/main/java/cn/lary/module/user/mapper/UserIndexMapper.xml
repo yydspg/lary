@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lary.module.user.mapper.UserIndexMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.lary.module.user.entity.UserIndex">
+        <id column="id" property="id" />
+        <result column="phone" property="phone" />
+        <result column="username" property="username" />
+        <result column="external" property="external" />
+        <result column="oid" property="oid" />
+        <result column="create_at" property="createAt" />
+    </resultMap>
+    <select id="getUid" resultType="java.lang.Long">
+        select uid from user_index 
+        <where>
+            1 = 1
+            <if test="phone != null and phone != ''">
+                and phone = #{username}
+            </if>
+            <if test="oid != null and oid != ''">
+                and oid = #{oid}
+            </if>
+            <if test="username != null and username != ''">
+                and username = #{username}
+            </if>
+
+        </where>
+    </select>
+
+</mapper>

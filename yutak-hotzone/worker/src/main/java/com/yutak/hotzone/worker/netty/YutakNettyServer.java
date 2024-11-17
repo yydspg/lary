@@ -27,9 +27,9 @@ public class YutakNettyServer {
 
     private final static int MAX_LENGTH = 2 *1024;
     private static final Logger log = LoggerFactory.getLogger(YutakNettyServer.class);
-    private  static ServerBootstrap bootstrap ;
 
-    public void build(int port) throws Exception {
+
+    public static void build(int port) {
         NioEventLoopGroup bossGroup = new NioEventLoopGroup(1);
         NioEventLoopGroup workerGroup = new NioEventLoopGroup(3);
         try {
@@ -43,13 +43,15 @@ public class YutakNettyServer {
                 bossGroup.shutdownGracefully(1000, 3000, TimeUnit.MILLISECONDS);
                 workerGroup.shutdownGracefully(1000, 3000, TimeUnit.MILLISECONDS);
             }));
+            log.info("yutak hotzone server start success");
             future.channel().closeFuture().sync();
         }catch (Exception e) {
-            log.error("yutak server start error:{}",e.getMessage());
+            log.error("yutak hotzone server start error:{}",e.getMessage());
         }finally {
             bossGroup.shutdownGracefully();
             workerGroup.shutdownGracefully();
         }
+
     }
 
     private static class YutakChannelHandler extends ChannelInitializer<Channel> {

@@ -10,7 +10,11 @@ public class DefaultKeyCollector implements KeyCollector {
     private final CollectComponent collectComponent = new CollectComponent();
 
     @Override
-    public List<YutakEntry> exec() {
+    public final List<YutakEntry> exec() {
         return collectComponent.read();
+    }
+    @Override
+    public final void put(YutakEntry entry) {
+        collectComponent.send(entry);
     }
 }

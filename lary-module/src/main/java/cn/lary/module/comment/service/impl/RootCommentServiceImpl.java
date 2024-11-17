@@ -92,11 +92,9 @@ public class RootCommentServiceImpl extends ServiceImpl<RootCommentMapper, RootC
         save(comment);
         String mentions = dto.getMentions();
         if (StringKit.isNotEmpty(mentions)) {
-            if (StringKit.isNotEmpty(mentions)) {
-                ResponsePair<Void> pair = generalService.processUserMention(mentions, dto.getContent(), dto.getEid());
-                if (pair.isFail()){
-                    return pair;
-                }
+            ResponsePair<Void> pair = generalService.processUserMention(mentions, dto.getContent(), dto.getEid());
+            if (pair.isFail()){
+                return pair;
             }
         }
         return BusinessKit.ok();

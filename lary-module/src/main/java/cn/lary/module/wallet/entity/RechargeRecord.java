@@ -55,7 +55,7 @@ public class RechargeRecord implements Serializable {
     /**
      * 完成时间
      */
-    private LocalDateTime completeAt;
+    private long completeAt;
 
     /*
     外部的支付订单号

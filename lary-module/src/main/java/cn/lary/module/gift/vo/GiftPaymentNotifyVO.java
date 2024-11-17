@@ -6,12 +6,14 @@ import cn.lary.module.pay.component.PaymentNotifyProcessPair;
 import lombok.Data;
 import lombok.experimental.Accessors;
 
+import java.math.BigDecimal;
+
 @Data
 @Accessors(chain = true)
 public class GiftPaymentNotifyVO {
 
     private long oid;
-    private long cost;
+    private BigDecimal amount;
     private String tradeNo;
     private String reason;
 
@@ -22,7 +24,7 @@ public class GiftPaymentNotifyVO {
     public GiftPaymentNotifyVO(PaymentNotifyProcessPair pair) {
         if(pair.getPaymentPlugin() == LARY.PAYMENT.PLUGIN.ALI){
             this.oid = Long.parseLong(pair.getParams().get("out_trade_no"));
-            this.cost = Long.parseLong(pair.getParams().get("total_amount"));
+            this.amount =BigDecimal.valueOf( Long.parseLong(pair.getParams().get("total_amount")));
             this.tradeNo = pair.getParams().get("trade_no");
             if (StringKit.diff(pair.getParams().get("trade_status"),"TRADE_FINISHED")
                     || StringKit.diff(pair.getParams().get("trade_status"),"TRADE_SUCCESS")){

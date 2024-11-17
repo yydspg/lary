@@ -16,8 +16,8 @@ public class CollectComponent {
     private  volatile int _node = 1;
 
     public CollectComponent() {
-        data_1 = new ArrayList<>(1024);
-        data_2 = new ArrayList<>(1024);
+        data_1 = new ArrayList<>(2056);
+        data_2 = new ArrayList<>(2056);
         lock_2 = new ReentrantLock();
         lock_1 = new ReentrantLock();
     }
@@ -44,7 +44,7 @@ public class CollectComponent {
         }
     }
     public final List<YutakEntry> read() {
-        List<YutakEntry> data;
+        List<YutakEntry> data ;
         if(1 == _node) {
             data = data_2.stream().toList();
                 data_2.clear();

@@ -25,7 +25,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class GiftPaymentNotify implements BusinessPaymentNotify {
+public class GiftPaymentNotify extends BusinessPaymentNotify<GiftPaymentNotifyVO> {
 
     private final AnchorFlowService anchorFlowService;
     private final GiftOrderService giftOrderService;
@@ -33,25 +33,6 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
     private final MessageService messageService;
     private final UserCacheComponent userCacheComponent;
 
-    @Override
-    public void onSuccess(PaymentNotifyProcessPair pair) {
-        processSuccess(pair,null);
-    }
-
-    @Override
-    public void onFail(PaymentNotifyProcessPair pair) {
-        processFail(pair,null);
-    }
-
-    @Override
-    public void onQuerySuccess(PaymentQueryVO pair) {
-        processSuccess(null,pair);
-    }
-
-    @Override
-    public void onQueryFail(PaymentQueryVO pair) {
-        processFail(null,pair);
-    }
 
     @Override
     public int getSign() {
@@ -59,12 +40,12 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
     }
 
 
-    private void processSuccess(PaymentNotifyProcessPair pair,PaymentQueryVO queryData) {
-        GiftPaymentNotifyVO vo = getPaymentNotify(pair, queryData);
+    @Override
+    public void whenSuccess(GiftPaymentNotifyVO vo) {
         long oid = vo.getOid();
         GiftOrder order = transactionTemplate.execute(status -> {
             GiftOrder temp = giftOrderService.lambdaQuery()
-                    .select(GiftOrder::getId)
+                    .select(GiftOrder::getOid)
                     .eq(GiftOrder::getId, oid)
                     .one();
             if (temp == null) {
@@ -91,7 +72,7 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
         }
         String username = "";
         if (pc != null) {
-           username = pc.getUsername();
+            username = pc.getUsername();
         }
         if (app != null) {
             username = app.getUsername();
@@ -103,8 +84,8 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
                 order.getNum()));
     }
 
-    private void processFail(PaymentNotifyProcessPair pair,PaymentQueryVO data) {
-        GiftPaymentNotifyVO vo = getPaymentNotify(pair, data);
+    @Override
+    public void whenFail(GiftPaymentNotifyVO vo) {
         long oid = vo.getOid();
         transactionTemplate.executeWithoutResult(status -> {
             GiftOrder order = giftOrderService.lambdaQuery()
@@ -125,10 +106,11 @@ public class GiftPaymentNotify implements BusinessPaymentNotify {
         });
     }
 
-    private GiftPaymentNotifyVO getPaymentNotify(PaymentNotifyProcessPair pair,PaymentQueryVO data) {
+    @Override
+    public  GiftPaymentNotifyVO getPaymentNotify(PaymentNotifyProcessPair pair,PaymentQueryVO data) {
         if (pair == null) {
             return new GiftPaymentNotifyVO()
-                    .setCost(data.getAmount())
+                    .setAmount(data.getAmount())
                     .setOid(data.getPaymentId())
                     .setReason(data.getReason())
                     .setTradeNo(data.getSn());

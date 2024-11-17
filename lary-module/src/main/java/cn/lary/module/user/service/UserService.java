@@ -23,6 +23,13 @@ import java.util.List;
  */
 public interface UserService extends IService<User> {
 
+    /**
+     * 虚拟角色
+     * @param user {@link User}
+     * @return user
+     */
+    User virtual(User user);
+
 
     /**
      * 登陆接口<br>

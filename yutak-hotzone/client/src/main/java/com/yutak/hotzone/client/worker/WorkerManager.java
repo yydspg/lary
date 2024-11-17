@@ -23,6 +23,12 @@ public class WorkerManager {
     public static void unregister(String address) {
         WORKER_HOLDER.removeIf(server -> address.equals(server.address));
     }
+    public static List<String> getNonConnectedWorkers() {
+        return WORKER_HOLDER.stream()
+                .filter(Server::getChannelStatus)
+                .map(t->t.address)
+                .toList();
+    }
     public static boolean getConnectStatus(String address){
         Optional<Server> data = WORKER_HOLDER.stream()
                 .filter(t -> t.address.equals(address))
@@ -33,13 +39,16 @@ public class WorkerManager {
         }
         return data.get().getChannelStatus();
     }
+
     public  static Channel getChannel(String K) {
         int index = spread(K.hashCode()) / WORKER_HOLDER.size();
         return WORKER_HOLDER.get(index).channel;
     }
+
     public static   int spread(int h){
         return (h ^ h >>> 16) & MAX;
     }
+
     public static long addressConvert(String address){
         String[] parts = address.split(":");
         if (parts.length != 2) {
@@ -62,6 +71,7 @@ public class WorkerManager {
         return (ipAsLong << 16) | portAsLong;
     }
     public static class Server implements Comparable<Server> {
+
         private String address;
         private Channel channel;
 

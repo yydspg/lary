@@ -133,14 +133,16 @@ public class GiftPayment extends AbstractBusinessPayment {
                 .set(GiftOrder::getStatus, LARY.PAYMENT.STATUS.FAIL)
                 .set(GiftOrder::getReason, vo.getErrMsg())
                 .set(GiftOrder::getCompleteAt, LocalDateTime.now())
-                .eq(GiftOrder::getId, vo.getPaymentId());
+                .eq(GiftOrder::getId, vo.getPaymentId())
+                .update();
     }
 
     @Override
     protected void processWhenPaymentSuccess(PaymentBuildVO vo) {
         giftOrderService.lambdaUpdate()
                 .set(GiftOrder::getStatus, LARY.PAYMENT.STATUS.COMMIT)
-                .eq(GiftOrder::getId, vo.getPaymentId());
+                .eq(GiftOrder::getId, vo.getPaymentId())
+                .update();
         messageService.asyncSendRocketMessage(new GiftOrderActiveDetectionMessage());
     }
 

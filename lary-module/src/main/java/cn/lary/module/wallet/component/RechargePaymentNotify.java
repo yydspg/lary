@@ -2,6 +2,7 @@ package cn.lary.module.wallet.component;
 
 import cn.lary.module.common.service.EventService;
 import cn.lary.module.common.constant.LARY;
+import cn.lary.module.id.SystemClock;
 import cn.lary.module.pay.component.BusinessPaymentNotify;
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
 import cn.lary.module.pay.vo.PaymentQueryVO;
@@ -23,7 +24,7 @@ import java.time.LocalDateTime;
 @Slf4j
 @Component
 @RequiredArgsConstructor
-public class RechargePaymentNotify implements BusinessPaymentNotify {
+public class RechargePaymentNotify extends BusinessPaymentNotify<RechargePaymentNotifyVO> {
 
 
     private final WalletService walletService;
@@ -32,34 +33,32 @@ public class RechargePaymentNotify implements BusinessPaymentNotify {
     private final EventService eventService;
     private final TransactionTemplate transactionTemplate;
 
-    @Override
-    public void onSuccess(PaymentNotifyProcessPair pair) {
 
-        RechargePaymentNotifyVO vo = new RechargePaymentNotifyVO(pair);
-        long rechargeId = vo.getRechargeId();
+    @Override
+    public void whenSuccess(RechargePaymentNotifyVO vo) {
+        long cid = vo.getRechargeId();
         RechargeRecord rechargeRecord = transactionTemplate.execute(status -> {
 
             RechargeRecord recharge = rechargeRecordService.lambdaQuery()
-                    .select(RechargeRecord::getId)
-                    .select(RechargeRecord::getUid)
-                    .eq(RechargeRecord::getId, rechargeId)
+                    .select(RechargeRecord::getUid,RechargeRecord::getCid)
+                    .eq(RechargeRecord::getCid, cid)
                     .one();
             if (recharge == null) {
-                log.error("callback recharge success error, rechargeId no exists:{}", rechargeId);
+                log.error("callback recharge success error, cid no exists:{}", cid);
                 return null;
             }
             rechargeRecordService.lambdaUpdate()
                     .set(RechargeRecord::getSn, vo.getTradeNo())
-                    .set(RechargeRecord::getCompleteAt, LocalDateTime.now())
+                    .set(RechargeRecord::getCompleteAt, SystemClock.now())
                     .set(RechargeRecord::getStatus, LARY.PAYMENT.STATUS.FINISH)
-                    .eq(RechargeRecord::getId, rechargeId)
+                    .eq(RechargeRecord::getId, cid)
                     .update();
             Wallet wallet = walletService.lambdaQuery()
                     .select(Wallet::getUid)
                     .eq(Wallet::getUid, recharge.getUid())
                     .one();
             if (wallet == null) {
-                log.error("sync wallet error, get wallet error,rechargeId:{},uid:{}", rechargeId, recharge.getUid());
+                log.error("sync wallet error, get wallet error,cid:{},uid:{}", cid, recharge.getUid());
                 return null;
             }
             walletService.lambdaUpdate()
@@ -81,16 +80,15 @@ public class RechargePaymentNotify implements BusinessPaymentNotify {
     }
 
     @Override
-    public void onFail(PaymentNotifyProcessPair pair) {
-        RechargePaymentNotifyVO vo = new RechargePaymentNotifyVO(pair);
-        long rechargeId = vo.getRechargeId();
+    public void whenFail(RechargePaymentNotifyVO vo) {
+        long cid = vo.getRechargeId();
         transactionTemplate.executeWithoutResult(status -> {
             RechargeRecord rechargeRecord = rechargeRecordService.lambdaQuery()
                     .select(RechargeRecord::getId)
-                    .eq(RechargeRecord::getId, rechargeId)
+                    .eq(RechargeRecord::getId, cid)
                     .one();
             if (rechargeRecord == null) {
-                log.error("callback recharge FAIL error, rechargeId no exists:{}", rechargeId);
+                log.error("callback recharge FAIL error, cid no exists:{}", cid);
                 return;
             }
             rechargeRecordService.lambdaUpdate()
@@ -105,14 +103,17 @@ public class RechargePaymentNotify implements BusinessPaymentNotify {
     }
 
     @Override
-    public void onQuerySuccess(PaymentQueryVO pair) {
-
+    public RechargePaymentNotifyVO getPaymentNotify(PaymentNotifyProcessPair pair, PaymentQueryVO data) {
+        if (pair == null) {
+            return new RechargePaymentNotifyVO()
+                    .setRechargeId(data.getPaymentId())
+                    .setFailReason(data.getReason())
+                    .setAmount(data.getAmount())
+                    .setTradeNo(data.getSn());
+        }
+        return new RechargePaymentNotifyVO(pair);
     }
 
-    @Override
-    public void onQueryFail(PaymentQueryVO pair) {
-
-    }
 
     @Override
     public int getSign() {

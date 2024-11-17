@@ -21,6 +21,7 @@ public class NettyClientEventHandler extends SimpleChannelInboundHandler<YutakPr
     @Override
     protected void channelRead0(ChannelHandlerContext channelHandlerContext, YutakProcessMessage message) throws Exception {
         int category = message.getCategory();
+        log.info("received process message: {}", message);
         switch (category) {
             case YUTAK.LOCAL : EventBus.getInstance().send(new EntryLocalEvent(message.getK(), message.getV()));
             case YUTAK.REJECTED: EventBus.getInstance().send(new EntryRejectedEvent(message.getK(), message.getV()));
@@ -30,13 +31,13 @@ public class NettyClientEventHandler extends SimpleChannelInboundHandler<YutakPr
 
     @Override
     public void channelActive(ChannelHandlerContext ctx) throws Exception {
-        log.info("yutak hotzone worker channel active");
+        log.info("yutak hotzone worker channel {} active",ctx.channel().remoteAddress());
         super.channelActive(ctx);
     }
 
     @Override
     public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-        log.info("yutak hotzone worker channel inactive");
+        log.info("yutak hotzone worker channel {} inactive",ctx.channel().remoteAddress());
         super.channelInactive(ctx);
     }
 
