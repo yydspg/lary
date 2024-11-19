@@ -15,7 +15,7 @@ import cn.lary.module.comment.service.CommentEventService;
 import cn.lary.module.comment.service.RootCommentService;
 import cn.lary.module.comment.vo.RootCommentVO;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.id.LaryIDBuilder;
+import cn.lary.common.id.LaryIDBuilder;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.user.entity.User;
 import cn.lary.module.user.service.UserService;

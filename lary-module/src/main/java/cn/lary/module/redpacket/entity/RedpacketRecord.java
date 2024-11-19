@@ -1,16 +1,14 @@
 package cn.lary.module.redpacket.entity;
 
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.id.SystemClock;
+import cn.lary.common.id.SystemClock;
 import cn.lary.module.redpacket.dto.RedpacketTokenDTO;
-import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
 import com.baomidou.mybatisplus.annotation.TableName;
 import java.io.Serializable;
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;

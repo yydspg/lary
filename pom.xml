@@ -15,6 +15,7 @@
         <module>lary-external</module>
         <module>lary-module</module>
         <module>lary-starter</module>
+        <module>lary-engine</module>
     </modules>
 
     <properties>

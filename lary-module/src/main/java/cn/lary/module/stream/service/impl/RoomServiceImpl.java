@@ -3,7 +3,7 @@ package cn.lary.module.stream.service.impl;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.*;
-import cn.lary.module.id.SystemClock;
+import cn.lary.common.id.SystemClock;
 import cn.lary.module.raffle.component.RaffleCacheComponent;
 import cn.lary.module.redpacket.component.RedpacketCacheComponent;
 import cn.lary.module.channel.dto.ChannelBuildDTO;

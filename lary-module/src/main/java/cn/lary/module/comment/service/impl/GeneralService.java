@@ -9,7 +9,7 @@ import cn.lary.module.comment.dto.BehaviorProcessorDTO;
 import cn.lary.module.comment.entity.MentionNotifyPayload;
 import cn.lary.module.comment.listener.BehaviorMessage;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.id.SystemClock;
+import cn.lary.common.id.SystemClock;
 import cn.lary.module.message.dto.comment.CommentMentionMessage;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.user.entity.User;

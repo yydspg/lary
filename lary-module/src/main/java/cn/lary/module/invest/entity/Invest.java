@@ -1,13 +1,13 @@
 package cn.lary.module.invest.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.io.Serializable;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * <p>
@@ -42,6 +42,18 @@ public class Invest implements Serializable {
      */
     private Long rid;
 
+    private Integer tag;
+
+    /**
+     * 金额
+     */
+    private BigDecimal amount;
+
+    /**
+     * 支付状态
+     */
+    private Integer status;
+
     /**
      * 投放策略,长期,单次
      */
@@ -56,10 +68,21 @@ public class Invest implements Serializable {
      * 直播开始投放,直播全程投放,当全程投放生效时,持续时间无效,立刻生效
      */
     private Integer category;
+    /**
+     * 外部订单id
+     */
+    private String sn;
 
     /**
      * 创建时间
      */
-      @TableField(fill = FieldFill.INSERT)
     private Long createAt;
+
+    private Long eid;
+
+    private String reason;
+    /**
+     * 状态
+     */
+    private Integer sync;
 }

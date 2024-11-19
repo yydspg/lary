@@ -5,7 +5,7 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.CollectionKit;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.id.LaryIDBuilder;
+import cn.lary.common.id.LaryIDBuilder;
 import cn.lary.module.user.dto.LoginLogPageQueryDTO;
 import cn.lary.module.user.entity.LoginLog;
 import cn.lary.module.user.mapper.LoginLogMapper;

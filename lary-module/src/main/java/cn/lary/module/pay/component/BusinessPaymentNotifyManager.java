@@ -83,7 +83,7 @@ public class BusinessPaymentNotifyManager {
     public void processQueryFail(PaymentQueryVO vo) {
         BusinessPaymentNotify notify = map.get(vo.getPair().getBusinessSign());
         if (notify == null) {
-            log.error("on query FAIL process ,invalid business code:{}",vo.getPair().getBusinessSign());
+            log.error("on query fail process ,invalid business code:{}",vo.getPair().getBusinessSign());
             return;
         }
         executor.execute(()->{notify.onQueryFail(vo);});

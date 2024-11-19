@@ -1,5 +1,6 @@
 package cn.lary.module.invest.mapper;
 
+
 import cn.lary.module.invest.entity.Invest;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 

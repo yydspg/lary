@@ -7,7 +7,7 @@ import cn.lary.module.gift.entity.GiftOrder;
 import cn.lary.module.gift.service.AnchorFlowService;
 import cn.lary.module.gift.service.GiftOrderService;
 import cn.lary.module.gift.vo.GiftPaymentNotifyVO;
-import cn.lary.module.id.SystemClock;
+import cn.lary.common.id.SystemClock;
 import cn.lary.module.message.dto.stream.GiftSendNotifyDTO;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.pay.component.BusinessPaymentNotify;
@@ -19,8 +19,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
-
-import java.time.LocalDateTime;
 
 @Slf4j
 @Component
@@ -45,18 +43,21 @@ public class GiftPaymentNotify extends BusinessPaymentNotify<GiftPaymentNotifyVO
         long oid = vo.getOid();
         GiftOrder order = transactionTemplate.execute(status -> {
             GiftOrder temp = giftOrderService.lambdaQuery()
-                    .select(GiftOrder::getOid)
-                    .eq(GiftOrder::getId, oid)
+                    .select(GiftOrder::getOid,GiftOrder::getStatus)
+                    .eq(GiftOrder::getOid, oid)
                     .one();
             if (temp == null) {
                 log.error("callback gift buy error,oid not exists:{}", oid);
                 return null;
             }
+            if (temp.getStatus() == LARY.PAYMENT.STATUS.FINISH) {
+                return temp;
+            }
             giftOrderService.lambdaUpdate()
                     .set(GiftOrder::getSn, vo.getTradeNo())
                     .set(GiftOrder::getStatus, LARY.PAYMENT.STATUS.FINISH)
-                    .set(GiftOrder::getCompleteAt, LocalDateTime.now())
-                    .eq(GiftOrder::getId, oid)
+                    .set(GiftOrder::getCompleteAt, SystemClock.now())
+                    .eq(GiftOrder::getOid, oid)
                     .update();
             anchorFlowService.save(new AnchorFLow(temp));
             return temp;
@@ -107,6 +108,7 @@ public class GiftPaymentNotify extends BusinessPaymentNotify<GiftPaymentNotifyVO
     }
 
     @Override
+
     public  GiftPaymentNotifyVO getPaymentNotify(PaymentNotifyProcessPair pair,PaymentQueryVO data) {
         if (pair == null) {
             return new GiftPaymentNotifyVO()

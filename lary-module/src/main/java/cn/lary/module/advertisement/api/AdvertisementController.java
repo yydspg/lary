@@ -60,5 +60,5 @@ public class AdvertisementController {
             return ResponseKit.pageFail(response.getMsg());
         }
         return ResponseKit.pageOk(response.getData(),dto.getPageIndex(),dto.getPageSize());
-     }
+    }
 }

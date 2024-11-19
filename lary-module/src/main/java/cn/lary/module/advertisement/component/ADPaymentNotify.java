@@ -1,8 +1,8 @@
 package cn.lary.module.advertisement.component;
 
-import cn.lary.module.advertisement.dto.AdPaymentNotifyVO;
 import cn.lary.module.advertisement.entity.Advertisement;
 import cn.lary.module.advertisement.entity.Provider;
+import cn.lary.module.advertisement.dto.AdPaymentNotifyVO;
 import cn.lary.module.advertisement.service.AdvertisementService;
 import cn.lary.module.advertisement.service.ProviderService;
 import cn.lary.module.common.constant.LARY;
@@ -33,12 +33,16 @@ public class ADPaymentNotify extends BusinessPaymentNotify<AdPaymentNotifyVO> {
         long aid = vo.getAid();
         Boolean execute = transactionTemplate.execute(status -> {
             Advertisement advertisement = advertisementService.lambdaQuery()
-                    .select(Advertisement::getAid, Advertisement::getPid)
+                    .select(Advertisement::getAid, Advertisement::getPid,
+                            Advertisement::getStatus)
                     .eq(Advertisement::getAid, vo.getAid())
                     .one();
             if (advertisement == null) {
                 log.error("payment notify fail,aid:{}", aid);
                 return false;
+            }
+            if (advertisement.getStatus() == LARY.AD.STATUS.FINISH) {
+                return true;
             }
             advertisementService.lambdaUpdate()
                     .set(Advertisement::getStatus, LARY.AD.STATUS.COMMON)
@@ -63,7 +67,6 @@ public class ADPaymentNotify extends BusinessPaymentNotify<AdPaymentNotifyVO> {
         if (Boolean.FALSE.equals(execute)) {
             return;
         }
-        // TODO  :  处理MQ事件
     }
 
 

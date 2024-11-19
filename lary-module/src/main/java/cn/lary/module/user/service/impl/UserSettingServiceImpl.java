@@ -3,7 +3,7 @@ package cn.lary.module.user.service.impl;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
-import cn.lary.module.id.LaryIDBuilder;
+import cn.lary.common.id.LaryIDBuilder;
 import cn.lary.module.user.dto.UserSettingUpdateDTO;
 import cn.lary.module.user.entity.UserSetting;
 import cn.lary.module.user.mapper.UserSettingMapper;

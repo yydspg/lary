@@ -46,6 +46,10 @@ public interface LARY {
             int UP =4;
             int DOWN =5;
         }
+        interface EVENT {
+            int UP = 1;
+            int DOWN = 2;
+        }
     }
 
     interface PAYMENT {
@@ -117,6 +121,10 @@ public interface LARY {
         interface CACHE{
             int RAFFLE = 1201;
             int REDPACKET = 1201;
+        }
+        interface STREAM {
+            int UP = 1;
+            int DOWN = 2;
         }
     }
     interface CHANNEL {
@@ -230,6 +238,7 @@ public interface LARY {
             int INIT = 1001;
             int ING = 1002;
             int FINISH = 1003;
+            int FAIL = 1004;
         }
     }
 }

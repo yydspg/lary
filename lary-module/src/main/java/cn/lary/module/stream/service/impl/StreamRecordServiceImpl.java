@@ -5,7 +5,7 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.CollectionKit;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.id.LaryIDBuilder;
+import cn.lary.common.id.LaryIDBuilder;
 import cn.lary.module.stream.entity.StreamRecord;
 import cn.lary.module.stream.mapper.StreamRecordMapper;
 import cn.lary.module.stream.service.StreamRecordService;
@@ -16,7 +16,6 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
 import java.util.List;
 
 /**

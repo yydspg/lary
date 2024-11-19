@@ -2,7 +2,7 @@ package cn.lary.module.wallet.component;
 
 import cn.lary.module.common.service.EventService;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.id.SystemClock;
+import cn.lary.common.id.SystemClock;
 import cn.lary.module.pay.component.BusinessPaymentNotify;
 import cn.lary.module.pay.component.PaymentNotifyProcessPair;
 import cn.lary.module.pay.vo.PaymentQueryVO;

@@ -1,14 +1,13 @@
 package cn.lary.module.advertisement.entity;
 
-import com.baomidou.mybatisplus.annotation.FieldFill;
 import com.baomidou.mybatisplus.annotation.IdType;
-import com.baomidou.mybatisplus.annotation.TableField;
 import com.baomidou.mybatisplus.annotation.TableId;
-import java.io.Serializable;
-import java.math.BigDecimal;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.experimental.Accessors;
+
+import java.io.Serializable;
+import java.math.BigDecimal;
 
 /**
  * <p>
@@ -57,6 +56,11 @@ public class Advertisement implements Serializable {
      * 结束时间,每天的分
      */
     private Long off;
+
+    /**
+     * cron 表达式
+     */
+    private String cron;
 
     /**
      * 投放策略

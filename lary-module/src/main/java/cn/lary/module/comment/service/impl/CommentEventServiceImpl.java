@@ -11,7 +11,7 @@ import cn.lary.module.comment.entity.CommentEvent;
 import cn.lary.module.comment.mapper.CommentEventMapper;
 import cn.lary.module.comment.service.CommentEventService;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.id.LaryIDBuilder;
+import cn.lary.common.id.LaryIDBuilder;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import lombok.RequiredArgsConstructor;

@@ -3,7 +3,7 @@ package cn.lary.module.channel.service.impl;
 import cn.lary.module.channel.entity.LaryChannel;
 import cn.lary.module.channel.mapper.LaryChannelMapper;
 import cn.lary.module.channel.service.LaryChannelService;
-import cn.lary.module.id.LaryIDBuilder;
+import cn.lary.common.id.LaryIDBuilder;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

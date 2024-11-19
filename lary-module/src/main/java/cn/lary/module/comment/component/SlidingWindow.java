@@ -1,8 +1,7 @@
 package cn.lary.module.comment.component;
 
-import cn.lary.module.id.SystemClock;
+import cn.lary.common.id.SystemClock;
 
-import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.locks.ReentrantLock;
 

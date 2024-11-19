@@ -5,10 +5,8 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.*;
 import cn.lary.external.wk.dto.user.UpdateTokenDTO;
 import cn.lary.external.wk.vo.route.RouteVO;
-import cn.lary.module.common.service.EventService;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.event.dto.UserRegisterEventDTO;
-import cn.lary.module.id.LaryIDBuilder;
+import cn.lary.common.id.LaryIDBuilder;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.user.component.UserCache;
 import cn.lary.module.user.component.UserCacheComponent;
@@ -21,20 +19,16 @@ import cn.lary.module.user.service.DeviceService;
 import cn.lary.module.user.service.UserService;
 import cn.lary.module.user.service.UserSettingService;
 import cn.lary.module.user.vo.UserVO;
-import cn.lary.module.wallet.entity.Wallet;
-import cn.lary.module.wallet.service.WalletService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
 import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.dromara.sms4j.core.factory.SmsFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Map;
 
 /**
  * <p>

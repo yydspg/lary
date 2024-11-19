@@ -10,7 +10,7 @@
     </parent>
 
     <artifactId>lary-module</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.0.1</version>
     <name>lary-module</name>
     <description>lary-module</description>
     <url/>
@@ -154,6 +154,11 @@
             <groupId>com.alibaba.fastjson2</groupId>
             <artifactId>fastjson2-extension</artifactId>
             <version>2.0.53</version>
+        </dependency>
+        <dependency>
+            <groupId>com.cronutils</groupId>
+            <artifactId>cron-utils</artifactId>
+            <version>9.2.1</version>
         </dependency>
     </dependencies>
 

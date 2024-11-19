@@ -9,7 +9,7 @@ import cn.lary.common.kit.StringKit;
 import cn.lary.module.redpacket.component.RedpacketCacheComponent;
 import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.constant.LARY;
-import cn.lary.module.id.LaryIDBuilder;
+import cn.lary.common.id.LaryIDBuilder;
 import cn.lary.module.message.service.MessageService;
 import cn.lary.module.redpacket.dto.RedpacketFsyncDTO;
 import cn.lary.module.redpacket.dto.RedpacketEventCache;
@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
-import java.util.Optional;
 
 @Slf4j
 @Service

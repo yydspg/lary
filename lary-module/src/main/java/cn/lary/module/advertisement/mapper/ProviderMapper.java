@@ -1,5 +1,6 @@
 package cn.lary.module.advertisement.mapper;
 
+
 import cn.lary.module.advertisement.entity.Provider;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
