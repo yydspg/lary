@@ -1,5 +1,6 @@
 package cn.lary.module.auth.request;
 
+import cn.lary.common.kit.StringKit;
 import cn.lary.module.auth.core.*;
 import cn.lary.module.auth.kit.GlobalAuthKit;
 import com.alibaba.fastjson2.JSONObject;
@@ -10,7 +11,6 @@ import com.alipay.api.request.AlipaySystemOauthTokenRequest;
 import com.alipay.api.request.AlipayUserInfoShareRequest;
 import com.alipay.api.response.AlipaySystemOauthTokenResponse;
 import com.alipay.api.response.AlipayUserInfoShareResponse;
-import cn.lary.common.kit.StringKit;
 
 /**
  * 支付宝登录

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lary.gift.mapper.GiftOrderMapper">
+
+
+    <select id="orders" resultType="cn.lary.gift.vo.GiftOrderVO">
+        select anchor_uid ,stream_id ,status,sn,amount,client_type,gift_name,gift_num from gift_order
+        where
+            uid = #{uid}
+            <if test="status != null and status != ''">
+                and status = #{status}
+            </if>
+            <if test="startAt != null and startAt != ''">
+                and create_at &gt;= #{startAt}
+            </if>
+            <if test="endAt != null and endAt != ''">
+                and end_at &lt;= #{endAt}
+            </if>
+        order by
+            create_at
+        limit #{pageIndex} ,#{pageSize}
+    </select>
+
+</mapper>

@@ -1,12 +1,12 @@
 package cn.lary.module.web.token.redis;
 
+import cn.lary.common.context.Profile;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.kit.ResponseKit;
 import cn.lary.common.kit.StringKit;
 import cn.lary.module.common.cache.CacheComponent;
 import cn.lary.module.common.cache.KVBuilder;
 import cn.lary.module.web.token.Operation;
-import cn.lary.common.context.Profile;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;

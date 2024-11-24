@@ -1,9 +1,6 @@
 package cn.lary.common.id;
 
 
-import org.springframework.context.annotation.Configuration;
-
-@Configuration
 public class IdGenerationOptions {
     /**
      * 雪花计算方法

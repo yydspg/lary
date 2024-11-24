@@ -1,11 +1,9 @@
 package cn.lary.module.auth.core;
 
-import java.io.Serializable;
-
-
-
 import com.alibaba.fastjson2.JSONObject;
 import lombok.*;
+
+import java.io.Serializable;
 
 
 

@@ -8,7 +8,7 @@
         <version>0.0.1</version>
     </parent>
     <artifactId>lary-engine</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1</version>
     <name>lary-engine</name>
     <description>lary-engine</description>
     <url/>
@@ -30,12 +30,8 @@
     <dependencies>
         <dependency>
             <groupId>cn.lary</groupId>
-            <artifactId>lary-module</artifactId>
-            <version>0.0.1</version>
-        </dependency>
-        <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
+            <artifactId>lary-common</artifactId>
+            <version>0.1</version>
         </dependency>
         <dependency>
             <groupId>com.cronutils</groupId>

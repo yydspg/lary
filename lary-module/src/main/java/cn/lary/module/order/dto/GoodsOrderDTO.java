@@ -1,10 +1,9 @@
 package cn.lary.module.order.dto;
 
-import cn.lary.module.pay.dto.BusinessPaymentDTO;
 import lombok.Data;
 
 @Data
-public class GoodsOrderDTO extends BusinessPaymentDTO {
+public class GoodsOrderDTO {
 
     private Long goods;
 

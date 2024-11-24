@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.lary.stream.mapper.RoomMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="cn.lary.stream.entity.Room">
+        <id column="id" property="id" />
+        <result column="uid" property="uid" />
+        <result column="stream_type_id" property="streamTypeId" />
+        <result column="stream_url" property="streamUrl" />
+        <result column="channel_id" property="channelId" />
+        <result column="is_alive" property="isAlive" />
+        <result column="last_remark" property="lastRemark" />
+        <result column="last_watch_num" property="lastWatchNum" />
+        <result column="is_hot" property="isHot" />
+        <result column="is_upload_cover" property="isUploadCover" />
+        <result column="cover_url" property="coverUrl" />
+        <result column="score" property="score" />
+        <result column="is_block" property="isBlock" />
+        <result column="block_type_id" property="blockTypeId" />
+        <result column="block_description" property="blockDescription" />
+        <result column="is_delete" property="isDelete" />
+    </resultMap>
+
+</mapper>

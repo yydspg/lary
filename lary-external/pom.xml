@@ -9,7 +9,7 @@
     </parent>
 
     <artifactId>lary-external</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>0.1</version>
     <name>lary-external</name>
     <description>lary-external</description>
     <url/>
@@ -33,7 +33,7 @@
 
             <groupId>cn.lary</groupId>
             <artifactId>lary-common</artifactId>
-            <version>0.0.1-SNAPSHOT</version>
+            <version>0.1</version>
         </dependency>
 
         <dependency>

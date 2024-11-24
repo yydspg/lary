@@ -14,8 +14,20 @@
         <module>lary-common</module>
         <module>lary-external</module>
         <module>lary-module</module>
-        <module>lary-starter</module>
         <module>lary-engine</module>
+        <module>lary-api</module>
+        <module>lary-advertisement</module>
+        <module>lary-comment</module>
+        <module>lary-group</module>
+        <module>lary-raffle</module>
+        <module>lary-redpacket</module>
+        <module>lary-gift</module>
+        <module>lary-wallet</module>
+        <module>lary-user</module>
+        <module>lary-stream</module>
+        <module>lary-message</module>
+        <module>lary-payment</module>
+        <module>lary-invest</module>
     </modules>
 
     <properties>
@@ -30,6 +42,23 @@
     <dependencyManagement>
         <dependencies>
             <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-bom</artifactId>
+                <version>3.3.0-beta.2</version>
+                <type>pom</type>
+                <scope>import</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-nacos-spring-boot-starter</artifactId>
+                <version>3.3.0-beta.2</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-spring-boot-starter</artifactId>
+                <version>3.3.0-beta.2</version>
+            </dependency>
+            <dependency>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-starter</artifactId>
                 <version>3.3.0</version>
@@ -38,17 +67,6 @@
                 <groupId>jakarta.validation</groupId>
                 <artifactId>jakarta.validation-api</artifactId>
                 <version>3.0.2</version>
-            </dependency>
-            <dependency>
-                <groupId>com.alicp.jetcache</groupId>
-                <artifactId>jetcache-starter-redis-lettuce</artifactId>
-                <exclusions>
-                    <exclusion>
-                        <groupId>org.springframework.boot</groupId>
-                        <artifactId>spring-boot-starter-logging</artifactId>
-                    </exclusion>
-                </exclusions>
-                <version>2.7.6</version>
             </dependency>
             <dependency>
                 <groupId>mysql</groupId>

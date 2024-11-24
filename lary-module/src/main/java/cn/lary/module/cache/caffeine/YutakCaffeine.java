@@ -1,13 +1,10 @@
 package cn.lary.module.cache.caffeine;
 
-import cn.lary.common.kit.StringKit;
 import com.github.benmanes.caffeine.cache.Cache;
-import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.extern.slf4j.Slf4j;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.TimeUnit;
 
 @Slf4j
 public final class YutakCaffeine<K,V> {
