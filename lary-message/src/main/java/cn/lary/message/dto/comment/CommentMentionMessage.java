@@ -1,11 +1,6 @@
 package cn.lary.message.dto.comment;
 
 import cn.lary.api.message.dto.YutakMessage;
-import cn.lary.common.kit.JSONKit;
-
-
-import java.nio.charset.StandardCharsets;
-import java.util.List;
 
 public class CommentMentionMessage extends YutakMessage {
 

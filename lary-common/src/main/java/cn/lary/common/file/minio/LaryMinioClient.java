@@ -4,7 +4,6 @@ package cn.lary.common.file.minio;
 import cn.lary.common.file.component.FileUploadBusinessConfig;
 import cn.lary.common.file.component.PresignedFileUploadUrlBuilder;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Component;
 
 @Slf4j
 public class LaryMinioClient implements PresignedFileUploadUrlBuilder {

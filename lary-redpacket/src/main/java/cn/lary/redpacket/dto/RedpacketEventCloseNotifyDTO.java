@@ -2,7 +2,6 @@ package cn.lary.redpacket.dto;
 
 
 import cn.lary.api.message.dto.YutakMessage;
-
 import lombok.Data;
 
 

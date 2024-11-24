@@ -1,7 +1,6 @@
 package cn.lary.stream.vo;
 
 
-import com.alibaba.fastjson.annotation.JSONField;
 import lombok.Data;
 import lombok.experimental.Accessors;
 

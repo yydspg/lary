@@ -1,7 +1,6 @@
 package cn.lary.user.component;
 
 import cn.lary.common.dto.ResponsePair;
-
 import cn.lary.user.dto.LoginDTO;
 import cn.lary.user.dto.RegisterDTO;
 import cn.lary.user.dto.UserDestroyDTO;

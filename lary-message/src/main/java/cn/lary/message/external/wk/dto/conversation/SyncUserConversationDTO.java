@@ -3,8 +3,6 @@ package cn.lary.message.external.wk.dto.conversation;
 import com.alibaba.fastjson2.annotation.JSONField;
 import lombok.Data;
 
-import java.util.List;
-
 @Data
 public class SyncUserConversationDTO  {
     @JSONField(format="channel_id")

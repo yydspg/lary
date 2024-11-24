@@ -3,7 +3,6 @@ package cn.lary.wallet.mapper;
 import cn.lary.wallet.entity.BatchOutcomeRandomTransfer;
 import cn.lary.wallet.entity.Wallet;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
-import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 

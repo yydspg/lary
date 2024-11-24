@@ -1,10 +1,7 @@
 package cn.lary.raffle.entity;
 
 import cn.lary.api.message.dto.YutakMessage;
-import cn.lary.common.constant.LARY;
 
-
-import java.nio.charset.StandardCharsets;
 import java.util.List;
 
 public class RaffleWiningUserNotifyMessage extends YutakMessage {
