@@ -54,16 +54,9 @@ public class RankGroupManager {
         }
         try {
             RBatch batch = redisson.createBatch();
-            batch.<RankNode>getScoredSortedSet(key + ":" + 1).addAsync(score, node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 2).addAsync(score, node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 3).addAsync(score, node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 4).addAsync(score, node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 5).addAsync(score, node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 6).addAsync(score, node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 7).addAsync(score, node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 8).addAsync(score, node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 9).addAsync(score, node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 10).addAsync(score, node);
+            for(int i = 1;i <= 10;i++){
+                batch.<RankNode>getScoredSortedSet(key + ":" + i).addAsync(score, node);
+            }
             batch.execute();
         }catch (Exception e){
             log.error("batch add  stream key error,when batch event:{}",e.getMessage());
@@ -76,16 +69,9 @@ public class RankGroupManager {
         }
         try {
             RBatch batch = redisson.createBatch();
-            batch.<RankNode>getScoredSortedSet(key + ":" + 1).removeAsync(node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 2).removeAsync(node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 3).removeAsync(node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 4).removeAsync(node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 5).removeAsync(node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 6).removeAsync(node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 7).removeAsync(node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 8).removeAsync(node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 9).removeAsync(node);
-            batch.<RankNode>getScoredSortedSet(key + ":" + 10).removeAsync(node);
+            for (int i = 1; i <= 10; i++) {
+                batch.<RankNode>getScoredSortedSet(key + ":" + i).removeAsync(node);
+            }
             batch.execute();
         }catch (Exception e){
             log.error("batch remove stream key error,when batch  event:{}",e.getMessage());
