@@ -10,13 +10,14 @@ import cn.lary.stream.component.RoomBusinessExecute;
 import cn.lary.stream.component.StreamBusinessExecute;
 import cn.lary.stream.dto.GoLiveDTO;
 import cn.lary.stream.vo.*;
-import jakarta.servlet.http.HttpServletRequest;
+
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -68,7 +69,7 @@ public class RoomController {
      * @return {@link GoLiveVO}
      */
     @PostMapping("/go")
-    public SingleResponse<GoLiveVO> start(@RequestBody @Valid GoLiveDTO dto,HttpServletRequest request) {
+    public SingleResponse<GoLiveVO> start(@RequestBody @Valid GoLiveDTO dto, HttpServletRequest request) {
 
         String ip = IPKit.getIp(request);
         ResponsePair<GoLiveVO> response = roomBusinessExecute.go(ip, dto);

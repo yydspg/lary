@@ -12,7 +12,7 @@ import org.springframework.web.servlet.HandlerInterceptor;
 @RequiredArgsConstructor
 public class UserLoginTokenInterceptor implements HandlerInterceptor {
 
-//    private final Operation operation;
+//    private final TokenOperation operation;
 
 
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {

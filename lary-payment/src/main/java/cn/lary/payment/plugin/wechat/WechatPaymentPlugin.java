@@ -6,10 +6,11 @@ import cn.lary.payment.component.PaymentQueryProcessPair;
 import cn.lary.payment.constant.PAYMENT;
 import cn.lary.payment.plugin.AbstractPaymentPlugin;
 import cn.lary.payment.vo.PaymentQueryVO;
-import jakarta.servlet.http.HttpServletRequest;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 @Slf4j

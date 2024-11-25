@@ -4,11 +4,12 @@ import cn.lary.redpacket.dto.RedpacketEventCache;
 import cn.lary.redpacket.dto.RedpacketRuleCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.redisson.api.RedissonClient;
 import org.springframework.stereotype.Component;
+
+import javax.annotation.PostConstruct;
 
 @Slf4j
 @Component
@@ -43,6 +44,7 @@ public class RedpacketCacheComponent {
     public RedpacketRuleCache getRule(long eid){
        return raffleRuleCache.getIfPresent(eid);
     }
+
 
     public void dropRule(long eid){
         raffleRuleCache.invalidate(eid);

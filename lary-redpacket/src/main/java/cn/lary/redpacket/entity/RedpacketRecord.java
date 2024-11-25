@@ -1,6 +1,6 @@
 package cn.lary.redpacket.entity;
 
-import cn.lary.common.id.SystemClock;
+import cn.lary.common.kit.SystemClock;
 import cn.lary.redpacket.constant.REDPACKET;
 import cn.lary.redpacket.dto.RedpacketTokenDTO;
 import com.baomidou.mybatisplus.annotation.IdType;

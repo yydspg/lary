@@ -8,7 +8,7 @@ import cn.lary.advertisement.mapper.ProviderMapper;
 import cn.lary.advertisement.service.ProviderService;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.id.LaryIDBuilder;
-import cn.lary.common.id.SystemClock;
+import cn.lary.common.kit.SystemClock;
 import cn.lary.common.kit.BusinessKit;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;

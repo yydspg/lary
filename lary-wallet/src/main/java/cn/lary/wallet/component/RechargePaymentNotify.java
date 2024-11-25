@@ -1,7 +1,7 @@
 package cn.lary.wallet.component;
 
 import cn.lary.common.constant.LARY;
-import cn.lary.common.id.SystemClock;
+import cn.lary.common.kit.SystemClock;
 import cn.lary.payment.component.BusinessPaymentNotify;
 import cn.lary.payment.component.PaymentNotifyProcessPair;
 import cn.lary.payment.constant.PAYMENT;

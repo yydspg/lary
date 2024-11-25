@@ -1,6 +1,7 @@
 package cn.lary.common.id;
 
 import cn.lary.common.exception.SystemException;
+import cn.lary.common.kit.SystemClock;
 
 public class SnowWorker implements ISnowWorker {
     /**
@@ -133,9 +134,6 @@ public class SnowWorker implements ISnowWorker {
 
     /**
      * 正常的获取下一个id，生成id核心代码
-     *
-     * @return 下一个id
-
      */
     private long NextNormalId()  {
         long currentTimeTick = GetCurrentTimeTick();
@@ -189,7 +187,6 @@ public class SnowWorker implements ISnowWorker {
 
     /**
      * 超出该毫秒内的支持的生成数，生成id
-     *
      * @return long生产的id
      */
     private long NextOverCostId() {

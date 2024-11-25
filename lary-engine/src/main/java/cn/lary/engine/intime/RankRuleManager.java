@@ -1,9 +1,10 @@
 package cn.lary.engine.intime;
 
-import jakarta.annotation.PostConstruct;
+
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import javax.annotation.PostConstruct;
 import java.util.HashMap;
 import java.util.concurrent.ThreadLocalRandom;
 

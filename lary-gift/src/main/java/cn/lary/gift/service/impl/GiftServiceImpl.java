@@ -8,10 +8,10 @@ import cn.lary.gift.mapper.GiftMapper;
 import cn.lary.gift.service.GiftService;
 import cn.lary.gift.vo.GiftCollectionVO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.ArrayList;
 import java.util.List;
 

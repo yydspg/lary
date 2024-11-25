@@ -4,8 +4,9 @@ import cn.lary.common.constant.ResultCode;
 import cn.lary.common.dto.MultiResponse;
 import cn.lary.common.dto.PageResponse;
 import cn.lary.common.dto.SingleResponse;
-import jakarta.servlet.http.HttpServletResponse;
 
+
+import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collection;
 
@@ -30,7 +31,7 @@ public class ResponseKit {
     }
 
     /*
-    list数据返沪接口
+    list数据接口
      */
     public static <T> MultiResponse<T> multiOk() {
         return MultiResponse.buildSuccess();
@@ -53,7 +54,7 @@ public class ResponseKit {
     public static <T> PageResponse<T> pageFail(String message) {
         return PageResponse.fail(9001,message);
     }
-    public static void responseFail(HttpServletResponse response,String message) {
+    public static void responseFail(HttpServletResponse response, String message) {
         response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json;charset=utf-8");
         try {

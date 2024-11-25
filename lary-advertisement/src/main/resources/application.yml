@@ -1,0 +1,35 @@
+server:
+  port: 9001
+spring:
+  datasource:
+    url: jdbc:mysql://192.168.1.101:3306/lary
+    driver-class-name: com.mysql.jdbc.Driver
+    username: root
+    password: 12345678
+  profiles:
+    active: dev
+  data:
+    redis:
+      host: 127.0.0.1
+      database: 0
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+logging:
+  level:
+    sql: debug
+    web: debug
+dubbo:
+  consumer:
+    check: true
+  provider:
+    delay: 500
+  registry:
+    check: true
+    address: nacos://localhost:8848?namespace=0aaa81fc-80d7-499f-83d9-311b2e8040e8
+    register-mode: instance
+    group: lary
+  protocol:
+    port: -1
+    name: tri

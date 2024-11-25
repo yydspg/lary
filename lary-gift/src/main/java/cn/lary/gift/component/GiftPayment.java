@@ -11,13 +11,12 @@ import cn.lary.payment.component.AbstractBusinessPayment;
 import cn.lary.payment.component.PaymentProcessPair;
 import cn.lary.payment.constant.PAYMENT;
 import cn.lary.payment.dto.BusinessPaymentDTO;
-import cn.lary.payment.listener.gift.GiftOrderActiveDetectionMessage;
 import cn.lary.payment.plugin.PaymentPluginManager;
 import cn.lary.payment.vo.PaymentBuildVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
-import org.springframework.transaction.support.TransactionTemplate;
+
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -34,7 +33,7 @@ public class GiftPayment extends AbstractBusinessPayment {
     private final PaymentPluginManager paymentPluginManager;
 //    private final WalletService walletService;
     private final YutakMessageService messageService;
-    private final TransactionTemplate transactionTemplate;
+//    private final TransactionTemplate transactionTemplate;
     private final YutakMQTemplate yutakMQTemplate;
 
     @Override
@@ -137,7 +136,7 @@ public class GiftPayment extends AbstractBusinessPayment {
                 .set(GiftOrder::getStatus, PAYMENT.STATUS.COMMIT)
                 .eq(GiftOrder::getId, vo.getPaymentId())
                 .update();
-        yutakMQTemplate.asyncSendRocketMessage(new GiftOrderActiveDetectionMessage());
+//        yutakMQTemplate.asyncSendRocketMessage(new GiftOrderActiveDetectionMessage());
     }
 
 

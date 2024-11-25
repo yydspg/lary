@@ -1,6 +1,7 @@
 package cn.lary.common.kit;
 
-import jakarta.servlet.http.HttpServletRequest;
+
+import javax.servlet.http.HttpServletRequest;
 
 public class IPKit {
     private static final String LOCAL_IP = "127.0.0.1";

@@ -7,11 +7,11 @@ import cn.lary.gift.dto.GiftOrderPageQueryDTO;
 import cn.lary.gift.service.GiftOrderService;
 import cn.lary.gift.vo.GiftOrderVO;
 import cn.lary.payment.vo.PaymentBuildVO;
-import jakarta.annotation.PostConstruct;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.util.List;
 
 @Slf4j

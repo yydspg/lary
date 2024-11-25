@@ -3,7 +3,7 @@ package cn.lary.gift.component;
 
 import cn.lary.api.message.YutakMessageService;
 import cn.lary.common.constant.LARY;
-import cn.lary.common.id.SystemClock;
+import cn.lary.common.kit.SystemClock;
 import cn.lary.gift.entity.AnchorFLow;
 import cn.lary.gift.entity.GiftOrder;
 import cn.lary.gift.service.AnchorFlowService;

@@ -15,25 +15,25 @@ public class YutakMQTemplate {
         this.rocketMQTemplate = rocketMQTemplate;
     }
 
-    public final void syncSendRocketMessage(AbstractSyncRocketMessage message) {
-        GenericMessage rocketMQMessage = new GenericMessage<>(message);
-        try {
-            rocketMQTemplate.syncSend("lary:raffle-close",rocketMQMessage,message.getTimeOut(),message.getDelayLevel());
-        } catch (Exception e) {
-            log.error("sync send {} message error,reason:{}",message.getBusinessSign(),e.getMessage());
-        }
-        log.info("sync send {} message success,:{}",message.getBusinessSign(),message.getLogData());
-    }
-
-
-    public final void asyncSendRocketMessage(AbstractAsyncRocketMessage message) {
-        GenericMessage rocketMQMessage = new GenericMessage<>(message);
-        try {
-            rocketMQTemplate.asyncSend("lary:raffle-close",rocketMQMessage,message.getSendCallback(),message.getTimeOut(),message.getDelayLevel());
-        } catch (Exception e) {
-            log.error("async send {} message error,reason:{}",message.getBusinessSign(),e.getMessage());
-        }
-        log.info("async send {} message success,:{}",message.getBusinessSign(),message.getLogData());
-    }
+//    public final void syncSendRocketMessage(AbstractSyncRocketMessage message) {
+//        GenericMessage rocketMQMessage = new GenericMessage<>(message);
+//        try {
+//            rocketMQTemplate.syncSend("lary:raffle-close",rocketMQMessage,message.getTimeOut(),message.getDelayLevel());
+//        } catch (Exception e) {
+//            log.error("sync send {} message error,reason:{}",message.getBusinessSign(),e.getMessage());
+//        }
+//        log.info("sync send {} message success,:{}",message.getBusinessSign(),message.getLogData());
+//    }
+//
+//
+//    public final void asyncSendRocketMessage(AbstractAsyncRocketMessage message) {
+//        GenericMessage rocketMQMessage = new GenericMessage<>(message);
+//        try {
+//            rocketMQTemplate.asyncSend("lary:raffle-close",rocketMQMessage,message.getSendCallback(),message.getTimeOut(),message.getDelayLevel());
+//        } catch (Exception e) {
+//            log.error("async send {} message error,reason:{}",message.getBusinessSign(),e.getMessage());
+//        }
+//        log.info("async send {} message success,:{}",message.getBusinessSign(),message.getLogData());
+//    }
 
 }
