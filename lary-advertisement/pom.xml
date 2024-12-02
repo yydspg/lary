@@ -34,11 +34,6 @@
             <artifactId>lary-common</artifactId>
             <version>0.1</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>cn.lary</groupId>-->
-<!--            <artifactId>lary-payment</artifactId>-->
-<!--            <version>0.1</version>-->
-<!--        </dependency>-->
         <dependency>
             <groupId>com.github.houbb</groupId>
             <artifactId>sensitive-word</artifactId>
@@ -48,7 +43,6 @@
             <artifactId>lary-payment</artifactId>
             <version>0.1</version>
         </dependency>
-
         <dependency>
             <groupId>com.alibaba.csp</groupId>
             <artifactId>sentinel-apache-dubbo-adapter</artifactId>
@@ -56,6 +50,15 @@
         <dependency>
             <groupId>com.alibaba.csp</groupId>
             <artifactId>sentinel-transport-netty-http</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>cn.lary</groupId>
+            <artifactId>lary-api-advertisement</artifactId>
+            <version>0.1</version>
         </dependency>
 <!--        <dependency>-->
 <!--            <groupId>com.esotericsoftware.kryo</groupId>-->
