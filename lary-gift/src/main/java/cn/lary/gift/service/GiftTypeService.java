@@ -1,6 +1,7 @@
 package cn.lary.gift.service;
 
-import cn.lary.gift.entity.GiftType;
+
+import cn.lary.api.gift.entity.GiftType;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**

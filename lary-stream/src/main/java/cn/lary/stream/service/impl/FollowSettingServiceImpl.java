@@ -1,6 +1,6 @@
 package cn.lary.stream.service.impl;
 
-import cn.lary.stream.entity.FollowSetting;
+import cn.lary.api.stream.entity.FollowSetting;
 import cn.lary.stream.mapper.FollowSettingMapper;
 import cn.lary.stream.service.FollowSettingService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

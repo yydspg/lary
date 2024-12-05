@@ -2,7 +2,7 @@ package cn.lary.gift.listener;
 
 
 import cn.lary.common.rocketmq.AbstractAsyncRocketMessage;
-import cn.lary.gift.entity.GiftOrder;
+import cn.lary.api.gift.entity.GiftOrder;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.apache.rocketmq.client.producer.SendCallback;

@@ -1,8 +1,8 @@
 package cn.lary.gift.service.impl;
 
+import cn.lary.api.gift.entity.AnchorFLow;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
-import cn.lary.gift.entity.AnchorFLow;
 import cn.lary.gift.mapper.AnchorFlowMapper;
 import cn.lary.gift.service.AnchorFlowService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

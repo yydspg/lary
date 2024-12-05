@@ -1,7 +1,7 @@
 package cn.lary.comment.service.impl;
 
+import cn.lary.api.comment.dto.BehaviorProcessorDTO;
 import cn.lary.api.message.YutakMessageService;
-import cn.lary.comment.dto.BehaviorProcessorDTO;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.StringKit;
@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
 public class GeneralService {
 
 //    private final UserService userService;
-    private final YutakMessageService messageService;
+//    private final YutakMessageService messageService;
 
     public ResponsePair<Void> processUserMention(String mentions, String content,long eid){
         if (StringKit.isEmpty(mentions)){

@@ -1,11 +1,11 @@
 package cn.lary.redpacket.service.impl;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.redpacket.dto.RedpacketRecordPageQueryDTO;
-import cn.lary.redpacket.entity.RedpacketRecord;
+import cn.lary.api.redpacket.dto.RedpacketRecordPageQueryDTO;
+import cn.lary.api.redpacket.entity.RedpacketRecord;
 import cn.lary.redpacket.mapper.RedpacketRecordMapper;
 import cn.lary.redpacket.service.RedpacketRecordService;
-import cn.lary.redpacket.vo.RedpacketRecordVO;
+import cn.lary.api.redpacket.vo.RedpacketRecordVO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import org.springframework.stereotype.Service;
 

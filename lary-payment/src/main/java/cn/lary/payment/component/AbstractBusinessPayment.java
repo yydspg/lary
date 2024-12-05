@@ -3,8 +3,8 @@ package cn.lary.payment.component;
 import cn.lary.common.business.BusinessSign;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
-import cn.lary.payment.dto.BusinessPaymentDTO;
-import cn.lary.payment.vo.PaymentBuildVO;
+import cn.lary.api.payment.dto.BusinessPaymentDTO;
+import cn.lary.api.payment.vo.PaymentBuildVO;
 
 public abstract class AbstractBusinessPayment implements BusinessPayment, BusinessSign {
 

@@ -1,9 +1,9 @@
 package cn.lary.raffle.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.raffle.dto.RaffleEventDTO;
-import cn.lary.raffle.entity.RaffleEvent;
-import cn.lary.raffle.vo.RaffleEventVO;
+import cn.lary.api.raffle.dto.RaffleEventDTO;
+import cn.lary.api.raffle.entity.RaffleEvent;
+import cn.lary.api.raffle.vo.RaffleEventVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**

@@ -1,7 +1,7 @@
 package cn.lary.gift.listener;
 
-import cn.lary.gift.entity.AnchorFLow;
-import cn.lary.gift.entity.GiftOrder;
+import cn.lary.api.gift.entity.AnchorFLow;
+import cn.lary.api.gift.entity.GiftOrder;
 import cn.lary.gift.service.AnchorFlowService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

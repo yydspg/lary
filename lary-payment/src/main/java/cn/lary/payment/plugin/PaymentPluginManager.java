@@ -1,9 +1,9 @@
 package cn.lary.payment.plugin;
 
-import cn.lary.payment.component.PaymentNotifyProcessPair;
+import cn.lary.api.payment.dto.PaymentNotifyProcessPair;
 import cn.lary.payment.component.PaymentProcessPair;
-import cn.lary.payment.component.PaymentQueryProcessPair;
-import cn.lary.payment.vo.PaymentBuildVO;
+import cn.lary.api.payment.dto.PaymentQueryProcessPair;
+import cn.lary.api.payment.vo.PaymentBuildVO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

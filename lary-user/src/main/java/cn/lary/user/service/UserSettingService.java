@@ -1,9 +1,9 @@
 package cn.lary.user.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.user.dto.UserSettingUpdateDTO;
-import cn.lary.user.entity.UserSetting;
-import cn.lary.user.vo.UserSettingVO;
+import cn.lary.api.user.dto.UserSettingUpdateDTO;
+import cn.lary.api.user.entity.UserSetting;
+import cn.lary.api.user.vo.UserSettingVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**

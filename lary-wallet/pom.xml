@@ -35,10 +35,6 @@
             <version>0.1</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
-        </dependency>
-        <dependency>
             <groupId>cn.lary</groupId>
             <artifactId>lary-payment</artifactId>
             <version>0.1</version>
@@ -46,6 +42,16 @@
         <dependency>
             <groupId>cn.lary</groupId>
             <artifactId>lary-api-message</artifactId>
+            <version>0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.lary</groupId>
+            <artifactId>lary-api-wallet</artifactId>
+            <version>0.1</version>
+        </dependency>
+        <dependency>
+            <groupId>cn.lary</groupId>
+            <artifactId>lary-api-payment</artifactId>
             <version>0.1</version>
         </dependency>
     </dependencies>

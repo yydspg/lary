@@ -1,8 +1,9 @@
 package cn.lary.gift.mapper;
 
-import cn.lary.gift.dto.GiftOrderPageQueryDTO;
-import cn.lary.gift.entity.GiftOrder;
-import cn.lary.gift.vo.GiftOrderVO;
+
+import cn.lary.api.gift.dto.GiftOrderPageQueryDTO;
+import cn.lary.api.gift.entity.GiftOrder;
+import cn.lary.api.gift.vo.GiftOrderVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import java.util.List;

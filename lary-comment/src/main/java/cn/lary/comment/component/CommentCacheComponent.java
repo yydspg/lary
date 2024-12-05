@@ -1,6 +1,7 @@
 package cn.lary.comment.component;
 
-import cn.lary.comment.dto.CommentEventCacheDTO;
+
+import cn.lary.api.comment.dto.CommentEventCacheDTO;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;
@@ -18,6 +19,7 @@ public class CommentCacheComponent {
             .maximumSize(10000)
             .softValues()
             .build();
+
 //    private final Caffeine<Long,>
     public void setEvent(CommentEventCacheDTO dto) {
         redisson.<CommentEventCacheDTO>getBucket(LARY_COMMENT_EVENT_CACHE+ dto.getEid()).set(dto);

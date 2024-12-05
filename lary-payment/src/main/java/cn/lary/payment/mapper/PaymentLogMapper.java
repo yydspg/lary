@@ -1,6 +1,6 @@
 package cn.lary.payment.mapper;
 
-import cn.lary.payment.entity.PaymentLog;
+import cn.lary.api.payment.entity.PaymentLog;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

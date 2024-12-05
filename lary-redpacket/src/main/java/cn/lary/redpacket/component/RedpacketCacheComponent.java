@@ -1,7 +1,7 @@
 package cn.lary.redpacket.component;
 
-import cn.lary.redpacket.dto.RedpacketEventCache;
-import cn.lary.redpacket.dto.RedpacketRuleCache;
+import cn.lary.api.redpacket.dto.RedpacketEventCache;
+import cn.lary.api.redpacket.dto.RedpacketRuleCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;

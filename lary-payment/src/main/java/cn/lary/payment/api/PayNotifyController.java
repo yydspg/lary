@@ -1,8 +1,8 @@
 package cn.lary.payment.api;
 
-import cn.lary.payment.component.impl.GiftOrderAliPaymentNotifyPair;
-import cn.lary.payment.component.impl.GiftOrderWechatPaymentNotifyPair;
-import cn.lary.payment.component.impl.RechargeWechatPaymentNotifyPair;
+import cn.lary.api.payment.dto.impl.GiftOrderAliPaymentNotifyPair;
+import cn.lary.api.payment.dto.impl.GiftOrderWechatPaymentNotifyPair;
+import cn.lary.api.payment.dto.impl.RechargeWechatPaymentNotifyPair;
 import cn.lary.payment.plugin.PaymentPluginManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

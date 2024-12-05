@@ -1,8 +1,8 @@
 package cn.lary.user.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.user.entity.UserRedDot;
-import cn.lary.user.vo.UserRedDotVO;
+import cn.lary.api.user.entity.UserRedDot;
+import cn.lary.api.user.vo.UserRedDotVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

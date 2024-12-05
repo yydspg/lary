@@ -1,6 +1,7 @@
 package cn.lary.gift.mapper;
 
-import cn.lary.gift.entity.AnchorFLow;
+
+import cn.lary.api.gift.entity.AnchorFLow;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

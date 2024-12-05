@@ -1,6 +1,6 @@
 package cn.lary.gift.service.impl;
 
-import cn.lary.gift.entity.GiftType;
+import cn.lary.api.gift.entity.GiftType;
 import cn.lary.gift.mapper.GiftTypeMapper;
 import cn.lary.gift.service.GiftTypeService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

@@ -1,8 +1,8 @@
 package cn.lary.stream.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.stream.entity.StreamRecord;
-import cn.lary.stream.vo.StreamRecordVO;
+import cn.lary.api.stream.entity.StreamRecord;
+import cn.lary.api.stream.vo.StreamRecordVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

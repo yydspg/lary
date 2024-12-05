@@ -1,6 +1,6 @@
 package cn.lary.advertisement.component;
 
-import cn.lary.advertisement.dto.ADCache;
+import cn.lary.api.advertisement.dto.ADCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;

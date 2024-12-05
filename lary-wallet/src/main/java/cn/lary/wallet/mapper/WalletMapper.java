@@ -1,7 +1,7 @@
 package cn.lary.wallet.mapper;
 
-import cn.lary.wallet.entity.BatchOutcomeRandomTransfer;
-import cn.lary.wallet.entity.Wallet;
+import cn.lary.api.wallet.entity.BatchOutcomeRandomTransfer;
+import cn.lary.api.wallet.entity.Wallet;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import java.util.List;

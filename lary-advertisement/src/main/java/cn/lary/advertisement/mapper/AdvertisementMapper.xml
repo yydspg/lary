@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.advertisement.mapper.AdvertisementMapper">
 
     <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.advertisement.entity.Advertisement">
+    <resultMap id="BaseResultMap" type="cn.lary.api.advertisement.entity.Advertisement">
         <id column="id" property="id" />
         <result column="aid" property="aid" />
         <result column="pid" property="pid" />

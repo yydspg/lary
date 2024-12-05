@@ -1,6 +1,6 @@
 package cn.lary.user.mapper;
 
-import cn.lary.user.entity.User;
+import cn.lary.api.user.entity.User;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

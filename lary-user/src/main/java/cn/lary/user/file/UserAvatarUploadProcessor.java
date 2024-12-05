@@ -7,7 +7,7 @@ import cn.lary.common.file.component.FileUploadExecutionListener;
 import cn.lary.common.file.component.PresignedFileUploadUrlBuilder;
 import cn.lary.common.file.dto.FileUploadDTO;
 import cn.lary.common.kit.BusinessKit;
-import cn.lary.user.dto.UserAvatarUploadDTO;
+import cn.lary.api.user.dto.UserAvatarUploadDTO;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;

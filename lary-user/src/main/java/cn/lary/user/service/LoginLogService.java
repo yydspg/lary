@@ -1,9 +1,9 @@
 package cn.lary.user.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.user.dto.LoginLogPageQueryDTO;
-import cn.lary.user.entity.LoginLog;
-import cn.lary.user.vo.LoginVO;
+import cn.lary.api.user.dto.LoginLogPageQueryDTO;
+import cn.lary.api.user.entity.LoginLog;
+import cn.lary.api.user.vo.LoginVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

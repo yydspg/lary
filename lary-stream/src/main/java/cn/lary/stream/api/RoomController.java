@@ -1,5 +1,6 @@
 package cn.lary.stream.api;
 
+import cn.lary.api.stream.vo.*;
 import cn.lary.common.dto.MultiResponse;
 import cn.lary.common.dto.PageResponse;
 import cn.lary.common.dto.ResponsePair;
@@ -8,8 +9,8 @@ import cn.lary.common.kit.IPKit;
 import cn.lary.common.kit.ResponseKit;
 import cn.lary.stream.component.RoomBusinessExecute;
 import cn.lary.stream.component.StreamBusinessExecute;
-import cn.lary.stream.dto.GoLiveDTO;
-import cn.lary.stream.vo.*;
+import cn.lary.api.stream.dto.GoLiveDTO;
+
 
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;

@@ -1,6 +1,6 @@
 package cn.lary.stream.service;
 
-import cn.lary.stream.entity.StreamTag;
+import cn.lary.api.stream.entity.StreamTag;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**

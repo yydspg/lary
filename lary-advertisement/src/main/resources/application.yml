@@ -22,6 +22,8 @@ dubbo:
     name: tri
 
 spring:
+  main:
+    web-application-type: none
   application:
     name: yutak-ad
   datasource:

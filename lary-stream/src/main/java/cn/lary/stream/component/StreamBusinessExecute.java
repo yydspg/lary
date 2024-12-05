@@ -2,7 +2,7 @@ package cn.lary.stream.component;
 
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.stream.service.StreamRecordService;
-import cn.lary.stream.vo.StreamRecordVO;
+import cn.lary.api.stream.vo.StreamRecordVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,6 @@
 package cn.lary.raffle.mapper;
 
-import cn.lary.raffle.entity.RaffleRecord;
+import cn.lary.api.raffle.entity.RaffleRecord;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

@@ -1,12 +1,12 @@
 package cn.lary.gift.service.impl;
 
+import cn.lary.api.gift.entity.Gift;
+import cn.lary.api.gift.vo.GiftCollectionVO;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.gift.component.GiftCacheComponent;
-import cn.lary.gift.entity.Gift;
 import cn.lary.gift.mapper.GiftMapper;
 import cn.lary.gift.service.GiftService;
-import cn.lary.gift.vo.GiftCollectionVO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;

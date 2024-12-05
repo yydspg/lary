@@ -1,10 +1,10 @@
 package cn.lary.stream.component;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.stream.dto.FollowDTO;
-import cn.lary.stream.dto.FollowPageQueryDTO;
+import cn.lary.api.stream.dto.FollowDTO;
+import cn.lary.api.stream.dto.FollowPageQueryDTO;
 import cn.lary.stream.service.FollowService;
-import cn.lary.stream.vo.FollowVO;
+import cn.lary.api.stream.vo.FollowVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,20 +1,20 @@
 package cn.lary.wallet.service.impl;
 
+import cn.lary.api.wallet.dto.*;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.common.kit.CollectionKit;
-import cn.lary.wallet.constant.WALLET;
-import cn.lary.wallet.dto.*;
-import cn.lary.wallet.entity.BatchOutcomeRandomTransfer;
-import cn.lary.wallet.entity.Wallet;
-import cn.lary.wallet.entity.WalletIncome;
-import cn.lary.wallet.entity.WalletOutcome;
+import cn.lary.api.wallet.constant.WALLET;
+import cn.lary.api.wallet.entity.BatchOutcomeRandomTransfer;
+import cn.lary.api.wallet.entity.Wallet;
+import cn.lary.api.wallet.entity.WalletIncome;
+import cn.lary.api.wallet.entity.WalletOutcome;
 import cn.lary.wallet.mapper.WalletMapper;
 import cn.lary.wallet.service.WalletIncomeService;
 import cn.lary.wallet.service.WalletOutcomeService;
 import cn.lary.wallet.service.WalletService;
-import cn.lary.wallet.vo.BalanceVO;
+import cn.lary.api.wallet.vo.BalanceVO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

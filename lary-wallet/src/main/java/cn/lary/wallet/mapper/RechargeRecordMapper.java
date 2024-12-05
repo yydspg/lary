@@ -1,6 +1,6 @@
 package cn.lary.wallet.mapper;
 
-import cn.lary.wallet.entity.RechargeRecord;
+import cn.lary.api.wallet.entity.RechargeRecord;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

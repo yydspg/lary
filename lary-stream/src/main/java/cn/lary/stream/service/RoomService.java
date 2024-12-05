@@ -1,12 +1,12 @@
 package cn.lary.stream.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.stream.dto.GoLiveDTO;
-import cn.lary.stream.entity.Room;
-import cn.lary.stream.vo.DownLiveVO;
-import cn.lary.stream.vo.GoLiveVO;
-import cn.lary.stream.vo.JoinLiveVO;
-import cn.lary.stream.vo.RoomVO;
+import cn.lary.api.stream.dto.GoLiveDTO;
+import cn.lary.api.stream.entity.Room;
+import cn.lary.api.stream.vo.DownLiveVO;
+import cn.lary.api.stream.vo.GoLiveVO;
+import cn.lary.api.stream.vo.JoinLiveVO;
+import cn.lary.api.stream.vo.RoomVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

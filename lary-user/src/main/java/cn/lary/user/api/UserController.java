@@ -5,19 +5,19 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.dto.SingleResponse;
 import cn.lary.common.kit.ResponseKit;
 import cn.lary.user.component.UserExecute;
-import cn.lary.user.dto.LoginDTO;
-import cn.lary.user.dto.RegisterDTO;
-import cn.lary.user.dto.UserDestroyDTO;
+import cn.lary.api.user.dto.LoginDTO;
+import cn.lary.api.user.dto.RegisterDTO;
+import cn.lary.api.user.dto.UserDestroyDTO;
 import cn.lary.user.file.UserAvatarUploadProcessor;
-import cn.lary.user.vo.UserRedDotVO;
-import cn.lary.user.vo.UserVO;
-import jakarta.servlet.http.HttpServletRequest;
+import cn.lary.api.user.vo.UserRedDotVO;
+import cn.lary.api.user.vo.UserVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @Slf4j

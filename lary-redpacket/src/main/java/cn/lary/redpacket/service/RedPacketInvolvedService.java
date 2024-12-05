@@ -1,8 +1,8 @@
 package cn.lary.redpacket.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.redpacket.dto.RedpacketFsyncDTO;
-import cn.lary.redpacket.vo.RedpacketTokenVO;
+import cn.lary.api.redpacket.dto.RedpacketFsyncDTO;
+import cn.lary.api.redpacket.vo.RedpacketTokenVO;
 
 public interface RedPacketInvolvedService {
 

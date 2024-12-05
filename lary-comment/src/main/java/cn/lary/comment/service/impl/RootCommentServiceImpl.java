@@ -1,17 +1,16 @@
 package cn.lary.comment.service.impl;
 
-import cn.lary.api.message.YutakMessageService;
+import cn.lary.api.comment.dto.CommentEventCacheDTO;
+import cn.lary.api.comment.dto.RootCommentDTO;
+import cn.lary.api.comment.dto.RootCommentPageQueryDTO;
 import cn.lary.comment.component.CommentCacheComponent;
 import cn.lary.comment.constant.COMMENT;
-import cn.lary.comment.dto.CommentEventCacheDTO;
-import cn.lary.comment.dto.RootCommentDTO;
-import cn.lary.comment.dto.RootCommentPageQueryDTO;
-import cn.lary.comment.entity.CommentEvent;
-import cn.lary.comment.entity.RootComment;
+import cn.lary.api.comment.entity.CommentEvent;
+import cn.lary.api.comment.entity.RootComment;
 import cn.lary.comment.mapper.RootCommentMapper;
 import cn.lary.comment.service.CommentEventService;
 import cn.lary.comment.service.RootCommentService;
-import cn.lary.comment.vo.RootCommentVO;
+import cn.lary.api.comment.vo.RootCommentVO;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.id.LaryIDBuilder;
@@ -42,9 +41,8 @@ public class RootCommentServiceImpl extends ServiceImpl<RootCommentMapper, RootC
 
     private final CommentCacheComponent commentCacheComponent;
     private final CommentEventService commentEventService;
-    private final YutakMessageService messageService;
     private final GeneralService generalService;
-    private final LaryIDBuilder idGenerator;
+    private final LaryIDBuilder builder;
     private final TransactionTemplate transactionTemplate;
 
     @Override
@@ -72,7 +70,7 @@ public class RootCommentServiceImpl extends ServiceImpl<RootCommentMapper, RootC
         if (SensitiveWordHelper.contains(dto.getContent())) {
             return BusinessKit.fail("content invalid");
         }
-        long cid = idGenerator.next();
+        long cid = builder.next();
         RootComment comment = new RootComment()
                 .setUid(uid)
                 .setCid(cid)

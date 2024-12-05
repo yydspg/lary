@@ -38,7 +38,11 @@
             <groupId>com.alipay.sdk</groupId>
             <artifactId>alipay-sdk-java</artifactId>
         </dependency>
-
+        <dependency>
+            <groupId>cn.lary</groupId>
+            <artifactId>lary-api-payment</artifactId>
+            <version>0.1</version>
+        </dependency>
     </dependencies>
 
     <build>

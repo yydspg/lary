@@ -1,15 +1,17 @@
 package cn.lary.user.interceptor;
 
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 import org.springframework.web.servlet.HandlerInterceptor;
 
-@Slf4j
-@Component
-@RequiredArgsConstructor
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+//@Slf4j
+//@Component
+//@RequiredArgsConstructor
 public class UserLoginTokenInterceptor implements HandlerInterceptor {
 
 //    private final TokenOperation operation;

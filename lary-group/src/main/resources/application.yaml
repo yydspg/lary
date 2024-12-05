@@ -1,0 +1,49 @@
+dubbo:
+  application:
+    name: lary-group
+  consumer:
+    check: true
+  provider:
+    delay: 500
+    parameters.enable-timeout-countdown: true
+  registry:
+    check: true
+    address: nacos://localhost:8848
+  #    register-mode: instance
+  #    group: lary
+  config-center:
+    address: nacos://localhost:8848
+    group: lary
+    namespace: dev
+  protocol:
+    port: 9003
+    name: tri
+
+spring:
+  main:
+    web-application-type: none
+  application:
+    name: yutak-ad
+  datasource:
+    url: jdbc:mysql://192.168.1.101:3306/lary
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 12345678
+  profiles:
+    active: dev
+  #  data:
+  #    redis:
+  #      host: 127.0.0.1
+  #      database: 0
+  logging:
+    level:
+      "org.apache.dubbo.rpc.protocol.tri": debug
+      "org.apache.dubbo.remoting": debug
+
+mybatis-plus:
+  configuration:
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+logging:
+  level:
+    sql: debug
+    web: debug

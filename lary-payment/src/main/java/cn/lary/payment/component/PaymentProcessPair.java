@@ -1,6 +1,6 @@
 package cn.lary.payment.component;
 
-import cn.lary.payment.dto.PaymentParamDTO;
+import cn.lary.api.payment.dto.PaymentParamDTO;
 import lombok.Data;
 import lombok.experimental.Accessors;
 

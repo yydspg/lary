@@ -1,8 +1,8 @@
 package cn.lary.wallet.mapper;
 
-import cn.lary.wallet.dto.WalletOutcomePageQueryDTO;
-import cn.lary.wallet.entity.WalletOutcome;
-import cn.lary.wallet.vo.WalletOutcomeVO;
+import cn.lary.api.wallet.dto.WalletOutcomePageQueryDTO;
+import cn.lary.api.wallet.entity.WalletOutcome;
+import cn.lary.api.wallet.vo.WalletOutcomeVO;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 import java.util.List;

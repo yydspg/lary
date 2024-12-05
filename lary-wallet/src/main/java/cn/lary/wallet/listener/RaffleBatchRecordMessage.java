@@ -2,8 +2,8 @@ package cn.lary.wallet.listener;
 
 import cn.lary.common.constant.LARY;
 import cn.lary.common.rocketmq.AbstractAsyncRocketMessage;
-import cn.lary.wallet.dto.BatchOutcomeFixTransferDTO;
-import cn.lary.wallet.dto.BatchOutcomeRandomTransferDTO;
+import cn.lary.api.wallet.dto.BatchOutcomeFixTransferDTO;
+import cn.lary.api.wallet.dto.BatchOutcomeRandomTransferDTO;
 import lombok.Data;
 import lombok.experimental.Accessors;
 import org.apache.rocketmq.client.producer.SendCallback;

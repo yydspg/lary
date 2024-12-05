@@ -1,10 +1,10 @@
 package cn.lary.comment.service.impl;
 
+import cn.lary.api.comment.dto.CommentEventCacheDTO;
+import cn.lary.api.comment.dto.CommentEventDTO;
 import cn.lary.comment.component.CommentCacheComponent;
 import cn.lary.comment.constant.COMMENT;
-import cn.lary.comment.dto.CommentEventCacheDTO;
-import cn.lary.comment.dto.CommentEventDTO;
-import cn.lary.comment.entity.CommentEvent;
+import cn.lary.api.comment.entity.CommentEvent;
 import cn.lary.comment.mapper.CommentEventMapper;
 import cn.lary.comment.service.CommentEventService;
 import cn.lary.common.context.RequestContext;
@@ -30,7 +30,7 @@ import org.springframework.stereotype.Service;
 public class CommentEventServiceImpl extends ServiceImpl<CommentEventMapper, CommentEvent> implements CommentEventService {
 
     private final int UNKNOWN = -1;
-    private final LaryIDBuilder idGenerator;
+    private final LaryIDBuilder builder;
     private final CommentCacheComponent commentCacheComponent;
 
     @Override
@@ -44,7 +44,7 @@ public class CommentEventServiceImpl extends ServiceImpl<CommentEventMapper, Com
             return BusinessKit.fail("contains illegal word");
         }
         long uid = RequestContext.uid();
-        long eid = idGenerator.next();
+        long eid = builder.next();
         save(new CommentEvent()
                 .setUid(uid)
                 .setEid(eid)

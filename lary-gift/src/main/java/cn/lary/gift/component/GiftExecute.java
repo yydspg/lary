@@ -1,12 +1,12 @@
 package cn.lary.gift.component;
 
+import cn.lary.api.payment.vo.PaymentBuildVO;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
-import cn.lary.gift.dto.GiftOrderDTO;
-import cn.lary.gift.dto.GiftOrderPageQueryDTO;
+import cn.lary.api.gift.dto.GiftOrderDTO;
+import cn.lary.api.gift.dto.GiftOrderPageQueryDTO;
 import cn.lary.gift.service.GiftOrderService;
-import cn.lary.gift.vo.GiftOrderVO;
-import cn.lary.payment.vo.PaymentBuildVO;
+import cn.lary.api.gift.vo.GiftOrderVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

@@ -1,6 +1,6 @@
 package cn.lary.stream.service.impl;
 
-import cn.lary.stream.entity.StreamTag;
+import cn.lary.api.stream.entity.StreamTag;
 import cn.lary.stream.mapper.StreamTagMapper;
 import cn.lary.stream.service.StreamTagService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

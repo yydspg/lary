@@ -1,9 +1,9 @@
 package cn.lary.wallet.service;
 
+import cn.lary.api.wallet.dto.*;
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.wallet.dto.*;
-import cn.lary.wallet.entity.Wallet;
-import cn.lary.wallet.vo.BalanceVO;
+import cn.lary.api.wallet.entity.Wallet;
+import cn.lary.api.wallet.vo.BalanceVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

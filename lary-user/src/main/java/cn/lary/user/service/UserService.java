@@ -1,15 +1,15 @@
 package cn.lary.user.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.user.dto.LoginDTO;
-import cn.lary.user.dto.RegisterDTO;
-import cn.lary.user.dto.UserDestroyDTO;
-import cn.lary.user.dto.UserUpdateDTO;
-import cn.lary.user.entity.User;
-import cn.lary.user.vo.UserVO;
+import cn.lary.api.user.dto.LoginDTO;
+import cn.lary.api.user.dto.RegisterDTO;
+import cn.lary.api.user.dto.UserDestroyDTO;
+import cn.lary.api.user.dto.UserUpdateDTO;
+import cn.lary.api.user.entity.User;
+import cn.lary.api.user.vo.UserVO;
 import com.baomidou.mybatisplus.extension.service.IService;
-import jakarta.servlet.http.HttpServletRequest;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 /**

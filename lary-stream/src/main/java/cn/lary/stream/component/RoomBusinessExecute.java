@@ -1,11 +1,11 @@
 package cn.lary.stream.component;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.stream.dto.GoLiveDTO;
+import cn.lary.api.stream.dto.GoLiveDTO;
 import cn.lary.stream.service.RoomService;
-import cn.lary.stream.vo.DownLiveVO;
-import cn.lary.stream.vo.GoLiveVO;
-import cn.lary.stream.vo.JoinLiveVO;
+import cn.lary.api.stream.vo.DownLiveVO;
+import cn.lary.api.stream.vo.GoLiveVO;
+import cn.lary.api.stream.vo.JoinLiveVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;

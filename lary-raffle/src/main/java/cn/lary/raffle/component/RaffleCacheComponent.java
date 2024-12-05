@@ -2,8 +2,8 @@ package cn.lary.raffle.component;
 
 //import cn.lary.module.cache.component.PubSubComponent;
 //import cn.lary.module.cache.dto.RaffleRuleNotifyDTO;
-import cn.lary.raffle.dto.RaffleEventCache;
-import cn.lary.raffle.dto.RaffleRuleCache;
+import cn.lary.api.raffle.dto.RaffleEventCache;
+import cn.lary.api.raffle.dto.RaffleRuleCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;

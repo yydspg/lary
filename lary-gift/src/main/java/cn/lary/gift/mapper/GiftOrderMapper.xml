@@ -3,7 +3,7 @@
 <mapper namespace="cn.lary.gift.mapper.GiftOrderMapper">
 
 
-    <select id="orders" resultType="cn.lary.gift.vo.GiftOrderVO">
+    <select id="orders" resultType="cn.lary.api.gift.vo.GiftOrderVO">
         select anchor_uid ,stream_id ,status,sn,amount,client_type,gift_name,gift_num from gift_order
         where
             uid = #{uid}

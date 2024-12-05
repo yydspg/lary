@@ -1,6 +1,6 @@
 package cn.lary.stream.mapper;
 
-import cn.lary.stream.entity.Follow;
+import cn.lary.api.stream.entity.Follow;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

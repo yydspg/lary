@@ -1,6 +1,7 @@
 package cn.lary.gift.mapper;
 
-import cn.lary.gift.entity.GiftType;
+
+import cn.lary.api.gift.entity.GiftType;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

@@ -5,7 +5,7 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.dto.SingleResponse;
 import cn.lary.common.kit.ResponseKit;
 import cn.lary.user.component.DeviceExecute;
-import cn.lary.user.vo.DeviceVO;
+import cn.lary.api.user.vo.DeviceVO;
 import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

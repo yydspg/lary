@@ -1,7 +1,7 @@
 package cn.lary.user.mapper;
 
-import cn.lary.user.dto.UidQueryDTO;
-import cn.lary.user.entity.UserIndex;
+import cn.lary.api.user.dto.UidQueryDTO;
+import cn.lary.api.user.entity.UserIndex;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

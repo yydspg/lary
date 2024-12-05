@@ -2,7 +2,7 @@ package cn.lary.payment.listener;
 
 
 
-import cn.lary.payment.component.PaymentQueryProcessPair;
+import cn.lary.api.payment.dto.PaymentQueryProcessPair;
 import cn.lary.payment.plugin.PaymentPluginManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

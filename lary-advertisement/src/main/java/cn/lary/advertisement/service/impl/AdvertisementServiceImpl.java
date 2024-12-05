@@ -1,13 +1,13 @@
 package cn.lary.advertisement.service.impl;
 
-import cn.lary.advertisement.constant.AD;
-import cn.lary.advertisement.dto.ADPageQueryDTO;
-import cn.lary.advertisement.entity.Advertisement;
-import cn.lary.advertisement.entity.Provider;
+import cn.lary.api.advertisement.constant.AD;
+import cn.lary.api.advertisement.dto.ADPageQueryDTO;
+import cn.lary.api.advertisement.entity.Advertisement;
+import cn.lary.api.advertisement.entity.Provider;
 import cn.lary.advertisement.mapper.AdvertisementMapper;
 import cn.lary.advertisement.service.AdvertisementService;
 import cn.lary.advertisement.service.ProviderService;
-import cn.lary.advertisement.vo.AdvertisementVO;
+import cn.lary.api.advertisement.vo.AdvertisementVO;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;

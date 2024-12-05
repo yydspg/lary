@@ -1,7 +1,8 @@
 package cn.lary.payment.component;
 
 import cn.lary.common.business.BusinessSign;
-import cn.lary.payment.vo.PaymentQueryVO;
+import cn.lary.api.payment.dto.PaymentNotifyProcessPair;
+import cn.lary.api.payment.vo.PaymentQueryVO;
 
 public abstract class BusinessPaymentNotify<T> implements BusinessSign {
 

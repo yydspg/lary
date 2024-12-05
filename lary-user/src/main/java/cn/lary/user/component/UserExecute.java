@@ -1,18 +1,18 @@
 package cn.lary.user.component;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.user.dto.LoginDTO;
-import cn.lary.user.dto.RegisterDTO;
-import cn.lary.user.dto.UserDestroyDTO;
+import cn.lary.api.user.dto.LoginDTO;
+import cn.lary.api.user.dto.RegisterDTO;
+import cn.lary.api.user.dto.UserDestroyDTO;
 import cn.lary.user.service.UserRedDotService;
 import cn.lary.user.service.UserService;
-import cn.lary.user.vo.UserRedDotVO;
-import cn.lary.user.vo.UserVO;
-import jakarta.servlet.http.HttpServletRequest;
+import cn.lary.api.user.vo.UserRedDotVO;
+import cn.lary.api.user.vo.UserVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 
 @Slf4j

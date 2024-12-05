@@ -1,6 +1,6 @@
 package cn.lary.redpacket.mapper;
 
-import cn.lary.redpacket.entity.RedpacketRecord;
+import cn.lary.api.redpacket.entity.RedpacketRecord;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

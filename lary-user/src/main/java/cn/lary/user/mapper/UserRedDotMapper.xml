@@ -2,15 +2,5 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="cn.lary.user.mapper.UserRedDotMapper">
 
-    <!-- 通用查询映射结果 -->
-    <resultMap id="BaseResultMap" type="cn.lary.user.entity.UserRedDot">
-        <id column="id" property="id" />
-        <result column="uid" property="uid" />
-        <result column="count" property="count" />
-        <result column="category" property="category" />
-        <result column="is_dot" property="isDot" />
-        <result column="created_at" property="createdAt" />
-        <result column="updated_at" property="updatedAt" />
-    </resultMap>
 
 </mapper>

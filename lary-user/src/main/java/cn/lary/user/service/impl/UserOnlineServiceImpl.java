@@ -1,6 +1,6 @@
 package cn.lary.user.service.impl;
 
-import cn.lary.user.entity.UserOnline;
+import cn.lary.api.user.entity.UserOnline;
 import cn.lary.user.mapper.UserOnlineMapper;
 import cn.lary.user.service.UserOnlineService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

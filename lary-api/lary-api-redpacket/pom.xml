@@ -29,6 +29,11 @@
         <java.version>17</java.version>
     </properties>
     <dependencies>
+        <dependency>
+            <groupId>cn.lary</groupId>
+            <artifactId>lary-api-message</artifactId>
+            <version>0.1</version>
+        </dependency>
     </dependencies>
 
     <build>

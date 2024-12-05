@@ -1,14 +1,14 @@
 package cn.lary.invest.component;
 
 
+import cn.lary.api.payment.dto.PaymentNotifyProcessPair;
+import cn.lary.api.payment.vo.PaymentQueryVO;
 import cn.lary.common.constant.LARY;
 import cn.lary.invest.constant.INVEST;
 import cn.lary.invest.dto.InvestPaymentNotifyVO;
 import cn.lary.invest.entity.Invest;
 import cn.lary.invest.service.InvestService;
 import cn.lary.payment.component.BusinessPaymentNotify;
-import cn.lary.payment.component.PaymentNotifyProcessPair;
-import cn.lary.payment.vo.PaymentQueryVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

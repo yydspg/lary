@@ -1,11 +1,12 @@
 package cn.lary.advertisement.component;
 
-import cn.lary.advertisement.dto.ADPageQueryDTO;
-import cn.lary.advertisement.dto.ADPaymentDTO;
+import cn.lary.api.advertisement.dto.ADPageQueryDTO;
+import cn.lary.api.advertisement.dto.ADPaymentDTO;
 import cn.lary.advertisement.service.AdvertisementService;
-import cn.lary.advertisement.vo.AdvertisementVO;
+import cn.lary.api.advertisement.vo.AdvertisementVO;
+import cn.lary.api.payment.vo.PaymentBuildVO;
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.payment.vo.PaymentBuildVO;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

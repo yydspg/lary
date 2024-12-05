@@ -1,8 +1,8 @@
 package cn.lary.advertisement.service;
 
-import cn.lary.advertisement.dto.ProviderBuildDTO;
-import cn.lary.advertisement.dto.ProviderUpdateDTO;
-import cn.lary.advertisement.entity.Provider;
+import cn.lary.api.advertisement.dto.ProviderBuildDTO;
+import cn.lary.api.advertisement.dto.ProviderUpdateDTO;
+import cn.lary.api.advertisement.entity.Provider;
 import cn.lary.common.dto.ResponsePair;
 import com.baomidou.mybatisplus.extension.service.IService;
 

@@ -40,12 +40,13 @@
             <version>0.1</version>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>cn.lary</groupId>
+            <artifactId>lary-external</artifactId>
+            <version>0.1</version>
         </dependency>
         <dependency>
             <groupId>cn.lary</groupId>
-            <artifactId>lary-external</artifactId>
+            <artifactId>lary-api-stream</artifactId>
             <version>0.1</version>
         </dependency>
     </dependencies>

@@ -1,15 +1,15 @@
 package cn.lary.redpacket.component;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.redpacket.dto.RedpacketEventBuildDTO;
-import cn.lary.redpacket.dto.RedpacketFsyncDTO;
-import cn.lary.redpacket.dto.RedpacketRecordPageQueryDTO;
+import cn.lary.api.redpacket.dto.RedpacketEventBuildDTO;
+import cn.lary.api.redpacket.dto.RedpacketFsyncDTO;
+import cn.lary.api.redpacket.dto.RedpacketRecordPageQueryDTO;
 import cn.lary.redpacket.service.RedPacketInvolvedService;
 import cn.lary.redpacket.service.RedpacketEventService;
 import cn.lary.redpacket.service.RedpacketRecordService;
-import cn.lary.redpacket.vo.RedpacketEventVO;
-import cn.lary.redpacket.vo.RedpacketRecordVO;
-import cn.lary.redpacket.vo.RedpacketTokenVO;
+import cn.lary.api.redpacket.vo.RedpacketEventVO;
+import cn.lary.api.redpacket.vo.RedpacketRecordVO;
+import cn.lary.api.redpacket.vo.RedpacketTokenVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

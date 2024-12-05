@@ -1,6 +1,6 @@
 package cn.lary.payment.service.impl;
 
-import cn.lary.payment.entity.PaymentLog;
+import cn.lary.api.payment.entity.PaymentLog;
 import cn.lary.payment.mapper.PaymentLogMapper;
 import cn.lary.payment.service.PaymentLogService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

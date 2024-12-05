@@ -1,7 +1,6 @@
 package cn.lary.gift.component;
-
-import cn.lary.gift.entity.GiftCache;
-import cn.lary.gift.entity.GiftCollectionCache;
+import cn.lary.api.gift.entity.GiftCache;
+import cn.lary.api.gift.entity.GiftCollectionCache;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
 import lombok.RequiredArgsConstructor;

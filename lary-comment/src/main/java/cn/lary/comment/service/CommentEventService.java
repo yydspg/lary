@@ -1,7 +1,8 @@
 package cn.lary.comment.service;
 
-import cn.lary.comment.dto.CommentEventDTO;
-import cn.lary.comment.entity.CommentEvent;
+
+import cn.lary.api.comment.dto.CommentEventDTO;
+import cn.lary.api.comment.entity.CommentEvent;
 import cn.lary.common.dto.ResponsePair;
 import com.baomidou.mybatisplus.extension.service.IService;
 

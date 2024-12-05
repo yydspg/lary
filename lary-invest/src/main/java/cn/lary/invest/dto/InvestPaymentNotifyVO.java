@@ -1,8 +1,8 @@
 package cn.lary.invest.dto;
 
+import cn.lary.api.payment.constant.PAYMENT;
+import cn.lary.api.payment.dto.PaymentNotifyProcessPair;
 import cn.lary.common.kit.StringKit;
-import cn.lary.payment.component.PaymentNotifyProcessPair;
-import cn.lary.payment.constant.PAYMENT;
 import lombok.Data;
 import lombok.experimental.Accessors;
 

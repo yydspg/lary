@@ -1,6 +1,6 @@
 package cn.lary.wallet.service;
 
-import cn.lary.wallet.entity.RechargeRecord;
+import cn.lary.api.wallet.entity.RechargeRecord;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**

@@ -18,6 +18,9 @@
 		<module>lary-api-comment</module>
 		<module>lary-api-engine</module>
 		<module>lary-api-invest</module>
+		<module>lary-api-payment</module>
+		<module>lary-api-gift</module>
+		<module>lary-api-stream</module>
 	</modules>
 
 	<artifactId>lary-api</artifactId>
@@ -44,6 +47,15 @@
 		<dependency>
 			<groupId>org.apache.dubbo</groupId>
 			<artifactId>dubbo-spring-boot-starter</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>org.projectlombok</groupId>
+			<artifactId>lombok</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>cn.lary</groupId>
+			<artifactId>lary-common</artifactId>
+			<version>0.1</version>
 		</dependency>
 	</dependencies>
 

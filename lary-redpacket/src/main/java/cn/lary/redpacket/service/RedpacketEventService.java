@@ -1,9 +1,9 @@
 package cn.lary.redpacket.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.redpacket.dto.RedpacketEventBuildDTO;
-import cn.lary.redpacket.entity.RedpacketEvent;
-import cn.lary.redpacket.vo.RedpacketEventVO;
+import cn.lary.api.redpacket.dto.RedpacketEventBuildDTO;
+import cn.lary.api.redpacket.entity.RedpacketEvent;
+import cn.lary.api.redpacket.vo.RedpacketEventVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 /**

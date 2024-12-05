@@ -1,14 +1,14 @@
 package cn.lary.gift.api;
 
+import cn.lary.api.payment.vo.PaymentBuildVO;
 import cn.lary.common.dto.PageResponse;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.dto.SingleResponse;
 import cn.lary.common.kit.ResponseKit;
+import cn.lary.api.gift.dto.GiftOrderDTO;
+import cn.lary.api.gift.dto.GiftOrderPageQueryDTO;
+import cn.lary.api.gift.vo.GiftOrderVO;
 import cn.lary.gift.component.GiftExecute;
-import cn.lary.gift.dto.GiftOrderDTO;
-import cn.lary.gift.dto.GiftOrderPageQueryDTO;
-import cn.lary.gift.vo.GiftOrderVO;
-import cn.lary.payment.vo.PaymentBuildVO;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;

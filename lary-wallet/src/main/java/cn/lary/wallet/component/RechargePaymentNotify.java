@@ -1,16 +1,16 @@
 package cn.lary.wallet.component;
 
+import cn.lary.api.payment.dto.PaymentNotifyProcessPair;
+import cn.lary.api.payment.vo.PaymentQueryVO;
 import cn.lary.common.constant.LARY;
 import cn.lary.common.kit.SystemClock;
 import cn.lary.payment.component.BusinessPaymentNotify;
-import cn.lary.payment.component.PaymentNotifyProcessPair;
-import cn.lary.payment.constant.PAYMENT;
-import cn.lary.payment.vo.PaymentQueryVO;
-import cn.lary.wallet.entity.RechargeRecord;
-import cn.lary.wallet.entity.Wallet;
+import cn.lary.api.payment.constant.PAYMENT;
+import cn.lary.api.wallet.entity.RechargeRecord;
+import cn.lary.api.wallet.entity.Wallet;
 import cn.lary.wallet.service.RechargeRecordService;
 import cn.lary.wallet.service.WalletService;
-import cn.lary.wallet.vo.RechargePaymentNotifyVO;
+import cn.lary.api.wallet.vo.RechargePaymentNotifyVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

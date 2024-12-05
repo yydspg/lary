@@ -10,29 +10,29 @@ import cn.lary.common.kit.StringKit;
 import cn.lary.common.kit.UUIDKit;
 import cn.lary.user.component.UserCache;
 import cn.lary.user.component.UserCacheComponent;
-import cn.lary.user.constant.DEVICE;
-import cn.lary.user.constant.USER;
-import cn.lary.user.dto.LoginDTO;
-import cn.lary.user.dto.RegisterDTO;
-import cn.lary.user.dto.UserDestroyDTO;
-import cn.lary.user.dto.UserUpdateDTO;
-import cn.lary.user.entity.Device;
-import cn.lary.user.entity.User;
-import cn.lary.user.entity.UserSetting;
+import cn.lary.api.user.constant.DEVICE;
+import cn.lary.api.user.constant.USER;
+import cn.lary.api.user.dto.LoginDTO;
+import cn.lary.api.user.dto.RegisterDTO;
+import cn.lary.api.user.dto.UserDestroyDTO;
+import cn.lary.api.user.dto.UserUpdateDTO;
+import cn.lary.api.user.entity.Device;
+import cn.lary.api.user.entity.User;
+import cn.lary.api.user.entity.UserSetting;
 import cn.lary.user.mapper.UserMapper;
 import cn.lary.user.service.DeviceService;
 import cn.lary.user.service.UserService;
 import cn.lary.user.service.UserSettingService;
-import cn.lary.user.vo.UserVO;
+import cn.lary.api.user.vo.UserVO;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
-import jakarta.servlet.http.HttpServletRequest;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import javax.servlet.http.HttpServletRequest;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -46,17 +46,16 @@ import java.util.List;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class UserServiceImpl extends ServiceImpl<UserMapper, User> implements UserService {
 
-    private final DeviceService deviceService;
-    private final UserSettingService userSettingService;
-    private final TransactionTemplate transactionTemplate;
-    private final UserCacheComponent userCacheComponent;
-    private final LaryIDBuilder builder;
+    private DeviceService deviceService;
+    private UserSettingService userSettingService;
+    private TransactionTemplate transactionTemplate;
+    private UserCacheComponent userCacheComponent;
+    private LaryIDBuilder builder;
+    private YutakMessageService yutakMessageService;
 
-    @DubboReference
-    private final YutakMessageService yutakMessageService;
+
     @Override
     public User virtual(User user) {
         user.setUid(builder.next());

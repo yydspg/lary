@@ -1,6 +1,6 @@
 package cn.lary.comment.mapper;
 
-import cn.lary.comment.entity.RootComment;
+import cn.lary.api.comment.entity.RootComment;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

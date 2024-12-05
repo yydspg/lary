@@ -1,8 +1,8 @@
 package cn.lary.gift.service;
 
+import cn.lary.api.gift.entity.Gift;
+import cn.lary.api.gift.vo.GiftCollectionVO;
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.gift.entity.Gift;
-import cn.lary.gift.vo.GiftCollectionVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;

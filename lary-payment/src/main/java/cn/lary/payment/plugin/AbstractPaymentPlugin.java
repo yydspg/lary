@@ -2,13 +2,13 @@ package cn.lary.payment.plugin;
 
 import cn.lary.common.exception.SystemException;
 import cn.lary.payment.component.BusinessPaymentNotifyManager;
-import cn.lary.payment.component.PaymentNotifyProcessPair;
+import cn.lary.api.payment.dto.PaymentNotifyProcessPair;
 import cn.lary.payment.component.PaymentProcessPair;
-import cn.lary.payment.component.PaymentQueryProcessPair;
-import cn.lary.payment.constant.PAYMENT;
-import cn.lary.payment.dto.PaymentParamDTO;
-import cn.lary.payment.vo.PaymentBuildVO;
-import cn.lary.payment.vo.PaymentQueryVO;
+import cn.lary.api.payment.dto.PaymentQueryProcessPair;
+import cn.lary.api.payment.constant.PAYMENT;
+import cn.lary.api.payment.dto.PaymentParamDTO;
+import cn.lary.api.payment.vo.PaymentBuildVO;
+import cn.lary.api.payment.vo.PaymentQueryVO;
 
 
 import javax.servlet.http.HttpServletRequest;

@@ -1,9 +1,9 @@
 package cn.lary.advertisement.service.impl;
 
-import cn.lary.advertisement.constant.AD;
-import cn.lary.advertisement.dto.ProviderBuildDTO;
-import cn.lary.advertisement.dto.ProviderUpdateDTO;
-import cn.lary.advertisement.entity.Provider;
+import cn.lary.api.advertisement.constant.AD;
+import cn.lary.api.advertisement.dto.ProviderBuildDTO;
+import cn.lary.api.advertisement.dto.ProviderUpdateDTO;
+import cn.lary.api.advertisement.entity.Provider;
 import cn.lary.advertisement.mapper.ProviderMapper;
 import cn.lary.advertisement.service.ProviderService;
 import cn.lary.common.dto.ResponsePair;

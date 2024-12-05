@@ -1,9 +1,9 @@
 package cn.lary.comment.service;
 
-import cn.lary.comment.dto.NextCommentDTO;
-import cn.lary.comment.dto.NextCommentPageQueryDTO;
-import cn.lary.comment.entity.NextComment;
-import cn.lary.comment.vo.NextCommentVO;
+import cn.lary.api.comment.dto.NextCommentDTO;
+import cn.lary.api.comment.dto.NextCommentPageQueryDTO;
+import cn.lary.api.comment.entity.NextComment;
+import cn.lary.api.comment.vo.NextCommentVO;
 import cn.lary.common.dto.ResponsePair;
 import com.baomidou.mybatisplus.extension.service.IService;
 

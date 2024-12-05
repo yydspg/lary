@@ -2,17 +2,17 @@ package cn.lary.gift.component;
 
 
 import cn.lary.api.message.YutakMessageService;
+import cn.lary.api.payment.constant.PAYMENT;
+import cn.lary.api.payment.dto.PaymentNotifyProcessPair;
+import cn.lary.api.payment.vo.PaymentQueryVO;
 import cn.lary.common.constant.LARY;
 import cn.lary.common.kit.SystemClock;
-import cn.lary.gift.entity.AnchorFLow;
-import cn.lary.gift.entity.GiftOrder;
+import cn.lary.api.gift.entity.AnchorFLow;
+import cn.lary.api.gift.entity.GiftOrder;
 import cn.lary.gift.service.AnchorFlowService;
 import cn.lary.gift.service.GiftOrderService;
-import cn.lary.gift.vo.GiftPaymentNotifyVO;
+import cn.lary.api.gift.vo.GiftPaymentNotifyVO;
 import cn.lary.payment.component.BusinessPaymentNotify;
-import cn.lary.payment.component.PaymentNotifyProcessPair;
-import cn.lary.payment.constant.PAYMENT;
-import cn.lary.payment.vo.PaymentQueryVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;
@@ -107,7 +107,7 @@ public class GiftPaymentNotify extends BusinessPaymentNotify<GiftPaymentNotifyVO
 
     @Override
 
-    public  GiftPaymentNotifyVO getPaymentNotify(PaymentNotifyProcessPair pair,PaymentQueryVO data) {
+    public  GiftPaymentNotifyVO getPaymentNotify(PaymentNotifyProcessPair pair, PaymentQueryVO data) {
         if (pair == null) {
             return new GiftPaymentNotifyVO()
                     .setAmount(data.getAmount())

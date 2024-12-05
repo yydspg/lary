@@ -52,19 +52,15 @@
             <artifactId>sentinel-transport-netty-http</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-web</artifactId>
+            <groupId>cn.lary</groupId>
+            <artifactId>lary-api-payment</artifactId>
+            <version>0.1</version>
         </dependency>
         <dependency>
             <groupId>cn.lary</groupId>
             <artifactId>lary-api-advertisement</artifactId>
             <version>0.1</version>
         </dependency>
-<!--        <dependency>-->
-<!--            <groupId>com.esotericsoftware.kryo</groupId>-->
-<!--            <artifactId>kryo5</artifactId>-->
-<!--            <version>5.5.0</version>-->
-<!--        </dependency>-->
     </dependencies>
 
     <build>

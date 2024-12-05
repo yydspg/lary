@@ -1,13 +1,13 @@
 package cn.lary.raffle.component;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.raffle.dto.RaffleEventDTO;
-import cn.lary.raffle.dto.RaffleRecordPageQueryDTO;
+import cn.lary.api.raffle.dto.RaffleEventDTO;
+import cn.lary.api.raffle.dto.RaffleRecordPageQueryDTO;
 import cn.lary.raffle.service.RaffleEventService;
 import cn.lary.raffle.service.RaffleInvolvedService;
 import cn.lary.raffle.service.RaffleRecordService;
-import cn.lary.raffle.vo.RaffleEventVO;
-import cn.lary.raffle.vo.RaffleRecordVO;
+import cn.lary.api.raffle.vo.RaffleEventVO;
+import cn.lary.api.raffle.vo.RaffleRecordVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

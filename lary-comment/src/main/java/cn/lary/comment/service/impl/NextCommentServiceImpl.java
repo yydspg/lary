@@ -1,16 +1,16 @@
 package cn.lary.comment.service.impl;
 
+import cn.lary.api.comment.dto.CommentEventCacheDTO;
+import cn.lary.api.comment.dto.NextCommentDTO;
+import cn.lary.api.comment.dto.NextCommentPageQueryDTO;
 import cn.lary.comment.component.CommentCacheComponent;
 import cn.lary.comment.constant.COMMENT;
-import cn.lary.comment.dto.CommentEventCacheDTO;
-import cn.lary.comment.dto.NextCommentDTO;
-import cn.lary.comment.dto.NextCommentPageQueryDTO;
-import cn.lary.comment.entity.CommentEvent;
-import cn.lary.comment.entity.NextComment;
+import cn.lary.api.comment.entity.CommentEvent;
+import cn.lary.api.comment.entity.NextComment;
 import cn.lary.comment.mapper.NextCommentMapper;
 import cn.lary.comment.service.CommentEventService;
 import cn.lary.comment.service.NextCommentService;
-import cn.lary.comment.vo.NextCommentVO;
+import cn.lary.api.comment.vo.NextCommentVO;
 import cn.lary.common.context.RequestContext;
 import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.id.LaryIDBuilder;
@@ -40,10 +40,12 @@ public class NextCommentServiceImpl extends ServiceImpl<NextCommentMapper, NextC
 
     private final CommentEventService commentEventService;
     private final CommentCacheComponent commentCacheComponent;
-    private final LaryIDBuilder idGenerator;
+    private final LaryIDBuilder builder;
 //    private final UserService userService;
     private final GeneralService generalService;
     private final TransactionTemplate transactionTemplate;
+    private final LaryIDBuilder build;
+
     @Override
     public ResponsePair<Void> comment(NextCommentDTO dto) {
 
@@ -70,7 +72,7 @@ public class NextCommentServiceImpl extends ServiceImpl<NextCommentMapper, NextC
         if (SensitiveWordHelper.contains(dto.getContent())) {
             return BusinessKit.fail("content invalid");
         }
-        long cid = idGenerator.next();
+        long cid = builder.next();
 //        User user = userService.lambdaQuery()
 //                .select(User::getAvatar)
 //                .eq(User::getUid, uid)

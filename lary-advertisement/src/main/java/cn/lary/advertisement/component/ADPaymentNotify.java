@@ -1,15 +1,15 @@
 package cn.lary.advertisement.component;
 
-import cn.lary.advertisement.constant.AD;
-import cn.lary.advertisement.dto.AdPaymentNotifyVO;
-import cn.lary.advertisement.entity.Advertisement;
-import cn.lary.advertisement.entity.Provider;
+import cn.lary.api.advertisement.constant.AD;
+import cn.lary.api.advertisement.dto.AdPaymentNotifyVO;
+import cn.lary.api.advertisement.entity.Advertisement;
+import cn.lary.api.advertisement.entity.Provider;
 import cn.lary.advertisement.service.AdvertisementService;
 import cn.lary.advertisement.service.ProviderService;
+import cn.lary.api.payment.dto.PaymentNotifyProcessPair;
+import cn.lary.api.payment.vo.PaymentQueryVO;
 import cn.lary.common.constant.LARY;
 import cn.lary.payment.component.BusinessPaymentNotify;
-import cn.lary.payment.component.PaymentNotifyProcessPair;
-import cn.lary.payment.vo.PaymentQueryVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Component;

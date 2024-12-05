@@ -1,7 +1,7 @@
 package cn.lary.advertisement.mapper;
 
 
-import cn.lary.advertisement.entity.Advertisement;
+import cn.lary.api.advertisement.entity.Advertisement;
 import com.baomidou.mybatisplus.core.mapper.BaseMapper;
 
 /**

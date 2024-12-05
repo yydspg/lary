@@ -4,7 +4,7 @@
 
 
 
-    <select id="getOutcomes" resultType="cn.lary.wallet.vo.WalletOutcomeVO">
+    <select id="getOutcomes" resultType="cn.lary.api.wallet.vo.WalletOutcomeVO">
         select id,to_uid,channel_id,category from wallet_outcome
         where
         uid = #{uid}

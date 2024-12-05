@@ -2,7 +2,8 @@ package cn.lary.payment.component;
 
 import cn.lary.common.exception.SystemException;
 import cn.lary.common.kit.CollectionKit;
-import cn.lary.payment.vo.PaymentQueryVO;
+import cn.lary.api.payment.dto.PaymentNotifyProcessPair;
+import cn.lary.api.payment.vo.PaymentQueryVO;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +31,7 @@ public class BusinessPaymentNotifyManager {
     });
 
     private final Map<Integer, BusinessPaymentNotify> map = new HashMap<>();
-
+    // TODO  :  这里领域模型已经变化,所以需要别的实现
     @Autowired
     public BusinessPaymentNotifyManager(Collection<BusinessPaymentNotify> callbacks) {
         if (CollectionKit.isEmpty(callbacks)) {

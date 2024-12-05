@@ -1,7 +1,7 @@
 package cn.lary.user.service.impl;
 
-import cn.lary.user.dto.UidQueryDTO;
-import cn.lary.user.entity.UserIndex;
+import cn.lary.api.user.dto.UidQueryDTO;
+import cn.lary.api.user.entity.UserIndex;
 import cn.lary.user.mapper.UserIndexMapper;
 import cn.lary.user.service.UserIndexService;
 import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;

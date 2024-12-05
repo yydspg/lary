@@ -1,7 +1,7 @@
 package cn.lary.wallet.listener;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.wallet.constant.RAFFLE;
+import cn.lary.api.wallet.constant.RAFFLE;
 import cn.lary.wallet.service.WalletService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

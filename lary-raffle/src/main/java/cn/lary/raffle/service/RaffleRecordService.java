@@ -1,9 +1,9 @@
 package cn.lary.raffle.service;
 
 import cn.lary.common.dto.ResponsePair;
-import cn.lary.raffle.dto.RaffleRecordPageQueryDTO;
-import cn.lary.raffle.entity.RaffleRecord;
-import cn.lary.raffle.vo.RaffleRecordVO;
+import cn.lary.api.raffle.dto.RaffleRecordPageQueryDTO;
+import cn.lary.api.raffle.entity.RaffleRecord;
+import cn.lary.api.raffle.vo.RaffleRecordVO;
 import com.baomidou.mybatisplus.extension.service.IService;
 
 import java.util.List;
