@@ -15,6 +15,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.support.TransactionTemplate;
 
 import java.util.List;
 
@@ -32,28 +33,30 @@ import java.util.List;
 public class AdvertisementServiceImpl extends ServiceImpl<AdvertisementMapper, Advertisement> implements AdvertisementService {
 
     private final ProviderService providerService;
-
+    private final TransactionTemplate transactionTemplate;
 
     @Override
     public ResponsePair<List<AdvertisementVO>> my(ADPageQueryDTO dto) {
-        Provider provider = providerService.lambdaQuery()
-                .select(Provider::getPid, Provider::getStatus)
-                .eq(Provider::getPid, dto.getPid())
-                .one();
-        if (provider == null) {
-            return BusinessKit.fail("no provider found");
-        }
-        if (provider.getStatus() == AD.PROVIDER.DISBAND
-                || provider.getStatus() == AD.PROVIDER.BLOCK) {
-            return BusinessKit.fail("provider status error");
-        }
-        return BusinessKit.ok(lambdaQuery()
-                .eq(Advertisement::getPid,provider.getPid())
-                .page(new Page<>(dto.getPageIndex(),dto.getPageSize()))
-                .getRecords()
-                .stream()
-                .map(AdvertisementVO::new)
-                .toList());
+        return transactionTemplate.execute(status -> {
+            Provider provider = providerService.lambdaQuery()
+                    .select(Provider::getPid, Provider::getStatus)
+                    .eq(Provider::getPid, dto.getPid())
+                    .one();
+            if (provider == null) {
+                return BusinessKit.fail("no provider found");
+            }
+            if (provider.getStatus() == AD.PROVIDER.DISBAND
+                    || provider.getStatus() == AD.PROVIDER.BLOCK) {
+                return BusinessKit.fail("provider status error");
+            }
+            return BusinessKit.ok(lambdaQuery()
+                    .eq(Advertisement::getPid,provider.getPid())
+                    .page(new Page<>(dto.getPageIndex(),dto.getPageSize()))
+                    .getRecords()
+                    .stream()
+                    .map(AdvertisementVO::new)
+                    .toList());
+        });
     }
 
 }

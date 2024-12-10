@@ -28,7 +28,7 @@ public class RedpacketController {
 //    public SingleResponse<RedpacketTokenVO> join(@RequestParam @NotNull Long toUid) {
 //        ResponsePair<RedpacketTokenVO> response = redpacketExecute.join(toUid);
 //        if (response.isFail()) {
-//            return ResponseKit.fail(response.getMsg());
+//            return ResponseKit.when(response.getMsg());
 //        }
 //        return ResponseKit.ok();
 //    }
@@ -36,7 +36,7 @@ public class RedpacketController {
 //    public SingleResponse<RedpacketEventVO>  info(@RequestParam @NotNull Long toUid) {
 //        ResponsePair<RedpacketEventVO> response =redpacketExecute.info(toUid);
 //        if (response.isFail()) {
-//            return ResponseKit.fail(response.getMsg());
+//            return ResponseKit.when(response.getMsg());
 //        }
 //        return ResponseKit.ok(response.getData());
 //    }
@@ -45,7 +45,7 @@ public class RedpacketController {
 //    public SingleResponse<Void> build(@RequestBody RedpacketEventBuildDTO dto) {
 //        ResponsePair<Void> response = redpacketExecute.redpacket(dto);
 //        if (response.isFail()) {
-//            return ResponseKit.fail(response.getMsg());
+//            return ResponseKit.when(response.getMsg());
 //        }
 //        return ResponseKit.ok();
 //    }

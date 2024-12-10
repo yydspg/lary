@@ -10,7 +10,7 @@ public class ProviderBuildDTO {
     /**
      * 名称
      */
-    private Long name;
+    private String name;
 
     /**
      * 总投入

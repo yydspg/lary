@@ -14,7 +14,7 @@ import java.util.HashMap;
 
 @Slf4j
 @Component
-public class PaymentPluginManager {
+public class PaymentPluginManager implements PluginManager {
 
     private final HashMap<Integer, PaymentPlugin> plugins = new HashMap<>();
 
@@ -25,28 +25,22 @@ public class PaymentPluginManager {
         }
     }
 
-
+    @Override
     public PaymentBuildVO pay(PaymentProcessPair pair) {
         return plugins.get(pair.getPaymentPlugin()).doPay(pair);
     }
-    /**
-     * delegate
-     */
+
+    @Override
     public void doCallback(PaymentNotifyProcessPair pair){
         plugins.get(pair.getPaymentPlugin()).doCallback(pair);
     }
 
-    /**
-     * delegate
-     */
+    @Override
     public void doNotify(PaymentNotifyProcessPair pair){
         plugins.get(pair.getPaymentPlugin()).doNotify(pair);
     }
 
-    /**
-     * delegate
-     * @param pair {@link PaymentQueryProcessPair}}
-     */
+    @Override
     public void doQuery(PaymentQueryProcessPair pair){
        plugins.get(pair.getPlugin()).doQuery(pair);
     }

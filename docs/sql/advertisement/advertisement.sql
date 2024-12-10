@@ -19,12 +19,13 @@ create table `advertisement` (
     create_at bigint not null comment '创建时间'
 );
 
-drop table if exists `prodiver`;
+drop table if exists `provider`;
 create table `provider` (
     id   bigint not null auto_increment primary key ,
     pid bigint not null comment '服务商id',
     name bigint not null comment '名称',
     amount bigint not null comment '总投入',
     level int not null comment '服务商等级',
+    status int not null comment '状态',
     create_at bigint not null comment '创建时间'
 )

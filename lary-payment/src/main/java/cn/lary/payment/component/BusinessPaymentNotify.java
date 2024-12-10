@@ -6,27 +6,7 @@ import cn.lary.api.payment.vo.PaymentQueryVO;
 
 public abstract class BusinessPaymentNotify<T> implements BusinessSign {
 
-//    /**
-//     * 成功后业务回调
-//     */
-//    void onSuccess(PaymentNotifyProcessPair pair);
-//
-//    /**
-//     * 失败后业务回调
-//     */
-//    void onFail(PaymentNotifyProcessPair pair);
-//
-//    /**
-//     * 主动查询,订单失败处理
-//     */
-//    void onQuerySuccess(PaymentQueryVO pair);
-//
-//    /**
-//     * 主动查询,订单成功处理
-//     */
-//    void onQueryFail(PaymentQueryVO pair);
-
-     public final void onSuccess(PaymentNotifyProcessPair pair) {
+    public final void onSuccess(PaymentNotifyProcessPair pair) {
         processSuccess(pair,null);
     }
 

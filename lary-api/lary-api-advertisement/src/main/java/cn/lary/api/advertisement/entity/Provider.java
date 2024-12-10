@@ -37,7 +37,7 @@ public class Provider implements Serializable {
     /**
      * 名称
      */
-    private Long name;
+    private String name;
 
     /**
      * 总投入

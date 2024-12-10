@@ -97,7 +97,7 @@ public class RechargePayment extends AbstractBusinessPayment {
 
 
     @Override
-    protected void processWhenPaymentFail(PaymentBuildVO vo) {
+    protected void whenTryPayFail(PaymentBuildVO vo) {
         rechargeRecordService.lambdaUpdate()
                 .set(RechargeRecord::getStatus, PAYMENT.STATUS.FAIL)
                 .set(RechargeRecord::getFailReason,vo.getErrMsg())
@@ -106,7 +106,7 @@ public class RechargePayment extends AbstractBusinessPayment {
     }
 
     @Override
-    protected void processWhenPaymentSuccess(PaymentBuildVO vo) {
+    protected void whenTryPaySuccess(PaymentBuildVO vo) {
         rechargeRecordService.lambdaUpdate()
                 .set(RechargeRecord::getStatus, PAYMENT.STATUS.COMMIT)
                 .eq(RechargeRecord::getId, vo.getPaymentId());

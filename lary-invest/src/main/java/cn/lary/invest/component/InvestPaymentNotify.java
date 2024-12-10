@@ -61,7 +61,7 @@ public class InvestPaymentNotify  extends BusinessPaymentNotify<InvestPaymentNot
                     .eq(Invest::getLid, lid)
                     .one();
             if (invest == null) {
-                log.error("process invest payment fail notify record  error, lid:{}", lid);
+                log.error("process invest payment when notify record  error, lid:{}", lid);
                 return;
             }
             if (invest.getStatus() == INVEST.STATUS.FINISH ||

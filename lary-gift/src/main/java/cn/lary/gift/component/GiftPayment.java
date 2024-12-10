@@ -50,11 +50,11 @@ public class GiftPayment extends AbstractBusinessPayment {
 //        GiftCache gift = giftCacheComponent.getGift(dto.getId());
 //        long anchorUid = dto.getToUid();
 //        if (gift == null) {
-//            return BusinessKit.fail("gift id error");
+//            return BusinessKit.when("gift id error");
 //        }
 //        LiveCache cache = liveCacheComponent.getLive(dto.getToUid());
 //        if (cache == null) {
-//            return BusinessKit.fail("live id error");
+//            return BusinessKit.when("live id error");
 //        }
 //        BigDecimal amount = calculate(dto.getNum(),gift.getAmount());
 //        // no rollback
@@ -93,17 +93,17 @@ public class GiftPayment extends AbstractBusinessPayment {
 //                    .setToUid(anchorUid)
 //                    .setCategory(LARY.CHANNEL.TYPE.PERSON));
 //            if (pair.isFail()) {
-//                return BusinessKit.fail(pair.getMsg());
+//                return BusinessKit.when(pair.getMsg());
 //            }
 //            return BusinessKit.ok(new PaymentProcessPair()
 //                    .setInternal(true));
 //        });
 //        if (execute == null ){
 //            log.error("system error,execute wallet decr error");
-//            return BusinessKit.fail("system error,execute wallet decr error");
+//            return BusinessKit.when("system error,execute wallet decr error");
 //        }
 //        if (execute.isFail()) {
-//            return BusinessKit.fail(execute.getMsg());
+//            return BusinessKit.when(execute.getMsg());
 //        }
 //        messageService.asyncSendRocketMessage(new SynchronizeGiftOrderMessage().setGiftOrder(order));
 //        messageService.send(new GiftSendNotifyDTO(cache.getCid(), uid,uidName,dto.getId(),dto.getNum()));
@@ -122,7 +122,7 @@ public class GiftPayment extends AbstractBusinessPayment {
     }
 
     @Override
-    protected void processWhenPaymentFail(PaymentBuildVO vo) {
+    protected void whenTryPayFail(PaymentBuildVO vo) {
         giftOrderService.lambdaUpdate()
                 .set(GiftOrder::getStatus, PAYMENT.STATUS.FAIL)
                 .set(GiftOrder::getReason, vo.getErrMsg())
@@ -132,7 +132,7 @@ public class GiftPayment extends AbstractBusinessPayment {
     }
 
     @Override
-    protected void processWhenPaymentSuccess(PaymentBuildVO vo) {
+    protected void whenTryPaySuccess(PaymentBuildVO vo) {
         giftOrderService.lambdaUpdate()
                 .set(GiftOrder::getStatus, PAYMENT.STATUS.COMMIT)
                 .eq(GiftOrder::getId, vo.getPaymentId())

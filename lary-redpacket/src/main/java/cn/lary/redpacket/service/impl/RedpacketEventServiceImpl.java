@@ -42,31 +42,31 @@ public class RedpacketEventServiceImpl extends ServiceImpl<RedpacketEventMapper,
 //        long uid = RequestContext.uid();
 //        LiveCache live = liveCacheComponent.getLive(uid);
 //        if (live == null) {
-//            return BusinessKit.fail("no live info");
+//            return BusinessKit.when("no live info");
 //        }
 //        RedpacketEventCache data = redpacketCacheComponent.getRedpacket(uid);
 //        if(data != null){
 //            log.error("have unfinished red packet service,uid:{}", uid);
-//            return BusinessKit.fail("have unfinished redpacket event");
+//            return BusinessKit.when("have unfinished redpacket event");
 //        }
 //        String badWord = SensitiveWordHelper.findFirst(dto.getTitle());
 //        if (StringKit.isNotEmpty(badWord)) {
-//            return BusinessKit.fail("title has bad word:"+badWord);
+//            return BusinessKit.when("title has bad word:"+badWord);
 //        }
 //        boolean needSendMessage = StringKit.isEmpty(dto.getMessage());
 //        if (needSendMessage) {
 //            badWord = SensitiveWordHelper.findFirst(dto.getMessage());
 //            if (StringKit.isNotEmpty(badWord)) {
-//                return BusinessKit.fail("message has bad word:"+badWord);
+//                return BusinessKit.when("message has bad word:"+badWord);
 //            }
 //        }
 //        if (dto.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
-//            return BusinessKit.fail("amount less than 0");
+//            return BusinessKit.when("amount less than 0");
 //        }
 //        if (dto.getTotalAmount()
 //                .compareTo(dto.getAmount()
 //                        .multiply(new BigDecimal(dto.getNum()))) != 0) {
-//            return BusinessKit.fail("total amount not match amount multiply num");
+//            return BusinessKit.when("total amount not match amount multiply num");
 //        }
 //        if (live.getLevel() >= 5){
 //            processSuperEvent();
@@ -80,11 +80,11 @@ public class RedpacketEventServiceImpl extends ServiceImpl<RedpacketEventMapper,
 //                .one();
 //        if(wallet == null || wallet.getStatus() != WALLET.STATUS.COMMON){
 //            log.error("create redpacket error,wallet not found or wallet status error,uid:{}", uid);
-//            return BusinessKit.fail("wallet status error");
+//            return BusinessKit.when("wallet status error");
 //        }
 //        BigDecimal amount = calculate(dto);
 //        if (wallet.getPocket().compareTo(amount) < 0 ) {
-//            return BusinessKit.fail("零钱不足,请充值");
+//            return BusinessKit.when("零钱不足,请充值");
 //        }
 //        walletService.lambdaUpdate()
 //                .eq(Wallet::getUid, uid)

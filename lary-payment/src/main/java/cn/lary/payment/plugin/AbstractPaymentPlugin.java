@@ -24,8 +24,8 @@ public abstract class AbstractPaymentPlugin implements PaymentPlugin {
 
     @Override
     public final void doNotify(PaymentNotifyProcessPair pair) {
-        assert(pair != null);
-        assert(pair.getRequest() != null);
+//        assert(pair != null);
+//        assert(pair.getRequest() != null);
         Map<String, String> params;
         try {
            params = getParamsFromRequest(pair.getRequest());

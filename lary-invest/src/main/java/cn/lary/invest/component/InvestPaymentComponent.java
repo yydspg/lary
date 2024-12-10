@@ -35,12 +35,12 @@ public class InvestPaymentComponent  extends AbstractBusinessPayment {
     }
 
     @Override
-    protected void processWhenPaymentFail(PaymentBuildVO vo) {
+    protected void whenTryPayFail(PaymentBuildVO vo) {
 
     }
 
     @Override
-    protected void processWhenPaymentSuccess(PaymentBuildVO vo) {
+    protected void whenTryPaySuccess(PaymentBuildVO vo) {
 
     }
 

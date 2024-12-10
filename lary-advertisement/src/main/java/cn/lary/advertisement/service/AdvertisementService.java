@@ -19,6 +19,10 @@ import java.util.List;
 public interface AdvertisementService extends IService<Advertisement> {
 
 
-
+    /**
+     * 查询广告充值记录
+     * @param dto {@link ADPageQueryDTO}
+     * @return {@link AdvertisementVO}
+     */
     ResponsePair<List<AdvertisementVO>> my(ADPageQueryDTO dto);
 }

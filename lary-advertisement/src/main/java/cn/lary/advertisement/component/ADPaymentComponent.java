@@ -13,9 +13,10 @@ import cn.lary.common.dto.ResponsePair;
 import cn.lary.common.kit.BusinessKit;
 import cn.lary.payment.component.AbstractBusinessPayment;
 import cn.lary.payment.component.PaymentProcessPair;
+import cn.lary.payment.plugin.PluginManager;
 import com.github.houbb.sensitive.word.core.SensitiveWordHelper;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -23,33 +24,19 @@ import java.math.BigDecimal;
 
 @Slf4j
 @Component
-@RequiredArgsConstructor
 public class ADPaymentComponent  extends AbstractBusinessPayment {
 
-    private final ProviderService providerService;
+    private  ProviderService providerService;
 //    private final UserService userService;
-    private final AdvertisementService advertisementService;
-    private final TransactionTemplate transactionTemplate;
+    private  AdvertisementService advertisementService;
+    @Autowired
+    private TransactionTemplate transactionTemplate;
+    @Autowired
+    private PluginManager pluginManager;
 
     @Override
-    protected ResponsePair<Void> doCheck(BusinessPaymentDTO dto) {
-        return BusinessKit.ok();
-    }
-
-    @Override
-    protected ResponsePair<PaymentProcessPair> beforePay(BusinessPaymentDTO paymentDTO) {
+    protected ResponsePair<Void> doCheck(BusinessPaymentDTO  paymentDTO) {
         ADPaymentDTO dto = (ADPaymentDTO) paymentDTO;
-        Provider provider = providerService.lambdaQuery()
-                .select(Provider::getPid)
-                .eq(Provider::getPid, dto.getPid())
-                .one();
-        if (provider == null) {
-            return BusinessKit.fail("no provider found");
-        }
-        if (provider.getStatus() == AD.PROVIDER.BLOCK
-                || provider.getStatus() == AD.PROVIDER.DISBAND) {
-            return BusinessKit.fail("provider status error");
-        }
         if (dto.getStartAt() >= dto.getEndAt()) {
             return BusinessKit.fail("start time error");
         }
@@ -69,6 +56,23 @@ public class ADPaymentComponent  extends AbstractBusinessPayment {
         }
         if(dto.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
             return BusinessKit.fail("amount less than zero");
+        }
+        return BusinessKit.ok();
+    }
+
+    @Override
+    protected ResponsePair<PaymentProcessPair> beforePay(BusinessPaymentDTO paymentDTO) {
+        ADPaymentDTO dto = (ADPaymentDTO) paymentDTO;
+        Provider provider = providerService.lambdaQuery()
+                .select(Provider::getPid)
+                .eq(Provider::getPid, dto.getPid())
+                .one();
+        if (provider == null) {
+            return BusinessKit.fail("no provider found");
+        }
+        if (provider.getStatus() == AD.PROVIDER.BLOCK
+                || provider.getStatus() == AD.PROVIDER.DISBAND) {
+            return BusinessKit.fail("provider status error");
         }
 //        User virtual = new User();
 //        virtual.setUsername(dto.getUsername());
@@ -98,16 +102,16 @@ public class ADPaymentComponent  extends AbstractBusinessPayment {
 
     @Override
     protected PaymentBuildVO doPay(PaymentProcessPair pair) {
-        return null;
+        return pluginManager.pay(pair);
     }
 
     @Override
-    protected void processWhenPaymentFail(PaymentBuildVO vo) {
+    protected void whenTryPayFail(PaymentBuildVO vo) {
 
     }
 
     @Override
-    protected void processWhenPaymentSuccess(PaymentBuildVO vo) {
+    protected void whenTryPaySuccess(PaymentBuildVO vo) {
 
     }
 

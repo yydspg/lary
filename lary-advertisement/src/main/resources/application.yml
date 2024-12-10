@@ -5,14 +5,15 @@ dubbo:
     name: lary-ad
   consumer:
     check: true
+    threadpool: cached
   provider:
     delay: 500
     parameters.enable-timeout-countdown: true
   registry:
     check: true
     address: nacos://localhost:8848
-  #    register-mode: instance
-  #    group: lary
+    register-mode: instance
+    group: lary
   config-center:
     address: nacos://localhost:8848
     group: lary
@@ -20,6 +21,7 @@ dubbo:
   protocol:
     port: 9001
     name: tri
+    threads: 200
 
 spring:
   main:

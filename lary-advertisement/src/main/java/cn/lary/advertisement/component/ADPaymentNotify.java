@@ -38,7 +38,7 @@ public class ADPaymentNotify extends BusinessPaymentNotify<AdPaymentNotifyVO> {
                     .eq(Advertisement::getAid, vo.getAid())
                     .one();
             if (advertisement == null) {
-                log.error("payment notify fail,aid:{}", aid);
+                log.error("payment notify when,aid:{}", aid);
                 return false;
             }
             if (advertisement.getStatus() == AD.STATUS.FINISH) {
@@ -79,7 +79,7 @@ public class ADPaymentNotify extends BusinessPaymentNotify<AdPaymentNotifyVO> {
                     .eq(Advertisement::getAid, vo.getAid())
                     .one();
             if (advertisement == null) {
-                log.error("callback ad payment notify fail,aid:{}", aid);
+                log.error("callback ad payment notify when,aid:{}", aid);
                 return ;
             }
             advertisementService.lambdaUpdate()

@@ -59,7 +59,7 @@ public class WalletServiceImpl extends ServiceImpl<WalletMapper, Wallet> impleme
                     .eq(Wallet::getUid, dto.getToUid())
                     .one();
             if (toUidWallet == null  || toUidWallet.getStatus() == WALLET.STATUS.BLOCK) {
-                return BusinessKit.fail("to uid wallet not exist");
+                return BusinessKit.fail("mulitTo uid wallet not exist");
             }
             if (uidWallet.getAmount().compareTo(dto.getAmount()) < 0) {
                 return BusinessKit.fail("uid balance not enough");

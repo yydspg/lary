@@ -59,7 +59,7 @@ public class WalletController {
 //    public SingleResponse<BalanceVO> my() {
 //        ResponsePair<BalanceVO> response = walletExecute.my();
 //        if (response.isFail()) {
-//            return ResponseKit.fail(response.getMsg());
+//            return ResponseKit.when(response.getMsg());
 //        }
 //        return ResponseKit.ok(response.getData());
 //    }
