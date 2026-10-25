@@ -4,7 +4,7 @@
 package io.lark.dag;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
@@ -18,7 +18,9 @@ import java.util.Objects;
  *
  * <p>Validation is split into three deterministic passes, mirroring the C++
  * {@code GraphBuilder}: materialize/index, wire dependencies, reject cycles
- * (iterative DFS with three-colour marking).
+ * (iterative DFS with three-colour marking). Definitions and dependency lists
+ * are consumed as arrays so a fixed graph does not allocate intermediate
+ * lists.
  */
 public final class GraphBuilder {
 
@@ -35,7 +37,8 @@ public final class GraphBuilder {
     }
 
     public Graph build(NodeDef... defs) {
-        return build(List.of(defs));
+        Objects.requireNonNull(defs, "defs");
+        return buildArray(defs);
     }
 
     /**
@@ -46,20 +49,24 @@ public final class GraphBuilder {
      */
     public Graph build(List<NodeDef> defs) {
         Objects.requireNonNull(defs, "defs");
+        return buildArray(defs.toArray(NodeDef[]::new));
+    }
 
-        List<Node> nodes = new ArrayList<>(defs.size());
+    private Graph buildArray(NodeDef[] defs) {
+        Node[] nodes = new Node[defs.length];
         Map<String, Node> byId = new LinkedHashMap<>();
         createAndIndexNodes(defs, nodes, byId);
         wireDependencies(defs, nodes, byId);
         rejectCycles(nodes);
-        return new Graph(nodes, byId);
+        return new Graph(Arrays.asList(nodes), byId);
     }
 
     // ---- pass 1: materialize node instances and index them by id ---------
 
-    private void createAndIndexNodes(List<NodeDef> defs, List<Node> nodes,
+    private void createAndIndexNodes(NodeDef[] defs, Node[] nodes,
                                      Map<String, Node> byId) {
-        for (NodeDef def : defs) {
+        for (int i = 0; i < defs.length; i++) {
+            NodeDef def = defs[i];
             if (def.type().isEmpty()) {
                 throw new IllegalArgumentException("GraphBuilder: node def has empty type");
             }
@@ -75,17 +82,17 @@ public final class GraphBuilder {
                 throw new IllegalArgumentException(
                         "GraphBuilder: duplicate node id '" + id + "'");
             }
-            nodes.add(node);
+            nodes[i] = node;
         }
     }
 
     // ---- pass 2: resolve dependency ids and attach them ------------------
 
-    private static void wireDependencies(List<NodeDef> defs, List<Node> nodes,
+    private static void wireDependencies(NodeDef[] defs, Node[] nodes,
                                          Map<String, Node> byId) {
-        for (int i = 0; i < defs.size(); i++) {
-            Node node = nodes.get(i);
-            for (String depId : defs.get(i).deps()) {
+        for (int i = 0; i < defs.length; i++) {
+            Node node = nodes[i];
+            for (String depId : defs[i].deps()) {
                 Node dep = byId.get(depId);
                 if (dep == null) {
                     throw new IllegalArgumentException(
@@ -110,7 +117,7 @@ public final class GraphBuilder {
     private record Frame(Node node, int index) {
     }
 
-    private static void rejectCycles(List<Node> nodes) {
+    private static void rejectCycles(Node[] nodes) {
         Map<Node, Mark> marks = new IdentityHashMap<>();
 
         for (Node start : nodes) {
@@ -124,10 +131,10 @@ public final class GraphBuilder {
 
             while (!stack.isEmpty()) {
                 Frame frame = stack.peek();
-                List<Node> dependencies = frame.node().dependencies();
+                Node[] dependencies = frame.node().dependencyArray();
 
-                if (frame.index() < dependencies.size()) {
-                    Node next = dependencies.get(frame.index());
+                if (frame.index() < dependencies.length) {
+                    Node next = dependencies[frame.index()];
                     stack.pop();
                     stack.push(new Frame(frame.node(), frame.index() + 1));
 

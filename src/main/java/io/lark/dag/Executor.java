@@ -11,32 +11,35 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CancellationException;
+import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * Drives a {@link Graph} to completion with one virtual thread per node.
+ * Drives a {@link Graph} to completion with a dependency-counter scheduler.
  *
- * <p>Model (the Java 21 analogue of the C++ coroutine executor): every node
- * gets a dedicated virtual thread. That thread blocks on its dependencies'
- * completion futures — cheaply parking the virtual thread — then runs the
- * node body on a virtual worker. Independent nodes therefore run concurrently,
- * and a wide graph never deadlocks on a small worker pool.
+ * <p>The executor does not create one dependency-waiting virtual thread per
+ * node. Instead it precomputes indegrees from the graph, starts only nodes whose
+ * dependencies have completed, and propagates completion to dependents. Node
+ * bodies still run on their own virtual threads, so blocking business code is
+ * cheap and independent nodes run concurrently.
  *
  * <p>Timeout support (opt-in through {@link #setTimeoutPolicy}):
  *
@@ -71,6 +74,7 @@ public final class Executor implements AutoCloseable {
     private final ExecutorService ioPool;
     private final ExecutorService backgroundPool;
     private final ExecutorService nodeBodyPool;
+    private final ScheduledExecutorService timeoutScheduler;
 
     private final AtomicBoolean closed = new AtomicBoolean(false);
     private final TimeoutTracker timeoutTracker = new TimeoutTracker();
@@ -106,6 +110,8 @@ public final class Executor implements AutoCloseable {
                 Thread.ofVirtual().name("lark-bg-", 0).factory());
         this.nodeBodyPool = Executors.newThreadPerTaskExecutor(
                 Thread.ofVirtual().name("lark-node-body-", 0).factory());
+        this.timeoutScheduler = Executors.newSingleThreadScheduledExecutor(
+                platformFactory("lark-dag-timer-"));
     }
 
     /** Optional observability hook; any thread-safe {@link Monitor}. */
@@ -180,21 +186,12 @@ public final class Executor implements AutoCloseable {
         installPoolsInto(ctx);
 
         TimeoutPolicy policy = timeoutPolicy;
-        RunState state = new RunState(graph.size());
+        RunState state = new RunState(graph, disabledIds, this, ctx, policy);
         state.runStartNanos = System.nanoTime();
         Thread watchdog = startGraphWatchdog(state, policy);
 
-        Set<String> disabled = disabledIds == null
-                ? Set.of() : new HashSet<>(disabledIds);
-
         try {
-            for (Node node : graph.nodes()) {
-                if (disabled.contains(node.id())) {
-                    skipNode(node, null, state, 0, "batch-disabled");
-                    continue;
-                }
-                spawnNode(node, ctx, state, policy);
-            }
+            state.start();
             state.await();
         } finally {
             if (watchdog != null) {
@@ -206,142 +203,230 @@ public final class Executor implements AutoCloseable {
         lastAbortReason = state.abortReason();
     }
 
-    private void spawnNode(Node node, IContext ctx, RunState state,
-                           TimeoutPolicy policy) {
-        try {
-            Thread.ofVirtual().name("lark-node-" + node.id()).start(() ->
-                    driveNode(node, ctx, state, policy));
-        } catch (Throwable fatal) {
-            // Virtual thread creation refused (e.g. JVM shutdown): drain.
-            node.setError(fatal);
-            node.setStatus(NodeStatus.FAILED);
-            emit(node, "node.failure", NodeStatus.FAILED.displayName(),
-                    0, 0, describeError(fatal), Map.of());
-            node.doneEvent().complete(null);
-            state.completeOne();
+    // ---- dependency-counter scheduler -----------------------------------
+
+    /**
+     * Drain the ready queue. Starting a skipped node completes synchronously
+     * and may enqueue dependents, so this loop (rather than recursion) handles
+     * long disabled / aborted chains without growing the stack.
+     */
+    private void pump(RunState state) {
+        if (!state.pumping.compareAndSet(false, true)) {
+            return;
         }
-    }
-
-    private void driveNode(Node node, IContext ctx, RunState state,
-                           TimeoutPolicy policy) {
         try {
-            for (Node dependency : node.dependencies()) {
-                dependency.doneEvent().join();
-            }
-            if (state.aborted()) {
-                skipNode(node, new GraphAbortedException(state.abortReason()),
-                        state, 0, state.abortReason());
-                return;
-            }
-
-            long start = System.nanoTime();
-            node.setStartedAtNanos(start - state.runStartNanos);
-            node.setStatus(NodeStatus.RUNNING);
-            emit(node, "node.start", NodeStatus.RUNNING.displayName(),
-                    -1, node.startedAtNanos(), null, Map.of());
-
-            String key = timeoutKey(node);
-            if (policy.quarantineEnabled() && timeoutTracker.isQuarantined(key)) {
-                handleQuarantined(node, ctx, state, policy, key, start);
-                return;
-            }
-
-            Duration effective = effectiveTimeout(node, policy, state);
-            if (state.aborted()) {
-                skipNode(node, new GraphAbortedException(state.abortReason()),
-                        state, System.nanoTime() - start, state.abortReason());
-                return;
-            }
-
-            Throwable error;
-            boolean timedOut = false;
-            Future<?> future = null;
-            try {
-                future = nodeBodyPool.submit(() -> {
-                    node.run(ctx);
-                    return null;
-                });
-                state.registerRunning(node, future);
-                try {
-                    if (effective.isZero()) {
-                        future.get();
-                    } else {
-                        future.get(effective.toNanos(), TimeUnit.NANOSECONDS);
-                    }
-                    error = null;
-                } catch (java.util.concurrent.TimeoutException timeout) {
-                    timedOut = true;
-                    future.cancel(policy.interruptOnTimeout());
-                    error = new DagTimeoutException(node.id(), effective, false);
-                } catch (CancellationException cancelled) {
-                    if (state.aborted()) {
-                        finishAborted(node, state, start);
+            while (true) {
+                Node node = state.ready.poll();
+                if (node == null) {
+                    state.pumping.set(false);
+                    // Close the enqueue-during-drain race: a producer that saw
+                    // pumping == true will not pump again.
+                    if (state.ready.isEmpty()
+                            || !state.pumping.compareAndSet(false, true)) {
                         return;
                     }
-                    error = cancelled;
-                } catch (ExecutionException execution) {
-                    error = unwrap(execution.getCause());
-                } finally {
-                    state.unregisterRunning(node);
+                    continue;
                 }
-            } catch (InterruptedException interrupted) {
-                Thread.currentThread().interrupt();
-                error = interrupted;
-            } catch (Throwable fatal) {
-                error = unwrap(fatal);
-            }
-
-            long elapsed = Math.max(0, System.nanoTime() - start);
-            node.setElapsedNanos(elapsed);
-
-            if (timedOut) {
-                handleTimeout(node, ctx, state, policy, key, start, elapsed,
-                        effective, error);
-            } else {
-                timeoutTracker.recordSuccess(key);
-                if (error == null) {
-                    node.setStatus(NodeStatus.SUCCESS);
-                    emit(node, "node.success", NodeStatus.SUCCESS.displayName(),
-                            elapsed, node.startedAtNanos(), null, Map.of());
-                } else {
-                    node.setError(error);
-                    boolean recovered = safeFallback(node, ctx, error);
-                    if (recovered) {
-                        node.setStatus(NodeStatus.FALLBACK);
-                        emit(node, "node.fallback",
-                                NodeStatus.FALLBACK.displayName(),
-                                elapsed, node.startedAtNanos(), null, Map.of());
-                    } else {
-                        node.setStatus(NodeStatus.FAILED);
-                        emit(node, "node.failure",
-                                NodeStatus.FAILED.displayName(),
-                                elapsed, node.startedAtNanos(),
-                                describeError(error), Map.of());
-                    }
-                }
+                startNode(node, state);
             }
         } catch (Throwable fatal) {
-            // Defensive: never leave the graph undrained.
-            node.setError(unwrap(fatal));
-            node.setStatus(NodeStatus.FAILED);
-            emit(node, "node.failure", NodeStatus.FAILED.displayName(),
-                    node.elapsedNanos(), node.startedAtNanos(),
-                    describeError(fatal), Map.of());
-        } finally {
-            // Always unblock dependents, even on failure/timeout.
-            node.doneEvent().complete(null);
-            state.completeOne();
+            state.pumping.set(false);
+            state.abort("scheduler failure: " + describeError(fatal));
         }
     }
 
-    private void handleTimeout(Node node, IContext ctx, RunState state,
-                               TimeoutPolicy policy, String key, long start,
+    private void startNode(Node node, RunState state) {
+        try {
+            startNodeInternal(node, state);
+        } catch (Throwable fatal) {
+            finishFailure(node, state, fatal, 0);
+        }
+    }
+
+    private void startNodeInternal(Node node, RunState state) {
+        IContext ctx = state.ctx;
+        TimeoutPolicy policy = state.policy;
+
+        if (state.aborted()) {
+            finishSkipped(node, state,
+                    new GraphAbortedException(state.abortReason()), 0,
+                    state.abortReason());
+            return;
+        }
+        if (state.disabled(node)) {
+            finishSkipped(node, state, null, 0, "batch-disabled");
+            return;
+        }
+
+        long start = System.nanoTime();
+        node.setStartedAtNanos(start - state.runStartNanos);
+        node.setStatus(NodeStatus.RUNNING);
+        emit(node, "node.start", NodeStatus.RUNNING.displayName(),
+                -1, node.startedAtNanos(), null, Map.of());
+
+        String key = timeoutKey(node);
+        if (policy.quarantineEnabled() && timeoutTracker.isQuarantined(key)) {
+            handleQuarantined(node, state, key, start);
+            return;
+        }
+
+        Duration effective = effectiveTimeout(node, policy, state);
+        if (state.aborted()) {
+            finishSkipped(node, state,
+                    new GraphAbortedException(state.abortReason()),
+                    System.nanoTime() - start, state.abortReason());
+            return;
+        }
+
+        CompletableFuture<Void> body;
+        try {
+            body = CompletableFuture.runAsync(() -> node.run(ctx), nodeBodyPool);
+        } catch (Throwable fatal) {
+            finishFailure(node, state, fatal, start);
+            return;
+        }
+        state.registerRunning(node, body);
+
+        ScheduledFuture<?> timer = null;
+        if (!effective.isZero()) {
+            try {
+                timer = timeoutScheduler.schedule(
+                        () -> Thread.ofVirtual()
+                                .name("lark-node-timeout-" + node.id())
+                                .start(() -> handleTimeoutSignal(node, state, key,
+                                        start, effective, body)),
+                        effective.toNanos(), TimeUnit.NANOSECONDS);
+            } catch (Throwable fatal) {
+                body.cancel(true);
+                finishFailure(node, state, fatal, start);
+                return;
+            }
+        }
+        final ScheduledFuture<?> timeoutTask = timer;
+
+        body.whenComplete((ignored, error) -> {
+            if (timeoutTask != null) {
+                timeoutTask.cancel(false);
+            }
+            state.unregisterRunning(node);
+            if (!state.markCompleted(node)) {
+                return;
+            }
+            if (state.aborted()) {
+                finishAbortedClaimed(node, state, start);
+                return;
+            }
+            completeBody(node, state, error, start);
+        });
+    }
+
+    private void completeBody(Node node, RunState state, Throwable error,
+                              long start) {
+        long elapsed = Math.max(0, System.nanoTime() - start);
+        node.setElapsedNanos(elapsed);
+        String key = timeoutKey(node);
+        timeoutTracker.recordSuccess(key);
+
+        Throwable cause = unwrap(error);
+        if (cause == null) {
+            node.setStatus(NodeStatus.SUCCESS);
+            emit(node, "node.success", NodeStatus.SUCCESS.displayName(),
+                    elapsed, node.startedAtNanos(), null, Map.of());
+        } else {
+            node.setError(cause);
+            boolean recovered = safeFallback(node, state.ctx, cause);
+            if (recovered) {
+                node.setStatus(NodeStatus.FALLBACK);
+                emit(node, "node.fallback", NodeStatus.FALLBACK.displayName(),
+                        elapsed, node.startedAtNanos(), null, Map.of());
+            } else {
+                node.setStatus(NodeStatus.FAILED);
+                emit(node, "node.failure", NodeStatus.FAILED.displayName(),
+                        elapsed, node.startedAtNanos(),
+                        describeError(cause), Map.of());
+            }
+        }
+        finishClaimed(node, state);
+    }
+
+    private void handleTimeoutSignal(Node node, RunState state, String key,
+                                     long start, Duration timeout,
+                                     CompletableFuture<Void> body) {
+        if (!state.markCompleted(node)) {
+            return;
+        }
+        state.unregisterRunning(node);
+        if (state.policy.interruptOnTimeout()) {
+            body.cancel(true);
+        }
+
+        long elapsed = Math.max(0, System.nanoTime() - start);
+        node.setElapsedNanos(elapsed);
+        DagTimeoutException error = new DagTimeoutException(
+                node.id(), timeout, false);
+        node.setError(error);
+        handleTimeout(node, state, key, elapsed, timeout, error);
+        finishClaimed(node, state);
+    }
+
+    private void finishFailure(Node node, RunState state, Throwable fatal,
+                               long start) {
+        if (!state.markCompleted(node)) {
+            return;
+        }
+        long elapsed = start == 0
+                ? 0 : Math.max(0, System.nanoTime() - start);
+        node.setElapsedNanos(elapsed);
+        node.setError(unwrap(fatal));
+        node.setStatus(NodeStatus.FAILED);
+        emit(node, "node.failure", NodeStatus.FAILED.displayName(),
+                elapsed, node.startedAtNanos(), describeError(fatal),
+                Map.of());
+        finishClaimed(node, state);
+    }
+
+    private void finishSkipped(Node node, RunState state, Throwable error,
+                               long elapsedNanos, String reason) {
+        if (!state.markCompleted(node)) {
+            return;
+        }
+        node.setStatus(NodeStatus.SKIPPED);
+        node.setError(error);
+        node.setElapsedNanos(Math.max(0, elapsedNanos));
+        emit(node, "node.skipped", NodeStatus.SKIPPED.displayName(),
+                node.elapsedNanos(), node.startedAtNanos(), reason, Map.of());
+        finishClaimed(node, state);
+    }
+
+    private void finishAbortedClaimed(Node node, RunState state, long start) {
+        long elapsed = Math.max(0, System.nanoTime() - start);
+        node.setElapsedNanos(elapsed);
+        node.setError(new GraphAbortedException(state.abortReason()));
+        node.setStatus(NodeStatus.SKIPPED);
+        emit(node, "node.skipped", NodeStatus.SKIPPED.displayName(),
+                elapsed, node.startedAtNanos(), state.abortReason(), Map.of());
+        finishClaimed(node, state);
+    }
+
+    /**
+     * Finish a node that has already won {@link RunState#markCompleted}.
+     * Completion is counted exactly once, then dependents are released and
+     * the ready queue is drained.
+     */
+    private void finishClaimed(Node node, RunState state) {
+        state.completeOne();
+        state.releaseDependents(node);
+        state.pump();
+    }
+
+    private void handleTimeout(Node node, RunState state, String key,
                                long elapsed, Duration timeout,
                                Throwable error) {
-        TimeoutTracker.Entry entry = timeoutTracker.recordTimeout(key, policy);
+        TimeoutTracker.Entry entry = timeoutTracker.recordTimeout(key,
+                state.policy);
         node.setError(error);
 
-        boolean recovered = safeFallback(node, ctx, error);
+        boolean recovered = safeFallback(node, state.ctx, error);
         Map<String, String> attrs = timeoutAttrs(timeout, entry);
         if (recovered) {
             node.setStatus(NodeStatus.FALLBACK);
@@ -356,15 +441,17 @@ public final class Executor implements AutoCloseable {
         if (entry.quarantined()) {
             emit(node, "node.quarantined", "quarantined",
                     elapsed, node.startedAtNanos(), null, attrs);
-            if (policy.repeatedAction() == TimeoutAction.ABORT_GRAPH) {
+            if (state.policy.repeatedAction() == TimeoutAction.ABORT_GRAPH) {
                 state.abort("node '" + node.id() + "' repeatedly timed out");
             }
         }
     }
 
-    private void handleQuarantined(Node node, IContext ctx, RunState state,
-                                   TimeoutPolicy policy, String key,
+    private void handleQuarantined(Node node, RunState state, String key,
                                    long start) {
+        if (!state.markCompleted(node)) {
+            return;
+        }
         TimeoutTracker.Entry entry = timeoutTracker.snapshot(key);
         long elapsed = Math.max(0, System.nanoTime() - start);
         node.setElapsedNanos(elapsed);
@@ -372,7 +459,7 @@ public final class Executor implements AutoCloseable {
                 node.id(), Duration.ZERO, true);
         node.setError(error);
 
-        boolean recovered = safeFallback(node, ctx, error);
+        boolean recovered = safeFallback(node, state.ctx, error);
         node.setStatus(recovered ? NodeStatus.FALLBACK : NodeStatus.SKIPPED);
         Map<String, String> attrs = timeoutAttrs(Duration.ZERO, entry);
         emit(node, "node.quarantined",
@@ -380,29 +467,10 @@ public final class Executor implements AutoCloseable {
                         : NodeStatus.SKIPPED.displayName(),
                 elapsed, node.startedAtNanos(), null, attrs);
 
-        if (policy.repeatedAction() == TimeoutAction.ABORT_GRAPH) {
+        if (state.policy.repeatedAction() == TimeoutAction.ABORT_GRAPH) {
             state.abort("node '" + node.id() + "' is quarantined");
         }
-    }
-
-    private void finishAborted(Node node, RunState state, long start) {
-        long elapsed = Math.max(0, System.nanoTime() - start);
-        node.setElapsedNanos(elapsed);
-        node.setError(new GraphAbortedException(state.abortReason()));
-        node.setStatus(NodeStatus.SKIPPED);
-        emit(node, "node.skipped", NodeStatus.SKIPPED.displayName(),
-                elapsed, node.startedAtNanos(), state.abortReason(), Map.of());
-    }
-
-    private void skipNode(Node node, Throwable error, RunState state,
-                          long elapsedNanos, String reason) {
-        node.setStatus(NodeStatus.SKIPPED);
-        node.setError(error);
-        node.setElapsedNanos(Math.max(0, elapsedNanos));
-        emit(node, "node.skipped", NodeStatus.SKIPPED.displayName(),
-                node.elapsedNanos(), node.startedAtNanos(), reason, Map.of());
-        node.doneEvent().complete(null);
-        state.completeOne();
+        finishClaimed(node, state);
     }
 
     private static String timeoutKey(Node node) {
@@ -541,21 +609,76 @@ public final class Executor implements AutoCloseable {
             ioPool.shutdownNow();
             backgroundPool.shutdownNow();
             nodeBodyPool.shutdownNow();
+            timeoutScheduler.shutdownNow();
         }
     }
 
     /** Shared coordination state for one execution. */
     private static final class RunState {
 
+        private final Executor owner;
+        private final Graph graph;
+        private final IContext ctx;
+        private final TimeoutPolicy policy;
+        private final Set<String> disabled;
+
+        private final Map<Node, AtomicInteger> pendingDeps =
+                new ConcurrentHashMap<>();
+        private final ConcurrentLinkedQueue<Node> ready =
+                new ConcurrentLinkedQueue<>();
+        private final AtomicBoolean pumping = new AtomicBoolean(false);
+        private final Set<Node> completed = ConcurrentHashMap.newKeySet();
+
         private final AtomicInteger remaining;
         private final CountDownLatch done = new CountDownLatch(1);
-        private final AtomicBoolean aborted = new AtomicBoolean(false);
         private final Map<Node, Future<?>> running = new HashMap<>();
+        private final AtomicBoolean aborted = new AtomicBoolean(false);
         private volatile String abortReason = "";
         private long runStartNanos;
 
-        private RunState(int nodeCount) {
-            this.remaining = new AtomicInteger(nodeCount);
+        private RunState(Graph graph, Collection<String> disabledIds,
+                         Executor owner, IContext ctx, TimeoutPolicy policy) {
+            this.graph = graph;
+            this.owner = owner;
+            this.ctx = ctx;
+            this.policy = policy;
+            this.disabled = disabledIds == null
+                    ? Set.of() : Set.copyOf(disabledIds);
+            this.remaining = new AtomicInteger(graph.size());
+
+            for (Node node : graph.nodeArray()) {
+                int dependencies = node.dependencyArray().length;
+                if (dependencies == 0) {
+                    ready.add(node);
+                } else {
+                    pendingDeps.put(node, new AtomicInteger(dependencies));
+                }
+            }
+        }
+
+        private void start() {
+            owner.pump(this);
+        }
+
+        private void pump() {
+            owner.pump(this);
+        }
+
+        private boolean disabled(Node node) {
+            return disabled.contains(node.id());
+        }
+
+        private boolean markCompleted(Node node) {
+            return completed.add(node);
+        }
+
+        private void releaseDependents(Node node) {
+            for (Node dependent : graph.dependentsOf(node)) {
+                AtomicInteger count = pendingDeps.get(dependent);
+                if (count != null && count.decrementAndGet() == 0) {
+                    ready.add(dependent);
+                }
+            }
         }
 
         private void registerRunning(Node node, Future<?> future) {

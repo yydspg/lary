@@ -270,6 +270,37 @@ class DagTest {
         assertEquals(500, ctx.domain(Bag.class).counter.get());
     }
 
+    @Test
+    void deepChainRunsOnTheReadyQueue() {
+        int size = 1_000;
+        NodeDef[] defs = new NodeDef[size];
+        defs[0] = new NodeDef("inc", new String[0], "n0");
+        for (int i = 1; i < size; i++) {
+            defs[i] = new NodeDef("inc",
+                    new String[]{"n" + (i - 1)}, "n" + i);
+        }
+        Graph graph = new GraphBuilder(registry()).build(defs);
+
+        DefaultContext ctx = new DefaultContext();
+        ctx.provideDomain(new Bag());
+        try (Executor executor = new Executor(2, 2)) {
+            executor.execute(graph, ctx);
+        }
+        assertEquals(size, ctx.domain(Bag.class).counter.get());
+    }
+
+    @Test
+    void nodeDefsAcceptArrayAndVarargsDependencies() {
+        Graph graph = new GraphBuilder(registry()).build(
+                new NodeDef("source"),
+                new NodeDef("sink", "source"),
+                NodeDef.of("inc", "after_sink", "sink"));
+
+        assertEquals(3, graph.size());
+        assertEquals(1, graph.find("sink").orElseThrow().dependencies().size());
+        assertEquals(1, graph.find("after_sink").orElseThrow().dependencies().size());
+    }
+
     // ---- custom IContext -------------------------------------------------
 
     static final class CountingContext implements IContext {

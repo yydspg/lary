@@ -76,7 +76,8 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
-`TimeoutTest`, `ModulePipelineTest` and `OpTensorTest`.
+`TimeoutTest`, `ModulePipelineTest` and `OpTensorTest`. `DagTest` also covers
+wide/deep ready-queue scheduling and array/varargs node definitions.
 
 ## End-to-end demo
 
@@ -203,7 +204,7 @@ registry.register("rank", RankNode::new);
 
 Graph graph = new GraphBuilder(registry).build(
         new NodeDef("fetch_user"),
-        new NodeDef("rank", List.of("fetch_user")));
+        new NodeDef("rank", "fetch_user"));
 
 DefaultContext ctx = new DefaultContext();
 ctx.set("user_id", 7);
@@ -213,9 +214,15 @@ try (Executor executor = new Executor(2, 4)) {
 }
 ```
 
-`Node.compute` / `Node.run` are blocking; each node gets a virtual thread.
-`Schedule.run(ctx, PoolKind.COMPUTE, work)` is the pool-hop equivalent of the
-C++ `co_await Schedule(...)`.
+`NodeDef` accepts dependency arrays / varargs
+(`new NodeDef("rank", "fetch_user")`); use `NodeDef.of(type, id, deps...)` when
+a definition needs an explicit id. `Node.compute` / `Node.run` are blocking.
+
+The executor uses a **dependency-counter ready queue**: nodes are started only
+after their dependencies complete, and only running node bodies get virtual
+threads. This avoids one parked dependency-waiting thread per node while keeping
+independent nodes concurrent. `Schedule.run(ctx, PoolKind.COMPUTE, work)` is
+the pool-hop equivalent of the C++ `co_await Schedule(...)`.
 
 ### Timeouts, fallback and quarantine
 

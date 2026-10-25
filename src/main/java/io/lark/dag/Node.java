@@ -8,7 +8,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -23,16 +22,16 @@ import java.util.concurrent.atomic.AtomicReference;
  * it, catches failures and invokes {@link #fallback} for graceful
  * degradation.
  *
- * <p>Framework state (id, dependencies, completion event, status) is set by
- * the graph / executor; business code only reads it.
+ * <p>Framework state (id, dependencies, status, timing, error) is set by the
+ * graph / executor; business code only reads it.
  */
 public class Node {
 
     private String id = "";
     private String type = "";
     private final List<Node> dependencies = new ArrayList<>();
+    private Node[] dependencyArray;
     private final AtomicReference<NodeStatus> status = new AtomicReference<>(NodeStatus.PENDING);
-    private volatile CompletableFuture<Void> doneEvent = new CompletableFuture<>();
     private volatile long elapsedNanos;
     private volatile long startedAtNanos;
     private volatile Throwable error;
@@ -125,10 +124,15 @@ public class Node {
 
     final void addDependency(Node dependency) {
         dependencies.add(Objects.requireNonNull(dependency, "dependency"));
+        dependencyArray = null;
     }
 
-    final CompletableFuture<Void> doneEvent() {
-        return doneEvent;
+    /** Fixed array view used by graph validation and scheduling. */
+    final Node[] dependencyArray() {
+        if (dependencyArray == null) {
+            dependencyArray = dependencies.toArray(Node[]::new);
+        }
+        return dependencyArray;
     }
 
     final void setStatus(NodeStatus newStatus) {
@@ -153,6 +157,5 @@ public class Node {
         elapsedNanos = 0;
         startedAtNanos = 0;
         error = null;
-        doneEvent = new CompletableFuture<>();
     }
 }

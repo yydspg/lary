@@ -43,6 +43,7 @@ test. Tests are the behavioral contract.
 |---|---|
 | `dag/include/dag/node.h`, `src/node.cpp` | `src/main/java/io/lark/dag/.../Node.java`, `NodeStatus.java` |
 | `dag/include/dag/graph.h`, `graph_builder.h` | `Graph.java`, `GraphBuilder.java`, `NodeDef.java` |
+| DAG ready-queue scheduler (Java-first) | `Executor.java` dependency counters + `Graph.dependentsOf`; `Graph.nodeArray()` |
 | `dag/include/dag/node_registry.h` | `NodeRegistry.java` |
 | `dag/include/dag/executor.h`, `src/executor.cpp` | `Executor.java` |
 | `dag/include/dag/stats.h` | `StatsCollector.java`, `ExecutionStats.java`, `NodeRunStats.java` |
@@ -110,10 +111,20 @@ test. Tests are the behavioral contract.
   dependents.
 - Validation rejects unknown dependencies, duplicate node ids, missing
   dependencies and cycles.
+- `NodeDef` stores dependencies as an array. `new NodeDef(type, deps...)` and
+  `NodeDef.of(type, id, deps...)` are the concise forms; the `List` overloads
+  remain for compatibility.
+- The Node executor uses a dependency-counter ready queue. It starts only nodes
+  whose dependencies are complete; there is no dependency-waiting virtual
+  thread per node. Running node bodies use virtual threads, and graph
+  completion is a countdown over all nodes.
+- Disabled nodes are skipped and release their dependents; abort skips pending
+  nodes and cancels running bodies, so the run still drains.
 - Independent nodes may run concurrently; dependency order and data flow are
   preserved.
 - Timeouts interrupt the worker, record the timeout, optionally invoke
   fallback, quarantine repeated offenders and abort the graph when configured.
+  A shared timer schedules Node deadlines rather than a driver thread per node.
 - Blocking `Node.run` / `Op.execute` bodies run on virtual threads; do not
   reintroduce callback-style APIs.
 - Op aspects may skip an op without failing the graph; async execution still
@@ -196,6 +207,7 @@ in `~/.gradle/gradle.properties`.
 - [ ] Column business code still uses `ColumnNode`; execution (`ComputeNode`)
       and tensor ops (`OpTensor`) stay out of the business API.
 - [ ] `./gradlew clean test` is green.
+- [ ] DAG tests cover wide and deep graphs and the ready-queue scheduler.
 - [ ] Column examples run with `--add-modules jdk.incubator.vector`.
 - [ ] Examples still compile; docs/mapping updated if API changed.
 - [ ] No C++ edits unless explicitly requested.

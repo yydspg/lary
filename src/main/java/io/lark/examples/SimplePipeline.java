@@ -13,8 +13,6 @@ import io.lark.dag.NodeDef;
 import io.lark.dag.NodeRegistry;
 import io.lark.dag.StatsCollector;
 
-import java.util.List;
-
 /**
  * Node-layer quick start: fetch a user, then rank it.
  *
@@ -48,7 +46,7 @@ public final class SimplePipeline {
 
         Graph graph = new GraphBuilder(registry).build(
                 new NodeDef("fetch_user"),
-                new NodeDef("rank", List.of("fetch_user")));
+                new NodeDef("rank", "fetch_user"));
 
         DefaultContext ctx = new DefaultContext();
         ctx.set("user_id", 7);
