@@ -29,6 +29,13 @@ import java.util.Optional;
  * an external module input (fed from row data). Dependencies are expressed by
  * passing the typed stream object to another node's constructor — never by
  * node names or positional indexes.
+ *
+ * <p><strong>A column is a typed port, not a node.</strong> It defines the
+ * contract (name + dtype) and is intentionally behavior-free. The node that
+ * produces the column owns the computation; for example {@code CtrNode}
+ * defines how CTR is calculated and declares {@code Ctr.class} as its output.
+ * This lets one metric type be produced by different sources/windows/experiments
+ * without putting execution lifecycle into a value type.
  */
 public abstract class ColumnStream<T> {
 

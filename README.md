@@ -320,6 +320,12 @@ public final class BuyAgainCost extends DoubleColumn {
 the tensor dtype. `ColumnContext` validates the dtype on every read/write, and
 typed feed columns are coerced to their declared dtype.
 
+A column class is a **typed port**, not the feed node: it defines the contract
+(name + dtype) and has no computation. The feed node is the class in `node/`
+that owns the inputs and implements `compute` (for example `CtrNode`). This
+separation lets the same metric type be produced by different sources, windows
+or experiments without putting node lifecycle into a value class.
+
 Classes are preferred over a global column enum: a node constructor can require
 `Clicks` or `Impressions` specifically, so passing the wrong metric is a
 compile error. An enum can still be used as a schema factory that returns these
