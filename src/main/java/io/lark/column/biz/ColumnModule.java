@@ -16,10 +16,11 @@ import java.util.Objects;
  * <p>Inputs and outputs are typed column classes, not strings:
  *
  * <pre>{@code
- * final class TransactionFeatureModule extends ColumnModule {
- *     final AmountFen amountFen = input(AmountFen.class);
- *     final AmountToYuanNode amount = add(new AmountToYuanNode(amountFen));
- *     { output(amount.out()); }
+ * final class FunnelMetricModule extends ColumnModule {
+ *     final Impressions impressions = input(Impressions.class);
+ *     final Clicks clicks = input(Clicks.class);
+ *     final CtrNode ctr = add(new CtrNode(clicks, impressions));
+ *     { output(ctr.out()); }
  * }
  * }</pre>
  *
@@ -80,9 +81,12 @@ public abstract class ColumnModule {
         outputs = null;
     }
 
-    /** Class-reference dependency on another module (ordering, no data flow). */
-    protected final void dependsOn(Class<? extends ColumnModule> module) {
-        dependencyBuilder.add(Objects.requireNonNull(module, "module"));
+    /** Class-reference dependencies on other modules (ordering, no data flow). */
+    @SafeVarargs
+    protected final void dependsOn(Class<? extends ColumnModule>... modules) {
+        for (Class<? extends ColumnModule> module : modules) {
+            dependencyBuilder.add(Objects.requireNonNull(module, "module"));
+        }
         dependencies = null;
     }
 

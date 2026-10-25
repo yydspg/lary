@@ -21,7 +21,7 @@ Every behavior or API change must update, in the same commit:
   `:examples` is an independent application module under
   `examples/src/main/java/io/lark/examples/...`.
 - Keep the project self-contained: JDK 25 + JUnit 5. Run examples with
-  `./gradlew :examples:runRisk` (or the other `:examples:` tasks).
+  `./gradlew :examples:runRecsys` (or the other `:examples:` tasks).
 - Column compute uses `jdk.incubator.vector`; keep the
   `--add-modules jdk.incubator.vector` flags in both `build.gradle.kts` files.
 - DAG business code uses virtual threads and blocking methods; do not turn

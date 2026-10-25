@@ -15,12 +15,12 @@ import java.util.Optional;
  * string names around. Define a small column class instead:
  *
  * <pre>{@code
- * public final class AmountYuan extends DoubleColumn {
+ * public final class CouponRoi extends DoubleColumn {
  * }
  * }</pre>
  *
- * <p>The column name is derived from the class name ({@code AmountYuan} →
- * {@code amount_yuan}); use the explicit-name constructor in the typed base
+ * <p>The column name is derived from the class name ({@code CouponRoi} →
+ * {@code coupon_roi}); use the explicit-name constructor in the typed base
  * class when an external column has a different physical name. The generic
  * value type and the typed base class document the logical type;
  * {@link ColumnContext} validates the tensor dtype on read/write.

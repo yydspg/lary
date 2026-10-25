@@ -25,7 +25,7 @@ dependencies {
 }
 
 application {
-    mainClass.set("io.lark.examples.risk.RiskEngineDemo")
+    mainClass.set("io.lark.examples.recsys.RecSysDemo")
     applicationDefaultJvmArgs = listOf("--add-modules", "jdk.incubator.vector")
 }
 
@@ -88,13 +88,6 @@ tasks.withType<Test>().configureEach {
     }
 }
 
-tasks.register<JavaExec>("runDemo") {
-    group = "application"
-    description = "Run the end-to-end layered demo."
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("io.lark.examples.LaryDemo")
-}
-
 tasks.register<JavaExec>("runSimple") {
     group = "application"
     description = "Run the Node-layer DAG example."
@@ -109,16 +102,9 @@ tasks.register<JavaExec>("runOp") {
     mainClass.set("io.lark.examples.OpPipeline")
 }
 
-tasks.register<JavaExec>("runNodes") {
+tasks.register<JavaExec>("runRecsys") {
     group = "application"
-    description = "Run the typed business column-node example."
+    description = "Run the search/recommendation metric demo."
     classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("io.lark.examples.BusinessNodeExample")
-}
-
-tasks.register<JavaExec>("runRisk") {
-    group = "application"
-    description = "Run the realistic payment risk-engine demo."
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("io.lark.examples.risk.RiskEngineDemo")
+    mainClass.set("io.lark.examples.recsys.RecSysDemo")
 }

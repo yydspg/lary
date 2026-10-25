@@ -5,27 +5,28 @@ examples. It is intentionally separate from the library build.
 
 ```sh
 ./gradlew :examples:test
-./gradlew :examples:runDemo
 ./gradlew :examples:runSimple
 ./gradlew :examples:runOp
-./gradlew :examples:runNodes
-./gradlew :examples:runRisk
+./gradlew :examples:runRecsys
 ```
 
 ## Realistic project layout
 
-`io.lark.examples.risk` is structured as a small production-shaped Java
-project:
+`io.lark.examples.recsys` is structured as a small production-shaped Java
+project for search / recommendation metrics:
 
 ```text
-risk/
-├─ RiskEngineDemo.java        composition + main
-├─ RiskResultPrinter.java     presentation
+recsys/
+├─ RecSysDemo.java            composition + main
+├─ MetricResultPrinter.java   presentation
 ├─ columns/                   typed ColumnStream subclasses
 ├─ node/                      one business node per file
 ├─ module/                    one module per file
-└─ data/                      transaction repository
+└─ data/                      item-level metric repository
 ```
 
-The other files (`LaryDemo`, `SimplePipeline`, `OpPipeline`,
-`BusinessNodeExample`) are compact guided tours of the library layers.
+The graph computes CTR, CVR, GMV, buy-again cost, coupon ROI and a ranking
+weight, then aggregates the portfolio. There are no user/item id columns: ids
+are lookup keys, not inputs to columnar metric computation.
+
+`SimplePipeline` and `OpPipeline` are compact tours of the DAG layers.

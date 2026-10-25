@@ -35,17 +35,15 @@ lary/
 └─ examples/                     # separate Gradle application module
    ├─ build.gradle.kts
    └─ src/main/java/io/lark/examples/
-      ├─ LaryDemo.java           # compact end-to-end tour
-      ├─ SimplePipeline.java
-      ├─ OpPipeline.java
-      ├─ BusinessNodeExample.java
-      └─ risk/                   # realistic multi-class demo project
-         ├─ RiskEngineDemo.java
-         ├─ RiskResultPrinter.java
+      ├─ SimplePipeline.java     # DAG Node tour
+      ├─ OpPipeline.java         # Op / Aspect tour
+      └─ recsys/                 # search / recommendation metrics project
+         ├─ RecSysDemo.java
+         ├─ MetricResultPrinter.java
          ├─ columns/             # typed ColumnStream subclasses
          ├─ node/                # one file per business node
          ├─ module/              # one file per module
-         └─ data/                # transaction repository
+         └─ data/                # item-level metric repository
 ```
 
 The root project is the reusable library; `:examples` is an independent
@@ -83,141 +81,104 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 ./gradlew clean test :examples:build
 ./gradlew build :examples:build
 
-./gradlew :examples:runDemo      # end-to-end layered demo (recommended)
+./gradlew :examples:runRecsys    # search/recommendation metric project
 ./gradlew :examples:runSimple    # DAG Node layer
 ./gradlew :examples:runOp        # DAG Op + Aspect layer
-./gradlew :examples:runNodes     # typed column-node quick start
-./gradlew :examples:runRisk      # realistic payment risk-engine project
 ```
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
 `TimeoutTest`, `ModulePipelineTest` and `OpTensorTest`. `DagTest` also covers
 wide/deep ready-queue scheduling and array/varargs node definitions. The
-`:examples` module has `RiskEngineTest` for the realistic risk graph.
+`:examples` module has `RecSysMetricTest` for the search/recommendation graph.
 
-## End-to-end demo
-
-```sh
-./gradlew :examples:runDemo
-```
-
-`LaryDemo` demonstrates the complete layering:
-
-1. **Business layer** — typed `ColumnNode` / `ColumnModule` / `ColumnStream`
-   graph with constructor-injected streams, `FeedStream`/`FetchStream`, weight
-   and unit-conversion nodes, `@ColumnComponent` module scanning, a deliberate
-   failure + fallback, aggregate outputs and run statistics.
-2. **Graph pruning / cycle detection** — compile only the branch needed for
-   `score`, then detect a cyclic module graph.
-3. **Tensor-op layer** — direct `FloatAddTensor` / `FloatMultiTensor` execution
-   and runtime dtype dispatch through `TensorOps.create`.
-4. **DAG timeout** — a slow node is interrupted, `Node.fallback` produces a
-   degraded result, and the run returns quickly.
-
-Sample output:
-
-```text
-SIMD: JDK Vector API (jdk.incubator.vector) {double=2, float=4, int=4, long=2}
-
-=== 1. Business module / typed stream pipeline ===
-user     = [110, 120, 130, 140, 150, 160]
-score    = [220, 240, 260, 280, 300, 320]
-mask     = [0, 0, 1, 1, 1, 1]
-user_li  = [1100, 1200, 1300, 1400, 1500, 1600]
-weighted = [2200, 2400, 2600, 2800, 3000, 3200]
-bonus    = [2201, 2401, 2601, 2801, 3001, 3201]
-high     = [260, 280, 300, 320]
-total    = 1620.0
-mean     = 270.0
-max      = 320.0
-fallback output = 8.0
-fallback events = 1
-
-=== 2. Graph pruning + cycle detection ===
-registered nodes = 3, compiled nodes = 2
-pruned score = 340.0
-module cycle detected: ColumnPipeline: module dependency cycle detected
-
-=== 3. Typed OpTensor layer ===
-FloatAddTensor   sum     = [11.0, 22.0, 33.0]
-FloatMultiTensor product = [10.0, 40.0, 90.0]
-dispatched add: dtype=float64, values=[1.5, 3.5, 5.5]
-
-=== 4. DAG timeout + business fallback ===
-status    = fallback
-fallback  = true
-elapsed   = 87ms
-```
-
-## Realistic example — payment risk engine
+## Search / recommendation metrics demo
 
 ```sh
-./gradlew :examples:runRisk
+./gradlew :examples:runRecsys
 ```
 
-The risk demo lives in the independent `:examples` module and is split like a
-normal Java service, not packed into one demo class:
+`RecSysDemo` is the realistic column-engine sample. It is deliberately split
+into independent classes under `io.lark.examples.recsys`, not nested in one
+demo class:
 
 ```text
-io.lark.examples.risk
-├─ RiskEngineDemo.java        # main / composition
-├─ RiskResultPrinter.java     # console presentation
-├─ columns/                   # one class per typed column
+recsys/
+├─ RecSysDemo.java            # composition + main
+├─ MetricResultPrinter.java   # presentation
+├─ columns/                   # one class per metric column
 ├─ node/                      # one class per business node
 ├─ module/                    # one class per module
-└─ data/                      # transaction repository
+└─ data/                      # item-level metric repository
 ```
 
-The graph has three modules:
+The graph computes search/ranking business metrics:
 
-1. **TransactionFeatureModule** — raw transactions → `amount_yuan`,
-   `txn_velocity`, `chargeback_ratio`, `weighted_amount` and `merchant_tier`.
-   Merchant enrichment simulates an external service; if it fails, a
-   conservative default tier is published through `ColumnNode.fallback`.
-2. **RiskScoreModule** — `dependsOn(TransactionFeatureModule.class)`; computes
-   `risk_score`, `risk_level` (LOW / MEDIUM / HIGH), `high_mask` and `approved`.
-3. **RiskReportModule** — `dependsOn(RiskScoreModule.class)`; aggregates total,
-   mean, max and high-risk count.
+1. **FunnelMetricModule** — raw aggregates → `ctr`, `cvr`, `gmv`,
+   `coupon_cost`, `buyagain_cost`, `coupon_roi`.
+2. **RankingWeightModule** — combines the metrics into `weight`:
+   ```text
+   weight = 100*ctr + 50*cvr + 0.01*gmv + 0.5*coupon_roi
+            - 0.5*buyagain_cost
+   ```
+3. **PerformanceSummaryModule** — aggregates `overall_ctr`, `overall_cvr`,
+   `total_gmv`, `total_coupon_cost`, `overall_roi`, `overall_buyagain_cost`
+   and `average_weight`.
 
-The modules are composed with constructor data wiring, typed columns and
-class-reference dependencies:
+Metric definitions:
+
+| Metric | Formula |
+|---|---|
+| `ctr` | `clicks / impressions` |
+| `cvr` | `orders / clicks` |
+| `gmv` | `gmv_fen / 100` |
+| `buyagain_cost` | `coupon_cost / buy_again_orders` |
+| `coupon_roi` | `gmv / coupon_cost` |
+| `weight` | `100*ctr + 50*cvr + 0.01*gmv + 0.5*coupon_roi - 0.5*buyagain_cost` |
+
+All ratios return `0` when the denominator is zero.
+
+There are **no user/item id columns**: the rows are already item-level
+aggregates; ids are lookup keys, not inputs to columnar metric computation.
+
+Composition and typed wiring:
 
 ```java
-TransactionFeatureModule features = new TransactionFeatureModule();
-RiskScoreModule risk = new RiskScoreModule(features);
-RiskReportModule report = new RiskReportModule(risk);
+FunnelMetricModule metrics = new FunnelMetricModule();
+RankingWeightModule ranking = new RankingWeightModule(metrics);
+PerformanceSummaryModule summary =
+        new PerformanceSummaryModule(metrics, ranking);
 
 try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
-    pipeline.add(features).add(risk).add(report);
+    pipeline.add(metrics).add(ranking).add(summary);
     pipeline.compile();
     pipeline.feed(FeedStream.of(new ColumnStream<?>[]{
-            features.userId(), features.amountFen(), features.txnCount(),
-            features.chargebackCount(), features.merchantId()
-    }, TransactionRepository.transactions()));
+            metrics.impressions(), metrics.clicks(), metrics.orders(),
+            metrics.gmvFen(), metrics.couponCostFen(),
+            metrics.buyAgainOrders()
+    }, MetricsRepository.rows()));
     pipeline.compute();
 
-    List<Row> scored = pipeline.fetch(FetchStream.of(
-            features.userId(), features.amount().out(), risk.score().out(),
-            risk.band().level(), risk.approval().out(),
-            features.merchantTier().out()));
-    System.out.println(pipeline.fetchScalar(report.summary().total()));
+    List<Row> rows = pipeline.fetch(FetchStream.of(
+            metrics.impressions(), metrics.clicks(), metrics.ctr(),
+            metrics.cvr(), metrics.gmv(), metrics.buyAgainCost(),
+            metrics.couponRoi(), ranking.weight()));
+    System.out.println(pipeline.fetchScalar(summary.overallRoi()));
 }
 ```
 
-A node is a small class with typed inputs and outputs; for example:
+A node is a small typed class, for example CTR:
 
 ```java
-public final class AmountToYuanNode
-        extends UnaryNode<AmountFen, AmountYuan> {
+public final class CtrNode extends BinaryNode<Clicks, Impressions, Ctr> {
 
-    public AmountToYuanNode(AmountFen input) {
-        super(input, AmountYuan.class);
+    public CtrNode(Clicks clicks, Impressions impressions) {
+        super(clicks, impressions, Ctr.class);
     }
 
     @Override
-    protected Tensor compute(ColumnContext ctx, Tensor amountFen) {
-        return Compute.divScalar(amountFen, 100.0);
+    protected Tensor compute(ColumnContext ctx, Tensor clicks, Tensor impressions) {
+        return Ratios.divide(clicks, impressions);
     }
 }
 ```
@@ -225,37 +186,39 @@ public final class AmountToYuanNode
 Sample output:
 
 ```text
-=== payment risk engine ===
-user      amount_yuan   risk_score    level   approved   tier
-1001          1200.00       486.67        1          1      1
-1002          8500.00      3418.33        2          0      1
-1003            50.00        25.42        0          1      1
-1004         25000.00     10024.17        2          0      1
-1005           450.00       186.25        0          1      1
-1006         15000.00      6028.33        2          0      1
-total_risk_score = 20169.166666666664
-mean_risk_score  = 3361.5277777777774
-max_risk_score   = 10024.166666666666
-high_risk_count  = 3.0
-fallback events  = 1
+=== search / recommendation metrics ===
+impressions    clicks      ctr      cvr          gmv  buyagain_cost coupon_roi     weight
+1000               50   0.0500   0.1000       500.00        10.0000    50.0000    35.0000
+2000              100   0.0500   0.2000      3000.00        12.5000    60.0000    68.7500
+500                10   0.0200   0.1000        80.00         0.0000    40.0000    27.8000
+1500              120   0.0800   0.2500      6000.00         8.0000    75.0000   114.0000
+800                40   0.0500   0.2000      1200.00        10.0000    60.0000    52.0000
+1200               90   0.0750   0.2000      2500.00         5.0000    83.3333    81.6667
+overall_ctr            = 0.058571
+overall_cvr            = 0.200000
+total_gmv              = 13280.00
+total_coupon_cost      = 192.00
+overall_roi            = 69.1667
+overall_buyagain_cost  = 8.3478
+average_weight         = 63.2028
 ```
 
 The run also emits per-module timing and CPU-pressure statistics through the
-same monitoring layer used by `LaryDemo`.
+same monitoring layer as the DAG examples.
 
 ## DAG quick start
 
 ```java
 NodeRegistry registry = new NodeRegistry();
-registry.register("fetch_user", FetchUserNode::new);
-registry.register("rank", RankNode::new);
+registry.register("source", SourceNode::new);
+registry.register("double", DoubleNode::new);
 
 Graph graph = new GraphBuilder(registry).build(
-        new NodeDef("fetch_user"),
-        new NodeDef("rank", "fetch_user"));
+        new NodeDef("source"),
+        new NodeDef("double", "source"));
 
 DefaultContext ctx = new DefaultContext();
-ctx.set("user_id", 7);
+ctx.set("seed", 7);
 
 try (Executor executor = new Executor(2, 4)) {
     executor.execute(graph, ctx);
@@ -263,7 +226,7 @@ try (Executor executor = new Executor(2, 4)) {
 ```
 
 `NodeDef` accepts dependency arrays / varargs
-(`new NodeDef("rank", "fetch_user")`); use `NodeDef.of(type, id, deps...)` when
+(`new NodeDef("double", "source")`); use `NodeDef.of(type, id, deps...)` when
 a definition needs an explicit id. `Node.compute` / `Node.run` are blocking.
 
 The executor uses a **dependency-counter ready queue**: nodes are started only
@@ -304,9 +267,9 @@ try (Executor executor = new Executor(2, 4)) {
 
 ```java
 OpGraph graph = new OpGraph()
-        .addOp(new FetchUserOp())
-        .addOp(new ScoreUserOp())
-        .dependsOn("fetch_user", "score_user")
+        .addOp(new SourceOp())
+        .addOp(new ScaleOp())
+        .dependsOn("source", "scale")
         .addAspect(new CheapModeAspect());
 
 try (OpExecutor executor = new OpExecutor()) {
@@ -323,17 +286,20 @@ fetch streams.
 ### Define columns as classes
 
 ```java
-public final class AmountFen extends LongColumn {
+public final class Impressions extends LongColumn {
 }
 
-public final class AmountYuan extends DoubleColumn {
+public final class Clicks extends LongColumn {
+}
+
+public final class Ctr extends DoubleColumn {
 }
 
 // Physical / external names can be explicit; otherwise the class name is
-// converted to snake_case (AmountYuan → amount_yuan).
-public final class TxnCount24h extends LongColumn {
-    public TxnCount24h() {
-        super("txn_count_24h");
+// converted to snake_case (Ctr → ctr, CouponRoi → coupon_roi).
+public final class BuyAgainCost extends DoubleColumn {
+    public BuyAgainCost() {
+        super("buyagain_cost");
     }
 }
 ```
@@ -343,23 +309,22 @@ the tensor dtype. `ColumnContext` validates the dtype on every read/write, and
 typed feed columns are coerced to their declared dtype.
 
 Classes are preferred over a global column enum: a node constructor can require
-`AmountFen` specifically, so passing the wrong column is a compile error. An
-enum can still be used as a schema factory that returns these classes if a
-project prefers that style.
+`Clicks` or `Impressions` specifically, so passing the wrong metric is a
+compile error. An enum can still be used as a schema factory that returns these
+classes if a project prefers that style.
 
 ### Nodes define the business logic
 
 ```java
-public final class AmountToYuanNode
-        extends UnaryNode<AmountFen, AmountYuan> {
+public final class CtrNode extends BinaryNode<Clicks, Impressions, Ctr> {
 
-    public AmountToYuanNode(AmountFen input) {
-        super(input, AmountYuan.class);
+    public CtrNode(Clicks clicks, Impressions impressions) {
+        super(clicks, impressions, Ctr.class);
     }
 
     @Override
-    protected Tensor compute(ColumnContext ctx, Tensor amountFen) {
-        return Compute.divScalar(amountFen, 100.0);
+    protected Tensor compute(ColumnContext ctx, Tensor clicks, Tensor impressions) {
+        return Ratios.divide(clicks, impressions);
     }
 }
 ```
@@ -369,19 +334,27 @@ Use `UnaryNode<I, O>` and `BinaryNode<A, B, O>` for the common shapes, or
 fields; outputs are declared with `fetch(SomeColumn.class)`:
 
 ```java
-public final class RiskBandNode extends ColumnNode {
-    private final RiskScore score;
-    private final RiskLevel level = fetch(RiskLevel.class);
-    private final HighMask highMask = fetch(HighMask.class);
+public final class RankingWeightNode extends ColumnNode {
+    private final Ctr ctr;
+    private final Cvr cvr;
+    private final Gmv gmv;
+    private final CouponRoi couponRoi;
+    private final BuyAgainCost buyAgainCost;
+    private final Weight out = fetch(Weight.class);
 
-    public RiskBandNode(RiskScore score) {
-        super(score);
-        this.score = score;
+    public RankingWeightNode(Ctr ctr, Cvr cvr, Gmv gmv,
+                             CouponRoi couponRoi, BuyAgainCost buyAgainCost) {
+        super(ctr, cvr, gmv, couponRoi, buyAgainCost);
+        this.ctr = ctr;
+        this.cvr = cvr;
+        this.gmv = gmv;
+        this.couponRoi = couponRoi;
+        this.buyAgainCost = buyAgainCost;
     }
 
     public void compute(ColumnContext ctx) {
-        Tensor scores = ctx.read(score); // named, typed — no feeds()[0]
-        // ...
+        // Business formula — no feeds()[0] or string output names.
+        ctx.write(out, /* ... */);
     }
 }
 ```
@@ -389,56 +362,53 @@ public final class RiskBandNode extends ColumnNode {
 ### Modules compose typed columns
 
 ```java
-public final class TransactionFeatureModule extends ColumnModule {
-    private final AmountFen amountFen = input(AmountFen.class);
-    private final AmountToYuanNode amount = add(new AmountToYuanNode(amountFen));
-    private final ScaleNode<WeightedAmount> weighted =
-            add(new ScaleNode<>(amount.out(), WeightedAmount.class, 0.4));
+public final class FunnelMetricModule extends ColumnModule {
+    private final Impressions impressions = input(Impressions.class);
+    private final Clicks clicks = input(Clicks.class);
+    private final CtrNode ctr = add(new CtrNode(clicks, impressions));
 
-    public TransactionFeatureModule() {
-        output(amount.out(), weighted.out());
+    public FunnelMetricModule() {
+        output(ctr.out());
     }
 
-    public AmountToYuanNode amount() { return amount; }
+    public Impressions impressions() { return impressions; }
+    public Clicks clicks() { return clicks; }
+    public Ctr ctr() { return ctr.out(); }
 }
 ```
 
 - Node ids are generated by the framework.
-- Dependencies are **class/stream references** (`new AmountToYuanNode(amountFen)`),
+- Dependencies are **class/stream references** (`new CtrNode(clicks, impressions)`),
   never node names.
 - Modules depend on modules with `dependsOn(OtherModule.class)`; cycles are
   rejected.
 - `ColumnNode.feeds()` / `fetches()` and module `nodes()`, `inputs()`,
   `outputs()`, `dependencies()` are arrays because their arity is fixed.
+- Rows contain metric data, not user/item ids. Ids are lookup keys; column
+  computation operates on measurable business columns.
 
 ### Compile, feed, compute, fetch
 
 ```java
-TransactionFeatureModule features = new TransactionFeatureModule();
+FunnelMetricModule metrics = new FunnelMetricModule();
 try (ColumnPipeline pipeline = new ColumnPipeline()) {
-    pipeline.add(features);             // or pipeline.scan("com.example")
+    pipeline.add(metrics);              // or pipeline.scan("com.example")
     pipeline.compile();
 
-    pipeline.feed(FeedStream.of(features.amountFen(), rows));
+    pipeline.feed(FeedStream.of(new ColumnStream<?>[]{
+            metrics.impressions(), metrics.clicks(), metrics.orders(),
+            metrics.gmvFen(), metrics.couponCostFen(), metrics.buyAgainOrders()
+    }, rows));
     pipeline.compute();
 
-    List<Row> out = pipeline.fetch(FetchStream.of(features.amount().out()));
-    double first = pipeline.fetchScalar(features.amount().out());
+    List<Row> out = pipeline.fetch(FetchStream.of(metrics.ctr()));
+    double firstCtr = pipeline.fetchScalar(metrics.ctr());
 }
 ```
 
 `FeedStream` / `FetchStream` carry `ColumnStream<?>[]`, so no names are needed
 at the API boundary. Missing required feed columns are rejected before
 execution.
-
-### Built-in business transforms
-
-```java
-UnitConvertNode<AmountLi> li =
-        new UnitConvertNode<>(amount.out(), AmountLi.class, 10.0); // fen → li
-ScaleNode<WeightedAmount> weighted =
-        new ScaleNode<>(li.out(), WeightedAmount.class, 0.3);      // weight
-```
 
 ### Spring-style modules
 
@@ -447,10 +417,10 @@ directories and jars, and needs no Spring dependency:
 
 ```java
 @ColumnComponent
-public final class RiskModule extends ColumnModule { ... }
+public final class RecSysModule extends ColumnModule { ... }
 
 pipeline.scan("com.example.features");
-RiskModule risk = pipeline.module(RiskModule.class);
+RecSysModule recsys = pipeline.module(RecSysModule.class);
 ```
 
 ### Graph pruning and cycle detection
@@ -503,7 +473,7 @@ runtime dtype promotion to choose the typed implementation (`AddTensor` →
 | `io.lark.column.compute` | `Compute`, `VectorOps` |
 | `io.lark.column.op` | `OpTensor`, `OpContext`, `OpSpec`, `TensorOps`; typed ops: `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`, `LongMultiTensor`, … |
 | `io.lark.column.exec` | `ComputeNode`, `ComputeGraph`, `ExecutionContext` — hidden execution layer |
-| `io.lark.column.biz` | typed business API: `ColumnStream<T>`, `LongColumn` / `DoubleColumn` / `FloatColumn` / `IntColumn` / `BoolColumn`, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `FeedStream`, `FetchStream`, `ScaleNode`, `UnitConvertNode`, `ColumnComponent`, `ColumnComponentScanner` |
+| `io.lark.column.biz` | typed business API: `ColumnStream<T>`, `LongColumn` / `DoubleColumn` / `FloatColumn` / `IntColumn` / `BoolColumn`, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |
 

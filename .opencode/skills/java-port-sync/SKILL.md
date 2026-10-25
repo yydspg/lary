@@ -79,10 +79,9 @@ test. Tests are the behavioral contract.
 | `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
 | Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `BusinessNodeOp.java` |
-| Typed column classes (Java-first) | `biz/LongColumn.java`, `DoubleColumn.java`, `FloatColumn.java`, `IntColumn.java`, `BoolColumn.java`; business schema subclasses e.g. `AmountYuan` |
+| Typed column classes (Java-first) | `biz/LongColumn.java`, `DoubleColumn.java`, `FloatColumn.java`, `IntColumn.java`, `BoolColumn.java`; business schema subclasses e.g. `CouponRoi` |
 | Typed node bases (Java-first) | `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`; custom nodes extend `ColumnNode` with typed fields |
 | Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream<?>[]`) |
-| Business transforms | `biz/ScaleNode.java`, `biz/UnitConvertNode.java` (generic output column class) |
 | Spring-style components | `biz/ColumnComponent.java`, `biz/ColumnComponentScanner.java` (on modules) |
 | C++ `biz::Module` / `SubGraph` / DSL / `Pipeline` | **intentionally removed in Java**; replaced by `ColumnModule` + `ColumnNode` + `ColumnStream` |
 | `backend/backend.h`, `backend.cpp` | `backend/Backend.java`, `CpuBackend.java`, `BackendFactory.java` |
@@ -91,9 +90,9 @@ test. Tests are the behavioral contract.
 | Tensor-op coverage | `OpTensorTest.java` |
 | Module / stream / pruning / component coverage | `ModulePipelineTest.java` |
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java` |
-| End-to-end demos | `examples/src/main/java/io/lark/examples/LaryDemo.java` (`:examples:runDemo`) |
-| Realistic multi-class demo | `examples/src/main/java/io/lark/examples/risk/**` (`:examples:runRisk`), split into `columns/`, `node/`, `module/`, `data/` |
-| Realistic demo test | `examples/src/test/java/io/lark/examples/risk/RiskEngineTest.java` |
+| DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
+| Realistic multi-class demo | `examples/src/main/java/io/lark/examples/recsys/**` (`:examples:runRecsys`), split into `columns/`, `node/`, `module/`, `data/` |
+| Realistic demo test | `examples/src/test/java/io/lark/examples/recsys/RecSysMetricTest.java` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
 ## Workflow
@@ -158,7 +157,7 @@ test. Tests are the behavioral contract.
   there is no `name()`/`inputs()`/`outputs()` override.
 - Columns are classes extending `LongColumn`, `DoubleColumn`, `FloatColumn`,
   `IntColumn` or `BoolColumn`. The default name is derived from the class
-  (`AmountYuan` → `amount_yuan`); explicit physical names use the
+  (`CouponRoi` → `coupon_roi`); explicit physical names use the
   `(String)` constructor. `ColumnContext` validates read/write dtype; typed
   feed columns are coerced to their declared dtype.
 - Outputs are declared with `fetch(ColumnClass.class)`. Common node shapes use
@@ -176,9 +175,12 @@ test. Tests are the behavioral contract.
   `ColumnStream<?>[]`. Missing required feed columns are rejected before
   compute. Use `compile(FetchStream)` / `fetchScalar(ColumnStream<?>)` to keep
   pruning and scalar reads typed.
-- Built-in business transforms: generic `ScaleNode<O>` (weight) and
-  `UnitConvertNode<O>` (factor, e.g. fen → li), both configured with the
-  output column class.
+- The realistic demo targets search/recommendation metrics: CTR =
+  clicks/impressions, CVR = orders/clicks, GMV = gmv_fen/100,
+  buyagain_cost = coupon_cost/buy_again_orders, coupon_roi = gmv/coupon_cost,
+  weight = 100*ctr + 50*cvr + 0.01*gmv + 0.5*coupon_roi - 0.5*buyagain_cost.
+  Ratios are zero when the denominator is zero. Rows contain metric
+  aggregates, not user/item ids; ids are lookup keys, not columnar inputs.
 - `@ColumnComponent` marks modules; `ColumnPipeline.scan(package)` discovers
   them without a Spring dependency. Modules need a no-arg constructor.
 - Graph pruning: `ColumnPipeline.compile(FetchStream)` keeps the transitive
@@ -208,10 +210,8 @@ test. Tests are the behavioral contract.
 
 ```sh
 JAVA_HOME=/path/to/jdk-25 ./gradlew clean test :examples:build
-JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runDemo
 JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runSimple :examples:runOp
-JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runNodes
-JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRisk
+JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRecsys
 ```
 
 Use JDK 25. If Gradle cannot find it, set `org.gradle.java.installations.paths`

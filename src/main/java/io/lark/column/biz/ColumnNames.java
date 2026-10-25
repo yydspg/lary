@@ -10,7 +10,7 @@ final class ColumnNames {
     }
 
     /**
-     * {@code AmountYuan → amount_yuan}, {@code UserID → user_id},
+     * {@code CtrValue → ctr_value}, {@code CouponRoi → coupon_roi},
      * {@code HTTPStatus → http_status}.
      */
     static String of(Class<?> type) {

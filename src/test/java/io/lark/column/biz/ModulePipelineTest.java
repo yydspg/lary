@@ -23,7 +23,7 @@ class ModulePipelineTest {
 
     // ---- typed column schema ---------------------------------------------
 
-    static final class UserId extends LongColumn {
+    static final class MetricValue extends LongColumn {
     }
 
     static final class Source extends LongColumn {
@@ -84,6 +84,18 @@ class ModulePipelineTest {
         }
     }
 
+    static final class TimesTenNode extends UnaryNode<LongColumn, Li> {
+
+        TimesTenNode(LongColumn input) {
+            super(input, Li.class);
+        }
+
+        @Override
+        protected Tensor compute(ColumnContext ctx, Tensor input) {
+            return Compute.mulScalar(input, 10.0);
+        }
+    }
+
     static final class FailingNode extends SourceNode<Recovered> {
 
         FailingNode() {
@@ -105,8 +117,8 @@ class ModulePipelineTest {
     // ---- modules ---------------------------------------------------------
 
     static final class FeatureModule extends ColumnModule {
-        final UserId userId = input(UserId.class);
-        final PlusNode<Source> source = add(new PlusNode<>(userId, Source.class, 1.0));
+        final MetricValue metricValue = input(MetricValue.class);
+        final PlusNode<Source> source = add(new PlusNode<>(metricValue, Source.class, 1.0));
         final ConsumerNode<Result> consumer =
                 add(new ConsumerNode<>(source.out(), Result.class));
         final FailingNode failing = add(new FailingNode());
@@ -119,8 +131,8 @@ class ModulePipelineTest {
     }
 
     static final class PruneModule extends ColumnModule {
-        final UserId userId = input(UserId.class);
-        final PlusNode<Used> used = add(new PlusNode<>(userId, Used.class, 1.0));
+        final MetricValue metricValue = input(MetricValue.class);
+        final PlusNode<Used> used = add(new PlusNode<>(metricValue, Used.class, 1.0));
         final PlusNode<Unused> unused = add(new PlusNode<>(used.out(), Unused.class, 100.0));
         final ConsumerNode<Result> result =
                 add(new ConsumerNode<>(used.out(), Result.class));
@@ -132,16 +144,16 @@ class ModulePipelineTest {
 
     @Test
     void columnClassDefinesNameAndDtype() {
-        UserId userId = new UserId();
-        assertEquals("user_id", userId.name());
-        assertEquals(DType.INT64, userId.dtype());
+        MetricValue metricValue = new MetricValue();
+        assertEquals("metric_value", metricValue.name());
+        assertEquals(DType.INT64, metricValue.dtype());
     }
 
     @Test
     void dtypeMismatchFailsAtTheBusinessBoundary() {
         ColumnContext ctx = new ColumnContext(new TensorStore());
         assertThrows(IllegalArgumentException.class,
-                () -> ctx.write(new UserId(), Tensor.fromDoubles(1.0)));
+                () -> ctx.write(new MetricValue(), Tensor.fromDoubles(1.0)));
     }
 
     @Test
@@ -152,10 +164,10 @@ class ModulePipelineTest {
             pipeline.compile();
 
             assertNotEquals(feature.source.id(), feature.consumer.id());
-            assertTrue(feature.userId.isExternalFeed());
-            assertEquals(List.of("user_id"), pipeline.requiredFeedColumns().stream().toList());
+            assertTrue(feature.metricValue.isExternalFeed());
+            assertEquals(List.of("metric_value"), pipeline.requiredFeedColumns().stream().toList());
 
-            pipeline.feed(FeedStream.of(feature.userId, rows(3)));
+            pipeline.feed(FeedStream.of(feature.metricValue, rows(3)));
             pipeline.compute();
 
             List<Row> out = pipeline.fetch(FetchStream.of(feature.consumer.out()));
@@ -176,7 +188,7 @@ class ModulePipelineTest {
             assertEquals(3, pipeline.nodeCount());
             assertEquals(2, pipeline.compiledNodeCount());
 
-            pipeline.feed(FeedStream.of(module.userId, rows(2)));
+            pipeline.feed(FeedStream.of(module.metricValue, rows(2)));
             pipeline.compute();
             assertEquals(List.of(3L, 4L),
                     pipeline.fetch(FetchStream.of(module.result.out())).stream()
@@ -215,13 +227,13 @@ class ModulePipelineTest {
     }
 
     @Test
-    void builtInBusinessTransformsAndComponents() {
+    void componentsAndTypedNodes() {
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
             pipeline.scan("io.lark.column.biz");
             ComponentModule component = pipeline.module(ComponentModule.class);
             pipeline.compile();
 
-            pipeline.feed(FeedStream.of(component.userId, rows(2)));
+            pipeline.feed(FeedStream.of(component.metricValue, rows(2)));
             pipeline.compute();
 
             List<Row> out = pipeline.fetch(FetchStream.of(component.out()));
@@ -232,10 +244,9 @@ class ModulePipelineTest {
 
     @ColumnComponent
     public static final class ComponentModule extends ColumnModule {
-        final UserId userId = input(UserId.class);
-        final PlusNode<Source> source = add(new PlusNode<>(userId, Source.class, 1.0));
-        final UnitConvertNode<Li> li =
-                add(new UnitConvertNode<>(source.out(), Li.class, 10.0));
+        final MetricValue metricValue = input(MetricValue.class);
+        final PlusNode<Source> source = add(new PlusNode<>(metricValue, Source.class, 1.0));
+        final TimesTenNode li = add(new TimesTenNode(source.out()));
 
         {
             output(li.out());
@@ -254,7 +265,7 @@ class ModulePipelineTest {
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
             pipeline.add(producer).add(consumer);
             pipeline.compile();
-            pipeline.feed(FeedStream.of(producer.userId, rows(2)));
+            pipeline.feed(FeedStream.of(producer.metricValue, rows(2)));
             pipeline.compute();
 
             assertEquals(List.of(3L, 4L),
@@ -264,9 +275,9 @@ class ModulePipelineTest {
     }
 
     static final class ProducerModule extends ColumnModule {
-        final UserId userId = input(UserId.class);
+        final MetricValue metricValue = input(MetricValue.class);
         final PlusNode<ProducerOut> node =
-                add(new PlusNode<>(userId, ProducerOut.class, 1.0));
+                add(new PlusNode<>(metricValue, ProducerOut.class, 1.0));
 
         {
             output(node.out());

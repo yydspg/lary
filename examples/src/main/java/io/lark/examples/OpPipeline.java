@@ -18,29 +18,27 @@ import io.lark.dag.OpStatus;
  */
 public final class OpPipeline {
 
-    public static final class FetchUserOp extends Op {
+    public static final class SourceOp extends Op {
         @Override
         public String name() {
-            return "fetch_user";
+            return "source";
         }
 
         @Override
         public void execute(IContext data) {
-            int id = data.get("user_id", Integer.class);
-            data.set("user", "user_" + id);
+            data.set("value", data.get("seed", Integer.class));
         }
     }
 
-    public static final class ScoreUserOp extends Op {
+    public static final class ScaleOp extends Op {
         @Override
         public String name() {
-            return "score_user";
+            return "scale";
         }
 
         @Override
         public void execute(IContext data) {
-            String user = data.get("user", String.class);
-            data.set("score", user.length() * 10);
+            data.set("scaled", data.get("value", Integer.class) * 10);
         }
     }
 
@@ -50,7 +48,7 @@ public final class OpPipeline {
         public boolean shouldSkip(Op op, IContext data) {
             return data.has("cheap_mode", Boolean.class)
                     && data.get("cheap_mode", Boolean.class)
-                    && op.name().equals("score_user");
+                    && op.name().equals("scale");
         }
 
         @Override
@@ -64,19 +62,20 @@ public final class OpPipeline {
 
     public static void main(String[] args) {
         OpGraph graph = new OpGraph()
-                .addOp(new FetchUserOp())
-                .addOp(new ScoreUserOp())
-                .dependsOn("fetch_user", "score_user")
+                .addOp(new SourceOp())
+                .addOp(new ScaleOp())
+                .dependsOn("source", "scale")
                 .addAspect(new CheapModeAspect());
 
         DefaultContext data = new DefaultContext();
-        data.set("user_id", 7);
+        data.set("seed", 7);
         data.set("cheap_mode", true);
 
         try (OpExecutor executor = new OpExecutor()) {
             executor.execute(graph, data);
-            System.out.println("user = " + data.get("user", String.class));
-            System.out.println("score present = " + data.has("score", Integer.class));
+            System.out.println("value = " + data.get("value", Integer.class));
+            System.out.println("scaled present = "
+                    + data.has("scaled", Integer.class));
             System.out.println("all succeeded = " + executor.allSucceeded());
         }
     }

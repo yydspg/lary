@@ -54,7 +54,6 @@ public final class ColumnPipeline implements AutoCloseable {
     private ExecutorService pool;
     private boolean compiled;
     private Set<String> requiredFeedColumns = Set.of();
-    private Map<String, ColumnStream<?>> fetchableOutputs = Map.of();
     private List<String> compiledOutputs = List.of();
 
     public ColumnPipeline() {
@@ -240,7 +239,6 @@ public final class ColumnPipeline implements AutoCloseable {
 
         this.graph = newGraph;
         this.requiredFeedColumns = Set.copyOf(feedColumns);
-        this.fetchableOutputs = Map.copyOf(allOutputs);
         this.compiledOutputs = List.copyOf(outputs);
         this.compiled = true;
     }
@@ -497,22 +495,6 @@ public final class ColumnPipeline implements AutoCloseable {
 
     public Set<String> requiredFeedColumns() {
         return requiredFeedColumns;
-    }
-
-    public List<String> outputColumns() {
-        List<String> names = new ArrayList<>();
-        for (ColumnModule module : modules) {
-            for (ColumnStream<?> stream : module.outputs()) {
-                if (!names.contains(stream.name())) {
-                    names.add(stream.name());
-                }
-            }
-        }
-        return List.copyOf(names);
-    }
-
-    public List<String> compiledOutputColumns() {
-        return compiledOutputs;
     }
 
     private void emitStart(String action, String subject) {

@@ -17,15 +17,15 @@ import java.util.Objects;
  * positional indexes in business compute code:
  *
  * <pre>{@code
- * final class AmountToYuanNode
- *         extends UnaryNode<AmountFen, AmountYuan> {
+ * final class CtrNode
+ *         extends BinaryNode<Clicks, Impressions, Ctr> {
  *
- *     AmountToYuanNode(AmountFen input) {
- *         super(input, AmountYuan.class);
+ *     CtrNode(Clicks clicks, Impressions impressions) {
+ *         super(clicks, impressions, Ctr.class);
  *     }
  *
- *     protected Tensor compute(ColumnContext ctx, Tensor input) {
- *         return Compute.divScalar(input, 100.0);
+ *     protected Tensor compute(ColumnContext ctx, Tensor clicks, Tensor impressions) {
+ *         return Ratios.divide(clicks, impressions);
  *     }
  * }
  * }</pre>
