@@ -15,6 +15,9 @@ public final class IntMultiTensor extends BinaryTensorOp {
     public IntMultiTensor(List<String> inputs, List<String> outputs) {
         super("int_multi", inputs, outputs, DType.INT32);
     }
+    public IntMultiTensor(String[] inputs, String[] outputs) {
+        super("int_multi", inputs, outputs, DType.INT32);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {

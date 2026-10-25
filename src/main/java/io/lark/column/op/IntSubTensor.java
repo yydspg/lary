@@ -15,6 +15,9 @@ public final class IntSubTensor extends BinaryTensorOp {
     public IntSubTensor(List<String> inputs, List<String> outputs) {
         super("int_sub", inputs, outputs, DType.INT32);
     }
+    public IntSubTensor(String[] inputs, String[] outputs) {
+        super("int_sub", inputs, outputs, DType.INT32);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {

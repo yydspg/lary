@@ -21,11 +21,19 @@ public abstract class BinaryTensorOp extends OpTensor {
 
     protected BinaryTensorOp(String opType, List<String> inputs,
                              List<String> outputs, DType dtype) {
+        this(opType,
+                inputs == null ? new String[0] : inputs.toArray(String[]::new),
+                outputs == null ? new String[0] : outputs.toArray(String[]::new),
+                dtype);
+    }
+
+    protected BinaryTensorOp(String opType, String[] inputs,
+                             String[] outputs, DType dtype) {
         super(opType, inputs, outputs);
-        if (inputs == null || inputs.size() != 2) {
+        if (inputs == null || inputs.length != 2) {
             throw new IllegalArgumentException(
                     opType + " requires 2 inputs, got "
-                            + (inputs == null ? 0 : inputs.size()));
+                            + (inputs == null ? 0 : inputs.length));
         }
         this.dtype = dtype;
     }
@@ -36,8 +44,8 @@ public abstract class BinaryTensorOp extends OpTensor {
 
     @Override
     public final void compute(OpContext ctx) {
-        Tensor a = ctx.input(inputs().get(0));
-        Tensor b = ctx.input(inputs().get(1));
+        Tensor a = ctx.input(inputs()[0]);
+        Tensor b = ctx.input(inputs()[1]);
         if (a.size() != b.size()) {
             throw new IllegalArgumentException(
                     opType() + ": length mismatch (" + a.size()
@@ -45,7 +53,7 @@ public abstract class BinaryTensorOp extends OpTensor {
         }
         Tensor left = a.dtype() == dtype ? a : a.castTo(dtype);
         Tensor right = b.dtype() == dtype ? b : b.castTo(dtype);
-        ctx.set(outputs().get(0), apply(left, right));
+        ctx.set(outputs()[0], apply(left, right));
     }
 
     /** Apply the typed kernel; both inputs are already {@link #dtype()}. */

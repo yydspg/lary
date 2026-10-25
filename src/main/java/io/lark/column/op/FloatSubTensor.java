@@ -15,6 +15,9 @@ public final class FloatSubTensor extends BinaryTensorOp {
     public FloatSubTensor(List<String> inputs, List<String> outputs) {
         super("float_sub", inputs, outputs, DType.FLOAT32);
     }
+    public FloatSubTensor(String[] inputs, String[] outputs) {
+        super("float_sub", inputs, outputs, DType.FLOAT32);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {

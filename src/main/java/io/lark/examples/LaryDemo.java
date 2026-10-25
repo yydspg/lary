@@ -4,18 +4,18 @@
 package io.lark.examples;
 
 import io.lark.column.Cell;
-import io.lark.column.DType;
 import io.lark.column.Row;
 import io.lark.column.Simd;
 import io.lark.column.Tensor;
 import io.lark.column.TensorStore;
 import io.lark.column.biz.ColumnComponent;
 import io.lark.column.biz.ColumnContext;
-import io.lark.column.biz.ColumnGraph;
+import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnNode;
+import io.lark.column.biz.ColumnPipeline;
+import io.lark.column.biz.ColumnStream;
 import io.lark.column.biz.FeedStream;
 import io.lark.column.biz.FetchStream;
-import io.lark.column.biz.NodePipeline;
 import io.lark.column.biz.ScaleNode;
 import io.lark.column.biz.UnitConvertNode;
 import io.lark.column.compute.Compute;
@@ -37,212 +37,173 @@ import io.lark.dag.TimeoutPolicy;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * End-to-end demo for the layered column engine.
+ * End-to-end demo for the simplified module / stream API.
  *
- * <p>Run with {@code ./gradlew runDemo} (or {@code ./gradlew run}).
+ * <p>Business nodes have no name/inputs/outputs overrides. Dependencies are
+ * stream references; modules group nodes and expose fetch streams.
  *
- * <p>Sections:
- * <ol>
- *   <li>Business layer: {@link ColumnNode} graph → feed / compute / fetch.</li>
- *   <li>Tensor-op layer: {@link FloatAddTensor} / {@link FloatMultiTensor}.</li>
- *   <li>Business fallback + DAG timeout / quarantine integration.</li>
- * </ol>
+ * <p>Run with {@code ./gradlew runDemo}.
  */
 public final class LaryDemo {
 
     // ─────────────────────────────────────────────────────────────────────
-    // Section 1: business ColumnNode graph
+    // Nodes: streams are passed by reference, ids are auto-generated.
     // ─────────────────────────────────────────────────────────────────────
 
     static final class FetchUserNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "fetch_user";
+        final ColumnStream out = output("user");
+
+        FetchUserNode(ColumnStream userId) {
+            super(userId);
         }
 
         @Override
-        public List<String> inputs() {
-            return List.of("user_id");
-        }
-
-        @Override
-        public List<String> outputs() {
-            return List.of("user");
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
-            ctx.output("user", Compute.addScalar(
-                    Compute.mulScalar(ctx.input("user_id"), 10.0), 100.0));
+        public void compute(ColumnContext ctx) {
+            ctx.write(out, Compute.addScalar(
+                    Compute.mulScalar(ctx.read(feeds()[0]), 10.0), 100.0));
         }
     }
 
     static final class ScoreNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "score";
+        final ColumnStream out = output("score");
+
+        ScoreNode(ColumnStream user) {
+            super(user);
         }
 
         @Override
-        public List<String> inputs() {
-            return List.of("user");
-        }
-
-        @Override
-        public List<String> outputs() {
-            return List.of("score");
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
-            ctx.output("score", Compute.mulScalar(ctx.input("user"), 2.0));
+        public void compute(ColumnContext ctx) {
+            ctx.write(out, Compute.mulScalar(ctx.read(feeds()[0]), 2.0));
         }
     }
 
     static final class HighScoreMaskNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "high_score_mask";
+        final ColumnStream out = output("high_mask");
+
+        HighScoreMaskNode(ColumnStream score) {
+            super(score);
         }
 
         @Override
-        public List<String> inputs() {
-            return List.of("score");
-        }
-
-        @Override
-        public List<String> outputs() {
-            return List.of("high_mask");
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
-            ctx.output("high_mask", Compute.gtScalar(ctx.input("score"), 250.0));
+        public void compute(ColumnContext ctx) {
+            ctx.write(out, Compute.gtScalar(ctx.read(feeds()[0]), 250.0));
         }
     }
 
     static final class FilterHighScoresNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "filter_high_scores";
+        final ColumnStream out = output("high_scores");
+
+        FilterHighScoresNode(ColumnStream score, ColumnStream mask) {
+            super(score, mask);
         }
 
         @Override
-        public List<String> inputs() {
-            return List.of("score", "high_mask");
-        }
-
-        @Override
-        public List<String> outputs() {
-            return List.of("high_scores");
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
-            ctx.output("high_scores",
-                    Compute.filter(ctx.input("score"), ctx.input("high_mask")));
+        public void compute(ColumnContext ctx) {
+            ctx.write(out, Compute.filter(ctx.read(feeds()[0]),
+                    ctx.read(feeds()[1])));
         }
     }
 
     static final class AggregateNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "aggregate";
+        final ColumnStream total = output("total");
+        final ColumnStream mean = output("mean");
+        final ColumnStream max = output("max");
+
+        AggregateNode(ColumnStream score) {
+            super(score);
         }
 
         @Override
-        public List<String> inputs() {
-            return List.of("score");
-        }
-
-        @Override
-        public List<String> outputs() {
-            return List.of("total", "mean", "max");
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
-            Tensor score = ctx.input("score");
-            ctx.output("total", Compute.sumTensor(score));
-            ctx.output("mean", Compute.meanTensor(score));
-            ctx.output("max", Compute.maxTensor(score));
+        public void compute(ColumnContext ctx) {
+            Tensor score = ctx.read(feeds()[0]);
+            ctx.write(total, Compute.sumTensor(score));
+            ctx.write(mean, Compute.meanTensor(score));
+            ctx.write(max, Compute.maxTensor(score));
         }
     }
 
     static final class FailingNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "failing";
-        }
+        final ColumnStream out = output("recovered");
 
         @Override
-        public List<String> outputs() {
-            return List.of("recovered");
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
+        public void compute(ColumnContext ctx) {
             throw new IllegalStateException("simulated business failure");
         }
 
         @Override
         public boolean fallback(ColumnContext ctx, Throwable error) {
-            ctx.output("recovered", Tensor.fromLongs(7));
+            ctx.write(out, Tensor.fromLongs(7));
             return true;
         }
     }
 
     static final class UseRecoveredNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "use_recovered";
+        final ColumnStream out = output("recovered_plus_one");
+
+        UseRecoveredNode(ColumnStream recovered) {
+            super(recovered);
         }
 
         @Override
-        public List<String> inputs() {
-            return List.of("recovered");
-        }
-
-        @Override
-        public List<String> outputs() {
-            return List.of("recovered_plus_one");
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
-            ctx.output("recovered_plus_one",
-                    Compute.addScalar(ctx.input("recovered"), 1.0));
+        public void compute(ColumnContext ctx) {
+            ctx.write(out, Compute.addScalar(ctx.read(feeds()[0]), 1.0));
         }
     }
 
-    @ColumnComponent
     static final class BonusNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "bonus";
+        final ColumnStream out = output("bonus");
+
+        BonusNode(ColumnStream weighted) {
+            super(weighted);
         }
 
         @Override
-        public List<String> inputs() {
-            return List.of("weighted");
+        public void compute(ColumnContext ctx) {
+            ctx.write(out, Compute.addScalar(ctx.read(feeds()[0]), 1.0));
         }
+    }
 
-        @Override
-        public List<String> outputs() {
-            return List.of("bonus");
+    /** A business module: nodes wired by stream references, outputs exposed. */
+    @ColumnComponent
+    static final class FeatureModule extends ColumnModule {
+        final ColumnStream userId = input("user_id");
+        final FetchUserNode fetch = add(new FetchUserNode(userId));
+        final ScoreNode score = add(new ScoreNode(fetch.out));
+        final HighScoreMaskNode mask = add(new HighScoreMaskNode(score.out));
+        final FilterHighScoresNode filter = add(
+                new FilterHighScoresNode(score.out, mask.out));
+        final AggregateNode aggregate = add(new AggregateNode(score.out));
+        final FailingNode failing = add(new FailingNode());
+        final UseRecoveredNode recovered = add(new UseRecoveredNode(failing.out));
+        final UnitConvertNode li = add(new UnitConvertNode(fetch.out, "user_li", 10.0));
+        final ScaleNode weighted = add(new ScaleNode(li.out, "weighted", 2.0));
+        final BonusNode bonus = add(new BonusNode(weighted.out));
+
+        {
+            output(fetch.out, score.out, mask.out, filter.out,
+                    aggregate.total, aggregate.mean, aggregate.max,
+                    failing.out, recovered.out, li.out, weighted.out, bonus.out);
         }
+    }
 
-        @Override
-        public void execute(ColumnContext ctx) {
-            ctx.output("bonus", Compute.addScalar(ctx.input("weighted"), 1.0));
+    /** A module with an unused branch, used to demonstrate pruning. */
+    static final class PruneModule extends ColumnModule {
+        final ColumnStream userId = input("user_id");
+        final FetchUserNode fetch = add(new FetchUserNode(userId));
+        final ScoreNode score = add(new ScoreNode(fetch.out));
+        final HighScoreMaskNode unused = add(new HighScoreMaskNode(score.out));
+
+        {
+            output(score.out, unused.out);
         }
     }
 
     // ─────────────────────────────────────────────────────────────────────
-    // Section 3: DAG timeout demo
+    // DAG timeout demo
     // ─────────────────────────────────────────────────────────────────────
 
     static final class SlowDagNode extends io.lark.dag.Node {
@@ -268,30 +229,21 @@ public final class LaryDemo {
 
     public static void main(String[] args) {
         System.out.println("SIMD: " + Simd.summary());
-        businessNodeDemo();
-        pruningDemo();
+        businessModuleDemo();
+        pruningAndCycleDemo();
         tensorOpDemo();
         timeoutDemo();
         System.out.println("\nDemo complete. Business code never touched ComputeNode/ComputeGraph.");
     }
 
-    private static void businessNodeDemo() {
-        System.out.println("\n=== 1. Business ColumnNode pipeline ===");
+    private static void businessModuleDemo() {
+        System.out.println("\n=== 1. Business module / stream pipeline ===");
 
         AtomicInteger fallbackEvents = new AtomicInteger();
-        try (NodePipeline pipeline = new NodePipeline(4)) {
-            pipeline.addNodes(
-                    new FetchUserNode(),
-                    new ScoreNode(),
-                    new HighScoreMaskNode(),
-                    new FilterHighScoresNode(),
-                    new AggregateNode(),
-                    new FailingNode(),
-                    new UseRecoveredNode(),
-                    new UnitConvertNode("user_to_li", "user", "user_li", 10.0),
-                    new ScaleNode("weighted", "user_li", "weighted", 2.0));
-            // Spring-style discovery: @ColumnComponent BonusNode in this package.
+        try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
+            // Spring-style @ColumnComponent discovery.
             pipeline.scan("io.lark.examples");
+            FeatureModule feature = pipeline.module(FeatureModule.class);
             pipeline.setMonitor(event -> {
                 if ("node.fallback".equals(event.action())) {
                     fallbackEvents.incrementAndGet();
@@ -303,12 +255,12 @@ public final class LaryDemo {
             for (int i = 1; i <= 6; i++) {
                 rows.add(Row.of(Cell.of(i)));
             }
-            pipeline.feed(FeedStream.of(List.of("user_id"), rows));
+            pipeline.feed(FeedStream.of(feature.userId, rows));
             pipeline.compute();
 
-            List<Row> scoreRows = pipeline.fetch(
-                    FetchStream.of("user", "score", "high_mask", "user_li", "weighted",
-                            "bonus"));
+            List<Row> scoreRows = pipeline.fetch(FetchStream.of(
+                    feature.fetch.out, feature.score.out, feature.mask.out,
+                    feature.li.out, feature.weighted.out, feature.bonus.out));
             System.out.println("user     = " + longs(scoreRows, 0));
             System.out.println("score    = " + longs(scoreRows, 1));
             System.out.println("mask     = " + longs(scoreRows, 2));
@@ -316,7 +268,7 @@ public final class LaryDemo {
             System.out.println("weighted = " + longs(scoreRows, 4));
             System.out.println("bonus    = " + longs(scoreRows, 5));
             System.out.println("high     = " + longs(pipeline.fetch(
-                    FetchStream.of("high_scores")), 0));
+                    FetchStream.of(feature.filter.out)), 0));
             System.out.println("total    = " + pipeline.fetchScalar("total"));
             System.out.println("mean     = " + pipeline.fetchScalar("mean"));
             System.out.println("max      = " + pipeline.fetchScalar("max"));
@@ -327,65 +279,42 @@ public final class LaryDemo {
         }
     }
 
-    private static void pruningDemo() {
+    private static void pruningAndCycleDemo() {
         System.out.println("\n=== 2. Graph pruning + cycle detection ===");
 
-        try (NodePipeline pipeline = new NodePipeline()) {
-            pipeline.addNodes(
-                    new FetchUserNode(),
-                    new ScoreNode(),
-                    new HighScoreMaskNode(),
-                    new FilterHighScoresNode());
-            // Only "score" is requested: high_score_mask/filter_high_scores are pruned.
-            pipeline.compile(java.util.Set.of("score"));
+        PruneModule module = new PruneModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline()) {
+            pipeline.add(module);
+            // Only score is requested; the unused mask branch is pruned.
+            pipeline.compile(Set.of(module.score.out.name()));
             System.out.println("registered nodes = " + pipeline.nodeCount()
                     + ", compiled nodes = " + pipeline.compiledNodeCount());
 
-            pipeline.feed(FeedStream.of(List.of("user_id"),
+            pipeline.feed(FeedStream.of(module.userId,
                     List.of(Row.of(Cell.of(7)))));
             pipeline.compute();
             System.out.println("pruned score = " + pipeline.fetchScalar("score"));
         }
 
-        ColumnGraph cycle = new ColumnGraph()
-                .add(new CycleNode("cycle_a", "b_out", "a_out"))
-                .add(new CycleNode("cycle_b", "a_out", "b_out"));
-        try {
-            cycle.compile(java.util.Set.of("a_out"));
-            System.out.println("cycle: NOT detected (unexpected)");
+        // Module-level cycle: A depends on B, B depends on A.
+        try (ColumnPipeline cycle = new ColumnPipeline()) {
+            cycle.add(new CycleA()).add(new CycleB());
+            cycle.compile();
+            System.out.println("module cycle: NOT detected (unexpected)");
         } catch (IllegalStateException e) {
-            System.out.println("cycle detected: " + e.getMessage());
+            System.out.println("module cycle detected: " + e.getMessage());
         }
     }
 
-    static final class CycleNode extends ColumnNode {
-        private final String name;
-        private final String input;
-        private final String output;
-
-        CycleNode(String name, String input, String output) {
-            this.name = name;
-            this.input = input;
-            this.output = output;
+    static final class CycleA extends ColumnModule {
+        {
+            dependsOn(CycleB.class);
         }
+    }
 
-        @Override
-        public String name() {
-            return name;
-        }
-
-        @Override
-        public List<String> inputs() {
-            return List.of(input);
-        }
-
-        @Override
-        public List<String> outputs() {
-            return List.of(output);
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
+    static final class CycleB extends ColumnModule {
+        {
+            dependsOn(CycleA.class);
         }
     }
 
@@ -405,7 +334,6 @@ public final class LaryDemo {
         System.out.println("FloatAddTensor   sum     = " + floats(store, "sum"));
         System.out.println("FloatMultiTensor product = " + floats(store, "product"));
 
-        // Runtime dtype dispatch: int64 + float64 -> Float64 add.
         TensorStore mixed = new TensorStore();
         mixed.set("i", Tensor.fromLongs(1, 2, 3));
         mixed.set("d", Tensor.fromDoubles(0.5, 1.5, 2.5));

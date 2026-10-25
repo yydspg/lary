@@ -347,11 +347,7 @@ public final class ComputeGraph {
 
     private void reserveOutputs(TensorStore store) {
         for (ComputeNode node : nodes) {
-            for (String output : node.op().outputs()) {
-                if (output != null && !output.isEmpty()) {
-                    store.ensureNames(List.of(output));
-                }
-            }
+            store.ensureNames(node.op().outputs());
         }
     }
 

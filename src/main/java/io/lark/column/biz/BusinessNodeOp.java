@@ -9,14 +9,22 @@ import io.lark.column.op.OpTensor;
 
 import java.util.Objects;
 
-/** Hidden adapter: business {@link ColumnNode} → tensor operation. */
+/** Hidden adapter from a business {@link ColumnNode} to the execution layer. */
 final class BusinessNodeOp extends OpTensor implements FallibleOpTensor {
 
     private final ColumnNode node;
 
     BusinessNodeOp(ColumnNode node) {
-        super("business", node.inputs(), node.outputs());
+        super("business", names(node.feeds()), names(node.fetches()));
         this.node = Objects.requireNonNull(node, "node");
+    }
+
+    private static String[] names(ColumnStream[] streams) {
+        String[] names = new String[streams.length];
+        for (int i = 0; i < streams.length; i++) {
+            names[i] = streams[i].name();
+        }
+        return names;
     }
 
     ColumnNode node() {
@@ -25,7 +33,7 @@ final class BusinessNodeOp extends OpTensor implements FallibleOpTensor {
 
     @Override
     public void compute(OpContext ctx) {
-        node.execute(new ColumnContext(ctx.store()));
+        node.compute(new ColumnContext(ctx.store()));
     }
 
     @Override

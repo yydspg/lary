@@ -15,6 +15,9 @@ public final class LongMultiTensor extends BinaryTensorOp {
     public LongMultiTensor(List<String> inputs, List<String> outputs) {
         super("long_multi", inputs, outputs, DType.INT64);
     }
+    public LongMultiTensor(String[] inputs, String[] outputs) {
+        super("long_multi", inputs, outputs, DType.INT64);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {

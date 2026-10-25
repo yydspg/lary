@@ -40,6 +40,10 @@ public final class TensorStore {
     }
 
     public void ensureNames(List<String> names) {
+        ensureNames(names.toArray(String[]::new));
+    }
+
+    public void ensureNames(String[] names) {
         synchronized (orderLock) {
             for (String name : names) {
                 if (name != null && !name.isEmpty() && !tensors.containsKey(name)) {

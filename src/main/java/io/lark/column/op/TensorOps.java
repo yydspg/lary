@@ -53,14 +53,14 @@ public final class TensorOps {
 
     private abstract static class BaseOp extends OpTensor {
         protected final String type;
-        protected final List<String> inputs;
-        protected final List<String> outputs;
+        protected final String[] inputs;
+        protected final String[] outputs;
 
         private BaseOp(OpSpec spec) {
             super(spec.type(), spec.inputs(), spec.outputs());
             this.type = spec.type();
-            this.inputs = spec.inputs();
-            this.outputs = spec.outputs();
+            this.inputs = spec.inputs().toArray(String[]::new);
+            this.outputs = spec.outputs().toArray(String[]::new);
         }
     }
 
@@ -79,7 +79,7 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            Tensor a = ctx.input(inputs.get(0));
+            Tensor a = ctx.input(inputs[0]);
             Tensor result = switch (type) {
                 case "add_scalar" -> Compute.addScalar(a, scalar);
                 case "sub_scalar" -> Compute.subScalar(a, scalar);
@@ -87,7 +87,7 @@ public final class TensorOps {
                 case "div_scalar" -> Compute.divScalar(a, scalar);
                 default -> throw new IllegalStateException("unreachable");
             };
-            ctx.set(outputs.get(0), result);
+            ctx.set(outputs[0], result);
         }
     }
 
@@ -99,7 +99,7 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            Tensor a = ctx.input(inputs.get(0));
+            Tensor a = ctx.input(inputs[0]);
             Tensor result = switch (type) {
                 case "neg" -> Compute.neg(a);
                 case "abs" -> Compute.abs(a);
@@ -109,7 +109,7 @@ public final class TensorOps {
                 case "log" -> Compute.log(a);
                 default -> throw new IllegalStateException("unreachable");
             };
-            ctx.set(outputs.get(0), result);
+            ctx.set(outputs[0], result);
         }
     }
 
@@ -121,7 +121,7 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            Tensor a = ctx.input(inputs.get(0));
+            Tensor a = ctx.input(inputs[0]);
             Tensor result = switch (type) {
                 case "sum" -> Compute.sumTensor(a);
                 case "mean" -> Compute.meanTensor(a);
@@ -131,7 +131,7 @@ public final class TensorOps {
                 case "stddev" -> Compute.stddevTensor(a);
                 default -> throw new IllegalStateException("unreachable");
             };
-            ctx.set(outputs.get(0), result);
+            ctx.set(outputs[0], result);
         }
     }
 
@@ -143,8 +143,8 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            Tensor a = ctx.input(inputs.get(0));
-            Tensor b = ctx.input(inputs.get(1));
+            Tensor a = ctx.input(inputs[0]);
+            Tensor b = ctx.input(inputs[1]);
             Tensor result = switch (type) {
                 case "gt" -> Compute.gt(a, b);
                 case "ge" -> Compute.ge(a, b);
@@ -154,7 +154,7 @@ public final class TensorOps {
                 case "neq" -> Compute.neq(a, b);
                 default -> throw new IllegalStateException("unreachable");
             };
-            ctx.set(outputs.get(0), result);
+            ctx.set(outputs[0], result);
         }
     }
 
@@ -173,7 +173,7 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            Tensor a = ctx.input(inputs.get(0));
+            Tensor a = ctx.input(inputs[0]);
             Tensor result = switch (type) {
                 case "gt_scalar" -> Compute.gtScalar(a, scalar);
                 case "ge_scalar" -> Compute.geScalar(a, scalar);
@@ -183,7 +183,7 @@ public final class TensorOps {
                 case "neq_scalar" -> Compute.neqScalar(a, scalar);
                 default -> throw new IllegalStateException("unreachable");
             };
-            ctx.set(outputs.get(0), result);
+            ctx.set(outputs[0], result);
         }
     }
 
@@ -195,10 +195,10 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            ctx.set(outputs.get(0), Compute.select(
-                    ctx.input(inputs.get(0)),
-                    ctx.input(inputs.get(1)),
-                    ctx.input(inputs.get(2))));
+            ctx.set(outputs[0], Compute.select(
+                    ctx.input(inputs[0]),
+                    ctx.input(inputs[1]),
+                    ctx.input(inputs[2])));
         }
     }
 
@@ -210,9 +210,9 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            ctx.set(outputs.get(0), Compute.filter(
-                    ctx.input(inputs.get(0)),
-                    ctx.input(inputs.get(1))));
+            ctx.set(outputs[0], Compute.filter(
+                    ctx.input(inputs[0]),
+                    ctx.input(inputs[1])));
         }
     }
 
@@ -230,7 +230,7 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            ctx.set(outputs.get(0), Compute.cast(ctx.input(inputs.get(0)), dtype));
+            ctx.set(outputs[0], Compute.cast(ctx.input(inputs[0]), dtype));
         }
     }
 
@@ -242,7 +242,7 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            ctx.set(outputs.get(0), Compute.quantize(ctx.input(inputs.get(0))));
+            ctx.set(outputs[0], Compute.quantize(ctx.input(inputs[0])));
         }
     }
 
@@ -254,7 +254,7 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            ctx.set(outputs.get(0), Compute.dequantize(ctx.input(inputs.get(0))));
+            ctx.set(outputs[0], Compute.dequantize(ctx.input(inputs[0])));
         }
     }
 
@@ -267,9 +267,9 @@ public final class TensorOps {
         @Override
         public void compute(OpContext ctx) {
             double value = Compute.dot(
-                    ctx.input(inputs.get(0)),
-                    ctx.input(inputs.get(1)));
-            ctx.set(outputs.get(0), Tensor.fromDoubles(value));
+                    ctx.input(inputs[0]),
+                    ctx.input(inputs[1]));
+            ctx.set(outputs[0], Tensor.fromDoubles(value));
         }
     }
 
@@ -290,7 +290,7 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            ctx.set(outputs.get(0), Compute.constant(value, dtype, size));
+            ctx.set(outputs[0], Compute.constant(value, dtype, size));
         }
     }
 
@@ -302,8 +302,8 @@ public final class TensorOps {
 
         @Override
         public void compute(OpContext ctx) {
-            String input = inputs.get(0);
-            String output = outputs.get(0);
+            String input = inputs[0];
+            String output = outputs[0];
             if (input.equals(output)) {
                 return; // pure ordering anchor
             }
@@ -323,10 +323,10 @@ public final class TensorOps {
         }
     }
 
-    private static void requireInputs(List<String> inputs, int count, String op) {
-        if (inputs.size() != count) {
+    private static void requireInputs(String[] inputs, int count, String op) {
+        if (inputs.length != count) {
             throw new IllegalArgumentException(
-                    op + " requires " + count + " input(s), got " + inputs.size());
+                    op + " requires " + count + " input(s), got " + inputs.length);
         }
     }
 }

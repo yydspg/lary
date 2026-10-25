@@ -15,6 +15,9 @@ public final class LongAddTensor extends BinaryTensorOp {
     public LongAddTensor(List<String> inputs, List<String> outputs) {
         super("long_add", inputs, outputs, DType.INT64);
     }
+    public LongAddTensor(String[] inputs, String[] outputs) {
+        super("long_add", inputs, outputs, DType.INT64);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {

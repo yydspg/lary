@@ -4,20 +4,19 @@
 package io.lark.column.biz;
 
 import java.util.List;
-import java.util.Objects;
 
-/** Explicit column-oriented fetch stream (column → row). */
-public record FetchStream(List<String> columns) {
+/** Column-oriented output bundle. */
+public record FetchStream(ColumnStream[] streams) {
 
     public FetchStream {
-        columns = List.copyOf(Objects.requireNonNull(columns, "columns"));
+        streams = streams == null ? new ColumnStream[0] : streams.clone();
     }
 
-    public static FetchStream of(String... columns) {
-        return new FetchStream(List.of(columns));
+    public static FetchStream of(ColumnStream... streams) {
+        return new FetchStream(streams);
     }
 
-    public static FetchStream of(List<String> columns) {
-        return new FetchStream(columns);
+    public List<String> names() {
+        return java.util.Arrays.stream(streams).map(ColumnStream::name).toList();
     }
 }

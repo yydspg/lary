@@ -117,16 +117,16 @@ tasks.register<JavaExec>("runOp") {
     mainClass.set("io.lark.examples.OpPipeline")
 }
 
-tasks.register<JavaExec>("runColumn") {
-    group = "application"
-    description = "Run the column feed/compute/fetch example (Vector API)."
-    classpath = sourceSets["main"].runtimeClasspath
-    mainClass.set("io.lark.examples.ColumnPipelineExample")
-}
-
 tasks.register<JavaExec>("runNodes") {
     group = "application"
-    description = "Run the business ColumnNode example (hidden OpTensor execution)."
+    description = "Run the business ColumnNode / module example."
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("io.lark.examples.BusinessNodeExample")
+}
+
+tasks.register<JavaExec>("runRisk") {
+    group = "application"
+    description = "Run the realistic payment risk-engine example."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("io.lark.examples.RiskEngineExample")
 }

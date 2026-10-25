@@ -14,11 +14,14 @@ public final class AddTensor extends OpTensor {
     public AddTensor(List<String> inputs, List<String> outputs) {
         super("add", inputs, outputs);
     }
+    public AddTensor(String[] inputs, String[] outputs) {
+        super("add", inputs, outputs);
+    }
 
     @Override
     public void compute(OpContext ctx) {
-        DType out = Compute.promote(ctx.input(inputs().get(0)).dtype(),
-                ctx.input(inputs().get(1)).dtype());
+        DType out = Compute.promote(ctx.input(inputs()[0]).dtype(),
+                ctx.input(inputs()[1]).dtype());
         typed(out).compute(ctx);
     }
 

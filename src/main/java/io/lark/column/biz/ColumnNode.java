@@ -3,58 +3,90 @@
 
 package io.lark.column.biz;
 
-import java.time.Duration;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 
 /**
- * Business unit of columnar computation.
+ * Business computation node.
  *
- * <p>Business code subclasses this and implements only {@link #name()},
- * {@link #inputs()}, {@link #outputs()} and {@link #execute(ColumnContext)}.
- * The framework compiles each business node into a hidden
- * {@code io.lark.column.exec.ComputeNode} execution node, derives dependency
- * edges from column names and runs the resulting graph.
+ * <p>No {@code name()} / {@code inputs()} / {@code outputs()} overrides: the
+ * framework generates a unique node id, inputs are {@link ColumnStream}s passed
+ * to the constructor, and outputs are {@link ColumnStream}s created with
+ * {@link #output(String)}. Dependencies are class/stream references, not node
+ * names.
  *
- * <p>Inputs that are produced by another registered business node create an
- * implicit dependency edge; inputs without a producer are treated as feed
- * columns. {@link #fallback} gives the node a chance to produce a degraded
- * result when execution fails.
+ * <p>Feeds and fetches are exposed as arrays because their arity is fixed once
+ * the node is constructed.
+ *
+ * <pre>{@code
+ * final class ScoreNode extends ColumnNode {
+ *     final ColumnStream out = output("score");
+ *
+ *     ScoreNode(ColumnStream feed) {
+ *         super(feed);
+ *     }
+ *
+ *     public void compute(ColumnContext ctx) {
+ *         ctx.write(out, Compute.mulScalar(ctx.read(feeds()[0]), 2.0));
+ *     }
+ * }
+ * }</pre>
  */
 public abstract class ColumnNode {
 
-    /** Unique business node name. */
-    public abstract String name();
+    private final String id = NodeIds.next(getClass());
+    private final ColumnStream[] feeds;
+    private final List<ColumnStream> fetchBuilder = new ArrayList<>();
+    private ColumnStream[] fetches;
 
-    /** Columns this node reads. */
-    public List<String> inputs() {
-        return List.of();
+    protected ColumnNode(ColumnStream... feeds) {
+        this.feeds = feeds == null ? new ColumnStream[0] : feeds;
+        for (ColumnStream feed : this.feeds) {
+            Objects.requireNonNull(feed, "feed stream");
+        }
     }
 
-    /** Columns this node writes. */
-    public List<String> outputs() {
-        return List.of();
+    public final String id() {
+        return id;
     }
 
-    /** Where a business node input column comes from. */
-    public ColumnSource inputSource(String column) {
-        return ColumnSource.AUTO;
+    /** Fixed input streams, in constructor order. */
+    public final ColumnStream[] feeds() {
+        return feeds;
     }
 
-    /** Business computation. Blocking calls are fine. */
-    public abstract void execute(ColumnContext ctx);
+    /** Declared output streams, in declaration order. */
+    public final ColumnStream[] fetches() {
+        if (fetches == null) {
+            fetches = fetchBuilder.toArray(ColumnStream[]::new);
+        }
+        return fetches;
+    }
+
+    /** Declare an output stream; call from a field initializer or constructor. */
+    protected final ColumnStream output(String name) {
+        ColumnStream stream = new ColumnStream(name, this);
+        fetchBuilder.add(stream);
+        fetches = null;
+        return stream;
+    }
+
+    /** Business computation; read/write streams via {@link ColumnContext}. */
+    public abstract void compute(ColumnContext ctx);
 
     /**
-     * Optional degradation hook invoked when {@link #execute} fails.
+     * Optional degradation hook invoked when {@link #compute} fails.
      *
-     * @return {@code true} if a usable degraded result was written into the
-     *     context
+     * @return {@code true} if a usable degraded result was written
      */
     public boolean fallback(ColumnContext ctx, Throwable error) {
         return false;
     }
 
-    /** Optional per-node deadline (reserved for the execution deadline layer). */
-    public Duration timeout() {
-        return Duration.ZERO;
+    @Override
+    public String toString() {
+        return id + Arrays.toString(fetches());
     }
 }

@@ -15,6 +15,9 @@ public final class IntAddTensor extends BinaryTensorOp {
     public IntAddTensor(List<String> inputs, List<String> outputs) {
         super("int_add", inputs, outputs, DType.INT32);
     }
+    public IntAddTensor(String[] inputs, String[] outputs) {
+        super("int_add", inputs, outputs, DType.INT32);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {

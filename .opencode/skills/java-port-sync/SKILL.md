@@ -69,73 +69,56 @@ test. Tests are the behavioral contract.
 | `feed_fetch.h`, `src/feed_fetch.cpp` | `Cell.java`, `Row.java`, `FeedFetch.java` |
 | `column/include/column/compute/*`, `src/compute/*` | `compute/Compute.java`, `compute/VectorOps.java` |
 | `compute/simd.h` | `Simd.java` + `compute/VectorOps.java` (`jdk.incubator.vector`) |
-| `exec/tensor_op.h`, `exec/ops*.cpp` | `src/main/java/io/lark/column/op/OpTensor.java`, `TensorOps.java`, `OpSpec.java`, `OpContext.java`, `FallibleOpTensor.java` |
-| Typed tensor ops (Java-first) | `src/main/java/io/lark/column/op/FloatAddTensor.java`, `FloatMultiTensor.java`, `FloatSubTensor.java`, `DoubleAddTensor.java`, `IntAddTensor.java`, `LongMultiTensor.java`, … |
-| `exec/exec_node.h`, `exec_node.cpp` | `src/main/java/io/lark/column/exec/ComputeNode.java` (hidden execution node) |
-| `exec/compute_graph.h`, `compute_graph.cpp` | `src/main/java/io/lark/column/exec/ComputeGraph.java` |
-| `context/execution_context.h` | `src/main/java/io/lark/column/exec/ExecutionContext.java` |
-| Business Node layer (Java-first) | `biz/ColumnNode.java`, `biz/ColumnContext.java`, `biz/ColumnGraph.java`, `biz/NodePipeline.java`, `biz/BusinessNodeOp.java` |
-| Feed/fetch streams + sources | `biz/FeedStream.java`, `biz/FetchStream.java`, `biz/ColumnSource.java` |
+| `exec/tensor_op.h`, `exec/ops*.cpp` | `op/OpTensor.java`, `TensorOps.java`, `OpSpec.java`, `OpContext.java`, `FallibleOpTensor.java` |
+| Typed tensor ops (Java-first) | `op/FloatAddTensor.java`, `FloatMultiTensor.java`, `FloatSubTensor.java`, `DoubleAddTensor.java`, `IntAddTensor.java`, `LongMultiTensor.java`, … |
+| `exec/exec_node.h`, `exec_node.cpp` | `exec/ComputeNode.java` (hidden execution node) |
+| `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
+| `context/execution_context.h` | `exec/ExecutionContext.java` |
+| Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `BusinessNodeOp.java` |
+| Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream[]`) |
 | Business transforms | `biz/ScaleNode.java`, `biz/UnitConvertNode.java` |
-| Spring-style components | `biz/ColumnComponent.java`, `biz/ColumnComponentScanner.java` |
-| `biz/module.h`, `module.cpp` | `biz/Module.java`, `biz/SubGraph.java` |
-| `biz/dsl.h`, `dsl.cpp` | `biz/ColumnDsl.java` |
-| `biz/sub_graph.h` (`ops::`) | `biz/Ops.java` |
-| `biz/pipeline.h`, `pipeline.cpp` | `biz/Pipeline.java` |
-| `biz/pipeline_compiler.h`, `pipeline_compiler.cpp` | `biz/PipelineCompiler.java` |
+| Spring-style components | `biz/ColumnComponent.java`, `biz/ColumnComponentScanner.java` (on modules) |
+| C++ `biz::Module` / `SubGraph` / DSL / `Pipeline` | **intentionally removed in Java**; replaced by `ColumnModule` + `ColumnNode` + `ColumnStream` |
 | `backend/backend.h`, `backend.cpp` | `backend/Backend.java`, `CpuBackend.java`, `BackendFactory.java` |
 | `monitor.h`, `monitor.cpp` | `monitor/RunStats.java`, `monitor/ColumnStatsCollector.java` |
 | `tests/test_column.cpp` | `TensorComputeTest.java` |
 | Tensor-op coverage | `OpTensorTest.java` |
-| Business Node coverage | `BusinessNodeTest.java` |
-| Pruning / sources / components | `GraphPruningTest.java` |
-| End-to-end demo | `src/main/java/io/lark/examples/LaryDemo.java` (`./gradlew runDemo`) |
-| `tests/test_engine.cpp` | `ExecutionGraphTest.java`, `PipelineTest.java` |
+| Module / stream / pruning / component coverage | `ModulePipelineTest.java` |
+| `tests/test_engine.cpp` | `ExecutionGraphTest.java` |
+| End-to-end demos | `examples/LaryDemo.java` (`runDemo`), `examples/RiskEngineExample.java` (`runRisk`) |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
 ## Workflow
 
-1. **Identify the delta** in the C++ implementation and tests: class/method,
-   status, event action, attribute name, validation order, executor semantics,
-   DSL grammar, dtype promotion, kernel behavior.
-2. **Port the implementation** under `src/main/java/io/lark/dag`,
-   `src/main/java/io/lark/column` or `src/main/java/io/lark/metric`. Keep public
-   names and semantics aligned; do not introduce new dependencies beyond
-   JDK 25 + JUnit 5 + `jdk.incubator.vector`.
-3. **Mirror the tests** under `src/test/java/io/lark/...`. Port the assertion,
-   not just the happy path.
-4. **Update examples/docs** if the user-facing API changed:
-   `src/main/java/io/lark/examples`, `README.md` mapping/limitations, and this
-   `SKILL.md` (mapping/invariants/verification). This is mandatory for every
-   change.
-5. **Run the Java suite** (see Verification) and report the result.
-6. **Do not modify the C++ side** unless the user explicitly asks for a
-   cross-language change.
+1. Read the matching C++ header/source and test before editing Java.
+2. Update layers in dependency order: data (`Tensor`/store) → compute →
+   `op` → `exec` → `biz` → examples/docs.
+3. Keep the business API free of `io.lark.column.exec` and
+   `io.lark.column.op` imports; `BusinessNodeOp` is the only adapter.
+4. Add or update a test for every behavior change, plus a runnable example for
+   user-facing API changes.
+5. Update `README.md` and this file in the same commit.
+6. Run the verification commands below; confirm the demo output, pruning,
+   cycle detection, fallback and stats.
 
 ## Invariants to preserve
 
 ### DAG
 
-- `NodeStatus`: PENDING, RUNNING, SUCCESS, FAILED, TIMED_OUT, FALLBACK, SKIPPED.
-- `OpStatus`: PENDING, RUNNING, SUCCESS, SKIPPED, FAILED, TIMED_OUT, FALLBACK.
-- Monitor source `"dag"`; node actions `node.start/success/failure/fallback/timeout/quarantined/skipped`;
-  op actions `op.start/end/error/fallback/timeout/quarantined/skipped`.
-- Event attributes: `type`, `status`, `started_ns`, `elapsed_ns`, `error`;
-  timeout events also carry `timeout_ms`, `consecutive_timeouts`,
-  `total_timeouts`, `quarantined`, and optionally `quarantine_until_ns`.
-- Failed op does not poison dependents; skipped still completes; fallback
-  `true` → FALLBACK, `false` → FAILED; timeout without fallback → TIMED_OUT;
-  batch-disable keeps timing zero.
-- Timeout behavior: interrupt the worker, invoke business fallback, then
-  quarantine on `maxConsecutiveTimeouts` (`TimeoutTracker`, keyed by node
-  type / op name) or abort the run when `TimeoutAction.ABORT_GRAPH` is set.
-  Graph deadline is `TimeoutPolicy.graphTimeout`.
-- Validation: unknown type, duplicate id, missing dependency, self-dependency,
-  cycle. Aspect auto-skip before `onBefore`; `onAfter` gets final status.
-- Op DSL: `id:Type -> id:Type`, `;`/newline separators, bare name means
-  id == type, reusing an id merges dependencies (fan-in).
-- Java adaptation: one virtual thread per node/op; blocking business methods;
-  `Schedule.run` is the pool-hop equivalent.
+- Node status transitions: PENDING → RUNNING → SUCCESS / FAILED /
+  TIMED_OUT, with fallback producing a degraded success and not poisoning
+  dependents.
+- Validation rejects unknown dependencies, duplicate node ids, missing
+  dependencies and cycles.
+- Independent nodes may run concurrently; dependency order and data flow are
+  preserved.
+- Timeouts interrupt the worker, record the timeout, optionally invoke
+  fallback, quarantine repeated offenders and abort the graph when configured.
+- Blocking `Node.run` / `Op.execute` bodies run on virtual threads; do not
+  reintroduce callback-style APIs.
+- Op aspects may skip an op without failing the graph; async execution still
+  completes the graph.
+- Monitoring events keep the C++ names/attributes; stats remain optional.
 
 ### Column
 
@@ -152,41 +135,37 @@ test. Tests are the behavioral contract.
 - Execution: dependency ordering, independent nodes concurrent, failed op does
   not poison dependents; placeholder replacement for forward references;
   duplicate column producer / duplicate write / cycle rejection.
-- Business API: `ColumnNode` + `ColumnContext` only. Each business node is
-  compiled to a hidden `exec.ComputeNode`; business code must not import
-  `io.lark.column.exec` or `io.lark.column.op`. Dependencies are derived from
-  declared input/output columns; `ColumnGraph.dependsOn` adds ordering-only
-  edges.
-- Tensor ops live in `io.lark.column.op`: `OpTensor` is the typed operation
-  abstraction (e.g. `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`);
-  `exec.ComputeNode` wraps an `OpTensor` and handles scheduling/status. Do not
-  name execution nodes `OpTensor`.
-- `ComputeNode` status: PENDING, SUCCESS, FAILED, FALLBACK. A business
-  `ColumnNode.fallback` success yields FALLBACK; the failure is still visible
-  through the hidden node's error.
-- `ColumnGraph.compile` rejects duplicate node names, duplicate column
-  producers, unknown explicit dependencies, self-dependencies and cycles.
-- Input provenance is explicit: `ColumnSource.AUTO` (producer if present, else
-  feed), `FEED` (row data only), `NODE` (must have a producer). Compilation
-  rejects `FEED` columns produced by a node and `NODE` columns without a
-  producer; `NodePipeline.compute` rejects missing required feed columns.
-- `FeedStream` and `FetchStream` are the explicit row-in / row-out boundaries.
+- Business API: `ColumnNode` + `ColumnContext` + `ColumnStream` +
+  `ColumnModule` + `ColumnPipeline`. Node ids are generated; there is no
+  `name()`/`inputs()`/`outputs()` override. Inputs are constructor stream
+  references; outputs are `output("name")` fields.
+- Data dependency is class/stream-reference based (`new BNode(a.out)`), never
+  node-name based. Node `feeds()`/`fetches()` are arrays.
+- `ColumnModule` groups nodes and exposes `inputs()`, `outputs()`, `nodes()`,
+  `dependencies()` as arrays. Modules depend on modules with
+  `dependsOn(OtherModule.class)`; module cycles are rejected.
+- `FeedStream` / `FetchStream` are the row-in / row-out boundaries and carry
+  `ColumnStream[]`. Missing required feed columns are rejected before compute.
 - Built-in business transforms: `ScaleNode` (weight) and `UnitConvertNode`
   (factor, e.g. fen → li).
-- `@ColumnComponent` + `NodePipeline.scan(package)` provide Spring-style
-  discovery without a Spring dependency; classes need a no-arg constructor.
-- Graph pruning: `ColumnGraph.compile(requiredOutputs)` keeps only the
-  transitive producers of requested columns; `NodePipeline.compile(Set)` and
-  `run(FeedStream, FetchStream)` use it. Cycles are detected on the full graph
-  even when a cyclic branch would be pruned.
-- `NodePipeline.nodeCount()` is registered nodes; `compiledNodeCount()` is the
-  pruned execution graph size.
+- `@ColumnComponent` marks modules; `ColumnPipeline.scan(package)` discovers
+  them without a Spring dependency. Modules need a no-arg constructor.
+- Graph pruning: `ColumnPipeline.compile(requiredOutputs)` keeps the transitive
+  producers of requested module outputs; `run(FeedStream, FetchStream)` prunes
+  before execution. Module cycles and node-graph cycles are always detected,
+  even in a pruned branch.
+- `ColumnPipeline.nodeCount()` is registered nodes; `compiledNodeCount()` is
+  the pruned execution graph size.
+- Tensor ops live in `io.lark.column.op`: `OpTensor` is the typed operation
+  abstraction (e.g. `FloatAddTensor`, `FloatMultiTensor`); it stores
+  inputs/outputs as arrays. `exec.ComputeNode` wraps an `OpTensor` and handles
+  scheduling/status. Do not name execution nodes `OpTensor`.
+- `ComputeNode` status: PENDING, SUCCESS, FAILED, FALLBACK. A business
+  `ColumnNode.fallback` success yields FALLBACK.
 - Monitoring source `"column"`; phase events `feed.start/end`,
   `compute.start/end`, `fetch.start/end`; node events
   `node.start/end/error/fallback`; `module.end` with `node_count`;
   `cpu.pressure` with `pool`, `utilization`, `busy_ns`, `wall_ns`, `workers`.
-- DSL: same operators/precedence, literal folding into `*_scalar`, functions
-  select/filter/cast/dot/quantize/dequantize and the unary/reduce set.
 - Vector API: use `jdk.incubator.vector` for element-wise arithmetic, scalar
   broadcast, comparisons, reductions and unary ops. Compile/test/run with
   `--add-modules jdk.incubator.vector`.
@@ -201,7 +180,7 @@ JAVA_HOME=/path/to/jdk-25 ./gradlew clean test
 JAVA_HOME=/path/to/jdk-25 ./gradlew runDemo
 JAVA_HOME=/path/to/jdk-25 ./gradlew runSimple runOp
 JAVA_HOME=/path/to/jdk-25 ./gradlew runNodes
-JAVA_HOME=/path/to/jdk-25 ./gradlew runColumn
+JAVA_HOME=/path/to/jdk-25 ./gradlew runRisk
 ```
 
 Use JDK 25. If Gradle cannot find it, set `org.gradle.java.installations.paths`

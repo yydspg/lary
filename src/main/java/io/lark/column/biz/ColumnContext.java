@@ -8,12 +8,7 @@ import io.lark.column.TensorStore;
 
 import java.util.Objects;
 
-/**
- * Business-facing view of the column store.
- *
- * <p>Business nodes read input columns and write output columns through this
- * context. They never see execution-layer types such as {@code OpTensor}.
- */
+/** Business-facing stream read/write view. */
 public final class ColumnContext {
 
     private final TensorStore store;
@@ -22,18 +17,16 @@ public final class ColumnContext {
         this.store = Objects.requireNonNull(store, "store");
     }
 
-    /** Read an input column; throws when it is absent. */
-    public Tensor input(String name) {
-        return store.get(name);
+    public Tensor read(ColumnStream stream) {
+        return store.get(stream.name());
     }
 
-    public boolean has(String name) {
-        return store.has(name);
+    public boolean has(ColumnStream stream) {
+        return store.has(stream.name());
     }
 
-    /** Write/replace an output column. */
-    public void output(String name, Tensor tensor) {
-        store.set(name, tensor);
+    public void write(ColumnStream stream, Tensor tensor) {
+        store.set(stream.name(), tensor);
     }
 
     /** Advanced escape hatch for custom tensor plumbing. */

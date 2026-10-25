@@ -7,10 +7,10 @@ column engine originally developed in the C++ **lark** repository.
   code, Node / Op layers, aspects, registries, KV + arrow DSL, statistics, and
   optional timeout / cancellation with business fallback and repeated-timeout
   quarantine.
-- **Column engine**: feed → compute → fetch, a business `ColumnNode` API,
-  typed tensor operations (`OpTensor`, `FloatAddTensor`, `FloatMultiTensor`, …),
-  hidden `ComputeNode` execution nodes, multi-dtype tensors, Q8_0 quantization,
-  declarative DSL modules, monitoring.
+- **Column engine**: feed → compute → fetch, a business `ColumnNode` /
+  `ColumnModule` / `ColumnStream` API, typed tensor operations (`OpTensor`,
+  `FloatAddTensor`, `FloatMultiTensor`, …), hidden `ComputeNode` execution nodes,
+  multi-dtype tensors, Q8_0 quantization and monitoring.
 - **SIMD**: column arithmetic, scalar broadcasting, comparisons, reductions and
   unary kernels use **`jdk.incubator.vector`**.
 
@@ -70,13 +70,13 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 ./gradlew runDemo      # end-to-end layered demo (recommended)
 ./gradlew runSimple    # DAG Node layer
 ./gradlew runOp        # DAG Op + Aspect layer
-./gradlew runNodes     # column business ColumnNode API (hidden ComputeNode)
-./gradlew runColumn    # declarative column feed/compute/fetch + Vector API
+./gradlew runNodes     # column module / stream business API
+./gradlew runRisk      # realistic payment risk-engine example
 ```
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
-`TimeoutTest`, `BusinessNodeTest`, `OpTensorTest` and `GraphPruningTest`.
+`TimeoutTest`, `ModulePipelineTest` and `OpTensorTest`.
 
 ## End-to-end demo
 
@@ -86,12 +86,12 @@ The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 
 `LaryDemo` demonstrates the complete layering:
 
-1. **Business layer** — `ColumnNode` graph with automatic column dependency
-   wiring, `FeedStream`/`FetchStream`, weight and unit-conversion nodes,
-   `@ColumnComponent` scanning, a deliberate failure + fallback, aggregate
-   outputs and run statistics.
+1. **Business layer** — `ColumnNode` / `ColumnModule` / `ColumnStream` graph
+   with constructor-injected streams, `FeedStream`/`FetchStream`, weight and
+   unit-conversion nodes, `@ColumnComponent` module scanning, a deliberate
+   failure + fallback, aggregate outputs and run statistics.
 2. **Graph pruning / cycle detection** — compile only the branch needed for
-   `score`, then detect a cyclic business graph.
+   `score`, then detect a cyclic module graph.
 3. **Tensor-op layer** — direct `FloatAddTensor` / `FloatMultiTensor` execution
    and runtime dtype dispatch through `TensorOps.create`.
 4. **DAG timeout** — a slow node is interrupted, `Node.fallback` produces a
@@ -102,7 +102,7 @@ Sample output:
 ```text
 SIMD: JDK Vector API (jdk.incubator.vector) {double=2, float=4, int=4, long=2}
 
-=== 1. Business ColumnNode pipeline ===
+=== 1. Business module / stream pipeline ===
 user     = [110, 120, 130, 140, 150, 160]
 score    = [220, 240, 260, 280, 300, 320]
 mask     = [0, 0, 1, 1, 1, 1]
@@ -117,9 +117,9 @@ fallback output = 8.0
 fallback events = 1
 
 === 2. Graph pruning + cycle detection ===
-registered nodes = 4, compiled nodes = 2
+registered nodes = 3, compiled nodes = 2
 pruned score = 340.0
-cycle detected: ColumnGraph: dependency cycle detected
+module cycle detected: ColumnPipeline: module dependency cycle detected
 
 === 3. Typed OpTensor layer ===
 FloatAddTensor   sum     = [11.0, 22.0, 33.0]
@@ -131,6 +131,68 @@ status    = fallback
 fallback  = true
 elapsed   = 87ms
 ```
+
+## Realistic example — payment risk engine
+
+```sh
+./gradlew runRisk
+```
+
+`RiskEngineExample` models a production-shaped pipeline with three modules:
+
+1. **TransactionFeatureModule** — raw transactions → `amount_yuan`,
+   `txn_velocity`, `chargeback_ratio`, `weighted_amount` and `merchant_tier`.
+   Merchant enrichment simulates an external service; if it fails, a
+   conservative default tier is published through `ColumnNode.fallback`.
+2. **RiskScoreModule** — `dependsOn(TransactionFeatureModule.class)`; computes
+   `risk_score`, `risk_level` (LOW / MEDIUM / HIGH), `high_mask` and `approved`.
+3. **RiskReportModule** — `dependsOn(RiskScoreModule.class)`; aggregates total,
+   mean, max and high-risk count.
+
+The modules are composed with constructor data wiring and class-reference
+dependencies:
+
+```java
+TransactionFeatureModule features = new TransactionFeatureModule();
+RiskScoreModule risk = new RiskScoreModule(features);
+RiskReportModule report = new RiskReportModule(risk);
+
+try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
+    pipeline.add(features).add(risk).add(report);
+    pipeline.compile();
+    pipeline.feed(FeedStream.of(new ColumnStream[]{
+            features.userId, features.amountFen, features.txnCount,
+            features.chargebackCount, features.merchantId
+    }, rows));
+    pipeline.compute();
+
+    List<Row> scored = pipeline.fetch(FetchStream.of(
+            features.userId, features.amount.out, risk.score.out,
+            risk.band.level, risk.approval.out, features.tier.out));
+    System.out.println(pipeline.fetchScalar("total_risk_score"));
+}
+```
+
+Sample output:
+
+```text
+=== payment risk engine ===
+user      amount_yuan   risk_score    level   approved   tier
+1001          1200.00       486.67        1          1      1
+1002          8500.00      3418.33        2          0      1
+1003            50.00        25.42        0          1      1
+1004         25000.00     10024.17        2          0      1
+1005           450.00       186.25        0          1      1
+1006         15000.00      6028.33        2          0      1
+total_risk_score = 20169.166666666664
+mean_risk_score  = 3361.5277777777774
+max_risk_score   = 10024.166666666666
+high_risk_count  = 3.0
+fallback events  = 1
+```
+
+The run also emits per-module timing and CPU-pressure statistics through the
+same monitoring layer used by `LaryDemo`.
 
 ## DAG quick start
 
@@ -197,114 +259,122 @@ try (OpExecutor executor = new OpExecutor()) {
 }
 ```
 
-## Column engine — business Node API (recommended)
+## Column engine — modules, nodes and streams
 
-Business code subclasses `ColumnNode` and implements only `name()`,
-`inputs()`, `outputs()` and `execute(ColumnContext)`. The framework derives
-dependency edges from column names and compiles every business node into a
-hidden `ComputeNode` execution node — business code never constructs or sees
-one.
+Business nodes have **no `name()` / `inputs()` / `outputs()` overrides**:
+the framework generates a unique node id, inputs are `ColumnStream` references
+passed to the constructor, and outputs are `ColumnStream` fields.
 
 ```java
 final class ScoreNode extends ColumnNode {
-    public String name() { return "score"; }
-    public List<String> inputs() { return List.of("user"); }
-    public List<String> outputs() { return List.of("score"); }
+    final ColumnStream out = output("score");
 
-    public void execute(ColumnContext ctx) {
-        ctx.output("score", Compute.mulScalar(ctx.input("user"), 2.0));
+    ScoreNode(ColumnStream user) {
+        super(user);
+    }
+
+    public void compute(ColumnContext ctx) {
+        ctx.write(out, Compute.mulScalar(ctx.read(feeds()[0]), 2.0));
     }
 }
-
-try (NodePipeline pipeline = new NodePipeline()) {
-    pipeline.addNode(new FetchUserNode())
-            .addNode(new ScoreNode());
-    pipeline.compile();
-
-    pipeline.feed(List.of("user_id"), rows);
-    pipeline.compute();
-    List<Row> scores = pipeline.fetch(List.of("score"));
-}
 ```
 
-- Dependencies are implicit: if B reads a column A writes, A runs first.
-- `pipeline.dependsOn("b", "a")` adds ordering without data flow.
-- `ColumnGraph.compile()` rejects duplicate producers, unknown dependencies,
-  self-dependencies and cycles.
-- `ColumnNode.fallback(ColumnContext, Throwable)` produces a degraded result on
-  failure; the framework sets the hidden ComputeNode status to `FALLBACK`.
-- `ComputeNode` is the execution-layer node that actually runs the business
-  adapter. `OpTensor` is the typed tensor-operation layer it wraps — e.g.
-  `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`.
-  Neither is part of the public business API.
-
-### Feed / fetch streams and input sources
-
-```java
-pipeline.feed(FeedStream.of(List.of("user_id"), rows));
-List<Row> out = pipeline.fetch(FetchStream.of("score"));
-pipeline.run(FeedStream.of(List.of("user_id"), rows),
-             FetchStream.of("score"));
-```
-
-Each input can declare its provenance:
-
-```java
-@Override
-public ColumnSource inputSource(String column) {
-    return ColumnSource.FEED;   // or NODE / AUTO (default)
-}
-```
-
-- `FEED` must come from row data; `NODE` must be produced by another node;
-  `AUTO` uses a producer when present, otherwise feed.
-- Compilation rejects `FEED` columns that a node produces, and `NODE` columns
-  with no producer.
-- `NodePipeline.compute()` rejects missing required feed columns before running.
-- `FeedStream` and `FetchStream` make the row-in / row-out boundaries explicit.
-
-Built-in business transformations:
-
-```java
-pipeline.addNodes(
-    new ScaleNode("weighted", "score", "weighted_score", 0.3),
-    new UnitConvertNode("fen_to_li", "amount_fen", "amount_li", 10.0));
-```
-
-Spring-style components (no Spring dependency):
+A `ColumnModule` groups nodes and exposes its fetch outputs:
 
 ```java
 @ColumnComponent
-final class WeightedScoreNode extends ColumnNode { ... }
+final class FeatureModule extends ColumnModule {
+    final ColumnStream userId = input("user_id");
+    final FetchUserNode fetch = add(new FetchUserNode(userId));
+    final ScoreNode score = add(new ScoreNode(fetch.out));
 
-pipeline.scan("com.example.features");
+    {
+        output(fetch.out, score.out);
+    }
+}
 ```
 
-`ColumnComponentScanner` scans class directories and jars and instantiates
-annotated nodes with a no-argument constructor.
+Wire and run the module:
+
+```java
+FeatureModule feature = new FeatureModule();
+try (ColumnPipeline pipeline = new ColumnPipeline()) {
+    pipeline.add(feature);                 // or pipeline.scan("com.example")
+    pipeline.compile();
+
+    pipeline.feed(FeedStream.of(feature.userId, rows));
+    pipeline.compute();
+
+    List<Row> out = pipeline.fetch(FetchStream.of(feature.score.out));
+}
+```
+
+- Dependencies are **class/stream references** (`new ScoreNode(fetch.out)`),
+  never node names.
+- `ColumnNode.feeds()` / `fetches()` return arrays. `ColumnModule.nodes()`,
+  `inputs()`, `outputs()` and `dependencies()` also return arrays; arity is
+  fixed after construction.
+- A module depends on another module with
+  `dependsOn(OtherModule.class)`; module cycles are rejected.
+- `ColumnPipeline` builds the hidden `ComputeNode` graph internally; the
+  business API never imports execution or tensor-op internals.
+
+### Feed / fetch streams
+
+`FeedStream` is the row-data input boundary; `FetchStream` is the output
+boundary. Both carry `ColumnStream[]`:
+
+```java
+pipeline.feed(FeedStream.of(feature.userId, rows));
+List<Row> out = pipeline.fetch(FetchStream.of(feature.score.out));
+pipeline.run(FeedStream.of(feature.userId, rows),
+             FetchStream.of(feature.score.out));
+```
+
+Missing required feed columns are rejected before execution.
+
+### Built-in business transforms
+
+```java
+UnitConvertNode li = new UnitConvertNode(fetch.out, "amount_li", 10.0); // fen → li
+ScaleNode weighted = new ScaleNode(li.out, "weighted", 0.3);           // weight
+```
+
+### Spring-style modules
+
+`@ColumnComponent` marks a `ColumnModule`; the scanner supports class
+directories and jars, and needs no Spring dependency:
+
+```java
+@ColumnComponent
+final class RiskModule extends ColumnModule { ... }
+
+pipeline.scan("com.example.features");
+RiskModule risk = pipeline.module(RiskModule.class);
+```
 
 ### Graph pruning and cycle detection
 
 ```java
-// Only keep nodes needed to produce "score"; unused branches are pruned.
+// Keep only nodes needed for the "score" module output.
 pipeline.compile(Set.of("score"));
 
-// Or prune and run in one call.
-pipeline.run(FeedStream.of(names, rows), FetchStream.of("score"));
+// Or prune as part of run.
+pipeline.run(FeedStream.of(feature.userId, rows),
+             FetchStream.of(feature.score.out));
 ```
 
-- `ColumnGraph.compile(requiredOutputs)` keeps the transitive producers of the
-  requested columns and drops unreachable nodes.
-- `FeedStream`/`FetchStream` `run(...)` prunes before execution.
-- Cycles are always detected on the **full** registered graph, even if the
-  cyclic branch would be pruned. Duplicate producers, self-dependencies and
-  unknown explicit `dependsOn` targets are also rejected.
-- `NodePipeline.compiledNodeCount()` reports the pruned node count;
-  `nodeCount()` reports all registered nodes.
+- `compile(requiredOutputs)` keeps the transitive producers of requested
+  module outputs and drops unreachable branches.
+- Module dependency cycles and node graph cycles are both detected.
+- The full graph is validated before pruning, so a cyclic unused branch still
+  fails compilation.
+- `nodeCount()` is total registered nodes; `compiledNodeCount()` is the pruned
+  execution graph size.
 
 ### Typed tensor operations
 
-The operation layer is deliberately separate from execution nodes:
+The operation layer is separate from execution nodes:
 
 ```java
 TensorStore store = new TensorStore();
@@ -318,38 +388,12 @@ OpTensor mul = new FloatMultiTensor(List.of("a", "b"), List.of("product"));
 mul.compute(new OpContext(store));
 ```
 
-`TensorOps.create(spec)` uses runtime dtype promotion to choose the typed
-implementation (`AddTensor` → `IntAddTensor` / `LongAddTensor` /
-`FloatAddTensor` / `DoubleAddTensor`); `MultiTensor`, `SubTensor` and
-`DivTensor` follow the same pattern.
+`OpTensor` stores inputs/outputs as arrays. `TensorOps.create(spec)` uses
+runtime dtype promotion to choose the typed implementation (`AddTensor` →
+`IntAddTensor` / `LongAddTensor` / `FloatAddTensor` / `DoubleAddTensor`).
 
-`Simd.summary()` reports the active Vector API species. The SIMD-backed kernels
-live in `io.lark.column.compute.VectorOps`.
-
-## Column engine — declarative Module / DSL API (advanced)
-
-The declarative API remains available for prebuilt kernel graphs:
-
-```java
-Module feature = new Module("feature");
-feature.input("x").input("y")
-        .output("score").output("total")
-        .fromDsl(
-                "score = x * 2 + y\n"
-                        + "total = sum(score)\n");
-
-try (Pipeline pipeline = new Pipeline()) {
-    pipeline.addModule(feature);
-    pipeline.compile();
-
-    pipeline.feed(List.of("x", "y"), List.of(
-            Row.of(Cell.of(1), Cell.of(10)),
-            Row.of(Cell.of(5), Cell.of(50))));
-    pipeline.compute();
-
-    double total = pipeline.fetchScalar("total");
-}
-```
+`Simd.summary()` reports the active Vector API species. SIMD kernels live in
+`io.lark.column.compute.VectorOps`.
 
 ## Column architecture
 
@@ -359,7 +403,7 @@ try (Pipeline pipeline = new Pipeline()) {
 | `io.lark.column.compute` | `Compute`, `VectorOps` |
 | `io.lark.column.op` | `OpTensor`, `OpContext`, `OpSpec`, `TensorOps`; typed ops: `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`, `LongMultiTensor`, … |
 | `io.lark.column.exec` | `ComputeNode`, `ComputeGraph`, `ExecutionContext` — hidden execution layer |
-| `io.lark.column.biz` | `ColumnNode`, `ColumnContext`, `ColumnGraph`, `NodePipeline`, `ColumnSource`, `FeedStream`, `FetchStream`, `ScaleNode`, `UnitConvertNode`, `ColumnComponent`, `ColumnComponentScanner` (business API); `Module`, `SubGraph`, `ColumnDsl`, `Ops`, `Pipeline`, `PipelineCompiler` (declarative API) |
+| `io.lark.column.biz` | `ColumnNode`, `ColumnContext`, `ColumnStream`, `ColumnModule`, `ColumnPipeline`, `FeedStream`, `FetchStream`, `ScaleNode`, `UnitConvertNode`, `ColumnComponent`, `ColumnComponentScanner` — business API |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |
 

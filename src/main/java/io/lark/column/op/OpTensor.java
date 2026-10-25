@@ -14,9 +14,13 @@ import java.util.Objects;
  * execution-graph node: {@code io.lark.column.exec.ComputeNode} wraps an
  * {@code OpTensor} and handles scheduling/dependencies/status.
  *
+ * <p>Inputs/outputs are stored as arrays because the arity is fixed once the
+ * operation is constructed. This avoids list allocation/iteration on the hot
+ * execution path.
+ *
  * <p>Layering:
  * <pre>
- *   business : ColumnNode / NodePipeline
+ *   business : ColumnNode / ColumnModule / ColumnPipeline
  *   execution: ComputeNode / ComputeGraph
  *   tensor op: OpTensor + FloatAddTensor / FloatMultiTensor / ...
  *   compute  : Compute / VectorOps (Vector API kernels)
@@ -26,24 +30,30 @@ import java.util.Objects;
 public abstract class OpTensor {
 
     private final String opType;
-    private final List<String> inputs;
-    private final List<String> outputs;
+    private final String[] inputs;
+    private final String[] outputs;
+
+    protected OpTensor(String opType, String[] inputs, String[] outputs) {
+        this.opType = Objects.requireNonNull(opType, "opType");
+        this.inputs = inputs == null ? new String[0] : inputs;
+        this.outputs = outputs == null ? new String[0] : outputs;
+    }
 
     protected OpTensor(String opType, List<String> inputs, List<String> outputs) {
-        this.opType = Objects.requireNonNull(opType, "opType");
-        this.inputs = inputs == null ? List.of() : List.copyOf(inputs);
-        this.outputs = outputs == null ? List.of() : List.copyOf(outputs);
+        this(opType,
+                inputs == null ? new String[0] : inputs.toArray(String[]::new),
+                outputs == null ? new String[0] : outputs.toArray(String[]::new));
     }
 
     public String opType() {
         return opType;
     }
 
-    public List<String> inputs() {
+    public String[] inputs() {
         return inputs;
     }
 
-    public List<String> outputs() {
+    public String[] outputs() {
         return outputs;
     }
 

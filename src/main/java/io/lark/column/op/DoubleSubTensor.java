@@ -15,6 +15,9 @@ public final class DoubleSubTensor extends BinaryTensorOp {
     public DoubleSubTensor(List<String> inputs, List<String> outputs) {
         super("double_sub", inputs, outputs, DType.FLOAT64);
     }
+    public DoubleSubTensor(String[] inputs, String[] outputs) {
+        super("double_sub", inputs, outputs, DType.FLOAT64);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {

@@ -15,6 +15,9 @@ public final class DoubleMultiTensor extends BinaryTensorOp {
     public DoubleMultiTensor(List<String> inputs, List<String> outputs) {
         super("double_multi", inputs, outputs, DType.FLOAT64);
     }
+    public DoubleMultiTensor(String[] inputs, String[] outputs) {
+        super("double_multi", inputs, outputs, DType.FLOAT64);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {

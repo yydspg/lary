@@ -15,6 +15,9 @@ public final class FloatMultiTensor extends BinaryTensorOp {
     public FloatMultiTensor(List<String> inputs, List<String> outputs) {
         super("float_multi", inputs, outputs, DType.FLOAT32);
     }
+    public FloatMultiTensor(String[] inputs, String[] outputs) {
+        super("float_multi", inputs, outputs, DType.FLOAT32);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {

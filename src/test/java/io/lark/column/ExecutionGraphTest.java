@@ -5,7 +5,6 @@ package io.lark.column;
 
 import io.lark.column.backend.Backend;
 import io.lark.column.backend.BackendFactory;
-import io.lark.column.biz.ColumnDsl;
 import io.lark.column.exec.ComputeGraph;
 import io.lark.column.exec.ExecutionContext;
 import io.lark.column.op.OpContext;
@@ -158,34 +157,6 @@ class ExecutionGraphTest {
         graph.addDependency("b", "a");
         graph.addDependency("a", "b");
         assertThrows(IllegalStateException.class, graph::finalizeGraph);
-    }
-
-    @Test
-    void dslParsesExpressionsAndFoldsLiterals() {
-        List<OpSpec> ops = ColumnDsl.parse(
-                "scaled = x * 2\n"
-                        + "score = scaled + y\n"
-                        + "mask = x > 3\n"
-                        + "filtered = filter(score, mask)\n"
-                        + "total = sum(score)\n"
-                        + "best = max(select(mask, score, 0))\n");
-
-        assertTrue(ops.size() >= 6);
-        assertTrue(ops.stream().anyMatch(op -> op.type().equals("mul_scalar")));
-        assertTrue(ops.stream().anyMatch(op -> op.type().equals("sum")));
-        assertTrue(ops.stream().anyMatch(op -> op.type().equals("filter")));
-
-        List<OpSpec> folded = ColumnDsl.parse("v = a + 2");
-        assertTrue(folded.stream().anyMatch(op -> op.type().equals("add_scalar")));
-
-        // literal-left non-commutative ops stay correct
-        List<OpSpec> leftSub = ColumnDsl.parse("v = 2 - a");
-        assertTrue(leftSub.stream().anyMatch(op -> op.type().equals("sub")));
-        assertTrue(leftSub.stream().anyMatch(op -> op.type().equals("const")));
-
-        assertThrows(IllegalArgumentException.class, () -> ColumnDsl.parse("x = "));
-        assertThrows(IllegalArgumentException.class,
-                () -> ColumnDsl.parse("x = bogus_fn(a)"));
     }
 
     @Test

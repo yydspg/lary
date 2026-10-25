@@ -14,11 +14,14 @@ public final class SubTensor extends OpTensor {
     public SubTensor(List<String> inputs, List<String> outputs) {
         super("sub", inputs, outputs);
     }
+    public SubTensor(String[] inputs, String[] outputs) {
+        super("sub", inputs, outputs);
+    }
 
     @Override
     public void compute(OpContext ctx) {
-        DType out = Compute.promote(ctx.input(inputs().get(0)).dtype(),
-                ctx.input(inputs().get(1)).dtype());
+        DType out = Compute.promote(ctx.input(inputs()[0]).dtype(),
+                ctx.input(inputs()[1]).dtype());
         typed(out).compute(ctx);
     }
 

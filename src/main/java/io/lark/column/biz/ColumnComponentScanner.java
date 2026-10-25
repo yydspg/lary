@@ -22,18 +22,17 @@ import java.util.stream.Stream;
 
 /**
  * Lightweight classpath scanner for {@link ColumnComponent}-annotated
- * {@link ColumnNode}s.
+ * {@link ColumnModule}s.
  *
- * <p>No Spring dependency is required. It scans class directories and jars,
- * instantiates annotated nodes through their no-argument constructor, and
- * returns them in deterministic class-name order.
+ * <p>Scans class directories and jars; instantiates annotated modules via a
+ * no-argument constructor. No Spring dependency is required.
  */
 public final class ColumnComponentScanner {
 
     private ColumnComponentScanner() {
     }
 
-    public static List<ColumnNode> scan(String... packageNames) {
+    public static List<ColumnModule> scanModules(String... packageNames) {
         if (packageNames == null || packageNames.length == 0) {
             return List.of();
         }
@@ -54,34 +53,32 @@ public final class ColumnComponentScanner {
         List<Class<?>> sorted = new ArrayList<>(classes);
         sorted.sort((left, right) -> left.getName().compareTo(right.getName()));
 
-        List<ColumnNode> nodes = new ArrayList<>();
+        List<ColumnModule> modules = new ArrayList<>();
         for (Class<?> type : sorted) {
             ColumnComponent component = type.getAnnotation(ColumnComponent.class);
             if (component == null) {
                 continue;
             }
-            if (!ColumnNode.class.isAssignableFrom(type)) {
+            if (!ColumnModule.class.isAssignableFrom(type)) {
                 throw new IllegalArgumentException(
-                        "@ColumnComponent class must extend ColumnNode: "
+                        "@ColumnComponent class must extend ColumnModule: "
                                 + type.getName());
             }
-            if (Modifier.isAbstract(type.getModifiers())
-                    || type.isInterface()) {
+            if (Modifier.isAbstract(type.getModifiers()) || type.isInterface()) {
                 throw new IllegalArgumentException(
                         "@ColumnComponent class must be concrete: " + type.getName());
             }
             try {
                 var constructor = type.getDeclaredConstructor();
                 constructor.setAccessible(true);
-                ColumnNode node = (ColumnNode) constructor.newInstance();
-                nodes.add(node);
+                modules.add((ColumnModule) constructor.newInstance());
             } catch (ReflectiveOperationException e) {
                 throw new IllegalArgumentException(
                         "Cannot instantiate @ColumnComponent " + type.getName()
                                 + " (a no-argument constructor is required)", e);
             }
         }
-        return nodes;
+        return modules;
     }
 
     private static void scanPackage(String packageName, ClassLoader loader,
@@ -158,10 +155,9 @@ public final class ColumnComponentScanner {
             return;
         }
         try {
-            Class<?> type = Class.forName(className, false, loader);
-            classes.add(type);
+            classes.add(Class.forName(className, false, loader));
         } catch (LinkageError | ClassNotFoundException ignored) {
-            // A class may reference optional dependencies; skip it.
+            // Optional dependency missing; skip.
         }
     }
 }

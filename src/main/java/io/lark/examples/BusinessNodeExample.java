@@ -6,87 +6,59 @@ package io.lark.examples;
 import io.lark.column.Cell;
 import io.lark.column.Row;
 import io.lark.column.Simd;
-import io.lark.column.Tensor;
 import io.lark.column.biz.ColumnContext;
+import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnNode;
-import io.lark.column.biz.NodePipeline;
+import io.lark.column.biz.ColumnPipeline;
+import io.lark.column.biz.ColumnStream;
+import io.lark.column.biz.FeedStream;
+import io.lark.column.biz.FetchStream;
 import io.lark.column.compute.Compute;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Business-node quick start: only {@link ColumnNode} is visible; the hidden
- * {@code OpTensor} execution layer is compiled by {@link NodePipeline}.
+ * Minimal business-node quick start: node ids are generated, streams are
+ * passed by reference, and the module exposes fetch outputs.
  *
  * <p>Run with {@code ./gradlew runNodes}.
  */
 public final class BusinessNodeExample {
 
     static final class FetchNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "fetch";
+        final ColumnStream out = output("user");
+
+        FetchNode(ColumnStream userId) {
+            super(userId);
         }
 
         @Override
-        public List<String> inputs() {
-            return List.of("user_id");
-        }
-
-        @Override
-        public List<String> outputs() {
-            return List.of("user");
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
-            ctx.output("user", Compute.addScalar(ctx.input("user_id"), 100.0));
+        public void compute(ColumnContext ctx) {
+            ctx.write(out, Compute.addScalar(ctx.read(feeds()[0]), 100.0));
         }
     }
 
     static final class ScoreNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "score";
+        final ColumnStream out = output("score");
+
+        ScoreNode(ColumnStream user) {
+            super(user);
         }
 
         @Override
-        public List<String> inputs() {
-            return List.of("user");
-        }
-
-        @Override
-        public List<String> outputs() {
-            return List.of("score");
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
-            ctx.output("score", Compute.mulScalar(ctx.input("user"), 2.0));
+        public void compute(ColumnContext ctx) {
+            ctx.write(out, Compute.mulScalar(ctx.read(feeds()[0]), 2.0));
         }
     }
 
-    static final class TotalNode extends ColumnNode {
-        @Override
-        public String name() {
-            return "total";
-        }
+    static final class FeatureModule extends ColumnModule {
+        final ColumnStream userId = input("user_id");
+        final FetchNode fetch = add(new FetchNode(userId));
+        final ScoreNode score = add(new ScoreNode(fetch.out));
 
-        @Override
-        public List<String> inputs() {
-            return List.of("score");
-        }
-
-        @Override
-        public List<String> outputs() {
-            return List.of("total");
-        }
-
-        @Override
-        public void execute(ColumnContext ctx) {
-            Tensor total = Compute.sumTensor(ctx.input("score"));
-            ctx.output("total", total);
+        {
+            output(score.out);
         }
     }
 
@@ -96,22 +68,21 @@ public final class BusinessNodeExample {
     public static void main(String[] args) {
         System.out.println("SIMD: " + Simd.summary());
 
-        try (NodePipeline pipeline = new NodePipeline(2)) {
-            pipeline.addNodes(new FetchNode(), new ScoreNode(), new TotalNode());
+        FeatureModule feature = new FeatureModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
+            pipeline.add(feature);
             pipeline.compile();
 
             List<Row> rows = new ArrayList<>();
             for (int i = 1; i <= 5; i++) {
                 rows.add(Row.of(Cell.of(i)));
             }
-
-            pipeline.feed(List.of("user_id"), rows);
+            pipeline.feed(FeedStream.of(feature.userId, rows));
             pipeline.compute();
 
-            List<Row> scores = pipeline.fetch(List.of("user", "score"));
+            List<Row> scores = pipeline.fetch(FetchStream.of(feature.score.out));
             System.out.println("scores = " + scores.stream()
-                    .map(row -> row.get(1).asLong()).toList());
-            System.out.println("total  = " + pipeline.fetchScalar("total"));
+                    .map(row -> row.get(0).asLong()).toList());
             System.out.print(pipeline.stats().summary());
         }
     }

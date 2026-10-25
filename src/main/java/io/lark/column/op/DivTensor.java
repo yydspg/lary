@@ -11,6 +11,9 @@ public final class DivTensor extends OpTensor {
     public DivTensor(List<String> inputs, List<String> outputs) {
         super("div", inputs, outputs);
     }
+    public DivTensor(String[] inputs, String[] outputs) {
+        super("div", inputs, outputs);
+    }
 
     @Override
     public void compute(OpContext ctx) {

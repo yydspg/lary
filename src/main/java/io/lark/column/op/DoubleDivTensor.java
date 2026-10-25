@@ -15,6 +15,9 @@ public final class DoubleDivTensor extends BinaryTensorOp {
     public DoubleDivTensor(List<String> inputs, List<String> outputs) {
         super("double_div", inputs, outputs, DType.FLOAT64);
     }
+    public DoubleDivTensor(String[] inputs, String[] outputs) {
+        super("double_div", inputs, outputs, DType.FLOAT64);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {

@@ -8,15 +8,23 @@ import io.lark.column.Row;
 import java.util.List;
 import java.util.Objects;
 
-/** Explicit row-oriented feed stream (row → column). */
-public record FeedStream(List<String> columns, List<Row> rows) {
+/** Row-oriented input bundle: external streams plus rows. */
+public record FeedStream(ColumnStream[] streams, List<Row> rows) {
 
     public FeedStream {
-        columns = List.copyOf(Objects.requireNonNull(columns, "columns"));
+        streams = streams == null ? new ColumnStream[0] : streams.clone();
         rows = List.copyOf(Objects.requireNonNull(rows, "rows"));
     }
 
-    public static FeedStream of(List<String> columns, List<Row> rows) {
-        return new FeedStream(columns, rows);
+    public static FeedStream of(ColumnStream stream, List<Row> rows) {
+        return new FeedStream(new ColumnStream[]{stream}, rows);
+    }
+
+    public static FeedStream of(ColumnStream[] streams, List<Row> rows) {
+        return new FeedStream(streams, rows);
+    }
+
+    public List<String> names() {
+        return java.util.Arrays.stream(streams).map(ColumnStream::name).toList();
     }
 }

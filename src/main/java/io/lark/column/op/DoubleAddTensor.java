@@ -15,6 +15,9 @@ public final class DoubleAddTensor extends BinaryTensorOp {
     public DoubleAddTensor(List<String> inputs, List<String> outputs) {
         super("double_add", inputs, outputs, DType.FLOAT64);
     }
+    public DoubleAddTensor(String[] inputs, String[] outputs) {
+        super("double_add", inputs, outputs, DType.FLOAT64);
+    }
 
     @Override
     protected Tensor apply(Tensor a, Tensor b) {
