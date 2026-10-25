@@ -10,12 +10,19 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
-/** Aggregate timing records for one column pipeline run. */
+/** Aggregate timing, shape and status records for one column pipeline run. */
 public final class RunStats {
 
     public record OpTiming(String nodeId, String opType, String module,
-                           long elapsedNanos) {
+                           long elapsedNanos, String status) {
+        /** Compatibility constructor for callers that do not track status. */
+        public OpTiming(String nodeId, String opType, String module,
+                        long elapsedNanos) {
+            this(nodeId, opType, module, elapsedNanos, "unknown");
+        }
     }
 
     public record ModuleTiming(String module, long elapsedNanos, int nodeCount) {
@@ -29,9 +36,17 @@ public final class RunStats {
     long computeElapsedNanos;
     long fetchElapsedNanos;
     int computeWorkers;
-    final List<OpTiming> ops = new ArrayList<>();
-    final List<ModuleTiming> modules = new ArrayList<>();
-    final List<CpuPressure> pressure = new ArrayList<>();
+    boolean virtualComputeThreads;
+    int feedRows;
+    int feedColumns;
+    int fetchRows;
+    int fetchColumns;
+    int computedNodes;
+    // Node completion is concurrent; queue snapshots keep the emitter off the
+    // stats lock while preserving the public List view.
+    final Queue<OpTiming> ops = new ConcurrentLinkedQueue<>();
+    final Queue<ModuleTiming> modules = new ConcurrentLinkedQueue<>();
+    final Queue<CpuPressure> pressure = new ConcurrentLinkedQueue<>();
 
     public long feedElapsedNanos() {
         return feedElapsedNanos;
@@ -47,6 +62,46 @@ public final class RunStats {
 
     public int computeWorkers() {
         return computeWorkers;
+    }
+
+    public boolean virtualComputeThreads() {
+        return virtualComputeThreads;
+    }
+
+    public int feedRows() {
+        return feedRows;
+    }
+
+    public int feedColumns() {
+        return feedColumns;
+    }
+
+    public int fetchRows() {
+        return fetchRows;
+    }
+
+    public int fetchColumns() {
+        return fetchColumns;
+    }
+
+    public int computedNodes() {
+        return computedNodes;
+    }
+
+    public long totalElapsedNanos() {
+        return feedElapsedNanos + computeElapsedNanos + fetchElapsedNanos;
+    }
+
+    public long successCount() {
+        return countStatus("success");
+    }
+
+    public long fallbackCount() {
+        return countStatus("fallback");
+    }
+
+    public long failureCount() {
+        return countStatus("failed");
     }
 
     public List<OpTiming> ops() {
@@ -66,6 +121,12 @@ public final class RunStats {
         computeElapsedNanos = 0;
         fetchElapsedNanos = 0;
         computeWorkers = 0;
+        virtualComputeThreads = false;
+        feedRows = 0;
+        feedColumns = 0;
+        fetchRows = 0;
+        fetchColumns = 0;
+        computedNodes = 0;
         ops.clear();
         modules.clear();
         pressure.clear();
@@ -74,10 +135,23 @@ public final class RunStats {
     /** Human-readable report. */
     public String summary() {
         StringBuilder sb = new StringBuilder("--- run stats ---\n");
-        sb.append("  feed   : ").append(formatNanos(feedElapsedNanos)).append('\n');
+        sb.append("  feed   : ").append(formatNanos(feedElapsedNanos))
+                .append(" (").append(feedRows).append(" rows x ")
+                .append(feedColumns).append(" cols)\n");
         sb.append("  compute: ").append(formatNanos(computeElapsedNanos))
-                .append(" (workers=").append(computeWorkers).append(")\n");
-        sb.append("  fetch  : ").append(formatNanos(fetchElapsedNanos)).append('\n');
+                .append(" (workers=").append(computeWorkers)
+                .append(virtualComputeThreads ? ", virtual" : ", platform")
+                .append(", nodes=").append(computedNodes).append(")\n");
+        sb.append("  fetch  : ").append(formatNanos(fetchElapsedNanos))
+                .append(" (").append(fetchRows).append(" rows x ")
+                .append(fetchColumns).append(" cols)\n");
+        sb.append("  total  : ").append(formatNanos(totalElapsedNanos()))
+                .append('\n');
+        if (!ops.isEmpty()) {
+            sb.append("  ops    : success=").append(successCount())
+                    .append(", fallback=").append(fallbackCount())
+                    .append(", failed=").append(failureCount()).append('\n');
+        }
 
         if (!modules.isEmpty()) {
             List<ModuleTiming> sorted = new ArrayList<>(modules);
@@ -111,12 +185,23 @@ public final class RunStats {
                 OpTiming op = sorted.get(i);
                 sb.append("    [").append(op.module()).append("] ")
                         .append(op.nodeId()).append(" (").append(op.opType())
-                        .append("): ").append(formatNanos(op.elapsedNanos()))
+                        .append('/').append(op.status()).append("): ")
+                        .append(formatNanos(op.elapsedNanos()))
                         .append('\n');
             }
         }
 
         return sb.toString();
+    }
+
+    private long countStatus(String status) {
+        long count = 0;
+        for (OpTiming op : ops) {
+            if (status.equals(op.status())) {
+                count++;
+            }
+        }
+        return count;
     }
 
     static String formatNanos(long nanos) {

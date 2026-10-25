@@ -434,7 +434,7 @@ public final class ComputeGraph {
         private final IdentityHashMap<ComputeNode, Integer> index =
                 new IdentityHashMap<>();
         private final AtomicIntegerArray pending;
-        private final ComputeNode[][] dependents;
+        private final int[][] dependentIndices;
         private final ConcurrentLinkedQueue<ComputeNode> ready =
                 new ConcurrentLinkedQueue<>();
         private final AtomicBoolean pumping = new AtomicBoolean(false);
@@ -443,7 +443,7 @@ public final class ComputeGraph {
                 ConcurrentHashMap.newKeySet();
         private final AtomicInteger remaining;
         private final CountDownLatch done = new CountDownLatch(1);
-        private final Map<String, ModuleAcc> modules = new LinkedHashMap<>();
+        private final Map<String, ModuleAcc> modules = new ConcurrentHashMap<>();
         private final AtomicLong busyNanos = new AtomicLong();
         private long execStartNanos;
 
@@ -466,15 +466,15 @@ public final class ComputeGraph {
                     outDegree[indexOf(dependency)]++;
                 }
             }
-            this.dependents = new ComputeNode[count][];
+            this.dependentIndices = new int[count][];
             for (int i = 0; i < count; i++) {
-                dependents[i] = new ComputeNode[outDegree[i]];
+                dependentIndices[i] = new int[outDegree[i]];
             }
             int[] cursor = new int[count];
             for (int i = 0; i < count; i++) {
                 for (ComputeNode dependency : nodes[i].dependencyView()) {
                     int dependencyIndex = indexOf(dependency);
-                    dependents[dependencyIndex][cursor[dependencyIndex]++] = nodes[i];
+                    dependentIndices[dependencyIndex][cursor[dependencyIndex]++] = i;
                 }
             }
 
@@ -548,18 +548,15 @@ public final class ComputeGraph {
         }
 
         private void releaseDependents(ComputeNode node) {
-            for (ComputeNode dependent : dependents[indexOf(node)]) {
-                int dependentIndex = indexOf(dependent);
+            for (int dependentIndex : dependentIndices[indexOf(node)]) {
                 if (pending.decrementAndGet(dependentIndex) == 0) {
-                    ready.add(dependent);
+                    ready.add(nodes[dependentIndex]);
                 }
             }
         }
 
         private ModuleAcc module(String name) {
-            synchronized (modules) {
-                return modules.computeIfAbsent(name, key -> new ModuleAcc());
-            }
+            return modules.computeIfAbsent(name, key -> new ModuleAcc());
         }
 
         private void completeOne() {

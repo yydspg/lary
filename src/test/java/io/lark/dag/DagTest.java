@@ -422,7 +422,10 @@ class DagTest {
             }
         }
         assertTrue(sawSkipped && sawSuccess);
+        assertEquals(1, stats.stats().successCount());
+        assertEquals(1, stats.stats().skippedCount());
         assertTrue(stats.stats().summary().contains("nodes=2"));
+        assertTrue(stats.stats().summary().contains("success=1"));
 
         Graph wide = new GraphBuilder(registry()).build(
                 new NodeDef("inc", List.of(), "a"),

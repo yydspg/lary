@@ -30,11 +30,35 @@ public final class ExecutionStats {
         return nodes;
     }
 
+    public long count(NodeStatus status) {
+        return nodes.stream().filter(node -> node.status() == status).count();
+    }
+
+    public long successCount() {
+        return count(NodeStatus.SUCCESS);
+    }
+
+    public long failureCount() {
+        return count(NodeStatus.FAILED) + count(NodeStatus.TIMED_OUT);
+    }
+
+    public long fallbackCount() {
+        return count(NodeStatus.FALLBACK);
+    }
+
+    public long skippedCount() {
+        return count(NodeStatus.SKIPPED);
+    }
+
     /** Human-readable waterfall summary ordered by start time. */
     public String summary() {
         StringBuilder sb = new StringBuilder()
                 .append("--- dag run stats (nodes=").append(nodes.size())
                 .append(", total=").append(formatNanos(totalElapsedNanos))
+                .append(", success=").append(successCount())
+                .append(", fallback=").append(fallbackCount())
+                .append(", failed=").append(failureCount())
+                .append(", skipped=").append(skippedCount())
                 .append(") ---\n");
 
         nodes.stream()

@@ -8,7 +8,6 @@ import io.lark.column.FeedFetch;
 import io.lark.column.Row;
 import io.lark.column.Tensor;
 import io.lark.column.TensorTable;
-import io.lark.column.exec.ComputeGraph;
 import io.lark.column.exec.ExecutionContext;
 import io.lark.column.monitor.ColumnStatsCollector;
 import io.lark.column.monitor.RunStats;
@@ -16,13 +15,9 @@ import io.lark.metric.CompositeMonitor;
 import io.lark.metric.Event;
 import io.lark.metric.Monitor;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -37,6 +32,12 @@ import java.util.concurrent.Executors;
  * nodes are wired exclusively through {@link ColumnStream} references. The
  * pipeline generates node ids, validates module dependencies, builds the hidden
  * execution graph and supports pruning to requested fetch streams.
+ *
+ * <p>Phase methods are fluent: {@code pipeline.addAll(a, b).compile()
+ * .feed(feed).compute();}. The pipeline is mutable and is not thread-safe;
+ * create one instance per concurrent run. Compilation produces an immutable
+ * {@code PipelinePlan}, so repeated runs with the same requested outputs reuse
+ * the graph.
  */
 public final class ColumnPipeline implements AutoCloseable {
 
@@ -52,14 +53,9 @@ public final class ColumnPipeline implements AutoCloseable {
             Runtime.getRuntime().availableProcessors());
     private boolean virtualComputeThreads;
 
-    private ComputeGraph graph = new ComputeGraph();
+    private PipelinePlan plan;
+    private List<String> planRequestedOutputs;
     private ExecutorService pool;
-    private boolean compiled;
-    private Set<String> requiredFeedColumns = Set.of();
-    private List<String> requiredFeedColumnOrder = List.of();
-    private Map<String, ColumnStream<?>> feedColumnsByName = Map.of();
-    private List<String> compiledOutputs = List.of();
-    private Set<String> compiledOutputSet = Set.of();
 
     public ColumnPipeline() {
         rebuildMonitor();
@@ -80,7 +76,26 @@ public final class ColumnPipeline implements AutoCloseable {
                     "ColumnPipeline: duplicate module type " + module.getClass().getName());
         }
         modules.add(module);
-        compiled = false;
+        plan = null;
+        planRequestedOutputs = null;
+        return this;
+    }
+
+    /** Add several modules in order. */
+    public ColumnPipeline addAll(ColumnModule... modules) {
+        Objects.requireNonNull(modules, "modules");
+        for (ColumnModule module : modules) {
+            add(module);
+        }
+        return this;
+    }
+
+    /** Add a collection of modules in iteration order. */
+    public ColumnPipeline addAll(Collection<? extends ColumnModule> modules) {
+        Objects.requireNonNull(modules, "modules");
+        for (ColumnModule module : modules) {
+            add(module);
+        }
         return this;
     }
 
@@ -145,246 +160,44 @@ public final class ColumnPipeline implements AutoCloseable {
 
     // ---- compile --------------------------------------------------------
 
-    public void compile() {
-        compile((Collection<String>) null);
+    /** Compile all module outputs and return this pipeline for fluent use. */
+    public ColumnPipeline compile() {
+        return compile((Collection<String>) null);
     }
 
     /** Prune to the typed streams in a fetch request. */
-    public void compile(FetchStream requiredOutputs) {
-        compile(requiredOutputs == null ? null : requiredOutputs.names());
+    public ColumnPipeline compile(FetchStream requiredOutputs) {
+        return compile(requiredOutputs == null ? null : requiredOutputs.names());
     }
 
     /**
      * Compile modules/nodes into the hidden execution graph.
      *
+     * <p>A failed recompile leaves the previous plan in place.
+     *
      * @param requiredOutputs module output names to keep; empty/null keeps all
      */
-    public void compile(Collection<String> requiredOutputs) {
-        for (ColumnModule module : modules) {
-            module.initialize();
+    public ColumnPipeline compile(Collection<String> requiredOutputs) {
+        List<String> requested = requiredOutputs == null || requiredOutputs.isEmpty()
+                ? null : List.copyOf(requiredOutputs);
+        if (plan != null && Objects.equals(planRequestedOutputs, requested)) {
+            return this;
         }
-        validateModuleDependencies();
-
-        Map<String, ColumnStream<?>> feedDefinitions = new LinkedHashMap<>();
-        for (ColumnModule module : modules) {
-            for (ColumnStream<?> input : module.inputs()) {
-                ColumnStream<?> previous =
-                        feedDefinitions.putIfAbsent(input.name(), input);
-                if (previous != null
-                        && !previous.definition().equals(input.definition())) {
-                    throw new IllegalArgumentException(
-                            "ColumnPipeline: feed column '" + input.name()
-                                    + "' declared with conflicting definitions");
-                }
-            }
-        }
-
-        Map<ColumnNode, ColumnModule> nodeModules = new IdentityHashMap<>();
-        Map<String, ColumnNode> producers = new LinkedHashMap<>();
-        Map<ColumnStream<?>, ColumnModule> moduleInputs = new IdentityHashMap<>();
-
-        for (ColumnModule module : modules) {
-            for (ColumnStream<?> input : module.inputs()) {
-                moduleInputs.put(input, module);
-            }
-            for (ColumnNode node : module.nodes()) {
-                if (nodeModules.put(node, module) != null) {
-                    throw new IllegalArgumentException(
-                            "ColumnPipeline: node added to multiple modules " + node.id());
-                }
-                for (ColumnStream<?> fetch : node.fetches()) {
-                    ColumnNode previous = producers.putIfAbsent(fetch.name(), node);
-                    if (previous != null && previous != node) {
-                        throw new IllegalArgumentException(
-                                "ColumnPipeline: stream '" + fetch.name()
-                                        + "' produced by both " + previous.id()
-                                        + " and " + node.id());
-                    }
-                }
-            }
-        }
-
-        Map<ColumnNode, List<ColumnNode>> deps = new IdentityHashMap<>();
-        Set<String> neededFeedColumns = new LinkedHashSet<>();
-        for (ColumnNode node : nodeModules.keySet()) {
-            deps.put(node, new ArrayList<>());
-            for (ColumnStream<?> feed : node.feeds()) {
-                ColumnNode producer = feed.producer().orElse(null);
-                if (producer != null) {
-                    if (!nodeModules.containsKey(producer)) {
-                        throw new IllegalArgumentException(
-                                "ColumnPipeline: stream '" + feed.name()
-                                        + "' of node " + node.id()
-                                        + " has a producer outside this pipeline");
-                    }
-                    deps.get(node).add(producer);
-                } else {
-                    if (!moduleInputs.containsKey(feed)) {
-                        throw new IllegalArgumentException(
-                                "ColumnPipeline: stream '" + feed.name()
-                                        + "' of node " + node.id()
-                                        + " is not declared as a module input");
-                    }
-                    neededFeedColumns.add(feed.name());
-                }
-            }
-        }
-
-        Map<String, ColumnStream<?>> allOutputs = new LinkedHashMap<>();
-        for (ColumnModule module : modules) {
-            for (ColumnStream<?> output : module.outputs()) {
-                ColumnStream<?> previous = allOutputs.putIfAbsent(output.name(), output);
-                if (previous != null && previous != output) {
-                    throw new IllegalArgumentException(
-                            "ColumnPipeline: duplicate module output stream '"
-                                    + output.name() + "'");
-                }
-            }
-        }
-
-        Set<ColumnNode> kept;
-        List<String> outputs;
-        if (requiredOutputs == null || requiredOutputs.isEmpty()) {
-            kept = new LinkedHashSet<>(nodeModules.keySet());
-            outputs = List.copyOf(allOutputs.keySet());
-        } else {
-            outputs = List.copyOf(requiredOutputs);
-            kept = requiredNodes(outputs, allOutputs, producers, deps,
-                    neededFeedColumns, moduleInputs);
-        }
-
-        Set<String> feedColumns = new LinkedHashSet<>();
-        for (ColumnNode node : kept) {
-            for (ColumnStream<?> feed : node.feeds()) {
-                if (feed.producer().isEmpty()) {
-                    feedColumns.add(feed.name());
-                }
-            }
-        }
-        for (String output : outputs) {
-            ColumnStream<?> stream = allOutputs.get(output);
-            if (stream != null && stream.producer().isEmpty()) {
-                feedColumns.add(stream.name());
-            }
-        }
-
-        ComputeGraph newGraph = new ComputeGraph();
-        for (ColumnNode node : kept) {
-            ColumnModule module = nodeModules.get(node);
-            newGraph.addNode(node.id(), module.id(), new BusinessNodeOp(node));
-        }
-        for (ColumnNode node : kept) {
-            for (ColumnNode dependency : deps.get(node)) {
-                if (kept.contains(dependency)) {
-                    newGraph.addDependency(node.id(), dependency.id());
-                }
-            }
-        }
-        newGraph.finalizeGraph();
-
-        this.graph = newGraph;
-        this.requiredFeedColumns = Set.copyOf(feedColumns);
-        this.requiredFeedColumnOrder = List.copyOf(feedColumns);
-        this.feedColumnsByName = Map.copyOf(feedDefinitions);
-        this.compiledOutputs = List.copyOf(outputs);
-        this.compiledOutputSet = Set.copyOf(outputs);
-        this.compiled = true;
-    }
-
-    private void validateModuleDependencies() {
-        Map<Class<? extends ColumnModule>, Integer> inDegree = new LinkedHashMap<>();
-        Map<Class<? extends ColumnModule>, List<Class<? extends ColumnModule>>> outgoing =
-                new LinkedHashMap<>();
-        for (ColumnModule module : modules) {
-            inDegree.put(module.getClass(), 0);
-        }
-        for (ColumnModule module : modules) {
-            for (Class<? extends ColumnModule> dependency : module.dependencies()) {
-                if (!modulesByType.containsKey(dependency)) {
-                    throw new IllegalArgumentException(
-                            "ColumnPipeline: module " + module.getClass().getName()
-                                    + " depends on missing module "
-                                    + dependency.getName());
-                }
-                outgoing.computeIfAbsent(dependency, key -> new ArrayList<>())
-                        .add(module.getClass());
-                inDegree.merge(module.getClass(), 1, Integer::sum);
-            }
-        }
-        Deque<Class<? extends ColumnModule>> ready = new ArrayDeque<>();
-        for (Map.Entry<Class<? extends ColumnModule>, Integer> entry : inDegree.entrySet()) {
-            if (entry.getValue() == 0) {
-                ready.add(entry.getKey());
-            }
-        }
-        int visited = 0;
-        while (!ready.isEmpty()) {
-            Class<? extends ColumnModule> type = ready.poll();
-            visited++;
-            for (Class<? extends ColumnModule> next : outgoing.getOrDefault(type, List.of())) {
-                int degree = inDegree.merge(next, -1, Integer::sum);
-                if (degree == 0) {
-                    ready.add(next);
-                }
-            }
-        }
-        if (visited != modules.size()) {
-            throw new IllegalStateException("ColumnPipeline: module dependency cycle detected");
-        }
-    }
-
-    private static Set<ColumnNode> requiredNodes(
-            List<String> requiredOutputs,
-            Map<String, ColumnStream<?>> allOutputs,
-            Map<String, ColumnNode> producers,
-            Map<ColumnNode, List<ColumnNode>> deps,
-            Set<String> feedColumns,
-            Map<ColumnStream<?>, ColumnModule> moduleInputs) {
-        Set<ColumnNode> needed = new LinkedHashSet<>();
-        Deque<ColumnNode> pending = new ArrayDeque<>();
-
-        for (String output : requiredOutputs) {
-            ColumnStream<?> stream = allOutputs.get(output);
-            if (stream == null) {
-                throw new IllegalArgumentException(
-                        "ColumnPipeline: unknown fetch output '" + output + "'");
-            }
-            ColumnNode producer = stream.producer().orElse(null);
-            if (producer == null) {
-                if (!moduleInputs.containsKey(stream)) {
-                    throw new IllegalArgumentException(
-                            "ColumnPipeline: fetch output '" + output
-                                    + "' is not a module output or input");
-                }
-                feedColumns.add(stream.name());
-                continue;
-            }
-            if (needed.add(producer)) {
-                pending.push(producer);
-            }
-        }
-
-        while (!pending.isEmpty()) {
-            ColumnNode node = pending.pop();
-            for (ColumnNode dependency : deps.get(node)) {
-                if (needed.add(dependency)) {
-                    pending.push(dependency);
-                }
-            }
-        }
-        return needed;
+        plan = PipelineCompiler.compile(modules, requested);
+        planRequestedOutputs = requested;
+        return this;
     }
 
     // ---- feed / compute / fetch ----------------------------------------
 
     /** Feed one or more typed external streams. Rows contain one cell per stream. */
-    public void feed(FeedStream stream) {
+    public ColumnPipeline feed(FeedStream stream) {
         Objects.requireNonNull(stream, "stream");
-        feed(FeedFetch.feedTable(stream.names(), stream.rows()));
+        return feed(FeedFetch.feedTable(stream.names(), stream.rows()));
     }
 
-    public void feed(List<String> names, List<Row> rows) {
-        feed(FeedFetch.feedTable(names, rows));
+    public ColumnPipeline feed(List<String> names, List<Row> rows) {
+        return feed(FeedFetch.feedTable(names, rows));
     }
 
     /**
@@ -393,60 +206,82 @@ public final class ColumnPipeline implements AutoCloseable {
      * <p>The order comes from {@link #compile()}, so callers do not need to
      * repeat the module input list at the feed boundary.
      */
-    public void feedRows(List<Row> rows) {
-        if (!compiled) {
+    public ColumnPipeline feedRows(List<Row> rows) {
+        if (plan == null) {
             compile();
         }
-        feed(requiredFeedColumnOrder, rows);
+        return feed(plan.requiredFeedColumnOrder(), rows);
     }
 
     /** Feed already column-oriented data, keyed by column name. */
-    public void feed(Map<String, List<Cell>> columns) {
-        feed(FeedFetch.feedTable(columns));
+    public ColumnPipeline feed(Map<String, List<Cell>> columns) {
+        return feed(FeedFetch.feedTable(columns));
     }
 
-    private void feed(TensorTable table) {
-        for (Map.Entry<String, ColumnStream<?>> entry : feedColumnsByName.entrySet()) {
-            String name = entry.getKey();
-            if (!table.has(name)) {
-                continue;
-            }
-            Tensor tensor = table.get(name);
-            if (tensor.dtype() != entry.getValue().dtype()) {
-                table.set(name, tensor.castTo(entry.getValue().dtype()));
-            }
-        }
+    /**
+     * Feed pre-built tensors without a row/cell transpose.
+     *
+     * <p>The pipeline takes ownership of these tensors; do not mutate them
+     * after feeding.
+     */
+    public ColumnPipeline feedTensors(Map<String, Tensor> columns) {
+        Objects.requireNonNull(columns, "columns");
+        TensorTable table = new TensorTable();
+        columns.forEach(table::add);
+        return feed(table);
+    }
+
+    private ColumnPipeline feed(TensorTable table) {
+        coerceFeed(table, false);
+        Map<String, String> shape = Map.of(
+                "rows", Integer.toString(table.numRows()),
+                "columns", Integer.toString(table.numCols()));
         ctx.beginPhase(ExecutionContext.RunPhase.FEED);
-        emitStart("feed.start", "feed");
+        emitStart("feed.start", "feed", shape);
         ctx.setFeed(table);
         ctx.store().clear();
         // The table was built for this run and ownership transfers to the
         // store: avoid cloning every input column.
         ctx.store().addTable(table, false);
         ctx.endPhase();
-        emitEnd("feed.end", "feed", ExecutionContext.RunPhase.FEED);
-        if (compiled) {
+        emitEnd("feed.end", "feed", ExecutionContext.RunPhase.FEED, shape);
+        if (plan != null) {
             validateFeed(table);
         }
+        return this;
     }
 
-    public void feed(String name, List<Row> rows) {
-        feed(List.of(name), rows);
+    public ColumnPipeline feed(String name, List<Row> rows) {
+        return feed(List.of(name), rows);
     }
 
-    public void compute() {
-        if (!compiled) {
+    public ColumnPipeline compute() {
+        if (plan == null) {
             compile();
         }
         runCompiled();
+        return this;
     }
 
-    public void compute(Collection<String> requiredOutputs) {
+    public ColumnPipeline compute(Collection<String> requiredOutputs) {
         compile(requiredOutputs);
         runCompiled();
+        return this;
+    }
+
+    /** Typed pruning + compute convenience. */
+    public ColumnPipeline compute(FetchStream requiredOutputs) {
+        compile(requiredOutputs);
+        runCompiled();
+        return this;
     }
 
     private void runCompiled() {
+        PipelinePlan current = plan;
+        if (current == null) {
+            throw new IllegalStateException("ColumnPipeline: compile first");
+        }
+        coerceFeed(ctx.feed(), true);
         validateFeed(ctx.feed());
         if (pool == null) {
             if (virtualComputeThreads) {
@@ -467,21 +302,56 @@ public final class ColumnPipeline implements AutoCloseable {
                                 .factory());
             }
         }
+        Map<String, String> mode = Map.of(
+                "workers", Integer.toString(computeWorkers),
+                "virtual", Boolean.toString(virtualComputeThreads),
+                "nodes", Integer.toString(current.nodeCount()));
         ctx.beginPhase(ExecutionContext.RunPhase.COMPUTE);
-        emitStart("compute.start", "compute");
-        graph.executeAsync(pool, ctx, computeWorkers);
+        emitStart("compute.start", "compute", mode);
+        current.graph().executeAsync(pool, ctx, computeWorkers);
         ctx.endPhase();
-        emitEnd("compute.end", "compute", ExecutionContext.RunPhase.COMPUTE);
+        emitEnd("compute.end", "compute", ExecutionContext.RunPhase.COMPUTE, mode);
+    }
+
+    /**
+     * Coerce pre-built columns to their declared feed dtypes. If the feed was
+     * supplied before compile, the store already holds the tensors, so update
+     * both the feed table and the store.
+     */
+    private void coerceFeed(TensorTable table, boolean updateStore) {
+        PipelinePlan current = plan;
+        if (current == null) {
+            return;
+        }
+        for (Map.Entry<String, ColumnStream<?>> entry
+                : current.feedColumnsByName().entrySet()) {
+            String name = entry.getKey();
+            if (!table.has(name)) {
+                continue;
+            }
+            Tensor tensor = table.get(name);
+            if (tensor.dtype() != entry.getValue().dtype()) {
+                Tensor cast = tensor.castTo(entry.getValue().dtype());
+                table.set(name, cast);
+                if (updateStore) {
+                    ctx.store().set(name, cast);
+                }
+            }
+        }
     }
 
     private void validateFeed(TensorTable table) {
-        List<String> missing = requiredFeedColumns.stream()
+        PipelinePlan current = plan;
+        if (current == null) {
+            return;
+        }
+        List<String> missing = current.requiredFeedColumns().stream()
                 .filter(column -> !table.has(column))
                 .toList();
         if (!missing.isEmpty()) {
             throw new IllegalArgumentException(
                     "ColumnPipeline: missing feed column(s) " + missing
-                            + "; required=" + requiredFeedColumns);
+                            + "; required=" + current.requiredFeedColumns());
         }
     }
 
@@ -508,14 +378,26 @@ public final class ColumnPipeline implements AutoCloseable {
         return fetchColumns(FetchStream.of(columns));
     }
 
-    private TensorTable fetchTable(List<String> names) {
-        if (!compiled) {
+    /**
+     * Fetch every compiled output as named cell lists. Unlike the row-oriented
+     * no-arg {@link #fetch()}, this permits outputs with different row counts.
+     */
+    public Map<String, List<Cell>> fetchColumns() {
+        if (plan == null) {
             throw new IllegalStateException("ColumnPipeline: compile first");
         }
-        if (!compiledOutputSet.containsAll(names)) {
+        return fetchColumns(plan.outputs());
+    }
+
+    private TensorTable fetchTable(List<String> names) {
+        PipelinePlan current = plan;
+        if (current == null) {
+            throw new IllegalStateException("ColumnPipeline: compile first");
+        }
+        if (!current.canFetch(names)) {
             throw new IllegalArgumentException(
                     "ColumnPipeline: cannot fetch " + names
-                            + "; compiled outputs=" + compiledOutputs);
+                            + "; compiled outputs=" + current.outputs());
         }
         ctx.beginPhase(ExecutionContext.RunPhase.FETCH);
         emitStart("fetch.start", "fetch");
@@ -523,7 +405,9 @@ public final class ColumnPipeline implements AutoCloseable {
         TensorTable table = ctx.store().toTable(names, false);
         ctx.setFetch(table);
         ctx.endPhase();
-        emitEnd("fetch.end", "fetch", ExecutionContext.RunPhase.FETCH);
+        emitEnd("fetch.end", "fetch", ExecutionContext.RunPhase.FETCH,
+                Map.of("rows", Integer.toString(table.numRows()),
+                        "columns", Integer.toString(table.numCols())));
         return table;
     }
 
@@ -536,31 +420,70 @@ public final class ColumnPipeline implements AutoCloseable {
     }
 
     public List<Row> fetch() {
-        return fetch(compiledOutputs);
+        if (plan == null) {
+            throw new IllegalStateException("ColumnPipeline: compile first");
+        }
+        return fetch(plan.outputs());
     }
 
     public double fetchScalar(ColumnStream<?> column) {
         return fetchScalar(column.name());
     }
 
+    /**
+     * Zero-copy typed result for columnar consumers. The returned tensor is a
+     * read-only view; do not mutate it.
+     */
+    public Tensor fetchTensor(ColumnStream<?> column) {
+        return fetchTensor(column.name());
+    }
+
+    /**
+     * Zero-copy typed result for columnar consumers. The returned tensor is a
+     * read-only view; do not mutate it.
+     */
+    public Tensor fetchTensor(String name) {
+        return fetchTable(List.of(name)).get(name);
+    }
+
     public double fetchScalar(String name) {
-        if (!compiledOutputSet.contains(name)) {
+        PipelinePlan current = plan;
+        if (current == null || !current.outputSet().contains(name)) {
             throw new IllegalArgumentException(
                     "ColumnPipeline: '" + name + "' is not a compiled output");
         }
+        Map<String, String> shape = Map.of("rows", "1", "columns", "1");
         ctx.beginPhase(ExecutionContext.RunPhase.FETCH);
-        emitStart("fetch.start", "fetch");
+        emitStart("fetch.start", "fetch", shape);
         double value = FeedFetch.fetchScalar(ctx.store().get(name));
         ctx.endPhase();
-        emitEnd("fetch.end", "fetch", ExecutionContext.RunPhase.FETCH);
+        emitEnd("fetch.end", "fetch", ExecutionContext.RunPhase.FETCH, shape);
         return value;
     }
 
+    /**
+     * Single-shot run returning every compiled module output. All outputs must
+     * share one row count; use {@link #fetchColumns()} or typed runs for
+     * heterogeneous result shapes.
+     */
+    public List<Row> run(FeedStream feedStream) {
+        compile();
+        feed(feedStream);
+        compute();
+        return fetch();
+    }
+
+    /** Single-shot run pruned to the requested fetch streams. */
     public List<Row> run(FeedStream feedStream, FetchStream fetchStream) {
         compile(fetchStream);
         feed(feedStream);
         compute();
         return fetch(fetchStream);
+    }
+
+    /** Typed convenience for a single-shot feed/compute/fetch cycle. */
+    public List<Row> run(FeedStream feedStream, ColumnStream<?>... outputs) {
+        return run(feedStream, FetchStream.of(outputs));
     }
 
     // ---- accessors ------------------------------------------------------
@@ -589,27 +512,42 @@ public final class ColumnPipeline implements AutoCloseable {
     public int nodeCount() {
         int count = 0;
         for (ColumnModule module : modules) {
-            count += module.nodes().length;
+            count += module.nodeView().length;
         }
         return count;
     }
 
     public int compiledNodeCount() {
-        return graph.size();
+        return plan == null ? 0 : plan.nodeCount();
     }
 
     public Set<String> requiredFeedColumns() {
-        return requiredFeedColumns;
+        return plan == null ? Set.of() : plan.requiredFeedColumns();
     }
 
     private void emitStart(String action, String subject) {
-        chaining.emit(new Event("column", action, subject));
+        emitStart(action, subject, Map.of());
+    }
+
+    private void emitStart(String action, String subject,
+                           Map<String, String> attrs) {
+        Event event = new Event("column", action, subject);
+        attrs.forEach(event::attr);
+        chaining.emit(event);
     }
 
     private void emitEnd(String action, String subject,
                          ExecutionContext.RunPhase phase) {
-        chaining.emit(new Event("column", action, subject)
-                .durationNanos(ctx.phaseElapsedNanos(phase)));
+        emitEnd(action, subject, phase, Map.of());
+    }
+
+    private void emitEnd(String action, String subject,
+                         ExecutionContext.RunPhase phase,
+                         Map<String, String> attrs) {
+        Event event = new Event("column", action, subject)
+                .durationNanos(ctx.phaseElapsedNanos(phase));
+        attrs.forEach(event::attr);
+        chaining.emit(event);
     }
 
     @Override

@@ -39,7 +39,7 @@ public abstract class ColumnNode {
     private ColumnStream<?>[] fetches;
 
     protected ColumnNode(ColumnStream<?>... feeds) {
-        this.feeds = feeds == null ? new ColumnStream<?>[0] : feeds;
+        this.feeds = feeds == null ? new ColumnStream<?>[0] : feeds.clone();
         for (ColumnStream<?> feed : this.feeds) {
             Objects.requireNonNull(feed, "feed stream");
         }
@@ -65,11 +65,19 @@ public abstract class ColumnNode {
 
     /** Fixed input streams, in constructor order. Prefer typed fields. */
     public final ColumnStream<?>[] feeds() {
-        return feeds;
+        return feedView().clone();
     }
 
     /** Declared output streams, in declaration order. */
     public final ColumnStream<?>[] fetches() {
+        return fetchView().clone();
+    }
+
+    final ColumnStream<?>[] feedView() {
+        return feeds;
+    }
+
+    final ColumnStream<?>[] fetchView() {
         if (fetches == null) {
             fetches = fetchBuilder.toArray(ColumnStream<?>[]::new);
         }
@@ -103,6 +111,6 @@ public abstract class ColumnNode {
 
     @Override
     public String toString() {
-        return id + Arrays.toString(fetches());
+        return id + Arrays.toString(fetchView());
     }
 }

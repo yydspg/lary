@@ -45,9 +45,9 @@ public class SpringRecSysDemo {
                     context.getBean(PerformanceSummaryModule.class);
 
             try (ColumnPipeline pipeline = pipelines.create()) {
-                pipeline.compile();
-                pipeline.feed(MetricsFeed.sample(metrics));
-                pipeline.compute();
+                pipeline.compile()
+                        .feed(MetricsFeed.sample(metrics))
+                        .compute();
 
                 List<Row> rows = pipeline.fetch(FetchStream.of(
                         metrics.impressions(),

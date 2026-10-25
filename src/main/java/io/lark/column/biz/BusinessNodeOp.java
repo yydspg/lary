@@ -15,7 +15,7 @@ final class BusinessNodeOp extends OpTensor implements FallibleOpTensor {
     private final ColumnNode node;
 
     BusinessNodeOp(ColumnNode node) {
-        super("business", names(node.feeds()), names(node.fetches()));
+        super("business", names(node.feedView()), names(node.fetchView()));
         this.node = Objects.requireNonNull(node, "node");
     }
 

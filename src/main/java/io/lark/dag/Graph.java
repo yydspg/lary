@@ -3,8 +3,6 @@
 
 package io.lark.dag;
 
-import java.util.ArrayList;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -18,30 +16,14 @@ import java.util.Optional;
  */
 public final class Graph {
 
-    private static final Node[] NO_NODES = new Node[0];
-
     private final List<Node> nodes;
     private final Node[] nodeArray;
     private final Map<String, Node> byId;
-    private final Map<Node, Node[]> dependents;
 
     Graph(List<Node> nodes, Map<String, Node> byId) {
         this.nodes = List.copyOf(nodes);
         this.nodeArray = this.nodes.toArray(Node[]::new);
         this.byId = Map.copyOf(byId);
-
-        Map<Node, List<Node>> builder = new IdentityHashMap<>();
-        for (Node node : this.nodes) {
-            for (Node dependency : node.dependencyArray()) {
-                builder.computeIfAbsent(dependency, key -> new ArrayList<>())
-                        .add(node);
-            }
-        }
-        Map<Node, Node[]> adjacency = new IdentityHashMap<>();
-        for (Map.Entry<Node, List<Node>> entry : builder.entrySet()) {
-            adjacency.put(entry.getKey(), entry.getValue().toArray(Node[]::new));
-        }
-        this.dependents = adjacency;
     }
 
     public List<Node> nodes() {
@@ -54,11 +36,6 @@ public final class Graph {
      */
     public Node[] nodeArray() {
         return nodeArray;
-    }
-
-    /** Direct dependents of {@code node}, in node insertion order. */
-    Node[] dependentsOf(Node node) {
-        return dependents.getOrDefault(node, NO_NODES);
     }
 
     public int size() {

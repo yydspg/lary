@@ -17,6 +17,8 @@ import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -134,6 +136,80 @@ class ModulePipelineTest {
 
         {
             output(used.out(), unused.out(), result.out());
+        }
+    }
+
+    @Test
+    void runConvenienceReturnsAllCompiledOutputs() {
+        ComponentModule component = new ComponentModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
+            pipeline.add(component);
+            List<Row> rows = pipeline.run(
+                    FeedStream.of(component.metricValue, rows(2)));
+
+            assertEquals(2, rows.size());
+            assertEquals(20L, rows.get(0).get(0).asLong());
+            assertEquals(30L, rows.get(1).get(0).asLong());
+            assertEquals(List.of(Cell.of(20), Cell.of(30)),
+                    pipeline.fetchColumns().get(LI.name()));
+        }
+    }
+
+    @Test
+    void fluentColumnarPipelineReportsUsefulStats() {
+        ComponentModule component = new ComponentModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline(2).addAll(component)) {
+            pipeline.compile(FetchStream.of(component.out()))
+                    .feedTensors(Map.of(METRIC_VALUE.name(),
+                            Tensor.fromLongs(1, 2)))
+                    .compute();
+
+            Tensor result = pipeline.fetchTensor(component.out());
+            assertEquals(List.of(20L, 30L), List.of(
+                    result.getLong(0), result.getLong(1)));
+
+            var stats = pipeline.stats();
+            assertEquals(2, stats.feedRows());
+            assertEquals(1, stats.feedColumns());
+            assertEquals(2, stats.fetchRows());
+            assertEquals(1, stats.fetchColumns());
+            assertEquals(2, stats.computedNodes());
+            assertEquals(2, stats.successCount());
+            assertEquals(0, stats.failureCount());
+            assertTrue(stats.totalElapsedNanos() > 0);
+            assertTrue(stats.summary().contains("rows x"));
+        }
+    }
+
+    @Test
+    void moduleArraysAreSnapshotsAndMapsAreCached() {
+        ComponentModule component = new ComponentModule();
+        ColumnNode[] nodes = component.nodes();
+        nodes[0] = null;
+
+        assertNotNull(component.nodes()[0]);
+        assertSame(component.feedMap(), component.feedMap());
+        assertSame(component.fetchMap(), component.fetchMap());
+    }
+
+    @Test
+    void failedDefinitionCanBeRetried() {
+        FlakyModule module = new FlakyModule();
+        assertThrows(IllegalStateException.class, module::feedMap);
+        assertTrue(module.feedMap().containsKey(METRIC_VALUE.name()));
+        assertEquals(1, module.feedMap().size());
+        assertEquals(2, module.attempts);
+    }
+
+    @Test
+    void failedRecompileKeepsThePreviousPlan() {
+        ComponentModule component = new ComponentModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline()) {
+            pipeline.add(component).compile();
+            int compiled = pipeline.compiledNodeCount();
+            assertThrows(IllegalArgumentException.class,
+                    () -> pipeline.compile(List.of("missing_output")));
+            assertEquals(compiled, pipeline.compiledNodeCount());
         }
     }
 
@@ -299,6 +375,21 @@ class ModulePipelineTest {
     }
 
     @Test
+    void feedBeforeCompileIsCoercedAfterImplicitCompile() {
+        ComponentModule component = new ComponentModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline()) {
+            pipeline.add(component);
+            pipeline.feed(Map.of(METRIC_VALUE.name(),
+                    List.of(Cell.of(1.0), Cell.of(2.0))));
+            pipeline.compute();
+
+            assertEquals(List.of(20L, 30L),
+                    pipeline.fetch(FetchStream.of(component.out())).stream()
+                            .map(row -> row.get(0).asLong()).toList());
+        }
+    }
+
+    @Test
     void feedColumnsAreCoercedToDeclaredDtype() {
         ComponentModule component = new ComponentModule();
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
@@ -372,6 +463,19 @@ class ModulePipelineTest {
 
         ColumnStream<Long> out() {
             return node.out();
+        }
+    }
+
+    static final class FlakyModule extends ColumnModule {
+        int attempts;
+
+        @Override
+        protected void define() {
+            attempts++;
+            input(METRIC_VALUE);
+            if (attempts == 1) {
+                throw new IllegalStateException("first definition fails");
+            }
         }
     }
 

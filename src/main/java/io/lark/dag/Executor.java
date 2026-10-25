@@ -11,6 +11,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -31,6 +32,7 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 
 /**
  * Drives a {@link Graph} to completion with a dependency-counter scheduler.
@@ -630,13 +632,15 @@ public final class Executor implements AutoCloseable {
     private static final class RunState {
 
         private final Executor owner;
-        private final Graph graph;
         private final IContext ctx;
         private final TimeoutPolicy policy;
         private final Set<String> disabled;
 
-        private final Map<Node, AtomicInteger> pendingDeps =
-                new ConcurrentHashMap<>();
+        private final Node[] nodes;
+        private final IdentityHashMap<Node, Integer> index =
+                new IdentityHashMap<>();
+        private final AtomicIntegerArray pending;
+        private final int[][] dependentIndices;
         private final ConcurrentLinkedQueue<Node> ready =
                 new ConcurrentLinkedQueue<>();
         private final AtomicBoolean pumping = new AtomicBoolean(false);
@@ -651,22 +655,53 @@ public final class Executor implements AutoCloseable {
 
         private RunState(Graph graph, Collection<String> disabledIds,
                          Executor owner, IContext ctx, TimeoutPolicy policy) {
-            this.graph = graph;
             this.owner = owner;
             this.ctx = ctx;
             this.policy = policy;
             this.disabled = disabledIds == null
                     ? Set.of() : Set.copyOf(disabledIds);
-            this.remaining = new AtomicInteger(graph.size());
+            this.nodes = graph.nodeArray();
+            int count = nodes.length;
+            this.remaining = new AtomicInteger(count);
+            this.pending = new AtomicIntegerArray(count);
 
-            for (Node node : graph.nodeArray()) {
-                int dependencies = node.dependencyArray().length;
-                if (dependencies == 0) {
-                    ready.add(node);
-                } else {
-                    pendingDeps.put(node, new AtomicInteger(dependencies));
+            for (int i = 0; i < count; i++) {
+                index.put(nodes[i], i);
+                pending.set(i, nodes[i].dependencyArray().length);
+            }
+
+            int[] outDegree = new int[count];
+            for (int i = 0; i < count; i++) {
+                for (Node dependency : nodes[i].dependencyArray()) {
+                    outDegree[indexOf(dependency)]++;
                 }
             }
+            this.dependentIndices = new int[count][];
+            for (int i = 0; i < count; i++) {
+                dependentIndices[i] = new int[outDegree[i]];
+            }
+            int[] cursor = new int[count];
+            for (int i = 0; i < count; i++) {
+                for (Node dependency : nodes[i].dependencyArray()) {
+                    int dependencyIndex = indexOf(dependency);
+                    dependentIndices[dependencyIndex][cursor[dependencyIndex]++] = i;
+                }
+            }
+
+            for (int i = 0; i < count; i++) {
+                if (pending.get(i) == 0) {
+                    ready.add(nodes[i]);
+                }
+            }
+        }
+
+        private int indexOf(Node node) {
+            Integer value = index.get(node);
+            if (value == null) {
+                throw new IllegalStateException(
+                        "Executor: dependency outside this graph: " + node.id());
+            }
+            return value;
         }
 
         private void start() {
@@ -686,10 +721,9 @@ public final class Executor implements AutoCloseable {
         }
 
         private void releaseDependents(Node node) {
-            for (Node dependent : graph.dependentsOf(node)) {
-                AtomicInteger count = pendingDeps.get(dependent);
-                if (count != null && count.decrementAndGet() == 0) {
-                    ready.add(dependent);
+            for (int dependentIndex : dependentIndices[indexOf(node)]) {
+                if (pending.decrementAndGet(dependentIndex) == 0) {
+                    ready.add(nodes[dependentIndex]);
                 }
             }
         }

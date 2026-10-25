@@ -192,6 +192,7 @@ public final class OpExecutor implements AutoCloseable {
     private void startOpInternal(Op op, RunState state) {
         IContext data = state.data;
         TimeoutPolicy policy = state.policy;
+        state.markStarted(op, System.nanoTime() - state.runStartNanos);
 
         if (state.aborted()) {
             finishSkipped(op, state, state.abortReason());
@@ -199,7 +200,7 @@ public final class OpExecutor implements AutoCloseable {
         }
 
         setStatus(op, OpStatus.RUNNING);
-        emit("op.start", op.name(), true, 0, Map.of());
+        emit("op.start", op.name(), true, 0, state.startedAt(op), Map.of());
 
         try {
             for (OpAspect aspect : state.graph.aspects()) {
@@ -304,7 +305,7 @@ public final class OpExecutor implements AutoCloseable {
             return;
         }
         setStatus(op, OpStatus.SKIPPED);
-        emit("op.skipped", op.name(), true, 0,
+        emit("op.skipped", op.name(), true, 0, state.startedAt(op),
                 Map.of("reason", reason == null ? "" : reason));
         finishClaimed(op, state);
     }
@@ -314,7 +315,7 @@ public final class OpExecutor implements AutoCloseable {
                 ? 0 : Math.max(0, System.nanoTime() - start);
         setStatus(op, OpStatus.SKIPPED);
         emit("op.skipped", op.name(), true, elapsed,
-                Map.of("reason", state.abortReason()));
+                state.startedAt(op), Map.of("reason", state.abortReason()));
         finishClaimed(op, state);
     }
 
@@ -327,7 +328,7 @@ public final class OpExecutor implements AutoCloseable {
                 ? 0 : Math.max(0, System.nanoTime() - start);
         setStatus(op, OpStatus.FAILED);
         emit("op.error", op.name(), false, elapsed,
-                Map.of("error", describeError(fatal)));
+                state.startedAt(op), Map.of("error", describeError(fatal)));
         finishClaimed(op, state);
     }
 
@@ -361,7 +362,7 @@ public final class OpExecutor implements AutoCloseable {
             }
             setStatus(op, OpStatus.FAILED);
             emit("op.error", op.name(), false, 0,
-                    Map.of("error", describeError(fatal)));
+                    state.startedAt(op), Map.of("error", describeError(fatal)));
             state.completeOne();
         }
     }
@@ -384,14 +385,21 @@ public final class OpExecutor implements AutoCloseable {
         OpStatus outcome = recovered ? OpStatus.FALLBACK : OpStatus.TIMED_OUT;
         setStatus(op, outcome);
         if (recovered) {
-            emit("op.fallback", op.name(), true, elapsed, attrs);
+            emit("op.fallback", op.name(), true, elapsed,
+                    state.startedAt(op), attrs);
         } else {
-            emit("op.timeout", op.name(), false, elapsed, attrs);
+            emit("op.timeout", op.name(), false, elapsed,
+                    state.startedAt(op), attrs);
         }
         notifyAfter(graph, op, data, outcome);
 
         if (entry.quarantined()) {
-            emit("op.quarantined", op.name(), true, elapsed, attrs);
+            // The timeout/fallback event above already carries the terminal
+            // status; keep this informational event from double-counting stats.
+            Map<String, String> quarantinedAttrs = new LinkedHashMap<>(attrs);
+            quarantinedAttrs.put("status", "quarantined");
+            emit("op.quarantined", op.name(), true, elapsed,
+                    state.startedAt(op), quarantinedAttrs);
             if (state.policy().repeatedAction() == TimeoutAction.ABORT_GRAPH) {
                 state.abort("op '" + op.name() + "' repeatedly timed out");
             }
@@ -412,7 +420,7 @@ public final class OpExecutor implements AutoCloseable {
             setStatus(op, outcome);
             Map<String, String> attrs = timeoutAttrs(Duration.ZERO, entry);
             emit("op.quarantined", op.name(),
-                    recovered, 0, attrs);
+                    recovered, 0, state.startedAt(op), attrs);
             notifyAfter(graph, op, data, outcome);
 
             if (state.policy().repeatedAction() == TimeoutAction.ABORT_GRAPH) {
@@ -430,14 +438,17 @@ public final class OpExecutor implements AutoCloseable {
         if (error == null) {
             timeoutTracker.recordSuccess(op.name());
             outcome = OpStatus.SUCCESS;
-            emit("op.end", op.name(), true, elapsed, Map.of());
+            emit("op.end", op.name(), true, elapsed,
+                    state.startedAt(op), Map.of());
         } else {
             boolean recovered = safeFallback(op, data, error);
             outcome = recovered ? OpStatus.FALLBACK : OpStatus.FAILED;
             if (recovered) {
-                emit("op.fallback", op.name(), true, elapsed, Map.of());
+                emit("op.fallback", op.name(), true, elapsed,
+                        state.startedAt(op), Map.of());
             } else {
                 emit("op.error", op.name(), false, elapsed,
+                        state.startedAt(op),
                         Map.of("error", describeError(error)));
             }
         }
@@ -548,15 +559,21 @@ public final class OpExecutor implements AutoCloseable {
     }
 
     private void emit(String action, String name, boolean ok,
-                      long elapsedNanos, Map<String, String> attrs) {
+                      long elapsedNanos, long startedAtNanos,
+                      Map<String, String> attrs) {
         Monitor current = monitor;
         if (current == null || current == NullMonitor.INSTANCE) {
             return;
         }
         try {
             Event event = new Event("dag", action, name)
+                    .attrNanos("started_ns", Math.max(0, startedAtNanos))
                     .durationNanos(Math.max(0, elapsedNanos))
                     .ok(ok);
+            String status = statusOf(action, ok);
+            if (status != null) {
+                event.attr("type", "op").attr("status", status);
+            }
             for (Map.Entry<String, String> attr : attrs.entrySet()) {
                 event.attr(attr.getKey(), attr.getValue());
             }
@@ -564,6 +581,19 @@ public final class OpExecutor implements AutoCloseable {
         } catch (Throwable ignored) {
             // Monitoring must never break graph execution.
         }
+    }
+
+    private static String statusOf(String action, boolean ok) {
+        return switch (action) {
+            case "op.start" -> "running";
+            case "op.end" -> "success";
+            case "op.error" -> "failed";
+            case "op.fallback" -> "fallback";
+            case "op.timeout" -> "timed_out";
+            case "op.skipped" -> "skipped";
+            case "op.quarantined" -> ok ? "fallback" : "skipped";
+            default -> null;
+        };
     }
 
     private static Throwable unwrap(Throwable error) {
@@ -618,7 +648,7 @@ public final class OpExecutor implements AutoCloseable {
         private final Op[] ops;
         private final IdentityHashMap<Op, Integer> index = new IdentityHashMap<>();
         private final AtomicIntegerArray pending;
-        private final Op[][] dependents;
+        private final int[][] dependentIndices;
         private final ConcurrentLinkedQueue<Op> ready =
                 new ConcurrentLinkedQueue<>();
         private final AtomicBoolean pumping = new AtomicBoolean();
@@ -627,6 +657,7 @@ public final class OpExecutor implements AutoCloseable {
         private final CompletableFuture<Void> allDone = new CompletableFuture<>();
         private final AtomicBoolean aborted = new AtomicBoolean();
         private final Map<Op, Future<?>> running = new IdentityHashMap<>();
+        private final Map<Op, Long> startedAt = new IdentityHashMap<>();
         private volatile String abortReason = "";
         private long runStartNanos;
 
@@ -652,15 +683,15 @@ public final class OpExecutor implements AutoCloseable {
                     outDegree[indexOf(dependency)]++;
                 }
             }
-            this.dependents = new Op[count][];
+            this.dependentIndices = new int[count][];
             for (int i = 0; i < count; i++) {
-                dependents[i] = new Op[outDegree[i]];
+                dependentIndices[i] = new int[outDegree[i]];
             }
             int[] cursor = new int[count];
             for (int i = 0; i < count; i++) {
                 for (Op dependency : graph.depsOf(ops[i])) {
                     int dependencyIndex = indexOf(dependency);
-                    dependents[dependencyIndex][cursor[dependencyIndex]++] = ops[i];
+                    dependentIndices[dependencyIndex][cursor[dependencyIndex]++] = i;
                 }
             }
 
@@ -692,15 +723,26 @@ public final class OpExecutor implements AutoCloseable {
             return ops;
         }
 
+        private void markStarted(Op op, long offsetNanos) {
+            synchronized (startedAt) {
+                startedAt.put(op, Math.max(0, offsetNanos));
+            }
+        }
+
+        private long startedAt(Op op) {
+            synchronized (startedAt) {
+                return startedAt.getOrDefault(op, 0L);
+            }
+        }
+
         private boolean markCompleted(Op op) {
             return completed.add(op);
         }
 
         private void releaseDependents(Op op) {
-            for (Op dependent : dependents[indexOf(op)]) {
-                int dependentIndex = indexOf(dependent);
+            for (int dependentIndex : dependentIndices[indexOf(op)]) {
                 if (pending.decrementAndGet(dependentIndex) == 0) {
-                    ready.add(dependent);
+                    ready.add(ops[dependentIndex]);
                 }
             }
         }

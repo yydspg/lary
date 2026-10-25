@@ -103,10 +103,12 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
 `TimeoutTest`, `ModulePipelineTest` and `OpTensorTest`. `DagTest` and `OpTest`
-also cover wide/deep ready-queue scheduling and array/varargs node definitions.
-The `:examples` module has `RecSysMetricTest` for the search/recommendation
-graph; `:spring` has Spring context tests for scanning, constructor injection
-and the prototype pipeline.
+also cover wide/deep ready-queue scheduling and array/varargs node definitions;
+`ModulePipelineTest` covers fluent/columnar boundaries, plan reuse after a
+failed recompile, module snapshots, and retryable module definitions. The
+`:examples` module has `RecSysMetricTest` for the search/recommendation graph;
+`:spring` has Spring context tests for scanning, constructor injection and the
+prototype pipeline.
 
 ## Search / recommendation metrics demo
 
@@ -182,10 +184,10 @@ PerformanceSummaryModule summary =
         new PerformanceSummaryModule(metrics, ranking);
 
 try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
-    pipeline.add(metrics).add(ranking).add(summary);
-    pipeline.compile();
-    pipeline.feed(MetricsFeed.sample(metrics));
-    pipeline.compute();
+    pipeline.addAll(metrics, ranking, summary)
+            .compile()
+            .feed(MetricsFeed.sample(metrics))
+            .compute();
 
     List<Row> rows = pipeline.fetch(FetchStream.of(
             metrics.impressions(), metrics.clicks(), metrics.ctr(),
@@ -284,6 +286,10 @@ after their dependencies complete, and only running node bodies get virtual
 threads. This avoids one parked dependency-waiting thread per node while keeping
 independent nodes concurrent. `Schedule.run(ctx, PoolKind.COMPUTE, work)` is
 the pool-hop equivalent of the C++ `co_await Schedule(...)`.
+
+`StatsCollector` records per-node (and per-op) status/timing without
+serializing completion on a stats lock. `ExecutionStats.summary()` now includes
+success, fallback, failed and skipped counts in addition to the waterfall.
 
 ### Timeouts, fallback and quarantine
 
@@ -455,7 +461,8 @@ classes and the module only composes them.
 - Modules depend on modules with `dependsOn(OtherModule.class)`; cycles are
   rejected.
 - `ColumnNode.feeds()` / `fetches()` and module `nodes()`, `inputs()`,
-  `outputs()`, `dependencies()` are arrays because their arity is fixed.
+  `outputs()`, `dependencies()` return snapshots; their arity is fixed after
+  construction. Internal scheduler/compiler paths use package-private views.
 - Rows contain metric data, not user/item ids. Ids are lookup keys; column
   computation operates on measurable business columns.
 
@@ -481,19 +488,17 @@ public final class RankingWeightModule extends ColumnModule {
 ```java
 FunnelMetricModule metrics = new FunnelMetricModule();
 try (ColumnPipeline pipeline = new ColumnPipeline()) {
-    pipeline.add(metrics);              // or pipeline.scan("com.example")
-    pipeline.compile();
+    pipeline.add(metrics).compile();     // or pipeline.scan("com.example")
 
-    // Uses the compiled required-feed order; no manual column list.
-    pipeline.feedRows(rows);
+    // Fluent phases: feedRows uses the compiled required-feed order.
+    pipeline.feedRows(rows).compute();
 
-    // Or feed already column-oriented data by name.
-    // pipeline.feed(Map.of("impressions", List.of(Cell.of(1000)), ...));
-
-    pipeline.compute();
+    // Columnar inputs avoid row/cell conversion (ownership transfers).
+    // pipeline.feedTensors(Map.of("impressions", Tensor.fromLongs(...)));
 
     List<Row> out = pipeline.fetch(FetchStream.of(metrics.ctr()));
     double firstCtr = pipeline.fetchScalar(metrics.ctr());
+    Tensor firstTensor = pipeline.fetchTensor(metrics.ctr());
 
     // Column-oriented result, keyed by name.
     Map<String, List<Cell>> columns =
@@ -503,8 +508,18 @@ try (ColumnPipeline pipeline = new ColumnPipeline()) {
 
 `FeedStream` / `FetchStream` remain the typed API and carry
 `ColumnStream<?>[]`. `feedRows` builds the feed from the compiled required
-columns; `feed(Map)` accepts named cell lists; `fetchColumns` returns named cell
-lists. Missing required feed columns are rejected before execution.
+columns; `feed(Map)` accepts named cell lists; `feedTensors` accepts pre-built
+columnar tensors; `fetchColumns` returns named cell lists and `fetchTensor`
+returns a read-only tensor without row conversion. `fetchColumns()` (no args)
+returns every compiled output and supports outputs with different row counts,
+unlike the row-oriented `fetch()`. Missing required feed columns are rejected
+before execution.
+
+A `ColumnPipeline` is mutable and not thread-safe. Create one pipeline per
+concurrent run; reusing one pipeline sequentially is fine, and the compiled
+plan is reused when the requested outputs do not change. For one-shot use,
+`run(feed)` returns every compiled output and `run(feed, outputs...)` prunes to
+the requested streams.
 
 ### Performance and execution model
 
@@ -515,6 +530,11 @@ ready queue: only nodes whose dependencies are complete are submitted, running
 op bodies execute directly on pool threads, and no thread is parked per
 dependency. Independent nodes still run concurrently, and sequential
 `ComputeGraph.execute` remains available for single-threaded runs.
+
+Compilation is separated into `PipelineCompiler` and an immutable
+`PipelinePlan`. Adding a module invalidates the plan; compiling the same
+requested outputs again reuses it. The ready-queue schedulers precompute integer
+dependent indices, avoiding identity-map lookups on every completed edge.
 
 If a column node performs blocking I/O, enable virtual compute threads with
 `pipeline.setVirtualComputeThreads(true)` (Spring:
@@ -541,12 +561,24 @@ copying defaults:
   Only the pipeline paths use the internal no-copy overloads.
 - `feedTable` writes primitive buffers directly, and `fetchColumns` reads one
   column at a time instead of transposing through `List<Row>`.
+- `fetchRows` builds one `Cell[]` per output row instead of an intermediate
+  `ArrayList` and defensive copy; `fetchTensor` skips row conversion entirely.
+- `feedTensors` skips the cell transpose for callers that already have
+  columnar tensors.
 - `fetchScalar` reads the first Q8_0 block without dequantizing the whole
   tensor.
+
+Module definitions are initialized idempotently: reentrant and failed
+`define()` calls cannot leave a module half-initialized, and `feedMap()` /
+`fetchMap()` cache immutable name views after initialization.
 
 Node monitoring events carry a `module` attribute, so `RunStats` attributes
 ops to the owning module even though node ids are generated. Integer
 `neg`/`abs`/`square` and comparison-mask writes are also SIMD kernels now.
+`RunStats` also reports feed/fetch shape, computed node count, platform/virtual
+mode, total elapsed time, and per-op `success` / `fallback` / `failed` status.
+Node-completion samples are collected in concurrent queues so monitoring does
+not serialize the scheduler on a stats lock.
 
 A single `RunStats` run measures one feed/compute/fetch cycle, including JIT
 and class-loading effects on short nodes. Use warm-up iterations and multiple
@@ -611,9 +643,7 @@ Auto-configuration exposes:
 
 ```java
 try (ColumnPipeline pipeline = context.getBean(ColumnPipelineFactory.class).create()) {
-    pipeline.compile();
-    pipeline.feed(feed);
-    pipeline.compute();
+    pipeline.compile().feed(feed).compute();
     return pipeline.fetch(FetchStream.of(metrics.ctr()));
 }
 ```
@@ -689,7 +719,7 @@ runtime dtype promotion to choose the typed implementation (`AddTensor` →
 | `io.lark.column.compute` | `Compute`, `VectorOps` |
 | `io.lark.column.op` | `OpTensor`, `OpContext`, `OpSpec`, `TensorOps`; typed ops: `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`, `LongMultiTensor`, … |
 | `io.lark.column.exec` | `ComputeNode`, `ComputeGraph`, `ExecutionContext` — hidden execution layer |
-| `io.lark.column.biz` | typed business API: `Column<T>` definitions, `ColumnStream<T>` handles, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
+| `io.lark.column.biz` | typed business API: `Column<T>` definitions, `ColumnStream<T>` handles, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `PipelineCompiler` / `PipelinePlan`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |
 | `io.lark.spring` (`:spring` module) | `EnableLaryColumns`, `ColumnComponentRegistrar`, `LaryColumnAutoConfiguration`, `ColumnPipelineFactory` — optional Spring Boot integration |

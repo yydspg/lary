@@ -34,10 +34,10 @@ public final class RecSysDemo {
                 new PerformanceSummaryModule(metrics, ranking);
 
         try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
-            pipeline.add(metrics).add(ranking).add(summary);
-            pipeline.compile();
-            pipeline.feed(MetricsFeed.sample(metrics));
-            pipeline.compute();
+            pipeline.addAll(metrics, ranking, summary)
+                    .compile()
+                    .feed(MetricsFeed.sample(metrics))
+                    .compute();
 
             List<Row> rows = pipeline.fetch(FetchStream.of(
                     metrics.impressions(),

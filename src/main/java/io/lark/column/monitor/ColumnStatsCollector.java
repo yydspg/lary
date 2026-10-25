@@ -24,19 +24,31 @@ public final class ColumnStatsCollector implements Monitor {
             case "feed.end" -> {
                 synchronized (lock) {
                     stats.feedElapsedNanos = event.durationNanos();
+                    stats.feedRows = intAttr(event, "rows");
+                    stats.feedColumns = intAttr(event, "columns");
                 }
             }
-            case "compute.end" -> {
+            case "compute.start", "compute.end" -> {
                 synchronized (lock) {
-                    stats.computeElapsedNanos = event.durationNanos();
+                    if ("compute.end".equals(event.action())) {
+                        stats.computeElapsedNanos = event.durationNanos();
+                    }
+                    stats.computedNodes = intAttr(event, "nodes");
+                    stats.computeWorkers = intAttr(event, "workers");
+                    stats.virtualComputeThreads =
+                            Boolean.parseBoolean(event.get("virtual").orElse("false"));
                 }
             }
             case "fetch.end" -> {
                 synchronized (lock) {
                     stats.fetchElapsedNanos = event.durationNanos();
+                    stats.fetchRows = intAttr(event, "rows");
+                    stats.fetchColumns = intAttr(event, "columns");
                 }
             }
-            case "node.end", "node.error", "node.fallback" -> handleNode(event);
+            case "node.end" -> handleNode(event, "success");
+            case "node.error" -> handleNode(event, "failed");
+            case "node.fallback" -> handleNode(event, "fallback");
             case "module.end" -> handleModule(event);
             case "cpu.pressure" -> handlePressure(event);
             default -> {
@@ -45,22 +57,21 @@ public final class ColumnStatsCollector implements Monitor {
         }
     }
 
-    private void handleNode(Event event) {
+    private void handleNode(Event event, String status) {
         String op = event.get("op").orElse("");
         String module = event.get("module").orElseGet(() -> moduleOf(event.subject()));
-        synchronized (lock) {
-            stats.ops.add(new RunStats.OpTiming(
-                    event.subject(), op, module,
-                    event.durationNanos()));
-        }
+        stats.ops.add(new RunStats.OpTiming(
+                event.subject(), op, module, event.durationNanos(), status));
+    }
+
+    private static int intAttr(Event event, String name) {
+        return event.get(name).map(Integer::parseInt).orElse(0);
     }
 
     private void handleModule(Event event) {
         int count = event.get("node_count").map(Integer::parseInt).orElse(0);
-        synchronized (lock) {
-            stats.modules.add(new RunStats.ModuleTiming(
-                    event.subject(), event.durationNanos(), count));
-        }
+        stats.modules.add(new RunStats.ModuleTiming(
+                event.subject(), event.durationNanos(), count));
     }
 
     private void handlePressure(Event event) {
@@ -72,9 +83,9 @@ public final class ColumnStatsCollector implements Monitor {
                 .map(Double::parseDouble).orElse(0.0);
         synchronized (lock) {
             stats.computeWorkers = workers;
-            stats.pressure.add(new RunStats.CpuPressure(
-                    pool, utilization, busy, wall, workers));
         }
+        stats.pressure.add(new RunStats.CpuPressure(
+                pool, utilization, busy, wall, workers));
     }
 
     public RunStats stats() {

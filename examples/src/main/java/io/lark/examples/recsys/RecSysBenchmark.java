@@ -60,8 +60,7 @@ public final class RecSysBenchmark {
         long[] totalNanos = new long[iterations];
 
         try (ColumnPipeline pipeline = new ColumnPipeline(workers)) {
-            pipeline.add(metrics).add(ranking).add(summary);
-            pipeline.compile();
+            pipeline.addAll(metrics, ranking, summary).compile();
 
             for (int i = 0; i < warmup; i++) {
                 runOnce(pipeline, feed, fetch);

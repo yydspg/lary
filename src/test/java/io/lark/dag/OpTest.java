@@ -266,6 +266,25 @@ class OpTest {
     }
 
     @Test
+    void statsCollectorCoversOpEvents() {
+        OpGraph graph = new OpGraph().addOp(new FetchOp());
+        DefaultContext data = new DefaultContext();
+        data.set("user_id", 7);
+        StatsCollector stats = new StatsCollector();
+
+        try (OpExecutor executor = new OpExecutor(stats)) {
+            executor.execute(graph, data);
+        }
+
+        assertEquals(1, stats.stats().nodes().size());
+        NodeRunStats record = stats.stats().nodes().get(0);
+        assertEquals(NodeStatus.SUCCESS, record.status());
+        assertEquals("op", record.type());
+        assertEquals(1, stats.stats().successCount());
+        assertEquals("user_7", data.get("user", String.class));
+    }
+
+    @Test
     void opGraphValidationRejectsBadGraphs() {
         OpGraph graph = new OpGraph().addOp(new FetchOp());
         assertThrows(IllegalArgumentException.class,

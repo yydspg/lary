@@ -46,7 +46,7 @@ test. Tests are the behavioral contract.
 |---|---|
 | `dag/include/dag/node.h`, `src/node.cpp` | `src/main/java/io/lark/dag/.../Node.java`, `NodeStatus.java` |
 | `dag/include/dag/graph.h`, `graph_builder.h` | `Graph.java`, `GraphBuilder.java`, `NodeDef.java` |
-| DAG ready-queue scheduler (Java-first) | `Executor.java` dependency counters + `Graph.dependentsOf`; `Graph.nodeArray()` |
+| DAG ready-queue scheduler (Java-first) | `Executor.java` dependency counters + `Graph.nodeArray()`; adjacency is precomputed as integer indices |
 | `dag/include/dag/node_registry.h` | `NodeRegistry.java` |
 | `dag/include/dag/executor.h`, `src/executor.cpp` | `Executor.java` |
 | `dag/include/dag/stats.h` | `StatsCollector.java`, `ExecutionStats.java`, `NodeRunStats.java` |
@@ -80,7 +80,7 @@ test. Tests are the behavioral contract.
 | `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
 | Column ready-queue scheduler (Java-first) | `exec/ComputeGraph.java` dependency counters + `ComputeNode.dependencyView()`; fixed platform pool sized by `ColumnPipeline.computeWorkers`, optional virtual compute threads for blocking nodes |
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
-| Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `BusinessNodeOp.java` |
+| Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `PipelineCompiler.java`, `PipelinePlan.java`, `BusinessNodeOp.java` |
 | Typed column schema (Java-first) | `biz/Column.java` (`Column<T>` value definitions), `biz/ColumnStream.java` (graph handles); schema constants e.g. `RecSysMetrics.COUPON_ROI` |
 | Typed node bases (Java-first) | `biz/NodeSchema.java`, `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`; custom nodes extend `ColumnNode` with typed fields |
 | Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream<?>[]`) |
@@ -149,6 +149,9 @@ test. Tests are the behavioral contract.
 - Op aspects may skip an op without failing the graph; async execution still
   completes the graph.
 - Monitoring events keep the C++ names/attributes; stats remain optional.
+  `StatsCollector` accepts both `node.*` and `op.*` terminal events, appends
+  records to a concurrent queue, and `ExecutionStats` exposes
+  success/fallback/failed/skipped counts.
 
 ### Column
 
@@ -213,13 +216,24 @@ test. Tests are the behavioral contract.
   `fetchColumns(...)` returns named cell lists. `FeedFetch` owns the row/column
   conversion helpers: feed writes primitive buffers directly, fetch reads one
   column without a row transpose, and Q8_0 scalar reads use the first block
-  without full dequantization.
+  without full dequantization. `feedTensors(Map<String, Tensor>)` skips cell
+  conversion; `fetchTensor(...)` returns a read-only typed tensor. `feed` may
+  run before compile: implicit compilation re-coerces the stored feed columns
+  to their declared dtypes.
 - Pipeline feed transfers table ownership to the store and `fetch` returns
   read-only result views; `fetchColumns` snapshots cells into immutable lists.
   `TensorStore.addTable(table)` / `toTable(names)` keep cloning for public
   callers; only `addTable(table, false)` / `toTable(names, false)`
   (pipeline-internal) share tensors. Never mutate a fed tensor after `feed` or
   a fetched tensor after `fetch`.
+- `ColumnPipeline` phase methods are fluent (`compile`/`feed`/`compute` return
+  the pipeline); `run(FeedStream, ColumnStream<?>...)` is the single-shot typed
+  convenience. A pipeline is mutable and not thread-safe; create one per
+  concurrent run.
+- `ColumnModule` returns array snapshots from public `nodes()`, `inputs()`,
+  `outputs()` and `dependencies()`; internal compiler/scheduler code uses
+  package-private views. `define()` is idempotent/synchronized and retryable
+  after failure; `feedMap()`/`fetchMap()` cache immutable name views.
 - Typed dispatcher ops (`AddTensor`, `SubTensor`, `MultiTensor`, `DivTensor`)
   cache their typed delegates instead of allocating one per `compute`.
 - The realistic demo targets search/recommendation metrics: CTR =
@@ -258,8 +272,12 @@ test. Tests are the behavioral contract.
   `compute.start/end`, `fetch.start/end`; node events
   `node.start/end/error/fallback` carry `op` and `module`; `module.end` with
   `node_count`; `cpu.pressure` with `pool`, `utilization`, `busy_ns`,
-  `wall_ns`, `workers`. `ColumnStatsCollector` attributes ops from the event
-  `module` attribute (node-id slash parsing is only a fallback).
+  `wall_ns`, `workers`. Feed/fetch end events carry `rows` and `columns`;
+  compute events carry `nodes`, `workers` and `virtual`. `ColumnStatsCollector`
+  attributes ops from the event `module` attribute (node-id slash parsing is
+  only a fallback), records per-op status, and appends concurrent node samples
+  to lock-free queues. `RunStats` exposes phase shape, node count, execution
+  mode, total elapsed, and success/fallback/failure counts.
 - Vector API: use `jdk.incubator.vector` for element-wise arithmetic, scalar
   broadcast, comparisons, reductions and unary ops, including integer
   `neg`/`abs`/`square` and mask writes. Compile/test/run with
@@ -300,9 +318,12 @@ in `~/.gradle/gradle.properties`.
 - [ ] DAG tests cover wide and deep graphs and both ready-queue schedulers
       (`Executor` and `OpExecutor`).
 - [ ] Column tests cover the ready-queue scheduler, monitoring `module`
-      attribution and the no-copy feed/fetch overload semantics.
+      attribution, no-copy feed/fetch overload semantics, fluent/columnar
+      boundaries, pipeline-plan reuse and module snapshots.
 - [ ] Blocking-column behavior is covered when the virtual-thread option
       changes; the benchmark still compiles and runs.
+- [ ] Repeated-run/timing changes are checked with
+      `:examples:runRecsysBenchmark`, not a single `RunStats` sample.
 - [ ] Column examples run with `--add-modules jdk.incubator.vector`.
 - [ ] `:examples` still compiles; realistic demo classes remain separated into
       schema/nodes/modules instead of one catch-all class.

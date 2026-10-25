@@ -25,10 +25,11 @@ import java.util.Objects;
  * }
  * }</pre>
  *
- * <p>Nodes, inputs, outputs and dependencies are exposed as arrays; their
- * cardinality is fixed after module construction. `feedMap()` and `fetchMap()`
- * are read-only name views; use `published(Column)` for typed module-to-module
- * wiring.
+ * <p>Nodes, inputs, outputs and dependencies are exposed as array snapshots;
+ * their cardinality is fixed after module construction. Internal compiler and
+ * scheduler code uses package-private views. `feedMap()` and `fetchMap()` are
+ * cached read-only name views; use `published(Column)` for typed
+ * module-to-module wiring.
  */
 public abstract class ColumnModule {
 
@@ -39,11 +40,15 @@ public abstract class ColumnModule {
     private final List<Class<? extends ColumnModule>> dependencyBuilder = new ArrayList<>();
     private final Map<String, ColumnStream<?>> inputByName = new LinkedHashMap<>();
 
+    private enum InitState { NEW, INITIALIZING, READY }
+
     private ColumnNode[] nodes;
     private ColumnStream<?>[] inputs;
     private ColumnStream<?>[] outputs;
     private Class<? extends ColumnModule>[] dependencies;
-    private boolean initialized;
+    private InitState initState = InitState.NEW;
+    private volatile Map<String, ColumnStream<?>> feedMap;
+    private volatile Map<String, ColumnStream<?>> fetchMap;
 
     /**
      * Declare a typed external feed input. The column definition carries the
@@ -65,6 +70,7 @@ public abstract class ColumnModule {
         inputByName.put(column.name(), stream);
         inputBuilder.add(stream);
         inputs = null;
+        feedMap = null;
         return stream;
     }
 
@@ -106,6 +112,7 @@ public abstract class ColumnModule {
             outputBuilder.add(Objects.requireNonNull(stream, "stream"));
         }
         outputs = null;
+        fetchMap = null;
     }
 
     /** Declarative alias for {@link #output(ColumnStream...)}. */
@@ -137,7 +144,7 @@ public abstract class ColumnModule {
     public final <T> ColumnStream<T> published(Column<T> column) {
         Objects.requireNonNull(column, "column");
         initialize();
-        for (ColumnStream<?> output : outputs()) {
+        for (ColumnStream<?> output : outputView()) {
             if (!output.name().equals(column.name())) {
                 continue;
             }
@@ -156,27 +163,74 @@ public abstract class ColumnModule {
     /** Read-only view of this module's external feed handles, keyed by name. */
     public final Map<String, ColumnStream<?>> feedMap() {
         initialize();
-        Map<String, ColumnStream<?>> map = new LinkedHashMap<>();
-        for (ColumnStream<?> input : inputs()) {
-            map.put(input.name(), input);
+        Map<String, ColumnStream<?>> cached = feedMap;
+        if (cached == null) {
+            Map<String, ColumnStream<?>> map = new LinkedHashMap<>();
+            for (ColumnStream<?> input : inputView()) {
+                map.put(input.name(), input);
+            }
+            cached = Collections.unmodifiableMap(map);
+            feedMap = cached;
         }
-        return Collections.unmodifiableMap(map);
+        return cached;
     }
 
     /** Read-only view of this module's published fetch handles, keyed by name. */
     public final Map<String, ColumnStream<?>> fetchMap() {
         initialize();
-        Map<String, ColumnStream<?>> map = new LinkedHashMap<>();
-        for (ColumnStream<?> output : outputs()) {
-            map.put(output.name(), output);
+        Map<String, ColumnStream<?>> cached = fetchMap;
+        if (cached == null) {
+            Map<String, ColumnStream<?>> map = new LinkedHashMap<>();
+            for (ColumnStream<?> output : outputView()) {
+                map.put(output.name(), output);
+            }
+            cached = Collections.unmodifiableMap(map);
+            fetchMap = cached;
         }
-        return Collections.unmodifiableMap(map);
+        return cached;
     }
 
-    final void initialize() {
-        if (!initialized) {
-            initialized = true;
+    /**
+     * Idempotent module definition. Reentrant calls from {@link #define()} are
+     * harmless; a failed definition is retried on the next call instead of
+     * leaving the module half-initialized.
+     */
+    final synchronized void initialize() {
+        if (initState != InitState.NEW) {
+            return;
+        }
+        initState = InitState.INITIALIZING;
+        int nodeCount = nodeBuilder.size();
+        int inputCount = inputBuilder.size();
+        int outputCount = outputBuilder.size();
+        int dependencyCount = dependencyBuilder.size();
+        Map<String, ColumnStream<?>> inputsBefore = new LinkedHashMap<>(inputByName);
+        try {
             define();
+            initState = InitState.READY;
+        } catch (Throwable failure) {
+            // A failed definition must not leave partial nodes/streams behind:
+            // the next initialize() retries from the pre-define state.
+            truncate(nodeBuilder, nodeCount);
+            truncate(inputBuilder, inputCount);
+            truncate(outputBuilder, outputCount);
+            truncate(dependencyBuilder, dependencyCount);
+            inputByName.clear();
+            inputByName.putAll(inputsBefore);
+            nodes = null;
+            inputs = null;
+            outputs = null;
+            dependencies = null;
+            feedMap = null;
+            fetchMap = null;
+            initState = InitState.NEW;
+            throw failure;
+        }
+    }
+
+    private static <T> void truncate(List<T> list, int size) {
+        if (list.size() > size) {
+            list.subList(size, list.size()).clear();
         }
     }
 
@@ -184,21 +238,42 @@ public abstract class ColumnModule {
         return id;
     }
 
+    /** Snapshot of registered nodes; callers cannot mutate module wiring. */
     public final ColumnNode[] nodes() {
+        return nodeView().clone();
+    }
+
+    /** Snapshot of external feed handles. */
+    public final ColumnStream<?>[] inputs() {
+        return inputView().clone();
+    }
+
+    /** Snapshot of published output handles. */
+    public final ColumnStream<?>[] outputs() {
+        return outputView().clone();
+    }
+
+    /** Snapshot of module dependency classes. */
+    @SuppressWarnings("unchecked")
+    public final Class<? extends ColumnModule>[] dependencies() {
+        return dependencyView().clone();
+    }
+
+    final ColumnNode[] nodeView() {
         if (nodes == null) {
             nodes = nodeBuilder.toArray(ColumnNode[]::new);
         }
         return nodes;
     }
 
-    public final ColumnStream<?>[] inputs() {
+    final ColumnStream<?>[] inputView() {
         if (inputs == null) {
             inputs = inputBuilder.toArray(ColumnStream<?>[]::new);
         }
         return inputs;
     }
 
-    public final ColumnStream<?>[] outputs() {
+    final ColumnStream<?>[] outputView() {
         if (outputs == null) {
             outputs = outputBuilder.toArray(ColumnStream<?>[]::new);
         }
@@ -206,7 +281,7 @@ public abstract class ColumnModule {
     }
 
     @SuppressWarnings("unchecked")
-    public final Class<? extends ColumnModule>[] dependencies() {
+    final Class<? extends ColumnModule>[] dependencyView() {
         if (dependencies == null) {
             dependencies = dependencyBuilder.toArray(Class[]::new);
         }

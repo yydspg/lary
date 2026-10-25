@@ -49,7 +49,7 @@ public final class ColumnPipelineFactory {
                 ? new ColumnPipeline(computeWorkers)
                 : new ColumnPipeline();
         pipeline.setVirtualComputeThreads(virtualThreads);
-        modules.forEach(pipeline::add);
+        pipeline.addAll(modules);
         return pipeline;
     }
 

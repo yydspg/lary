@@ -146,12 +146,14 @@ public final class FeedFetch {
                     ? column.dequantize() : column;
         }
 
+        // Row.of wraps an immutable list; building a Cell[] avoids one
+        // ArrayList allocation and one defensive copy per output row.
         for (int r = 0; r < rows; r++) {
-            List<Cell> cells = new ArrayList<>(names.size());
-            for (Tensor col : columns) {
-                cells.add(cellAt(col, r));
+            Cell[] cells = new Cell[columns.length];
+            for (int c = 0; c < columns.length; c++) {
+                cells[c] = cellAt(columns[c], r);
             }
-            result.add(new Row(cells));
+            result.add(Row.of(cells));
         }
         return result;
     }
@@ -177,11 +179,11 @@ public final class FeedFetch {
             if (column.dtype() == DType.Q8_0) {
                 column = column.dequantize();
             }
-            List<Cell> cells = new ArrayList<>(rows);
+            Cell[] cells = new Cell[rows];
             for (int r = 0; r < rows; r++) {
-                cells.add(cellAt(column, r));
+                cells[r] = cellAt(column, r);
             }
-            result.put(name, List.copyOf(cells));
+            result.put(name, List.of(cells));
         }
         return Collections.unmodifiableMap(result);
     }

@@ -6,8 +6,10 @@ package io.lark.dag;
 import io.lark.metric.Event;
 import io.lark.metric.Monitor;
 
-import java.util.ArrayList;
 import java.util.List;
+import java.util.Queue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Built-in per-node monitoring/timing implementation.
@@ -25,16 +27,16 @@ import java.util.List;
  */
 public final class StatsCollector implements Monitor {
 
-    private final Object lock = new Object();
-    private final List<NodeRunStats> records = new ArrayList<>();
-    private long totalElapsedNanos;
+    private final Queue<NodeRunStats> records = new ConcurrentLinkedQueue<>();
+    private final AtomicLong totalElapsedNanos = new AtomicLong();
 
     @Override
     public void emit(Event event) {
         if (!"dag".equals(event.source())) {
             return;
         }
-        if (event.action().startsWith("node.")) {
+        if (event.action().startsWith("node.")
+                || event.action().startsWith("op.")) {
             handleNodeEvent(event);
         }
     }
@@ -63,23 +65,18 @@ public final class StatsCollector implements Monitor {
         NodeRunStats record = new NodeRunStats(event.subject(), type,
                 nodeStatus, elapsed, startedAt);
 
-        synchronized (lock) {
-            records.add(record);
-            totalElapsedNanos = Math.max(totalElapsedNanos, startedAt + elapsed);
-        }
+        records.add(record);
+        long end = startedAt + elapsed;
+        totalElapsedNanos.accumulateAndGet(end, Math::max);
     }
 
     /** Immutable snapshot of the current statistics. */
     public ExecutionStats stats() {
-        synchronized (lock) {
-            return new ExecutionStats(totalElapsedNanos, records);
-        }
+        return new ExecutionStats(totalElapsedNanos.get(), List.copyOf(records));
     }
 
     public void reset() {
-        synchronized (lock) {
-            records.clear();
-            totalElapsedNanos = 0;
-        }
+        records.clear();
+        totalElapsedNanos.set(0);
     }
 }
