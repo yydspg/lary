@@ -199,27 +199,21 @@ final class VectorOps {
         double[] src = input.doubleData();
         double mean = sumDouble(src) / n;
 
-        double[] diff = new double[n];
+        // Second pass only: subtracting into a temporary diff[] doubles the
+        // memory traffic for no benefit.
         var species = DoubleVector.SPECIES_PREFERRED;
         int lanes = species.length();
         DoubleVector meanVector = DoubleVector.broadcast(species, mean);
+        double sq = 0.0;
         int i = 0;
         for (; i + lanes <= n; i += lanes) {
-            DoubleVector v = DoubleVector.fromArray(species, src, i);
-            v.sub(meanVector).intoArray(diff, i);
+            DoubleVector diff = DoubleVector.fromArray(species, src, i)
+                    .sub(meanVector);
+            sq += diff.mul(diff).reduceLanes(VectorOperators.ADD);
         }
         for (; i < n; i++) {
-            diff[i] = src[i] - mean;
-        }
-
-        double sq = 0.0;
-        i = 0;
-        for (; i + lanes <= n; i += lanes) {
-            DoubleVector v = DoubleVector.fromArray(species, diff, i);
-            sq += v.mul(v).reduceLanes(VectorOperators.ADD);
-        }
-        for (; i < n; i++) {
-            sq += diff[i] * diff[i];
+            double diff = src[i] - mean;
+            sq += diff * diff;
         }
         return Math.sqrt(sq / n);
     }
@@ -538,6 +532,13 @@ final class VectorOps {
     }
 
     private static void writeMask(VectorMask<?> mask, long[] out, int offset, int lanes) {
+        if (lanes <= Long.SIZE) {
+            long bits = mask.toLong();
+            for (int i = 0; i < lanes; i++) {
+                out[offset + i] = (bits >>> i) & 1L;
+            }
+            return;
+        }
         for (int i = 0; i < lanes; i++) {
             out[offset + i] = mask.laneIsSet(i) ? 1L : 0L;
         }
@@ -579,20 +580,44 @@ final class VectorOps {
     // ---- unary ----------------------------------------------------------
 
     private static void unaryInt(int[] a, int[] out, Unary op) {
-        for (int i = 0; i < a.length; i++) {
+        var species = IntVector.SPECIES_PREFERRED;
+        int lanes = species.length();
+        int i = 0;
+        for (; i + lanes <= a.length; i += lanes) {
+            IntVector v = IntVector.fromArray(species, a, i);
+            IntVector r = switch (op) {
+                case NEG -> v.neg();
+                case ABS -> v.abs();
+                case SQUARE -> v.mul(v);
+            };
+            r.intoArray(out, i);
+        }
+        for (; i < a.length; i++) {
             out[i] = switch (op) {
                 case NEG -> -a[i];
-                case ABS -> a[i] < 0 ? -a[i] : a[i];
+                case ABS -> Math.abs(a[i]);
                 case SQUARE -> a[i] * a[i];
             };
         }
     }
 
     private static void unaryLong(long[] a, long[] out, Unary op) {
-        for (int i = 0; i < a.length; i++) {
+        var species = LongVector.SPECIES_PREFERRED;
+        int lanes = species.length();
+        int i = 0;
+        for (; i + lanes <= a.length; i += lanes) {
+            LongVector v = LongVector.fromArray(species, a, i);
+            LongVector r = switch (op) {
+                case NEG -> v.neg();
+                case ABS -> v.abs();
+                case SQUARE -> v.mul(v);
+            };
+            r.intoArray(out, i);
+        }
+        for (; i < a.length; i++) {
             out[i] = switch (op) {
                 case NEG -> -a[i];
-                case ABS -> a[i] < 0 ? -a[i] : a[i];
+                case ABS -> Math.abs(a[i]);
                 case SQUARE -> a[i] * a[i];
             };
         }

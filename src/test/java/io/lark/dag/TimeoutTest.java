@@ -209,6 +209,27 @@ class TimeoutTest {
     }
 
     @Test
+    void opGraphDeadlineAbortsTheRun() {
+        SlowOp op = new SlowOp(false);
+        OpGraph graph = new OpGraph().addOp(op);
+
+        long start = System.nanoTime();
+        try (OpExecutor executor = new OpExecutor()) {
+            executor.setTimeoutPolicy(TimeoutPolicy.builder()
+                    .graphTimeout(TIMEOUT)
+                    .build());
+            executor.execute(graph, new DefaultContext());
+
+            assertTrue(executor.lastRunAborted());
+            assertTrue(executor.lastAbortReason().contains("graph timeout"));
+        }
+        long millis = (System.nanoTime() - start) / 1_000_000;
+
+        assertTrue(millis < 2_000,
+                "op graph deadline should return quickly, took " + millis + "ms");
+    }
+
+    @Test
     void repeatedOpTimeoutsQuarantineTheOp() {
         SlowOp op = new SlowOp(false);
         OpGraph graph = new OpGraph().addOp(op);

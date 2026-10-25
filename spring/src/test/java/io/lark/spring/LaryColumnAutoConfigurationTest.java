@@ -23,6 +23,7 @@ import org.springframework.context.annotation.Import;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertSame;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class LaryColumnAutoConfigurationTest {
 
@@ -66,6 +67,26 @@ class LaryColumnAutoConfigurationTest {
             } finally {
                 first.close();
                 second.close();
+            }
+        }
+    }
+
+    @Test
+    void virtualThreadsPropertyConfiguresTheFactory() {
+        String key = "lary.column.virtual-threads";
+        String previous = System.getProperty(key);
+        System.setProperty(key, "true");
+        try (AnnotationConfigApplicationContext context =
+                     new AnnotationConfigApplicationContext(AnnotationConfig.class)) {
+            try (ColumnPipeline pipeline =
+                         context.getBean(ColumnPipelineFactory.class).create()) {
+                assertTrue(pipeline.usesVirtualComputeThreads());
+            }
+        } finally {
+            if (previous == null) {
+                System.clearProperty(key);
+            } else {
+                System.setProperty(key, previous);
             }
         }
     }

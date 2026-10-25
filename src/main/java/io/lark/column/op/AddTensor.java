@@ -11,6 +11,13 @@ import java.util.List;
 /** Runtime dispatcher for add; chooses a typed AddTensor. */
 public final class AddTensor extends OpTensor {
 
+    private final OpTensor[] typed = {
+            new IntAddTensor(inputs(), outputs()),
+            new LongAddTensor(inputs(), outputs()),
+            new FloatAddTensor(inputs(), outputs()),
+            new DoubleAddTensor(inputs(), outputs())
+    };
+
     public AddTensor(List<String> inputs, List<String> outputs) {
         super("add", inputs, outputs);
     }
@@ -22,15 +29,11 @@ public final class AddTensor extends OpTensor {
     public void compute(OpContext ctx) {
         DType out = Compute.promote(ctx.input(inputs()[0]).dtype(),
                 ctx.input(inputs()[1]).dtype());
-        typed(out).compute(ctx);
-    }
-
-    private OpTensor typed(DType out) {
-        return switch (out) {
-            case INT32 -> new IntAddTensor(inputs(), outputs());
-            case INT64 -> new LongAddTensor(inputs(), outputs());
-            case FLOAT32 -> new FloatAddTensor(inputs(), outputs());
-            default -> new DoubleAddTensor(inputs(), outputs());
-        };
+        switch (out) {
+            case INT32 -> typed[0].compute(ctx);
+            case INT64 -> typed[1].compute(ctx);
+            case FLOAT32 -> typed[2].compute(ctx);
+            default -> typed[3].compute(ctx);
+        }
     }
 }

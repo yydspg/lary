@@ -31,19 +31,44 @@ public final class FeedFetch {
     }
 
     public static TensorTable feedTable(List<String> names, List<Row> rows) {
-        Map<String, List<Cell>> columns = new LinkedHashMap<>();
+        Objects.requireNonNull(names, "names");
+        Objects.requireNonNull(rows, "rows");
+        TensorTable table = new TensorTable();
+        int rowCount = rows.size();
         for (int c = 0; c < names.size(); c++) {
-            List<Cell> cells = new ArrayList<>(rows.size());
-            for (Row row : rows) {
-                if (c >= row.size()) {
-                    throw new IllegalArgumentException(
-                            "feed_table: row has fewer cells than columns");
+            boolean anyDouble = false;
+            for (int r = 0; r < rowCount; r++) {
+                Cell cell = cellAt(rows.get(r), c);
+                if (!cell.isNil() && cell.isDouble()) {
+                    anyDouble = true;
+                    break;
                 }
-                cells.add(row.get(c));
             }
-            columns.put(names.get(c), cells);
+            // Build the primitive buffer directly: no per-cell List<Cell>
+            // transpose and no per-element virtual setter.
+            if (anyDouble) {
+                double[] data = new double[rowCount];
+                for (int r = 0; r < rowCount; r++) {
+                    data[r] = cellAt(rows.get(r), c).asDouble();
+                }
+                table.add(names.get(c), Tensor.wrapDoubles(data));
+            } else {
+                long[] data = new long[rowCount];
+                for (int r = 0; r < rowCount; r++) {
+                    data[r] = cellAt(rows.get(r), c).asLong();
+                }
+                table.add(names.get(c), Tensor.wrapLongs(data));
+            }
         }
-        return feedTable(columns);
+        return table;
+    }
+
+    private static Cell cellAt(Row row, int column) {
+        if (column >= row.size()) {
+            throw new IllegalArgumentException(
+                    "feed_table: row has fewer cells than columns");
+        }
+        return Objects.requireNonNull(row.get(column), "cell");
     }
 
     /** Build a column table from named, already column-oriented data. */
@@ -66,29 +91,28 @@ public final class FeedFetch {
     }
 
     private static Tensor columnTensor(List<Cell> cells) {
+        int count = cells.size();
         boolean anyDouble = false;
-        for (Cell cell : cells) {
-            Objects.requireNonNull(cell, "cell");
+        for (int i = 0; i < count; i++) {
+            Cell cell = Objects.requireNonNull(cells.get(i), "cell");
             if (!cell.isNil() && cell.isDouble()) {
                 anyDouble = true;
                 break;
             }
         }
 
-        DType dtype = anyDouble ? DType.FLOAT64 : DType.INT64;
-        Tensor column = Tensor.zeros(cells.size(), dtype);
-        for (int r = 0; r < cells.size(); r++) {
-            Cell cell = cells.get(r);
-            if (cell.isNil()) {
-                if (dtype == DType.INT64) column.setLong(r, 0L);
-                else column.setDouble(r, 0.0);
-            } else if (dtype == DType.INT64) {
-                column.setLong(r, cell.asLong());
-            } else {
-                column.setDouble(r, cell.asDouble());
+        if (anyDouble) {
+            double[] data = new double[count];
+            for (int i = 0; i < count; i++) {
+                data[i] = Objects.requireNonNull(cells.get(i), "cell").asDouble();
             }
+            return Tensor.wrapDoubles(data);
         }
-        return column;
+        long[] data = new long[count];
+        for (int i = 0; i < count; i++) {
+            data[i] = Objects.requireNonNull(cells.get(i), "cell").asLong();
+        }
+        return Tensor.wrapLongs(data);
     }
 
     public static TensorTable tableFromColumns(List<Column> columns) {
@@ -139,18 +163,26 @@ public final class FeedFetch {
     /** Convert selected table columns to named cell lists. */
     public static Map<String, List<Cell>> fetchColumns(TensorTable table,
                                                        List<String> names) {
-        List<Row> rows = fetchRows(table, names);
-        Map<String, List<Cell>> columns = new LinkedHashMap<>();
-        for (String name : names) {
-            columns.put(name, new ArrayList<>(rows.size()));
+        if (names.isEmpty()) {
+            return Map.of();
         }
-        for (Row row : rows) {
-            for (int c = 0; c < names.size(); c++) {
-                columns.get(names.get(c)).add(row.get(c));
-            }
-        }
+        int rows = table.get(names.get(0)).size();
         Map<String, List<Cell>> result = new LinkedHashMap<>();
-        columns.forEach((name, cells) -> result.put(name, List.copyOf(cells)));
+        for (String name : names) {
+            Tensor column = table.get(name);
+            if (column.size() != rows) {
+                throw new IllegalArgumentException(
+                        "fetch_rows: column '" + name + "' length mismatch");
+            }
+            if (column.dtype() == DType.Q8_0) {
+                column = column.dequantize();
+            }
+            List<Cell> cells = new ArrayList<>(rows);
+            for (int r = 0; r < rows; r++) {
+                cells.add(cellAt(column, r));
+            }
+            result.put(name, List.copyOf(cells));
+        }
         return Collections.unmodifiableMap(result);
     }
 
@@ -168,7 +200,10 @@ public final class FeedFetch {
             case INT64 -> tensor.getLong(0);
             case FLOAT32 -> tensor.getFloat(0);
             case FLOAT64 -> tensor.getDouble(0);
-            case Q8_0 -> tensor.dequantize().getDouble(0);
+            case Q8_0 -> {
+                BlockQ8_0 block = tensor.q8Blocks()[0];
+                yield block.q(0) * (double) block.scale();
+            }
         };
     }
 

@@ -27,11 +27,18 @@ public final class TensorStore {
     public void set(String name, Tensor tensor) {
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(tensor, "tensor");
+        // Fast path: execution pre-registers every output name, so most writes
+        // only need one concurrent map operation and no global lock.
+        if (tensors.replace(name, tensor) != null) {
+            return;
+        }
         synchronized (orderLock) {
-            if (!tensors.containsKey(name)) {
+            Tensor previous = tensors.putIfAbsent(name, tensor);
+            if (previous == null) {
                 order.add(name);
+            } else {
+                tensors.put(name, tensor);
             }
-            tensors.put(name, tensor);
         }
     }
 
@@ -96,12 +103,35 @@ public final class TensorStore {
     }
 
     public void addTable(TensorTable table) {
+        addTable(table, true);
+    }
+
+    /**
+     * Copy a table into the store.
+     *
+     * <p>{@code copy == false} stores the tensor references directly. Use it
+     * only when the caller transfers ownership (the pipeline feed path does);
+     * the caller must not retain or mutate those tensors afterwards.
+     */
+    public void addTable(TensorTable table, boolean copy) {
         for (String name : table.names()) {
-            set(name, table.get(name).clone());
+            Tensor tensor = table.get(name);
+            set(name, copy ? tensor.clone() : tensor);
         }
     }
 
     public TensorTable toTable(List<String> names) {
+        return toTable(names, true);
+    }
+
+    /**
+     * Materialize selected columns as a table.
+     *
+     * <p>{@code copy == false} returns a view over the stored tensors. The
+     * caller must treat them as read-only; the pipeline fetch path uses it to
+     * avoid copying every result column.
+     */
+    public TensorTable toTable(List<String> names, boolean copy) {
         TensorTable out = new TensorTable();
         Integer rows = null;
         for (String name : names) {
@@ -116,7 +146,7 @@ public final class TensorStore {
                 throw new IllegalArgumentException(
                         "TensorStore.toTable: length mismatch for column '" + name + "'");
             }
-            out.add(name, tensor.clone());
+            out.add(name, copy ? tensor.clone() : tensor);
         }
         return out;
     }

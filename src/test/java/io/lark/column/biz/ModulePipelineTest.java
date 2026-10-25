@@ -250,6 +250,23 @@ class ModulePipelineTest {
     }
 
     @Test
+    void virtualComputeThreadsKeepTheReadyQueueBehavior() {
+        ComponentModule component = new ComponentModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline(1)) {
+            pipeline.setVirtualComputeThreads(true);
+            pipeline.add(component);
+            pipeline.compile(FetchStream.of(component.out()));
+            pipeline.feed(FeedStream.of(component.metricValue, rows(2)));
+            pipeline.compute();
+
+            assertTrue(pipeline.usesVirtualComputeThreads());
+            assertEquals(List.of(20L, 30L),
+                    pipeline.fetch(FetchStream.of(component.out())).stream()
+                            .map(row -> row.get(0).asLong()).toList());
+        }
+    }
+
+    @Test
     void feedRowsUsesCompiledColumnOrder() {
         ComponentModule component = new ComponentModule();
         try (ColumnPipeline pipeline = new ColumnPipeline()) {

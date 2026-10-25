@@ -108,3 +108,15 @@ tasks.register<JavaExec>("runRecsys") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("io.lark.examples.recsys.RecSysDemo")
 }
+
+tasks.register<JavaExec>("runRecsysBenchmark") {
+    group = "application"
+    description = "Run the warmed-up search/recommendation benchmark."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("io.lark.examples.recsys.RecSysBenchmark")
+    listOf("rows", "warmup", "iterations", "workers").forEach { name ->
+        (project.findProperty("lary.bench.$name") as String?)?.let {
+            systemProperty("lary.bench.$name", it)
+        }
+    }
+}

@@ -41,7 +41,8 @@ lary/
 │     ├─ SimplePipeline.java     # DAG Node tour
 │     ├─ OpPipeline.java         # Op / Aspect tour
 │     └─ recsys/                 # search / recommendation metrics project
-│        ├─ RecSysDemo.java
+│        ├─ RecSysDemo.java      # single-run demo
+│        ├─ RecSysBenchmark.java # warmed-up steady-state benchmark
 │        ├─ MetricResultPrinter.java
 │        ├─ schema/              # Column<T> definitions (one file)
 │        ├─ node/                # one file per business node
@@ -93,6 +94,7 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 ./gradlew build :examples:build :spring:build
 
 ./gradlew :examples:runRecsys    # search/recommendation metric project
+./gradlew :examples:runRecsysBenchmark # warmed-up steady-state benchmark
 ./gradlew :examples:runSimple    # DAG Node layer
 ./gradlew :examples:runOp        # DAG Op + Aspect layer
 ./gradlew :spring:runSpringRecsys # same recsys demo through Spring Boot
@@ -100,11 +102,11 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
-`TimeoutTest`, `ModulePipelineTest` and `OpTensorTest`. `DagTest` also covers
-wide/deep ready-queue scheduling and array/varargs node definitions. The
-`:examples` module has `RecSysMetricTest` for the search/recommendation graph;
-`:spring` has Spring context tests for scanning, constructor injection and the
-prototype pipeline.
+`TimeoutTest`, `ModulePipelineTest` and `OpTensorTest`. `DagTest` and `OpTest`
+also cover wide/deep ready-queue scheduling and array/varargs node definitions.
+The `:examples` module has `RecSysMetricTest` for the search/recommendation
+graph; `:spring` has Spring context tests for scanning, constructor injection
+and the prototype pipeline.
 
 ## Search / recommendation metrics demo
 
@@ -234,6 +236,26 @@ average_weight         = 63.2028
 The run also emits per-module timing and CPU-pressure statistics through the
 same monitoring layer as the DAG examples.
 
+### Steady-state benchmark
+
+The demo's `RunStats` covers one six-row run, so it is useful for attribution
+but includes JIT and class-loading cost. For throughput, use the warmed-up
+benchmark:
+
+```sh
+./gradlew :examples:runRecsysBenchmark
+./gradlew :examples:runRecsysBenchmark \
+    -Plary.bench.rows=200000 -Plary.bench.warmup=20 -Plary.bench.iterations=50 \
+    -Plary.bench.workers=4
+```
+
+`RecSysBenchmark` repeats the sample rows, runs unmeasured warm-up iterations,
+then reports median and p95 timings for feed, compute, fetch and the whole
+run. Defaults are 100,000 rows, 10 warm-up iterations, 30 measured iterations
+and 4 compute workers. The benchmark still uses a synthetic dataset; compare
+configurations on the same machine and JDK rather than treating the absolute
+numbers as a hardware-independent baseline.
+
 ## DAG quick start
 
 ```java
@@ -288,7 +310,9 @@ try (Executor executor = new Executor(2, 4)) {
   invoking fallback) until the quarantine expires or `timeoutTracker().reset`.
 - `TimeoutAction.ABORT_GRAPH` cancels running bodies and drains the current run;
   inspect `executor.lastRunAborted()` / `lastAbortReason()`.
-- `graphTimeout(...)` sets a whole-run deadline.
+- `graphTimeout(...)` sets a whole-run deadline. If a node or op's effective
+  deadline is the graph deadline, its timeout also aborts the run, so
+  `lastRunAborted()` is reliable even when the task timer beats the watchdog.
 - `Op` has the same `timeout()` / `fallback()` hooks, handled by `OpExecutor`.
 
 ## Op-layer quick start
@@ -482,6 +506,54 @@ try (ColumnPipeline pipeline = new ColumnPipeline()) {
 columns; `feed(Map)` accepts named cell lists; `fetchColumns` returns named cell
 lists. Missing required feed columns are rejected before execution.
 
+### Performance and execution model
+
+The column engine is CPU-bound by default, so `compute-workers` (or
+`new ColumnPipeline(workers)`) bounds a fixed platform daemon pool; `0` means
+available processors. `ComputeGraph.executeAsync` uses a dependency-counter
+ready queue: only nodes whose dependencies are complete are submitted, running
+op bodies execute directly on pool threads, and no thread is parked per
+dependency. Independent nodes still run concurrently, and sequential
+`ComputeGraph.execute` remains available for single-threaded runs.
+
+If a column node performs blocking I/O, enable virtual compute threads with
+`pipeline.setVirtualComputeThreads(true)` (Spring:
+`lary.column.virtual-threads: true`). The ready queue is unchanged, but
+blocking nodes no longer occupy one of a small number of platform workers.
+`compute-workers` remains the concurrency hint reported by monitoring. For a
+well-bounded blocking workload you can keep the fixed pool and raise the worker
+count instead.
+
+The separate DAG `OpExecutor` now uses the same dependency-counter ready queue:
+an op is submitted only after its dependencies complete, its body runs on the
+dag pool, and a shared timer schedules deadlines. `OpExecutor.execute` simply
+joins `executeAsync`. Its default pool is virtual-thread-per-task; a
+caller-provided pool is not shut down by `close()`.
+
+Boundary conversion avoids redundant copies without changing the public
+copying defaults:
+
+- `feed` transfers ownership of the freshly built feed table to the pipeline
+  store; callers must not mutate their feed tensors after feeding.
+- `fetch` returns read-only views of result tensors. `fetchColumns` snapshots
+  the cell values into immutable lists; do not mutate the tensors behind them.
+- `TensorStore.addTable(table)` and `toTable(names)` still clone, as before.
+  Only the pipeline paths use the internal no-copy overloads.
+- `feedTable` writes primitive buffers directly, and `fetchColumns` reads one
+  column at a time instead of transposing through `List<Row>`.
+- `fetchScalar` reads the first Q8_0 block without dequantizing the whole
+  tensor.
+
+Node monitoring events carry a `module` attribute, so `RunStats` attributes
+ops to the owning module even though node ids are generated. Integer
+`neg`/`abs`/`square` and comparison-mask writes are also SIMD kernels now.
+
+A single `RunStats` run measures one feed/compute/fetch cycle, including JIT
+and class-loading effects on short nodes. Use warm-up iterations and multiple
+samples for throughput decisions; `:examples:runRecsysBenchmark` does this with
+median and p95 reporting. Sub-millisecond per-op timings remain sensitive to
+JIT compilation, CPU frequency and monitoring overhead.
+
 ### Classpath discovery without Spring
 
 `@ColumnComponent` marks a `ColumnModule`; the built-in scanner supports class
@@ -553,6 +625,7 @@ lary:
   column:
     scan-packages: [com.example.features]
     compute-workers: 4   # 0 = available processors
+    virtual-threads: false # true for blocking column nodes
     enabled: true
 ```
 

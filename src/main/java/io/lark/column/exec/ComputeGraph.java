@@ -21,21 +21,29 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.CompletionException;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
+import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicIntegerArray;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * Execution-layer DAG of {@link ComputeNode}s.
  *
  * <p>{@link #execute(ExecutionContext)} runs sequentially in topological
- * order. {@link #executeAsync(ExecutorService, ExecutionContext)} gives every
- * node its own virtual thread (the Java coroutine equivalent) and executes op
- * bodies on the supplied pool. Independent nodes run concurrently.
+ * order. {@link #executeAsync(ExecutorService, ExecutionContext)} uses a
+ * dependency-counter ready queue: a node is submitted to the supplied pool only
+ * after all of its dependencies completed, and its op body runs directly on a
+ * pool thread. Independent nodes run concurrently and no thread is parked while
+ * waiting for dependencies.
  *
  * <p>Placeholders support forward references during total-graph compilation;
  * they are replaced via {@link #replacePlaceholder} before execution.
@@ -188,7 +196,7 @@ public final class ComputeGraph {
         }
         reserveOutputs(ctx.store());
 
-        RunState state = new RunState(nodes.size());
+        RunState state = new RunState(nodes, ctx);
         state.execStartNanos = System.nanoTime();
 
         for (ComputeNode node : topo) {
@@ -227,7 +235,6 @@ public final class ComputeGraph {
             if (error != null) {
                 node.setError(error);
             }
-            node.doneEvent().complete(null);
         }
 
         long wall = System.nanoTime() - state.execStartNanos;
@@ -235,8 +242,10 @@ public final class ComputeGraph {
     }
 
     /**
-     * Asynchronous execution: one virtual thread per node; op bodies run on
-     * {@code pool}. Blocks until every node completed.
+     * Asynchronous execution through a dependency-counter ready queue. A node
+     * is submitted to {@code pool} only after all dependencies completed; its
+     * op body runs directly on the pool thread. Blocks until every node
+     * completed.
      */
     public void executeAsync(ExecutorService pool, ExecutionContext ctx) {
         executeAsync(pool, ctx, workers(pool));
@@ -260,34 +269,20 @@ public final class ComputeGraph {
         reserveOutputs(ctx.store());
 
         int workers = Math.max(1, workersHint);
-        RunState state = new RunState(nodes.size());
+        RunState state = new RunState(nodes, ctx);
         state.execStartNanos = System.nanoTime();
 
-        for (ComputeNode node : nodes) {
-            try {
-                Thread.ofVirtual().name("lark-column-" + node.id()).start(() ->
-                        runNodeAsync(node, pool, ctx, state));
-            } catch (Throwable t) {
-                node.setStatus(ComputeNode.Status.FAILED);
-                node.setError(t);
-                node.doneEvent().complete(null);
-                state.completeOne();
-            }
-        }
-
+        state.start(pool);
         state.await();
+
         long wall = System.nanoTime() - state.execStartNanos;
         reportRunSummary(ctx, state, wall, workers);
     }
 
-    private void runNodeAsync(ComputeNode node, ExecutorService pool,
-                              ExecutionContext ctx, RunState state) {
+    private static void runNode(ComputeNode node, ExecutorService pool,
+                                ExecutionContext ctx, RunState state) {
+        long start = System.nanoTime();
         try {
-            for (ComputeNode dependency : node.dependencies()) {
-                dependency.doneEvent().join();
-            }
-
-            long start = System.nanoTime();
             emitNode(ctx, "node.start", node, 0, true);
             ModuleAcc acc = state.module(node.module());
             synchronized (acc) {
@@ -300,15 +295,7 @@ public final class ComputeGraph {
 
             Throwable error = null;
             try {
-                pool.submit(() -> {
-                    node.op().compute(new OpContext(ctx.store()));
-                    return null;
-                }).get();
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
-                error = e;
-            } catch (ExecutionException e) {
-                error = unwrap(e.getCause());
+                node.op().compute(new OpContext(ctx.store()));
             } catch (Throwable t) {
                 error = unwrap(t);
             }
@@ -330,12 +317,15 @@ public final class ComputeGraph {
             if (error != null) {
                 node.setError(error);
             }
-        } catch (Throwable t) {
+        } catch (Throwable fatal) {
             node.setStatus(ComputeNode.Status.FAILED);
-            node.setError(unwrap(t));
+            node.setError(unwrap(fatal));
         } finally {
-            node.doneEvent().complete(null);
-            state.completeOne();
+            if (state.markCompleted(node)) {
+                state.completeOne();
+                state.releaseDependents(node);
+            }
+            state.pump(pool);
         }
     }
 
@@ -357,8 +347,8 @@ public final class ComputeGraph {
                 : Math.max(1, Runtime.getRuntime().availableProcessors());
     }
 
-    private void emitNode(ExecutionContext ctx, String action, ComputeNode node,
-                          long elapsedNanos, boolean ok) {
+    private static void emitNode(ExecutionContext ctx, String action,
+                                 ComputeNode node, long elapsedNanos, boolean ok) {
         if (!ctx.hasMonitor()) {
             return;
         }
@@ -366,6 +356,7 @@ public final class ComputeGraph {
         try {
             monitor.emit(new Event("column", action, node.id())
                     .attr("op", node.op().opType())
+                    .attr("module", node.module())
                     .attrNanos("elapsed_ns", elapsedNanos)
                     .durationNanos(Math.max(0, elapsedNanos))
                     .ok(ok));
@@ -438,14 +429,131 @@ public final class ComputeGraph {
     }
 
     private static final class RunState {
+        private final ExecutionContext ctx;
+        private final ComputeNode[] nodes;
+        private final IdentityHashMap<ComputeNode, Integer> index =
+                new IdentityHashMap<>();
+        private final AtomicIntegerArray pending;
+        private final ComputeNode[][] dependents;
+        private final ConcurrentLinkedQueue<ComputeNode> ready =
+                new ConcurrentLinkedQueue<>();
+        private final AtomicBoolean pumping = new AtomicBoolean(false);
+        private final AtomicBoolean aborted = new AtomicBoolean(false);
+        private final Set<ComputeNode> completed =
+                ConcurrentHashMap.newKeySet();
         private final AtomicInteger remaining;
         private final CountDownLatch done = new CountDownLatch(1);
         private final Map<String, ModuleAcc> modules = new LinkedHashMap<>();
         private final AtomicLong busyNanos = new AtomicLong();
         private long execStartNanos;
 
-        private RunState(int nodeCount) {
-            this.remaining = new AtomicInteger(nodeCount);
+        private RunState(List<ComputeNode> graphNodes, ExecutionContext ctx) {
+            this.ctx = ctx;
+            int count = graphNodes.size();
+            this.nodes = graphNodes.toArray(ComputeNode[]::new);
+            this.pending = new AtomicIntegerArray(count);
+            this.remaining = new AtomicInteger(count);
+
+            for (int i = 0; i < count; i++) {
+                ComputeNode node = nodes[i];
+                index.put(node, i);
+                pending.set(i, node.dependencyView().size());
+            }
+
+            int[] outDegree = new int[count];
+            for (int i = 0; i < count; i++) {
+                for (ComputeNode dependency : nodes[i].dependencyView()) {
+                    outDegree[indexOf(dependency)]++;
+                }
+            }
+            this.dependents = new ComputeNode[count][];
+            for (int i = 0; i < count; i++) {
+                dependents[i] = new ComputeNode[outDegree[i]];
+            }
+            int[] cursor = new int[count];
+            for (int i = 0; i < count; i++) {
+                for (ComputeNode dependency : nodes[i].dependencyView()) {
+                    int dependencyIndex = indexOf(dependency);
+                    dependents[dependencyIndex][cursor[dependencyIndex]++] = nodes[i];
+                }
+            }
+
+            for (int i = 0; i < count; i++) {
+                if (pending.get(i) == 0) {
+                    ready.add(nodes[i]);
+                }
+            }
+        }
+
+        private int indexOf(ComputeNode node) {
+            Integer value = index.get(node);
+            if (value == null) {
+                throw new IllegalStateException(
+                        "ComputeGraph: dependency outside this graph: " + node.id());
+            }
+            return value;
+        }
+
+        private void start(ExecutorService pool) {
+            pump(pool);
+        }
+
+        private void pump(ExecutorService pool) {
+            if (!pumping.compareAndSet(false, true)) {
+                return;
+            }
+            try {
+                while (!aborted.get()) {
+                    ComputeNode node = ready.poll();
+                    if (node == null) {
+                        pumping.set(false);
+                        // Close the enqueue-during-drain race: a producer that
+                        // observed pumping == true will not pump again.
+                        if (ready.isEmpty()
+                                || !pumping.compareAndSet(false, true)) {
+                            return;
+                        }
+                        continue;
+                    }
+                    try {
+                        pool.execute(() -> runNode(node, pool, ctx, this));
+                    } catch (RejectedExecutionException rejected) {
+                        // No pool capacity: drain serially on this thread
+                        // instead of leaving the graph stuck.
+                        runNode(node, pool, ctx, this);
+                    }
+                }
+                pumping.set(false);
+            } catch (Throwable fatal) {
+                pumping.set(false);
+                failRemaining(fatal);
+            }
+        }
+
+        private void failRemaining(Throwable fatal) {
+            aborted.set(true);
+            ready.clear();
+            for (ComputeNode node : nodes) {
+                if (!markCompleted(node)) {
+                    continue;
+                }
+                node.setStatus(ComputeNode.Status.FAILED);
+                node.setError(unwrap(fatal));
+                completeOne();
+            }
+        }
+
+        private boolean markCompleted(ComputeNode node) {
+            return completed.add(node);
+        }
+
+        private void releaseDependents(ComputeNode node) {
+            for (ComputeNode dependent : dependents[indexOf(node)]) {
+                int dependentIndex = indexOf(dependent);
+                if (pending.decrementAndGet(dependentIndex) == 0) {
+                    ready.add(dependent);
+                }
+            }
         }
 
         private ModuleAcc module(String name) {

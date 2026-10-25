@@ -55,6 +55,7 @@ test. Tests are the behavioral contract.
 | `dag/include/dag/op.h` | `Op.java`, `OpAspect.java`, `OpStatus.java` |
 | `dag/include/dag/op_graph.h` | `OpGraph.java` |
 | `dag/include/dag/op_executor.h` | `OpExecutor.java` |
+| DAG op ready-queue scheduler (Java-first) | `OpExecutor.java` dependency counters + per-op timeout scheduler; op bodies run on the dag pool, not a driver thread |
 | `dag/include/dag/op_registry.h` | `OpRegistry.java` |
 | `dag/include/dag/op_graph_builder.h`, `src/op_graph_builder.cpp` | `OpGraphBuilder.java`, `OpDef.java`, `DslParser.java` |
 | Timeout / cancellation (Java-first) | `TimeoutPolicy.java`, `TimeoutAction.java`, `TimeoutTracker.java`, `DagTimeoutException.java`, `GraphAbortedException.java` |
@@ -77,6 +78,7 @@ test. Tests are the behavioral contract.
 | Typed tensor ops (Java-first) | `op/FloatAddTensor.java`, `FloatMultiTensor.java`, `FloatSubTensor.java`, `DoubleAddTensor.java`, `IntAddTensor.java`, `LongMultiTensor.java`, … |
 | `exec/exec_node.h`, `exec_node.cpp` | `exec/ComputeNode.java` (hidden execution node) |
 | `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
+| Column ready-queue scheduler (Java-first) | `exec/ComputeGraph.java` dependency counters + `ComputeNode.dependencyView()`; fixed platform pool sized by `ColumnPipeline.computeWorkers`, optional virtual compute threads for blocking nodes |
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
 | Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `BusinessNodeOp.java` |
 | Typed column schema (Java-first) | `biz/Column.java` (`Column<T>` value definitions), `biz/ColumnStream.java` (graph handles); schema constants e.g. `RecSysMetrics.COUPON_ROI` |
@@ -93,6 +95,7 @@ test. Tests are the behavioral contract.
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java` |
 | DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
 | Realistic multi-class demo | `examples/src/main/java/io/lark/examples/recsys/**` (`:examples:runRecsys`), split into `schema/`, `node/`, `module/`, `data/` |
+| Warmed-up benchmark | `examples/src/main/java/io/lark/examples/recsys/RecSysBenchmark.java` (`:examples:runRecsysBenchmark`), median/p95 after warm-up |
 | Realistic demo test | `examples/src/test/java/io/lark/examples/recsys/RecSysMetricTest.java`, mock edge-case feed `MockMetrics.java` |
 | Spring demo / tests | `spring/src/test/java/io/lark/spring/example/SpringRecSysDemo.java` (`:spring:runSpringRecsys`), `LaryColumnAutoConfigurationTest.java`, `LaryColumnPropertyScanTest.java`, fixtures under `spring/src/test/java/io/lark/spring/fixture/` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
@@ -133,6 +136,14 @@ test. Tests are the behavioral contract.
 - Timeouts interrupt the worker, record the timeout, optionally invoke
   fallback, quarantine repeated offenders and abort the graph when configured.
   A shared timer schedules Node deadlines rather than a driver thread per node.
+  If a node or op timer fires exactly at the graph deadline, the timeout handler
+  also marks the run aborted, so `lastRunAborted()` does not depend on the
+  watchdog winning the race.
+- `OpExecutor` uses the same dependency-counter ready queue: an op is submitted
+  only after its dependencies complete, its body runs directly on the dag pool,
+  and completion releases dependents. No driver virtual thread is parked per
+  op. A single daemon timer thread schedules op deadlines and dispatches the
+  timeout handler; `execute` joins `executeAsync`.
 - Blocking `Node.run` / `Op.execute` bodies run on virtual threads; do not
   reintroduce callback-style APIs.
 - Op aspects may skip an op without failing the graph; async execution still
@@ -154,6 +165,16 @@ test. Tests are the behavioral contract.
 - Execution: dependency ordering, independent nodes concurrent, failed op does
   not poison dependents; placeholder replacement for forward references;
   duplicate column producer / duplicate write / cycle rejection.
+- `ComputeGraph.executeAsync` is a dependency-counter ready queue, not a
+  virtual thread per node: a node is submitted only when its dependency count
+  reaches zero, its op body runs directly on the supplied pool, and completion
+  releases dependents. `ColumnPipeline` passes a fixed platform daemon pool
+  sized by `computeWorkers` because column kernels are CPU-bound. For blocking
+  column nodes call `setVirtualComputeThreads(true)` (Spring
+  `lary.column.virtual-threads: true`): the ready queue is unchanged, but the
+  pool becomes virtual-thread-per-task and `computeWorkers` stays a monitoring
+  hint. A rejected submit drains serially instead of deadlocking; sequential
+  `execute` stays on the calling thread.
 - Business API: typed `ColumnStream<T>` handles + `ColumnNode` /
   `ColumnContext` / `ColumnModule` / `ColumnPipeline`. Node ids are generated;
   there is no `name()`/`inputs()`/`outputs()` override.
@@ -190,7 +211,17 @@ test. Tests are the behavioral contract.
   pruning and scalar reads typed. `feedRows(List<Row>)` uses the compiled
   required-column order; `feed(Map<String, List<Cell>>)` accepts named columns;
   `fetchColumns(...)` returns named cell lists. `FeedFetch` owns the row/column
-  conversion helpers.
+  conversion helpers: feed writes primitive buffers directly, fetch reads one
+  column without a row transpose, and Q8_0 scalar reads use the first block
+  without full dequantization.
+- Pipeline feed transfers table ownership to the store and `fetch` returns
+  read-only result views; `fetchColumns` snapshots cells into immutable lists.
+  `TensorStore.addTable(table)` / `toTable(names)` keep cloning for public
+  callers; only `addTable(table, false)` / `toTable(names, false)`
+  (pipeline-internal) share tensors. Never mutate a fed tensor after `feed` or
+  a fetched tensor after `fetch`.
+- Typed dispatcher ops (`AddTensor`, `SubTensor`, `MultiTensor`, `DivTensor`)
+  cache their typed delegates instead of allocating one per `compute`.
 - The realistic demo targets search/recommendation metrics: CTR =
   clicks/impressions, CVR = orders/clicks, GMV = gmv_fen/100,
   buyagain_cost = coupon_cost/buy_again_orders, coupon_roi = gmv/coupon_cost,
@@ -225,14 +256,20 @@ test. Tests are the behavioral contract.
   `ColumnNode.fallback` success yields FALLBACK.
 - Monitoring source `"column"`; phase events `feed.start/end`,
   `compute.start/end`, `fetch.start/end`; node events
-  `node.start/end/error/fallback`; `module.end` with `node_count`;
-  `cpu.pressure` with `pool`, `utilization`, `busy_ns`, `wall_ns`, `workers`.
+  `node.start/end/error/fallback` carry `op` and `module`; `module.end` with
+  `node_count`; `cpu.pressure` with `pool`, `utilization`, `busy_ns`,
+  `wall_ns`, `workers`. `ColumnStatsCollector` attributes ops from the event
+  `module` attribute (node-id slash parsing is only a fallback).
 - Vector API: use `jdk.incubator.vector` for element-wise arithmetic, scalar
-  broadcast, comparisons, reductions and unary ops. Compile/test/run with
+  broadcast, comparisons, reductions and unary ops, including integer
+  `neg`/`abs`/`square` and mask writes. Compile/test/run with
   `--add-modules jdk.incubator.vector`.
-- Java adaptation: blocking virtual-thread drivers; op bodies run on the
-  pipeline pool; `ComputeGraph.execute` is sequential, `executeAsync` is the
-  virtual-thread path.
+- Java adaptation: blocking virtual-thread execution; column op bodies run on
+  the configured compute pool (fixed platform by default, virtual on request);
+  `ComputeGraph.execute` is sequential, `executeAsync` is the ready-queue path.
+  `RunStats` covers one run, so use the warmed-up
+  `:examples:runRecsysBenchmark` (median/p95) for throughput comparisons rather
+  than a single small demo run.
 
 ## Verification
 
@@ -240,6 +277,8 @@ test. Tests are the behavioral contract.
 JAVA_HOME=/path/to/jdk-25 ./gradlew clean test :examples:build :spring:build
 JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runSimple :examples:runOp
 JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRecsys
+JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRecsysBenchmark \
+    -Plary.bench.rows=50000 -Plary.bench.iterations=10
 JAVA_HOME=/path/to/jdk-25 ./gradlew :spring:test :spring:runSpringRecsys
 ```
 
@@ -258,7 +297,12 @@ in `~/.gradle/gradle.properties`.
       (`ComputeNode`) and tensor ops (`OpTensor`) stay out of the business API.
 - [ ] No business compute uses string outputs or positional `feeds()[n]`.
 - [ ] `./gradlew clean test :examples:build` is green.
-- [ ] DAG tests cover wide and deep graphs and the ready-queue scheduler.
+- [ ] DAG tests cover wide and deep graphs and both ready-queue schedulers
+      (`Executor` and `OpExecutor`).
+- [ ] Column tests cover the ready-queue scheduler, monitoring `module`
+      attribution and the no-copy feed/fetch overload semantics.
+- [ ] Blocking-column behavior is covered when the virtual-thread option
+      changes; the benchmark still compiles and runs.
 - [ ] Column examples run with `--add-modules jdk.incubator.vector`.
 - [ ] `:examples` still compiles; realistic demo classes remain separated into
       schema/nodes/modules instead of one catch-all class.

@@ -47,9 +47,10 @@ public final class ColumnStatsCollector implements Monitor {
 
     private void handleNode(Event event) {
         String op = event.get("op").orElse("");
+        String module = event.get("module").orElseGet(() -> moduleOf(event.subject()));
         synchronized (lock) {
             stats.ops.add(new RunStats.OpTiming(
-                    event.subject(), op, moduleOf(event.subject()),
+                    event.subject(), op, module,
                     event.durationNanos()));
         }
     }

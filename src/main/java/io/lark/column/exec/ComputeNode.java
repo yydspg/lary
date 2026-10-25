@@ -8,7 +8,6 @@ import io.lark.column.op.OpTensor;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
-import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
@@ -32,7 +31,6 @@ public final class ComputeNode {
     private final OpTensor op;
     private final List<ComputeNode> dependencies = new ArrayList<>();
     private final AtomicReference<Status> status = new AtomicReference<>(Status.PENDING);
-    private volatile CompletableFuture<Void> doneEvent = new CompletableFuture<>();
     private volatile long elapsedNanos;
     private volatile Throwable error;
 
@@ -60,6 +58,15 @@ public final class ComputeNode {
 
     public List<ComputeNode> dependencies() {
         return List.copyOf(dependencies);
+    }
+
+    /**
+     * Scheduler view of the dependency list. The returned list is owned by the
+     * node and must not be modified; use {@link #dependencies()} at API
+     * boundaries.
+     */
+    List<ComputeNode> dependencyView() {
+        return dependencies;
     }
 
     /**
@@ -94,10 +101,6 @@ public final class ComputeNode {
         return error;
     }
 
-    CompletableFuture<Void> doneEvent() {
-        return doneEvent;
-    }
-
     void setStatus(Status newStatus) {
         status.set(Objects.requireNonNull(newStatus, "status"));
     }
@@ -114,6 +117,5 @@ public final class ComputeNode {
         status.set(Status.PENDING);
         elapsedNanos = 0;
         error = null;
-        doneEvent = new CompletableFuture<>();
     }
 }

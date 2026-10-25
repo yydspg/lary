@@ -7,9 +7,12 @@ import io.lark.column.compute.Compute;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
+import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -99,6 +102,30 @@ class TensorComputeTest {
     }
 
     @Test
+    void tensorStoreCopyOverloadsPreserveOwnership() {
+        Tensor a = Tensor.fromLongs(1, 2);
+        Tensor b = Tensor.fromDoubles(0.5, 1.5);
+        TensorTable table = new TensorTable();
+        table.add("a", a);
+        table.add("b", b);
+
+        TensorStore copied = new TensorStore();
+        copied.addTable(table);
+        assertNotSame(a, copied.get("a"));
+
+        TensorStore shared = new TensorStore();
+        shared.addTable(table, false);
+        assertSame(a, shared.get("a"));
+        assertSame(b, shared.get("b"));
+
+        TensorTable view = shared.toTable(List.of("a", "b"), false);
+        assertSame(shared.get("a"), view.get("a"));
+
+        TensorTable cloned = shared.toTable(List.of("a", "b"));
+        assertNotSame(shared.get("a"), cloned.get("a"));
+    }
+
+    @Test
     void feedAndFetchRoundTrip() {
         List<Row> rows = List.of(
                 Row.of(Cell.of(1), Cell.of(10.5)),
@@ -117,6 +144,44 @@ class TensorComputeTest {
         assertEquals(10.5, out.get(0).get(1).asDouble(), 1e-9);
         assertEquals(20.0, out.get(1).get(1).asDouble(), 1e-9);
         assertEquals(30.0, out.get(2).get(1).asDouble(), 1e-9);
+    }
+
+    @Test
+    void feedFetchReadsQ8ScalarAndColumnsDirectly() {
+        Tensor quantized = Tensor.fromDoubles(1.5, 2.5, 3.5).quantizeQ8_0();
+        TensorTable table = new TensorTable();
+        table.add("q", quantized);
+
+        assertEquals(quantized.dequantize().getDouble(0),
+                FeedFetch.fetchScalar(quantized), 1e-9);
+
+        Map<String, List<Cell>> columns =
+                FeedFetch.fetchColumns(table, List.of("q"));
+        assertEquals(3, columns.get("q").size());
+        assertEquals(quantized.dequantize().getDouble(2),
+                columns.get("q").get(2).asDouble(), 1e-9);
+    }
+
+    @Test
+    void integerUnaryAndComparisonKernelsCoverVectorWidths() {
+        int n = 1000;
+        long[] values = new long[n];
+        for (int i = 0; i < n; i++) {
+            values[i] = i - n / 2;
+        }
+        Tensor ints = Tensor.fromLongs(values).castTo(DType.INT32);
+        Tensor squares = Compute.square(ints);
+        for (int i = 0; i < n; i++) {
+            long expected = values[i];
+            assertEquals(expected * expected, squares.getInt(i));
+        }
+        assertEquals(Math.abs(values[0]), Compute.abs(ints).getInt(0));
+        assertEquals(-values[0], Compute.neg(ints).getInt(0));
+
+        Tensor mask = Compute.gtScalar(ints, 0);
+        for (int i = 0; i < n; i++) {
+            assertEquals(values[i] > 0 ? 1L : 0L, mask.getLong(i));
+        }
     }
 
     @Test

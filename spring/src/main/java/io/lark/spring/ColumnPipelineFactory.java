@@ -30,10 +30,17 @@ public final class ColumnPipelineFactory {
 
     private final List<ColumnModule> modules;
     private final int computeWorkers;
+    private final boolean virtualThreads;
 
     public ColumnPipelineFactory(List<ColumnModule> modules, int computeWorkers) {
+        this(modules, computeWorkers, false);
+    }
+
+    public ColumnPipelineFactory(List<ColumnModule> modules, int computeWorkers,
+                                 boolean virtualThreads) {
         this.modules = List.copyOf(Objects.requireNonNull(modules, "modules"));
         this.computeWorkers = computeWorkers;
+        this.virtualThreads = virtualThreads;
     }
 
     /** Create an uncompiled pipeline containing the Spring-managed modules. */
@@ -41,6 +48,7 @@ public final class ColumnPipelineFactory {
         ColumnPipeline pipeline = computeWorkers > 0
                 ? new ColumnPipeline(computeWorkers)
                 : new ColumnPipeline();
+        pipeline.setVirtualComputeThreads(virtualThreads);
         modules.forEach(pipeline::add);
         return pipeline;
     }

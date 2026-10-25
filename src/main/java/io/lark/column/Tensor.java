@@ -71,6 +71,16 @@ public final class Tensor {
         return new Tensor(DType.INT64, values.clone(), values.length);
     }
 
+    /** Adopt an already-allocated buffer (feed/fetch conversion hot path). */
+    static Tensor wrapLongs(long[] values) {
+        return new Tensor(DType.INT64, values, values.length);
+    }
+
+    /** Adopt an already-allocated buffer (feed/fetch conversion hot path). */
+    static Tensor wrapDoubles(double[] values) {
+        return new Tensor(DType.FLOAT64, values, values.length);
+    }
+
     public static Tensor fromFloats(float... values) {
         return new Tensor(DType.FLOAT32, values.clone(), values.length);
     }

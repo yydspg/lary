@@ -13,6 +13,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicInteger;
 
 class OpTest {
@@ -95,6 +97,47 @@ class OpTest {
         @Override
         public void onAfter(Op op, IContext data, OpStatus status) {
             after.incrementAndGet();
+        }
+    }
+
+    static final class StepOp extends Op {
+        private final int expected;
+
+        StepOp(int expected) {
+            this.expected = expected;
+        }
+
+        @Override
+        public String name() {
+            return "step";
+        }
+
+        @Override
+        public void execute(IContext data) {
+            int value = data.get("step", Integer.class);
+            if (value != expected) {
+                throw new IllegalStateException(
+                        "expected step " + expected + " but got " + value);
+            }
+            data.set("step", value + 1);
+        }
+    }
+
+    static final class WriteStepOp extends Op {
+        private final String key;
+
+        WriteStepOp(String key) {
+            this.key = key;
+        }
+
+        @Override
+        public String name() {
+            return key;
+        }
+
+        @Override
+        public void execute(IContext data) {
+            data.set(key, data.get("step", Integer.class));
         }
     }
 
@@ -188,6 +231,37 @@ class OpTest {
             assertTrue(executor.allSucceeded());
             assertEquals("user_11", data.get("user", String.class));
             assertEquals(99, data.get("score", Integer.class));
+        }
+    }
+
+    @Test
+    void readyQueueHandlesDeepAndWideGraphsOnBoundedPool() {
+        OpGraph graph = new OpGraph();
+        for (int i = 0; i < 50; i++) {
+            graph.addOp(new StepOp(i), "step" + i);
+            if (i > 0) {
+                graph.dependsOn("step" + (i - 1), "step" + i);
+            }
+        }
+        for (int i = 0; i < 32; i++) {
+            String key = "wide" + i;
+            graph.addOp(new WriteStepOp(key), key);
+            graph.dependsOn("step49", key);
+        }
+
+        DefaultContext data = new DefaultContext();
+        data.set("step", 0);
+        ExecutorService pool = Executors.newFixedThreadPool(2);
+        try (OpExecutor executor = new OpExecutor(pool)) {
+            executor.execute(graph, data);
+            assertTrue(executor.allSucceeded());
+        } finally {
+            pool.shutdownNow();
+        }
+
+        assertEquals(50, data.get("step", Integer.class));
+        for (int i = 0; i < 32; i++) {
+            assertEquals(50, data.get("wide" + i, Integer.class));
         }
     }
 

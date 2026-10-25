@@ -426,6 +426,12 @@ public final class Executor implements AutoCloseable {
                 state.policy);
         node.setError(error);
 
+        // The per-node deadline may be the graph deadline itself. If the node
+        // timer wins the race against the watchdog, still mark the run aborted.
+        if (graphDeadlineReached(state)) {
+            state.abort("graph timeout after " + state.policy.graphTimeout());
+        }
+
         boolean recovered = safeFallback(node, state.ctx, error);
         Map<String, String> attrs = timeoutAttrs(timeout, entry);
         if (recovered) {
@@ -498,6 +504,13 @@ public final class Executor implements AutoCloseable {
             return graphRemaining;
         }
         return base;
+    }
+
+    private static boolean graphDeadlineReached(RunState state) {
+        Duration graphTimeout = state.policy.graphTimeout();
+        return !graphTimeout.isZero()
+                && System.nanoTime() - state.runStartNanos
+                        >= graphTimeout.toNanos();
     }
 
     private static Map<String, String> timeoutAttrs(Duration timeout,

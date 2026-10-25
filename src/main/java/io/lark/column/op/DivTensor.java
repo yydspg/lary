@@ -8,6 +8,8 @@ import java.util.List;
 /** Division dispatcher; all division results are float64. */
 public final class DivTensor extends OpTensor {
 
+    private final OpTensor typed = new DoubleDivTensor(inputs(), outputs());
+
     public DivTensor(List<String> inputs, List<String> outputs) {
         super("div", inputs, outputs);
     }
@@ -17,6 +19,6 @@ public final class DivTensor extends OpTensor {
 
     @Override
     public void compute(OpContext ctx) {
-        new DoubleDivTensor(inputs(), outputs()).compute(ctx);
+        typed.compute(ctx);
     }
 }

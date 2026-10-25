@@ -11,6 +11,13 @@ import java.util.List;
 /** Runtime dispatcher for subtraction; chooses a typed SubTensor. */
 public final class SubTensor extends OpTensor {
 
+    private final OpTensor[] typed = {
+            new IntSubTensor(inputs(), outputs()),
+            new LongSubTensor(inputs(), outputs()),
+            new FloatSubTensor(inputs(), outputs()),
+            new DoubleSubTensor(inputs(), outputs())
+    };
+
     public SubTensor(List<String> inputs, List<String> outputs) {
         super("sub", inputs, outputs);
     }
@@ -22,15 +29,11 @@ public final class SubTensor extends OpTensor {
     public void compute(OpContext ctx) {
         DType out = Compute.promote(ctx.input(inputs()[0]).dtype(),
                 ctx.input(inputs()[1]).dtype());
-        typed(out).compute(ctx);
-    }
-
-    private OpTensor typed(DType out) {
-        return switch (out) {
-            case INT32 -> new IntSubTensor(inputs(), outputs());
-            case INT64 -> new LongSubTensor(inputs(), outputs());
-            case FLOAT32 -> new FloatSubTensor(inputs(), outputs());
-            default -> new DoubleSubTensor(inputs(), outputs());
-        };
+        switch (out) {
+            case INT32 -> typed[0].compute(ctx);
+            case INT64 -> typed[1].compute(ctx);
+            case FLOAT32 -> typed[2].compute(ctx);
+            default -> typed[3].compute(ctx);
+        }
     }
 }

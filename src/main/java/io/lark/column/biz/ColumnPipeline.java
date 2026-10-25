@@ -50,6 +50,7 @@ public final class ColumnPipeline implements AutoCloseable {
     private CompositeMonitor chaining;
     private int computeWorkers = Math.max(1,
             Runtime.getRuntime().availableProcessors());
+    private boolean virtualComputeThreads;
 
     private ComputeGraph graph = new ComputeGraph();
     private ExecutorService pool;
@@ -58,6 +59,7 @@ public final class ColumnPipeline implements AutoCloseable {
     private List<String> requiredFeedColumnOrder = List.of();
     private Map<String, ColumnStream<?>> feedColumnsByName = Map.of();
     private List<String> compiledOutputs = List.of();
+    private Set<String> compiledOutputSet = Set.of();
 
     public ColumnPipeline() {
         rebuildMonitor();
@@ -109,6 +111,27 @@ public final class ColumnPipeline implements AutoCloseable {
             pool = null;
         }
         return this;
+    }
+
+    /**
+     * Use virtual threads instead of the fixed platform pool. The ready queue
+     * still submits only dependency-ready nodes, but blocking nodes no longer
+     * occupy one of a small number of platform workers. {@link #setComputeWorkers}
+     * remains the concurrency hint used by monitoring.
+     */
+    public ColumnPipeline setVirtualComputeThreads(boolean virtualThreads) {
+        if (this.virtualComputeThreads != virtualThreads) {
+            this.virtualComputeThreads = virtualThreads;
+            if (pool != null) {
+                pool.shutdownNow();
+                pool = null;
+            }
+        }
+        return this;
+    }
+
+    public boolean usesVirtualComputeThreads() {
+        return virtualComputeThreads;
     }
 
     private void rebuildMonitor() {
@@ -264,6 +287,7 @@ public final class ColumnPipeline implements AutoCloseable {
         this.requiredFeedColumnOrder = List.copyOf(feedColumns);
         this.feedColumnsByName = Map.copyOf(feedDefinitions);
         this.compiledOutputs = List.copyOf(outputs);
+        this.compiledOutputSet = Set.copyOf(outputs);
         this.compiled = true;
     }
 
@@ -396,7 +420,9 @@ public final class ColumnPipeline implements AutoCloseable {
         emitStart("feed.start", "feed");
         ctx.setFeed(table);
         ctx.store().clear();
-        ctx.store().addTable(table);
+        // The table was built for this run and ownership transfers to the
+        // store: avoid cloning every input column.
+        ctx.store().addTable(table, false);
         ctx.endPhase();
         emitEnd("feed.end", "feed", ExecutionContext.RunPhase.FEED);
         if (compiled) {
@@ -423,8 +449,23 @@ public final class ColumnPipeline implements AutoCloseable {
     private void runCompiled() {
         validateFeed(ctx.feed());
         if (pool == null) {
-            pool = Executors.newThreadPerTaskExecutor(
-                    Thread.ofVirtual().name("lark-column-module-", 0).factory());
+            if (virtualComputeThreads) {
+                // Blocking nodes: one virtual thread per ready node. The ready
+                // queue still avoids parked dependency-waiting threads.
+                pool = Executors.newThreadPerTaskExecutor(
+                        Thread.ofVirtual()
+                                .name("lark-column-worker-", 0)
+                                .factory());
+            } else {
+                // Column kernels are CPU-bound: use a fixed platform pool so
+                // the configured worker count is a real concurrency bound. The
+                // ready queue only submits nodes whose dependencies are done.
+                pool = Executors.newFixedThreadPool(computeWorkers,
+                        Thread.ofPlatform()
+                                .name("lark-column-worker-", 0)
+                                .daemon(true)
+                                .factory());
+            }
         }
         ctx.beginPhase(ExecutionContext.RunPhase.COMPUTE);
         emitStart("compute.start", "compute");
@@ -471,14 +512,15 @@ public final class ColumnPipeline implements AutoCloseable {
         if (!compiled) {
             throw new IllegalStateException("ColumnPipeline: compile first");
         }
-        if (!compiledOutputs.containsAll(names)) {
+        if (!compiledOutputSet.containsAll(names)) {
             throw new IllegalArgumentException(
                     "ColumnPipeline: cannot fetch " + names
                             + "; compiled outputs=" + compiledOutputs);
         }
         ctx.beginPhase(ExecutionContext.RunPhase.FETCH);
         emitStart("fetch.start", "fetch");
-        TensorTable table = ctx.store().toTable(names);
+        // Fetch only reads the columns; do not copy every result tensor.
+        TensorTable table = ctx.store().toTable(names, false);
         ctx.setFetch(table);
         ctx.endPhase();
         emitEnd("fetch.end", "fetch", ExecutionContext.RunPhase.FETCH);
@@ -502,7 +544,7 @@ public final class ColumnPipeline implements AutoCloseable {
     }
 
     public double fetchScalar(String name) {
-        if (!compiledOutputs.contains(name)) {
+        if (!compiledOutputSet.contains(name)) {
             throw new IllegalArgumentException(
                     "ColumnPipeline: '" + name + "' is not a compiled output");
         }

@@ -6,6 +6,7 @@ package io.lark.column;
 import io.lark.column.backend.Backend;
 import io.lark.column.backend.BackendFactory;
 import io.lark.column.exec.ComputeGraph;
+import io.lark.column.exec.ComputeNode;
 import io.lark.column.exec.ExecutionContext;
 import io.lark.column.op.OpContext;
 import io.lark.column.op.OpSpec;
@@ -135,16 +136,60 @@ class ExecutionGraphTest {
         graph.execute(sync);
         assertEquals(18.0, sync.store().get("total").getDouble(0), 1e-9);
         assertEquals(3, stats.stats().ops().size());
+        assertEquals(List.of("m1", "m1", "m2"), stats.stats().ops().stream()
+                .map(op -> op.module()).toList());
         assertEquals(2, stats.stats().modules().size());
         assertFalse(stats.stats().pressure().isEmpty());
 
         ExecutionContext async = new ExecutionContext();
         async.store().set("x", Tensor.fromLongs(1, 2, 3));
-        try (ExecutorService pool = Executors.newThreadPerTaskExecutor(
-                Thread.ofVirtual().name("column-test-", 0).factory())) {
+        ColumnStatsCollector asyncStats = new ColumnStatsCollector();
+        async.setMonitor(asyncStats);
+        try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
             graph.executeAsync(pool, async);
         }
         assertEquals(18.0, async.store().get("total").getDouble(0), 1e-9);
+        assertEquals(2, asyncStats.stats().computeWorkers());
+        assertEquals(2, asyncStats.stats().ops().stream()
+                .map(op -> op.module()).distinct().count());
+        assertTrue(asyncStats.stats().ops().stream()
+                .allMatch(op -> op.module().equals("m1") || op.module().equals("m2")));
+    }
+
+    @Test
+    void computeGraphAsyncHandlesDeepAndWideGraphs() {
+        ComputeGraph graph = new ComputeGraph();
+        graph.addNode("deep0", "m", TensorOps.create(
+                new OpSpec("add_scalar", List.of("x"), List.of("deep0"),
+                        Map.of("scalar", "1"))));
+        for (int i = 1; i < 50; i++) {
+            String previous = "deep" + (i - 1);
+            String current = "deep" + i;
+            graph.addNode(current, "m", TensorOps.create(
+                    new OpSpec("add_scalar", List.of(previous), List.of(current),
+                            Map.of("scalar", "1"))));
+            graph.addDependency(current, previous);
+        }
+        for (int i = 0; i < 32; i++) {
+            String output = "wide" + i;
+            graph.addNode(output, "m", TensorOps.create(
+                    new OpSpec("mul_scalar", List.of("x"), List.of(output),
+                            Map.of("scalar", "2"))));
+            graph.addDependency(output, "deep0");
+        }
+
+        ExecutionContext ctx = new ExecutionContext();
+        ctx.store().set("x", Tensor.fromLongs(1, 2, 3));
+        try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
+            graph.executeAsync(pool, ctx);
+        }
+
+        assertEquals(51, ctx.store().get("deep49").getLong(0));
+        for (int i = 0; i < 32; i++) {
+            assertEquals(2, ctx.store().get("wide" + i).getLong(0));
+        }
+        assertTrue(graph.nodes().stream()
+                .allMatch(node -> node.status() == ComputeNode.Status.SUCCESS));
     }
 
     @Test

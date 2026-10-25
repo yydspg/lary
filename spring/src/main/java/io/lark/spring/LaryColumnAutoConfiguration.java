@@ -37,9 +37,10 @@ public class LaryColumnAutoConfiguration {
     @ConditionalOnMissingBean
     public ColumnPipelineFactory columnPipelineFactory(
             ObjectProvider<ColumnModule> modules,
-            @Value("${lary.column.compute-workers:0}") int computeWorkers) {
+            @Value("${lary.column.compute-workers:0}") int computeWorkers,
+            @Value("${lary.column.virtual-threads:false}") boolean virtualThreads) {
         return new ColumnPipelineFactory(
-                modules.orderedStream().toList(), computeWorkers);
+                modules.orderedStream().toList(), computeWorkers, virtualThreads);
     }
 
     @Bean
