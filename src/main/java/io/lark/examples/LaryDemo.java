@@ -9,9 +9,15 @@ import io.lark.column.Row;
 import io.lark.column.Simd;
 import io.lark.column.Tensor;
 import io.lark.column.TensorStore;
+import io.lark.column.biz.ColumnComponent;
 import io.lark.column.biz.ColumnContext;
+import io.lark.column.biz.ColumnGraph;
 import io.lark.column.biz.ColumnNode;
+import io.lark.column.biz.FeedStream;
+import io.lark.column.biz.FetchStream;
 import io.lark.column.biz.NodePipeline;
+import io.lark.column.biz.ScaleNode;
+import io.lark.column.biz.UnitConvertNode;
 import io.lark.column.compute.Compute;
 import io.lark.column.op.FloatAddTensor;
 import io.lark.column.op.FloatMultiTensor;
@@ -212,6 +218,29 @@ public final class LaryDemo {
         }
     }
 
+    @ColumnComponent
+    static final class BonusNode extends ColumnNode {
+        @Override
+        public String name() {
+            return "bonus";
+        }
+
+        @Override
+        public List<String> inputs() {
+            return List.of("weighted");
+        }
+
+        @Override
+        public List<String> outputs() {
+            return List.of("bonus");
+        }
+
+        @Override
+        public void execute(ColumnContext ctx) {
+            ctx.output("bonus", Compute.addScalar(ctx.input("weighted"), 1.0));
+        }
+    }
+
     // ─────────────────────────────────────────────────────────────────────
     // Section 3: DAG timeout demo
     // ─────────────────────────────────────────────────────────────────────
@@ -240,6 +269,7 @@ public final class LaryDemo {
     public static void main(String[] args) {
         System.out.println("SIMD: " + Simd.summary());
         businessNodeDemo();
+        pruningDemo();
         tensorOpDemo();
         timeoutDemo();
         System.out.println("\nDemo complete. Business code never touched ComputeNode/ComputeGraph.");
@@ -257,7 +287,11 @@ public final class LaryDemo {
                     new FilterHighScoresNode(),
                     new AggregateNode(),
                     new FailingNode(),
-                    new UseRecoveredNode());
+                    new UseRecoveredNode(),
+                    new UnitConvertNode("user_to_li", "user", "user_li", 10.0),
+                    new ScaleNode("weighted", "user_li", "weighted", 2.0));
+            // Spring-style discovery: @ColumnComponent BonusNode in this package.
+            pipeline.scan("io.lark.examples");
             pipeline.setMonitor(event -> {
                 if ("node.fallback".equals(event.action())) {
                     fallbackEvents.incrementAndGet();
@@ -269,25 +303,94 @@ public final class LaryDemo {
             for (int i = 1; i <= 6; i++) {
                 rows.add(Row.of(Cell.of(i)));
             }
-            pipeline.feed(List.of("user_id"), rows);
+            pipeline.feed(FeedStream.of(List.of("user_id"), rows));
             pipeline.compute();
 
-            List<Row> scoreRows = pipeline.fetch(List.of("user", "score", "high_mask"));
-            System.out.println("user  = " + longs(scoreRows, 0));
-            System.out.println("score = " + longs(scoreRows, 1));
-            System.out.println("mask  = " + longs(scoreRows, 2));
-            System.out.println("high  = " + longs(pipeline.fetch(List.of("high_scores")), 0));
-            System.out.println("total = " + pipeline.fetchScalar("total"));
-            System.out.println("mean  = " + pipeline.fetchScalar("mean"));
-            System.out.println("max   = " + pipeline.fetchScalar("max"));
-            System.out.println("fallback output = " + pipeline.fetchScalar("recovered_plus_one"));
+            List<Row> scoreRows = pipeline.fetch(
+                    FetchStream.of("user", "score", "high_mask", "user_li", "weighted",
+                            "bonus"));
+            System.out.println("user     = " + longs(scoreRows, 0));
+            System.out.println("score    = " + longs(scoreRows, 1));
+            System.out.println("mask     = " + longs(scoreRows, 2));
+            System.out.println("user_li  = " + longs(scoreRows, 3));
+            System.out.println("weighted = " + longs(scoreRows, 4));
+            System.out.println("bonus    = " + longs(scoreRows, 5));
+            System.out.println("high     = " + longs(pipeline.fetch(
+                    FetchStream.of("high_scores")), 0));
+            System.out.println("total    = " + pipeline.fetchScalar("total"));
+            System.out.println("mean     = " + pipeline.fetchScalar("mean"));
+            System.out.println("max      = " + pipeline.fetchScalar("max"));
+            System.out.println("fallback output = "
+                    + pipeline.fetchScalar("recovered_plus_one"));
             System.out.println("fallback events = " + fallbackEvents.get());
             System.out.print(pipeline.stats().summary());
         }
     }
 
+    private static void pruningDemo() {
+        System.out.println("\n=== 2. Graph pruning + cycle detection ===");
+
+        try (NodePipeline pipeline = new NodePipeline()) {
+            pipeline.addNodes(
+                    new FetchUserNode(),
+                    new ScoreNode(),
+                    new HighScoreMaskNode(),
+                    new FilterHighScoresNode());
+            // Only "score" is requested: high_score_mask/filter_high_scores are pruned.
+            pipeline.compile(java.util.Set.of("score"));
+            System.out.println("registered nodes = " + pipeline.nodeCount()
+                    + ", compiled nodes = " + pipeline.compiledNodeCount());
+
+            pipeline.feed(FeedStream.of(List.of("user_id"),
+                    List.of(Row.of(Cell.of(7)))));
+            pipeline.compute();
+            System.out.println("pruned score = " + pipeline.fetchScalar("score"));
+        }
+
+        ColumnGraph cycle = new ColumnGraph()
+                .add(new CycleNode("cycle_a", "b_out", "a_out"))
+                .add(new CycleNode("cycle_b", "a_out", "b_out"));
+        try {
+            cycle.compile(java.util.Set.of("a_out"));
+            System.out.println("cycle: NOT detected (unexpected)");
+        } catch (IllegalStateException e) {
+            System.out.println("cycle detected: " + e.getMessage());
+        }
+    }
+
+    static final class CycleNode extends ColumnNode {
+        private final String name;
+        private final String input;
+        private final String output;
+
+        CycleNode(String name, String input, String output) {
+            this.name = name;
+            this.input = input;
+            this.output = output;
+        }
+
+        @Override
+        public String name() {
+            return name;
+        }
+
+        @Override
+        public List<String> inputs() {
+            return List.of(input);
+        }
+
+        @Override
+        public List<String> outputs() {
+            return List.of(output);
+        }
+
+        @Override
+        public void execute(ColumnContext ctx) {
+        }
+    }
+
     private static void tensorOpDemo() {
-        System.out.println("\n=== 2. Typed OpTensor layer ===");
+        System.out.println("\n=== 3. Typed OpTensor layer ===");
 
         TensorStore store = new TensorStore();
         store.set("a", Tensor.fromFloats(1.0f, 2.0f, 3.0f));
@@ -315,7 +418,7 @@ public final class LaryDemo {
     }
 
     private static void timeoutDemo() {
-        System.out.println("\n=== 3. DAG timeout + business fallback ===");
+        System.out.println("\n=== 4. DAG timeout + business fallback ===");
 
         SlowDagNode slow = new SlowDagNode();
         NodeRegistry registry = new NodeRegistry();

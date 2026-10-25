@@ -76,7 +76,7 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
-`TimeoutTest`, `BusinessNodeTest` and `OpTensorTest`.
+`TimeoutTest`, `BusinessNodeTest`, `OpTensorTest` and `GraphPruningTest`.
 
 ## End-to-end demo
 
@@ -86,12 +86,15 @@ The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 
 `LaryDemo` demonstrates the complete layering:
 
-1. **Business layer** — seven `ColumnNode`s with automatic column dependency
-   wiring, a deliberate failure + fallback, aggregate outputs, fetch and run
-   statistics.
-2. **Tensor-op layer** — direct `FloatAddTensor` / `FloatMultiTensor` execution
+1. **Business layer** — `ColumnNode` graph with automatic column dependency
+   wiring, `FeedStream`/`FetchStream`, weight and unit-conversion nodes,
+   `@ColumnComponent` scanning, a deliberate failure + fallback, aggregate
+   outputs and run statistics.
+2. **Graph pruning / cycle detection** — compile only the branch needed for
+   `score`, then detect a cyclic business graph.
+3. **Tensor-op layer** — direct `FloatAddTensor` / `FloatMultiTensor` execution
    and runtime dtype dispatch through `TensorOps.create`.
-3. **DAG timeout** — a slow node is interrupted, `Node.fallback` produces a
+4. **DAG timeout** — a slow node is interrupted, `Node.fallback` produces a
    degraded result, and the run returns quickly.
 
 Sample output:
@@ -100,22 +103,30 @@ Sample output:
 SIMD: JDK Vector API (jdk.incubator.vector) {double=2, float=4, int=4, long=2}
 
 === 1. Business ColumnNode pipeline ===
-user  = [110, 120, 130, 140, 150, 160]
-score = [220, 240, 260, 280, 300, 320]
-mask  = [0, 0, 1, 1, 1, 1]
-high  = [260, 280, 300, 320]
-total = 1620.0
-mean  = 270.0
-max   = 320.0
+user     = [110, 120, 130, 140, 150, 160]
+score    = [220, 240, 260, 280, 300, 320]
+mask     = [0, 0, 1, 1, 1, 1]
+user_li  = [1100, 1200, 1300, 1400, 1500, 1600]
+weighted = [2200, 2400, 2600, 2800, 3000, 3200]
+bonus    = [2201, 2401, 2601, 2801, 3001, 3201]
+high     = [260, 280, 300, 320]
+total    = 1620.0
+mean     = 270.0
+max      = 320.0
 fallback output = 8.0
 fallback events = 1
 
-=== 2. Typed OpTensor layer ===
+=== 2. Graph pruning + cycle detection ===
+registered nodes = 4, compiled nodes = 2
+pruned score = 340.0
+cycle detected: ColumnGraph: dependency cycle detected
+
+=== 3. Typed OpTensor layer ===
 FloatAddTensor   sum     = [11.0, 22.0, 33.0]
 FloatMultiTensor product = [10.0, 40.0, 90.0]
 dispatched add: dtype=float64, values=[1.5, 3.5, 5.5]
 
-=== 3. DAG timeout + business fallback ===
+=== 4. DAG timeout + business fallback ===
 status    = fallback
 fallback  = true
 elapsed   = 87ms
@@ -227,6 +238,70 @@ try (NodePipeline pipeline = new NodePipeline()) {
   `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`.
   Neither is part of the public business API.
 
+### Feed / fetch streams and input sources
+
+```java
+pipeline.feed(FeedStream.of(List.of("user_id"), rows));
+List<Row> out = pipeline.fetch(FetchStream.of("score"));
+pipeline.run(FeedStream.of(List.of("user_id"), rows),
+             FetchStream.of("score"));
+```
+
+Each input can declare its provenance:
+
+```java
+@Override
+public ColumnSource inputSource(String column) {
+    return ColumnSource.FEED;   // or NODE / AUTO (default)
+}
+```
+
+- `FEED` must come from row data; `NODE` must be produced by another node;
+  `AUTO` uses a producer when present, otherwise feed.
+- Compilation rejects `FEED` columns that a node produces, and `NODE` columns
+  with no producer.
+- `NodePipeline.compute()` rejects missing required feed columns before running.
+- `FeedStream` and `FetchStream` make the row-in / row-out boundaries explicit.
+
+Built-in business transformations:
+
+```java
+pipeline.addNodes(
+    new ScaleNode("weighted", "score", "weighted_score", 0.3),
+    new UnitConvertNode("fen_to_li", "amount_fen", "amount_li", 10.0));
+```
+
+Spring-style components (no Spring dependency):
+
+```java
+@ColumnComponent
+final class WeightedScoreNode extends ColumnNode { ... }
+
+pipeline.scan("com.example.features");
+```
+
+`ColumnComponentScanner` scans class directories and jars and instantiates
+annotated nodes with a no-argument constructor.
+
+### Graph pruning and cycle detection
+
+```java
+// Only keep nodes needed to produce "score"; unused branches are pruned.
+pipeline.compile(Set.of("score"));
+
+// Or prune and run in one call.
+pipeline.run(FeedStream.of(names, rows), FetchStream.of("score"));
+```
+
+- `ColumnGraph.compile(requiredOutputs)` keeps the transitive producers of the
+  requested columns and drops unreachable nodes.
+- `FeedStream`/`FetchStream` `run(...)` prunes before execution.
+- Cycles are always detected on the **full** registered graph, even if the
+  cyclic branch would be pruned. Duplicate producers, self-dependencies and
+  unknown explicit `dependsOn` targets are also rejected.
+- `NodePipeline.compiledNodeCount()` reports the pruned node count;
+  `nodeCount()` reports all registered nodes.
+
 ### Typed tensor operations
 
 The operation layer is deliberately separate from execution nodes:
@@ -284,7 +359,7 @@ try (Pipeline pipeline = new Pipeline()) {
 | `io.lark.column.compute` | `Compute`, `VectorOps` |
 | `io.lark.column.op` | `OpTensor`, `OpContext`, `OpSpec`, `TensorOps`; typed ops: `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`, `LongMultiTensor`, … |
 | `io.lark.column.exec` | `ComputeNode`, `ComputeGraph`, `ExecutionContext` — hidden execution layer |
-| `io.lark.column.biz` | `ColumnNode`, `ColumnContext`, `ColumnGraph`, `NodePipeline` (business API); `Module`, `SubGraph`, `ColumnDsl`, `Ops`, `Pipeline`, `PipelineCompiler` (declarative API) |
+| `io.lark.column.biz` | `ColumnNode`, `ColumnContext`, `ColumnGraph`, `NodePipeline`, `ColumnSource`, `FeedStream`, `FetchStream`, `ScaleNode`, `UnitConvertNode`, `ColumnComponent`, `ColumnComponentScanner` (business API); `Module`, `SubGraph`, `ColumnDsl`, `Ops`, `Pipeline`, `PipelineCompiler` (declarative API) |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |
 

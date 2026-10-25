@@ -75,6 +75,9 @@ test. Tests are the behavioral contract.
 | `exec/compute_graph.h`, `compute_graph.cpp` | `src/main/java/io/lark/column/exec/ComputeGraph.java` |
 | `context/execution_context.h` | `src/main/java/io/lark/column/exec/ExecutionContext.java` |
 | Business Node layer (Java-first) | `biz/ColumnNode.java`, `biz/ColumnContext.java`, `biz/ColumnGraph.java`, `biz/NodePipeline.java`, `biz/BusinessNodeOp.java` |
+| Feed/fetch streams + sources | `biz/FeedStream.java`, `biz/FetchStream.java`, `biz/ColumnSource.java` |
+| Business transforms | `biz/ScaleNode.java`, `biz/UnitConvertNode.java` |
+| Spring-style components | `biz/ColumnComponent.java`, `biz/ColumnComponentScanner.java` |
 | `biz/module.h`, `module.cpp` | `biz/Module.java`, `biz/SubGraph.java` |
 | `biz/dsl.h`, `dsl.cpp` | `biz/ColumnDsl.java` |
 | `biz/sub_graph.h` (`ops::`) | `biz/Ops.java` |
@@ -85,6 +88,7 @@ test. Tests are the behavioral contract.
 | `tests/test_column.cpp` | `TensorComputeTest.java` |
 | Tensor-op coverage | `OpTensorTest.java` |
 | Business Node coverage | `BusinessNodeTest.java` |
+| Pruning / sources / components | `GraphPruningTest.java` |
 | End-to-end demo | `src/main/java/io/lark/examples/LaryDemo.java` (`./gradlew runDemo`) |
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java`, `PipelineTest.java` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
@@ -162,6 +166,21 @@ test. Tests are the behavioral contract.
   through the hidden node's error.
 - `ColumnGraph.compile` rejects duplicate node names, duplicate column
   producers, unknown explicit dependencies, self-dependencies and cycles.
+- Input provenance is explicit: `ColumnSource.AUTO` (producer if present, else
+  feed), `FEED` (row data only), `NODE` (must have a producer). Compilation
+  rejects `FEED` columns produced by a node and `NODE` columns without a
+  producer; `NodePipeline.compute` rejects missing required feed columns.
+- `FeedStream` and `FetchStream` are the explicit row-in / row-out boundaries.
+- Built-in business transforms: `ScaleNode` (weight) and `UnitConvertNode`
+  (factor, e.g. fen → li).
+- `@ColumnComponent` + `NodePipeline.scan(package)` provide Spring-style
+  discovery without a Spring dependency; classes need a no-arg constructor.
+- Graph pruning: `ColumnGraph.compile(requiredOutputs)` keeps only the
+  transitive producers of requested columns; `NodePipeline.compile(Set)` and
+  `run(FeedStream, FetchStream)` use it. Cycles are detected on the full graph
+  even when a cyclic branch would be pruned.
+- `NodePipeline.nodeCount()` is registered nodes; `compiledNodeCount()` is the
+  pruned execution graph size.
 - Monitoring source `"column"`; phase events `feed.start/end`,
   `compute.start/end`, `fetch.start/end`; node events
   `node.start/end/error/fallback`; `module.end` with `node_count`;

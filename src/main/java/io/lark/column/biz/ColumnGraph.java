@@ -24,14 +24,16 @@ import java.util.Set;
  */
 public final class ColumnGraph {
 
-    /** Compiled order plus resolved dependency edges. */
+    /** Compiled order, resolved dependency edges and required feed columns. */
     public record Compiled(
             List<ColumnNode> order,
-            Map<ColumnNode, List<ColumnNode>> dependencies
+            Map<ColumnNode, List<ColumnNode>> dependencies,
+            Set<String> feedInputs
     ) {
         public Compiled {
             order = List.copyOf(order);
             dependencies = Collections.unmodifiableMap(new IdentityHashMap<>(dependencies));
+            feedInputs = Set.copyOf(feedInputs);
         }
 
         public List<ColumnNode> dependenciesOf(ColumnNode node) {
@@ -90,6 +92,18 @@ public final class ColumnGraph {
      * @throws IllegalStateException on a dependency cycle
      */
     public Compiled compile() {
+        return compile(null);
+    }
+
+    /**
+     * Validate, topologically sort and optionally prune the business graph.
+     *
+     * <p>When {@code requiredOutputs} is non-empty, only nodes needed
+     * (transitively) to produce those columns are retained; unused branches are
+     * removed from the execution graph. Cycles are always detected on the full
+     * graph, even in pruned branches.
+     */
+    public Compiled compile(Set<String> requiredOutputs) {
         Map<ColumnNode, Set<ColumnNode>> deps = new IdentityHashMap<>();
         for (ColumnNode node : nodes) {
             deps.put(node, new LinkedHashSet<>());
@@ -110,18 +124,52 @@ public final class ColumnGraph {
             }
         }
 
+        Set<String> feedInputs = new LinkedHashSet<>();
         for (ColumnNode node : nodes) {
             for (String input : node.inputs()) {
                 ColumnNode producer = producers.get(input);
-                if (producer == null) {
-                    continue; // feed column
+                ColumnSource source = node.inputSource(input);
+                if (source == null) {
+                    source = ColumnSource.AUTO;
                 }
-                if (producer == node) {
-                    throw new IllegalArgumentException(
-                            "ColumnGraph: node '" + node.name()
-                                    + "' depends on its own column '" + input + "'");
+                switch (source) {
+                    case FEED -> {
+                        if (producer != null) {
+                            throw new IllegalArgumentException(
+                                    "ColumnGraph: node '" + node.name()
+                                            + "' declares feed input '" + input
+                                            + "' but it is produced by node '"
+                                            + producer.name() + "'");
+                        }
+                        feedInputs.add(input);
+                    }
+                    case NODE -> {
+                        if (producer == null) {
+                            throw new IllegalArgumentException(
+                                    "ColumnGraph: node '" + node.name()
+                                            + "' requires node input '" + input
+                                            + "' but no node produces it");
+                        }
+                        if (producer == node) {
+                            throw new IllegalArgumentException(
+                                    "ColumnGraph: node '" + node.name()
+                                            + "' depends on its own column '" + input + "'");
+                        }
+                        deps.get(node).add(producer);
+                    }
+                    case AUTO -> {
+                        if (producer == null) {
+                            feedInputs.add(input);
+                        } else {
+                            if (producer == node) {
+                                throw new IllegalArgumentException(
+                                        "ColumnGraph: node '" + node.name()
+                                                + "' depends on its own column '" + input + "'");
+                            }
+                            deps.get(node).add(producer);
+                        }
+                    }
                 }
-                deps.get(node).add(producer);
             }
         }
 
@@ -175,10 +223,63 @@ public final class ColumnGraph {
             throw new IllegalStateException("ColumnGraph: dependency cycle detected");
         }
 
-        Map<ColumnNode, List<ColumnNode>> resolved = new IdentityHashMap<>();
-        for (ColumnNode node : nodes) {
-            resolved.put(node, List.copyOf(deps.get(node)));
+        Set<ColumnNode> kept;
+        if (requiredOutputs == null || requiredOutputs.isEmpty()) {
+            kept = Collections.newSetFromMap(new IdentityHashMap<>());
+            kept.addAll(nodes);
+        } else {
+            kept = requiredNodes(requiredOutputs, producers, deps, feedInputs);
         }
-        return new Compiled(order, resolved);
+
+        List<ColumnNode> prunedOrder = order.stream()
+                .filter(kept::contains)
+                .toList();
+
+        Map<ColumnNode, List<ColumnNode>> resolved = new IdentityHashMap<>();
+        Set<String> prunedFeedInputs = new LinkedHashSet<>();
+        for (ColumnNode node : kept) {
+            resolved.put(node, deps.get(node).stream()
+                    .filter(kept::contains)
+                    .toList());
+            for (String input : node.inputs()) {
+                if (producers.get(input) == null) {
+                    prunedFeedInputs.add(input);
+                }
+            }
+        }
+        return new Compiled(prunedOrder, resolved, prunedFeedInputs);
+    }
+
+    private static Set<ColumnNode> requiredNodes(
+            Set<String> requiredOutputs,
+            Map<String, ColumnNode> producers,
+            Map<ColumnNode, Set<ColumnNode>> deps,
+            Set<String> feedInputs) {
+        Set<ColumnNode> needed = Collections.newSetFromMap(new IdentityHashMap<>());
+        Deque<ColumnNode> pending = new ArrayDeque<>();
+
+        for (String output : requiredOutputs) {
+            ColumnNode producer = producers.get(output);
+            if (producer == null) {
+                if (feedInputs.contains(output)) {
+                    continue; // feed columns can be fetched directly
+                }
+                throw new IllegalArgumentException(
+                        "ColumnGraph: no node produces required output '" + output + "'");
+            }
+            if (needed.add(producer)) {
+                pending.push(producer);
+            }
+        }
+
+        while (!pending.isEmpty()) {
+            ColumnNode node = pending.pop();
+            for (ColumnNode dependency : deps.get(node)) {
+                if (needed.add(dependency)) {
+                    pending.push(dependency);
+                }
+            }
+        }
+        return needed;
     }
 }

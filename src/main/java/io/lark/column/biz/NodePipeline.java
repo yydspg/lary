@@ -16,7 +16,9 @@ import io.lark.metric.Event;
 import io.lark.metric.Monitor;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -24,9 +26,12 @@ import java.util.concurrent.Executors;
  * Business-facing column pipeline: register {@link ColumnNode}s, feed rows,
  * compute, fetch rows.
  *
- * <p>The execution graph is compiled into hidden {@code OpTensor} nodes.
- * Business code never constructs or touches an {@code OpTensor}; it only sees
+ * <p>The execution graph is compiled into hidden {@code ComputeNode} nodes.
+ * Business code never constructs or touches a {@code ComputeNode}; it only sees
  * {@link ColumnNode} and {@link ColumnContext}.
+ *
+ * <p>{@link #compile(Collection)} / {@link #run(FeedStream, FetchStream)} can
+ * prune unused branches when the required fetch columns are known.
  *
  * <pre>{@code
  * try (NodePipeline pipeline = new NodePipeline()) {
@@ -52,6 +57,8 @@ public final class NodePipeline implements AutoCloseable {
     private ComputeGraph graph = new ComputeGraph();
     private ExecutorService pool;
     private boolean compiled;
+    private Set<String> requiredFeedInputs = Set.of();
+    private List<String> compiledOutputs = List.of();
 
     public NodePipeline() {
         this(0);
@@ -69,6 +76,14 @@ public final class NodePipeline implements AutoCloseable {
     public NodePipeline addNode(ColumnNode node) {
         nodeGraph.add(node);
         compiled = false;
+        return this;
+    }
+
+    /** Scan packages for {@link ColumnComponent}-annotated business nodes. */
+    public NodePipeline scan(String... packages) {
+        for (ColumnNode node : ColumnComponentScanner.scan(packages)) {
+            addNode(node);
+        }
         return this;
     }
 
@@ -92,6 +107,15 @@ public final class NodePipeline implements AutoCloseable {
 
     public int nodeCount() {
         return nodeGraph.size();
+    }
+
+    /** Number of nodes in the last compiled (possibly pruned) execution graph. */
+    public int compiledNodeCount() {
+        return graph.size();
+    }
+
+    public Set<String> requiredFeedInputs() {
+        return requiredFeedInputs;
     }
 
     // ---- configuration --------------------------------------------------
@@ -126,11 +150,21 @@ public final class NodePipeline implements AutoCloseable {
     // ---- compile / run --------------------------------------------------
 
     /**
-     * Compile the business graph into hidden OpTensor execution nodes.
+     * Compile the business graph into hidden ComputeNode execution nodes.
      * Called automatically before the first compute.
      */
     public void compile() {
-        ColumnGraph.Compiled compiledGraph = nodeGraph.compile();
+        compile((Collection<String>) null);
+    }
+
+    /**
+     * Compile the graph, pruning unused branches when fetch outputs are given.
+     */
+    public void compile(Collection<String> requiredOutputs) {
+        ColumnGraph.Compiled compiledGraph = requiredOutputs == null
+                || requiredOutputs.isEmpty()
+                ? nodeGraph.compile()
+                : nodeGraph.compile(Set.copyOf(requiredOutputs));
         ComputeGraph newGraph = new ComputeGraph();
 
         for (ColumnNode node : compiledGraph.order()) {
@@ -143,11 +177,20 @@ public final class NodePipeline implements AutoCloseable {
         }
         newGraph.finalizeGraph();
         this.graph = newGraph;
+        this.requiredFeedInputs = compiledGraph.feedInputs();
+        this.compiledOutputs = compiledGraph.order().stream()
+                .flatMap(node -> node.outputs().stream())
+                .distinct()
+                .toList();
         this.compiled = true;
     }
 
     public void feed(List<String> names, List<Row> rows) {
-        feed(FeedFetch.feedTable(names, rows));
+        feed(FeedStream.of(names, rows));
+    }
+
+    public void feed(FeedStream stream) {
+        feed(FeedFetch.feedTable(stream.columns(), stream.rows()));
     }
 
     public void feed(TensorTable table) {
@@ -158,12 +201,26 @@ public final class NodePipeline implements AutoCloseable {
         ctx.store().addTable(table);
         ctx.endPhase();
         emitEnd("feed.end", "feed", ExecutionContext.RunPhase.FEED);
+        if (compiled) {
+            validateFeed(table);
+        }
     }
 
     public void compute() {
         if (!compiled) {
             compile();
         }
+        runCompiledGraph();
+    }
+
+    /** Compile with pruning to {@code requiredOutputs}, then execute. */
+    public void compute(Collection<String> requiredOutputs) {
+        compile(requiredOutputs);
+        runCompiledGraph();
+    }
+
+    private void runCompiledGraph() {
+        validateFeed(ctx.feed());
         if (pool == null) {
             pool = Executors.newThreadPerTaskExecutor(
                     Thread.ofVirtual().name("lark-column-node-", 0).factory());
@@ -173,6 +230,21 @@ public final class NodePipeline implements AutoCloseable {
         graph.executeAsync(pool, ctx, computeWorkers);
         ctx.endPhase();
         emitEnd("compute.end", "compute", ExecutionContext.RunPhase.COMPUTE);
+    }
+
+    private void validateFeed(TensorTable table) {
+        List<String> missing = requiredFeedInputs.stream()
+                .filter(column -> !table.has(column))
+                .toList();
+        if (!missing.isEmpty()) {
+            throw new IllegalArgumentException(
+                    "NodePipeline: missing feed column(s) " + missing
+                            + "; required=" + requiredFeedInputs);
+        }
+    }
+
+    public List<Row> fetch(FetchStream stream) {
+        return fetch(stream.columns());
     }
 
     public List<Row> fetch(List<String> names) {
@@ -188,7 +260,7 @@ public final class NodePipeline implements AutoCloseable {
 
     /** Fetch every declared business-node output. */
     public List<Row> fetch() {
-        return fetch(outputColumns());
+        return fetch(compiled ? compiledOutputs : outputColumns());
     }
 
     public TensorTable fetchTable(List<String> names) {
@@ -214,9 +286,16 @@ public final class NodePipeline implements AutoCloseable {
     /** feed + compute + fetch in one call. */
     public List<Row> run(List<String> feedNames, List<Row> feedRows,
                          List<String> fetchNames) {
-        feed(feedNames, feedRows);
+        return run(FeedStream.of(feedNames, feedRows),
+                FetchStream.of(fetchNames));
+    }
+
+    /** Feed + pruned compute + fetch. */
+    public List<Row> run(FeedStream feedStream, FetchStream fetchStream) {
+        compile(fetchStream.columns());
+        feed(feedStream);
         compute();
-        return fetch(fetchNames);
+        return fetch(fetchStream);
     }
 
     // ---- accessors ------------------------------------------------------
@@ -236,6 +315,11 @@ public final class NodePipeline implements AutoCloseable {
             out.addAll(node.outputs());
         }
         return out;
+    }
+
+    /** Outputs of the last compiled (possibly pruned) graph. */
+    public List<String> compiledOutputColumns() {
+        return compiledOutputs;
     }
 
     private void emitStart(String action, String subject) {

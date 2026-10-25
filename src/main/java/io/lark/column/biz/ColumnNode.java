@@ -35,6 +35,11 @@ public abstract class ColumnNode {
         return List.of();
     }
 
+    /** Where a business node input column comes from. */
+    public ColumnSource inputSource(String column) {
+        return ColumnSource.AUTO;
+    }
+
     /** Business computation. Blocking calls are fine. */
     public abstract void execute(ColumnContext ctx);
 
