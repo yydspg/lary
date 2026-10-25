@@ -10,18 +10,17 @@ import java.util.Objects;
 /** A node with two typed inputs and one typed fetch output. */
 @SuppressWarnings("this-escape")
 public abstract class BinaryNode<A extends ColumnStream<?>,
-        B extends ColumnStream<?>, O extends ColumnStream<?>>
-        extends ColumnNode {
+        B extends ColumnStream<?>, O> extends ColumnNode {
 
     private final A left;
     private final B right;
-    private final O output;
+    private final ColumnStream<O> output;
 
-    protected BinaryNode(A left, B right, Class<O> outputType) {
+    protected BinaryNode(A left, B right, Column<O> outputColumn) {
         super(left, right);
         this.left = Objects.requireNonNull(left, "left");
         this.right = Objects.requireNonNull(right, "right");
-        this.output = fetch(outputType);
+        this.output = fetch(outputColumn);
     }
 
     public final A left() {
@@ -32,7 +31,7 @@ public abstract class BinaryNode<A extends ColumnStream<?>,
         return right;
     }
 
-    public final O out() {
+    public final ColumnStream<O> out() {
         return output;
     }
 

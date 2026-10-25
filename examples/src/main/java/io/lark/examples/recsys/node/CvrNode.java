@@ -6,15 +6,15 @@ package io.lark.examples.recsys.node;
 import io.lark.column.Tensor;
 import io.lark.column.biz.BinaryNode;
 import io.lark.column.biz.ColumnContext;
-import io.lark.examples.recsys.columns.Clicks;
-import io.lark.examples.recsys.columns.Cvr;
-import io.lark.examples.recsys.columns.Orders;
+import io.lark.column.biz.ColumnStream;
+import io.lark.examples.recsys.schema.RecSysMetrics;
 
 /** Conversion rate: orders / clicks. */
-public final class CvrNode extends BinaryNode<Orders, Clicks, Cvr> {
+public final class CvrNode
+        extends BinaryNode<ColumnStream<Long>, ColumnStream<Long>, Double> {
 
-    public CvrNode(Orders orders, Clicks clicks) {
-        super(orders, clicks, Cvr.class);
+    public CvrNode(ColumnStream<Long> orders, ColumnStream<Long> clicks) {
+        super(orders, clicks, RecSysMetrics.CVR);
     }
 
     @Override

@@ -79,7 +79,7 @@ test. Tests are the behavioral contract.
 | `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
 | Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `BusinessNodeOp.java` |
-| Typed column classes (Java-first) | `biz/LongColumn.java`, `DoubleColumn.java`, `FloatColumn.java`, `IntColumn.java`, `BoolColumn.java`; business schema subclasses e.g. `CouponRoi` |
+| Typed column schema (Java-first) | `biz/Column.java` (`Column<T>` value definitions), `biz/ColumnStream.java` (graph handles); schema constants e.g. `RecSysMetrics.COUPON_ROI` |
 | Typed node bases (Java-first) | `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`; custom nodes extend `ColumnNode` with typed fields |
 | Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream<?>[]`) |
 | Spring-style components | `biz/ColumnComponent.java`, `biz/ColumnComponentScanner.java` (on modules) |
@@ -91,7 +91,7 @@ test. Tests are the behavioral contract.
 | Module / stream / pruning / component coverage | `ModulePipelineTest.java` |
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java` |
 | DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
-| Realistic multi-class demo | `examples/src/main/java/io/lark/examples/recsys/**` (`:examples:runRecsys`), split into `columns/`, `node/`, `module/`, `data/` |
+| Realistic multi-class demo | `examples/src/main/java/io/lark/examples/recsys/**` (`:examples:runRecsys`), split into `schema/`, `node/`, `module/`, `data/` |
 | Realistic demo test | `examples/src/test/java/io/lark/examples/recsys/RecSysMetricTest.java`, mock edge-case feed `MockMetrics.java` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
@@ -155,20 +155,20 @@ test. Tests are the behavioral contract.
 - Business API: typed `ColumnStream<T>` subclasses + `ColumnNode` /
   `ColumnContext` / `ColumnModule` / `ColumnPipeline`. Node ids are generated;
   there is no `name()`/`inputs()`/`outputs()` override.
-- Columns are classes extending `LongColumn`, `DoubleColumn`, `FloatColumn`,
-  `IntColumn` or `BoolColumn`. The default name is derived from the class
-  (`CouponRoi` → `coupon_roi`); explicit physical names use the
-  `(String)` constructor. `ColumnContext` validates read/write dtype; typed
-  feed columns are coerced to their declared dtype.
-- Outputs are declared with `fetch(ColumnClass.class)`. Common node shapes use
-  `UnaryNode<I,O>`, `BinaryNode<A,B,O>` and `SourceNode<O>`; custom nodes extend
-  `ColumnNode` and keep typed input fields. Business compute must not use
-  `output("name")` or `feeds()[0]`.
-- Data dependency is class/stream-reference based
-  (`new BNode(a.out())`), never node-name based. Node `feeds()`/`fetches()` are
-  arrays.
+- Schema is declared once as immutable `Column<T>` constants
+  (`new Column<>("ctr", DType.FLOAT64)`), not one empty subclass per metric.
+  `ColumnContext` validates read/write dtype; typed feed columns are coerced to
+  their declared dtype.
+- `ColumnStream<T>` handles are created by `fetch(Column<T>)` on nodes and
+  `input(Column<T>)` on modules. Outputs are declared with
+  `fetch(RecSysMetrics.CTR)`. Common node shapes use `UnaryNode<I,O>`,
+  `BinaryNode<A,B,O>` and `SourceNode<O>`; custom nodes extend `ColumnNode` and
+  keep typed handles. Business compute must not use string output names or
+  `feeds()[0]`.
+- Data dependency is handle/reference based (`new BNode(a.out())`), never
+  node-name based. Node `feeds()`/`fetches()` are arrays.
 - `ColumnModule` groups nodes and exposes `inputs()`, `outputs()`, `nodes()`,
-  `dependencies()` as arrays. Module inputs use `input(ColumnClass.class)`.
+  `dependencies()` as arrays. Module inputs use `input(Column<T>)`.
   Modules depend on modules with `dependsOn(OtherModule.class)`; module cycles
   are rejected.
 - `FeedStream` / `FetchStream` are the row-in / row-out boundaries and carry
@@ -226,14 +226,14 @@ in `~/.gradle/gradle.properties`.
 - [ ] Java test added/updated for the behavior.
 - [ ] `README.md` updated (feature, usage, limitations).
 - [ ] This `SKILL.md` updated (mapping, invariants, verification).
-- [ ] Column business code uses typed column classes and `ColumnNode` /
-      `UnaryNode` / `BinaryNode` / `SourceNode`; execution (`ComputeNode`) and
-      tensor ops (`OpTensor`) stay out of the business API.
+- [ ] Column business code uses `Column<T>` schema definitions and
+      `ColumnNode` / `UnaryNode` / `BinaryNode` / `SourceNode`; execution
+      (`ComputeNode`) and tensor ops (`OpTensor`) stay out of the business API.
 - [ ] No business compute uses string outputs or positional `feeds()[n]`.
 - [ ] `./gradlew clean test :examples:build` is green.
 - [ ] DAG tests cover wide and deep graphs and the ready-queue scheduler.
 - [ ] Column examples run with `--add-modules jdk.incubator.vector`.
 - [ ] `:examples` still compiles; realistic demo classes remain separated into
-      columns/nodes/modules instead of one catch-all class.
+      schema/nodes/modules instead of one catch-all class.
 - [ ] Docs/mapping updated if API or module layout changed.
 - [ ] No C++ edits unless explicitly requested.

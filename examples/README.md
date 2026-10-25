@@ -19,7 +19,7 @@ project for search / recommendation metrics:
 recsys/
 ├─ RecSysDemo.java            composition + main
 ├─ MetricResultPrinter.java   presentation
-├─ columns/                   typed ColumnStream subclasses
+├─ schema/                    Column<T> definitions (one file)
 ├─ node/                      one business node per file
 ├─ module/                    one module per file
 └─ data/                      item-level metric repository

@@ -6,48 +6,47 @@ package io.lark.examples.recsys.node;
 import io.lark.column.Tensor;
 import io.lark.column.biz.ColumnContext;
 import io.lark.column.biz.ColumnNode;
+import io.lark.column.biz.ColumnStream;
 import io.lark.column.compute.Compute;
-import io.lark.examples.recsys.columns.BuyAgainOrders;
-import io.lark.examples.recsys.columns.CouponCost;
-import io.lark.examples.recsys.columns.Gmv;
-import io.lark.examples.recsys.columns.OverallBuyAgainCost;
-import io.lark.examples.recsys.columns.OverallRoi;
-import io.lark.examples.recsys.columns.TotalCouponCost;
-import io.lark.examples.recsys.columns.TotalGmv;
+import io.lark.examples.recsys.schema.RecSysMetrics;
 
 /** Aggregate commercial metrics across all rows. */
 public final class PortfolioSummaryNode extends ColumnNode {
 
-    private final Gmv gmv;
-    private final CouponCost couponCost;
-    private final BuyAgainOrders buyAgainOrders;
-    private final TotalGmv totalGmv = fetch(TotalGmv.class);
-    private final TotalCouponCost totalCouponCost = fetch(TotalCouponCost.class);
-    private final OverallRoi overallRoi = fetch(OverallRoi.class);
-    private final OverallBuyAgainCost overallBuyAgainCost =
-            fetch(OverallBuyAgainCost.class);
+    private final ColumnStream<Double> gmv;
+    private final ColumnStream<Double> couponCost;
+    private final ColumnStream<Long> buyAgainOrders;
+    private final ColumnStream<Double> totalGmv =
+            fetch(RecSysMetrics.TOTAL_GMV);
+    private final ColumnStream<Double> totalCouponCost =
+            fetch(RecSysMetrics.TOTAL_COUPON_COST);
+    private final ColumnStream<Double> overallRoi =
+            fetch(RecSysMetrics.OVERALL_ROI);
+    private final ColumnStream<Double> overallBuyAgainCost =
+            fetch(RecSysMetrics.OVERALL_BUYAGAIN_COST);
 
-    public PortfolioSummaryNode(Gmv gmv, CouponCost couponCost,
-                                BuyAgainOrders buyAgainOrders) {
+    public PortfolioSummaryNode(ColumnStream<Double> gmv,
+                                ColumnStream<Double> couponCost,
+                                ColumnStream<Long> buyAgainOrders) {
         super(gmv, couponCost, buyAgainOrders);
         this.gmv = gmv;
         this.couponCost = couponCost;
         this.buyAgainOrders = buyAgainOrders;
     }
 
-    public TotalGmv totalGmv() {
+    public ColumnStream<Double> totalGmv() {
         return totalGmv;
     }
 
-    public TotalCouponCost totalCouponCost() {
+    public ColumnStream<Double> totalCouponCost() {
         return totalCouponCost;
     }
 
-    public OverallRoi overallRoi() {
+    public ColumnStream<Double> overallRoi() {
         return overallRoi;
     }
 
-    public OverallBuyAgainCost overallBuyAgainCost() {
+    public ColumnStream<Double> overallBuyAgainCost() {
         return overallBuyAgainCost;
     }
 

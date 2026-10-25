@@ -4,34 +4,27 @@
 package io.lark.examples.recsys.module;
 
 import io.lark.column.biz.ColumnModule;
-import io.lark.examples.recsys.columns.BuyAgainCost;
-import io.lark.examples.recsys.columns.BuyAgainOrders;
-import io.lark.examples.recsys.columns.Clicks;
-import io.lark.examples.recsys.columns.CouponCost;
-import io.lark.examples.recsys.columns.CouponCostFen;
-import io.lark.examples.recsys.columns.CouponRoi;
-import io.lark.examples.recsys.columns.Ctr;
-import io.lark.examples.recsys.columns.Cvr;
-import io.lark.examples.recsys.columns.Gmv;
-import io.lark.examples.recsys.columns.GmvFen;
-import io.lark.examples.recsys.columns.Impressions;
-import io.lark.examples.recsys.columns.Orders;
+import io.lark.column.biz.ColumnStream;
 import io.lark.examples.recsys.node.BuyAgainCostNode;
 import io.lark.examples.recsys.node.CouponCostNode;
 import io.lark.examples.recsys.node.CouponRoiNode;
 import io.lark.examples.recsys.node.CtrNode;
 import io.lark.examples.recsys.node.CvrNode;
 import io.lark.examples.recsys.node.GmvNode;
+import io.lark.examples.recsys.schema.RecSysMetrics;
 
 /** Computes the core search/recommendation funnel and commercial metrics. */
 public final class FunnelMetricModule extends ColumnModule {
 
-    private final Impressions impressions = input(Impressions.class);
-    private final Clicks clicks = input(Clicks.class);
-    private final Orders orders = input(Orders.class);
-    private final GmvFen gmvFen = input(GmvFen.class);
-    private final CouponCostFen couponCostFen = input(CouponCostFen.class);
-    private final BuyAgainOrders buyAgainOrders = input(BuyAgainOrders.class);
+    private final ColumnStream<Long> impressions =
+            input(RecSysMetrics.IMPRESSIONS);
+    private final ColumnStream<Long> clicks = input(RecSysMetrics.CLICKS);
+    private final ColumnStream<Long> orders = input(RecSysMetrics.ORDERS);
+    private final ColumnStream<Long> gmvFen = input(RecSysMetrics.GMV_FEN);
+    private final ColumnStream<Long> couponCostFen =
+            input(RecSysMetrics.COUPON_COST_FEN);
+    private final ColumnStream<Long> buyAgainOrders =
+            input(RecSysMetrics.BUY_AGAIN_ORDERS);
 
     private final CtrNode ctr = add(new CtrNode(clicks, impressions));
     private final CvrNode cvr = add(new CvrNode(orders, clicks));
@@ -47,51 +40,51 @@ public final class FunnelMetricModule extends ColumnModule {
                 buyAgainCost.out(), couponRoi.out());
     }
 
-    public Impressions impressions() {
+    public ColumnStream<Long> impressions() {
         return impressions;
     }
 
-    public Clicks clicks() {
+    public ColumnStream<Long> clicks() {
         return clicks;
     }
 
-    public Orders orders() {
+    public ColumnStream<Long> orders() {
         return orders;
     }
 
-    public GmvFen gmvFen() {
+    public ColumnStream<Long> gmvFen() {
         return gmvFen;
     }
 
-    public CouponCostFen couponCostFen() {
+    public ColumnStream<Long> couponCostFen() {
         return couponCostFen;
     }
 
-    public BuyAgainOrders buyAgainOrders() {
+    public ColumnStream<Long> buyAgainOrders() {
         return buyAgainOrders;
     }
 
-    public Ctr ctr() {
+    public ColumnStream<Double> ctr() {
         return ctr.out();
     }
 
-    public Cvr cvr() {
+    public ColumnStream<Double> cvr() {
         return cvr.out();
     }
 
-    public Gmv gmv() {
+    public ColumnStream<Double> gmv() {
         return gmv.out();
     }
 
-    public CouponCost couponCost() {
+    public ColumnStream<Double> couponCost() {
         return couponCost.out();
     }
 
-    public BuyAgainCost buyAgainCost() {
+    public ColumnStream<Double> buyAgainCost() {
         return buyAgainCost.out();
     }
 
-    public CouponRoi couponRoi() {
+    public ColumnStream<Double> couponRoi() {
         return couponRoi.out();
     }
 }

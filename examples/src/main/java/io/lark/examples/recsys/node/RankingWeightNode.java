@@ -6,13 +6,9 @@ package io.lark.examples.recsys.node;
 import io.lark.column.Tensor;
 import io.lark.column.biz.ColumnContext;
 import io.lark.column.biz.ColumnNode;
+import io.lark.column.biz.ColumnStream;
 import io.lark.column.compute.Compute;
-import io.lark.examples.recsys.columns.BuyAgainCost;
-import io.lark.examples.recsys.columns.CouponRoi;
-import io.lark.examples.recsys.columns.Ctr;
-import io.lark.examples.recsys.columns.Cvr;
-import io.lark.examples.recsys.columns.Gmv;
-import io.lark.examples.recsys.columns.Weight;
+import io.lark.examples.recsys.schema.RecSysMetrics;
 
 /**
  * Search/ranking weight from the funnel and commercial metrics.
@@ -28,15 +24,18 @@ public final class RankingWeightNode extends ColumnNode {
     private static final double ROI_WEIGHT = 0.5;
     private static final double BUY_AGAIN_COST_PENALTY = 0.5;
 
-    private final Ctr ctr;
-    private final Cvr cvr;
-    private final Gmv gmv;
-    private final CouponRoi couponRoi;
-    private final BuyAgainCost buyAgainCost;
-    private final Weight out = fetch(Weight.class);
+    private final ColumnStream<Double> ctr;
+    private final ColumnStream<Double> cvr;
+    private final ColumnStream<Double> gmv;
+    private final ColumnStream<Double> couponRoi;
+    private final ColumnStream<Double> buyAgainCost;
+    private final ColumnStream<Double> out = fetch(RecSysMetrics.WEIGHT);
 
-    public RankingWeightNode(Ctr ctr, Cvr cvr, Gmv gmv,
-                             CouponRoi couponRoi, BuyAgainCost buyAgainCost) {
+    public RankingWeightNode(ColumnStream<Double> ctr,
+                             ColumnStream<Double> cvr,
+                             ColumnStream<Double> gmv,
+                             ColumnStream<Double> couponRoi,
+                             ColumnStream<Double> buyAgainCost) {
         super(ctr, cvr, gmv, couponRoi, buyAgainCost);
         this.ctr = ctr;
         this.cvr = cvr;
@@ -45,7 +44,7 @@ public final class RankingWeightNode extends ColumnNode {
         this.buyAgainCost = buyAgainCost;
     }
 
-    public Weight out() {
+    public ColumnStream<Double> out() {
         return out;
     }
 

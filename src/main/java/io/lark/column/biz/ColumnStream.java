@@ -9,74 +9,44 @@ import java.util.Objects;
 import java.util.Optional;
 
 /**
- * A typed, named data stream flowing between business nodes.
+ * A typed stream handle bound to a {@link Column} definition.
  *
- * <p>Business code should not create {@code ColumnStream} anonymously or pass
- * string names around. Define a small column class instead:
+ * <p>Handles are created by the framework: a node output is created with
+ * {@link ColumnNode#fetch(Column)} and an external input with
+ * {@link ColumnModule#input(Column)}. Business code passes handles between
+ * nodes and reads/writes them through {@link ColumnContext}; it does not create
+ * handles or use string names.
  *
- * <pre>{@code
- * public final class CouponRoi extends DoubleColumn {
- * }
- * }</pre>
- *
- * <p>The column name is derived from the class name ({@code CouponRoi} →
- * {@code coupon_roi}); use the explicit-name constructor in the typed base
- * class when an external column has a different physical name. The generic
- * value type and the typed base class document the logical type;
- * {@link ColumnContext} validates the tensor dtype on read/write.
- *
- * <p>A stream with a producer is a node output; a stream without a producer is
- * an external module input (fed from row data). Dependencies are expressed by
- * passing the typed stream object to another node's constructor — never by
- * node names or positional indexes.
- *
- * <p><strong>A column is a typed port, not a node.</strong> It defines the
- * contract (name + dtype) and is intentionally behavior-free. The node that
- * produces the column owns the computation; for example {@code CtrNode}
- * defines how CTR is calculated and declares {@code Ctr.class} as its output.
- * This lets one metric type be produced by different sources/windows/experiments
- * without putting execution lifecycle into a value type.
+ * <p>A handle with a producer is a node output; a handle without a producer is
+ * an external module input.
  */
-public abstract class ColumnStream<T> {
+public final class ColumnStream<T> {
 
-    private final String explicitName;
-    private final DType dtype;
-    private volatile String resolvedName;
+    private final Column<T> column;
     private ColumnNode producer;
 
-    /** Derive the stream name from the concrete column class. */
-    protected ColumnStream(DType dtype) {
-        this.explicitName = null;
-        this.dtype = Objects.requireNonNull(dtype, "dtype");
+    ColumnStream(Column<T> column, ColumnNode producer) {
+        this.column = Objects.requireNonNull(column, "column");
+        this.producer = producer;
     }
 
-    /** Use an explicit physical name (for example a database column). */
-    protected ColumnStream(String name, DType dtype) {
-        this.explicitName = Objects.requireNonNull(name, "name");
-        this.dtype = Objects.requireNonNull(dtype, "dtype");
+    public Column<T> definition() {
+        return column;
     }
 
-    public final String name() {
-        if (explicitName != null) {
-            return explicitName;
-        }
-        String name = resolvedName;
-        if (name == null) {
-            name = ColumnNames.of(getClass());
-            resolvedName = name;
-        }
-        return name;
+    public String name() {
+        return column.name();
     }
 
-    public final DType dtype() {
-        return dtype;
+    public DType dtype() {
+        return column.dtype();
     }
 
-    public final Optional<ColumnNode> producer() {
+    public Optional<ColumnNode> producer() {
         return Optional.ofNullable(producer);
     }
 
-    public final boolean isExternalFeed() {
+    public boolean isExternalFeed() {
         return producer == null;
     }
 
@@ -93,8 +63,6 @@ public abstract class ColumnStream<T> {
 
     @Override
     public String toString() {
-        return getClass().getSimpleName() + "{" + name()
-                + (producer == null ? ", external" : ", producer=" + producer.id())
-                + '}';
+        return column + (producer == null ? " {external}" : " {" + producer.id() + '}');
     }
 }

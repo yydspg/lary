@@ -8,9 +8,9 @@ applications are separate Gradle modules.
   code, Node / Op layers, aspects, registries, KV + arrow DSL, statistics, and
   optional timeout / cancellation with business fallback and repeated-timeout
   quarantine.
-- **Column engine**: feed → compute → fetch, class-based typed columns
-  (`LongColumn`, `DoubleColumn`, …), `ColumnNode` / `ColumnModule` /
-  `ColumnStream` business API, typed tensor operations (`OpTensor`,
+- **Column engine**: feed → compute → fetch, `Column<T>` schema definitions and
+  typed `ColumnStream<T>` handles, `ColumnNode` / `ColumnModule` business API,
+  typed tensor operations (`OpTensor`,
   `FloatAddTensor`, `FloatMultiTensor`, …), hidden `ComputeNode` execution nodes,
   multi-dtype tensors, Q8_0 quantization and monitoring.
 - **SIMD**: column arithmetic, scalar broadcasting, comparisons, reductions and
@@ -40,7 +40,7 @@ lary/
       └─ recsys/                 # search / recommendation metrics project
          ├─ RecSysDemo.java
          ├─ MetricResultPrinter.java
-         ├─ columns/             # typed ColumnStream subclasses
+         ├─ schema/              # Column<T> definitions (one file)
          ├─ node/                # one file per business node
          ├─ module/              # one file per module
          └─ data/                # item-level metric repository
@@ -106,7 +106,7 @@ demo class:
 recsys/
 ├─ RecSysDemo.java            # composition + main
 ├─ MetricResultPrinter.java   # presentation
-├─ columns/                   # one class per metric column
+├─ schema/                    # Column<T> definitions (one file)
 ├─ node/                      # one class per business node
 ├─ module/                    # one class per module
 └─ data/                      # item-level metric repository
@@ -182,10 +182,12 @@ try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
 A node is a small typed class, for example CTR:
 
 ```java
-public final class CtrNode extends BinaryNode<Clicks, Impressions, Ctr> {
+public final class CtrNode
+        extends BinaryNode<ColumnStream<Long>, ColumnStream<Long>, Double> {
 
-    public CtrNode(Clicks clicks, Impressions impressions) {
-        super(clicks, impressions, Ctr.class);
+    public CtrNode(ColumnStream<Long> clicks,
+                   ColumnStream<Long> impressions) {
+        super(clicks, impressions, RecSysMetrics.CTR);
     }
 
     @Override
@@ -295,49 +297,51 @@ Business code does not use string outputs or positional feed indexes. Columns
 are classes, nodes have typed input/output fields, and modules expose typed
 fetch streams.
 
-### Define columns as classes
+### Define the schema once
+
+No empty class per column. Declare immutable `Column<T>` definitions in one
+schema file:
 
 ```java
-public final class Impressions extends LongColumn {
-}
-
-public final class Clicks extends LongColumn {
-}
-
-public final class Ctr extends DoubleColumn {
-}
-
-// Physical / external names can be explicit; otherwise the class name is
-// converted to snake_case (Ctr → ctr, CouponRoi → coupon_roi).
-public final class BuyAgainCost extends DoubleColumn {
-    public BuyAgainCost() {
-        super("buyagain_cost");
-    }
+public final class RecSysMetrics {
+    public static final Column<Long> IMPRESSIONS =
+            new Column<>("impressions", DType.INT64);
+    public static final Column<Long> CLICKS =
+            new Column<>("clicks", DType.INT64);
+    public static final Column<Double> CTR =
+            new Column<>("ctr", DType.FLOAT64);
+    public static final Column<Double> BUYAGAIN_COST =
+            new Column<>("buyagain_cost", DType.FLOAT64);
 }
 ```
 
-`LongColumn`, `DoubleColumn`, `FloatColumn`, `IntColumn` and `BoolColumn` carry
-the tensor dtype. `ColumnContext` validates the dtype on every read/write, and
-typed feed columns are coerced to their declared dtype.
+A `Column<T>` is a **value object / port**, not a node. The framework creates
+a `ColumnStream<T>` handle from it when a module declares an input or a node
+declares an output:
 
-A column class is a **typed port**, not the feed node: it defines the contract
-(name + dtype) and has no computation. The feed node is the class in `node/`
-that owns the inputs and implements `compute` (for example `CtrNode`). This
-separation lets the same metric type be produced by different sources, windows
-or experiments without putting node lifecycle into a value class.
+```java
+ColumnStream<Long> impressions = input(RecSysMetrics.IMPRESSIONS);
+ColumnStream<Double> ctr = fetch(RecSysMetrics.CTR);
+```
 
-Classes are preferred over a global column enum: a node constructor can require
-`Clicks` or `Impressions` specifically, so passing the wrong metric is a
-compile error. An enum can still be used as a schema factory that returns these
-classes if a project prefers that style.
+`ColumnContext` validates the tensor dtype on read/write, and typed feed
+columns are coerced to their declared dtype. This is intentionally preferred
+over one empty subclass per metric: the schema stays in one place while the
+generic type still prevents mixing long and double columns.
+
+An enum can also be used as a schema factory if a project prefers that style;
+the important part is that `Column<T>` definitions are values, while nodes own
+the computation.
 
 ### Nodes define the business logic
 
 ```java
-public final class CtrNode extends BinaryNode<Clicks, Impressions, Ctr> {
+public final class CtrNode
+        extends BinaryNode<ColumnStream<Long>, ColumnStream<Long>, Double> {
 
-    public CtrNode(Clicks clicks, Impressions impressions) {
-        super(clicks, impressions, Ctr.class);
+    public CtrNode(ColumnStream<Long> clicks,
+                   ColumnStream<Long> impressions) {
+        super(clicks, impressions, RecSysMetrics.CTR);
     }
 
     @Override
@@ -349,19 +353,22 @@ public final class CtrNode extends BinaryNode<Clicks, Impressions, Ctr> {
 
 Use `UnaryNode<I, O>` and `BinaryNode<A, B, O>` for the common shapes, or
 `SourceNode<O>` for a source. Custom nodes extend `ColumnNode` and keep typed
-fields; outputs are declared with `fetch(SomeColumn.class)`:
+fields; outputs are declared with `fetch(Column<T>)`:
 
 ```java
 public final class RankingWeightNode extends ColumnNode {
-    private final Ctr ctr;
-    private final Cvr cvr;
-    private final Gmv gmv;
-    private final CouponRoi couponRoi;
-    private final BuyAgainCost buyAgainCost;
-    private final Weight out = fetch(Weight.class);
+    private final ColumnStream<Double> ctr;
+    private final ColumnStream<Double> cvr;
+    private final ColumnStream<Double> gmv;
+    private final ColumnStream<Double> couponRoi;
+    private final ColumnStream<Double> buyAgainCost;
+    private final ColumnStream<Double> out = fetch(RecSysMetrics.WEIGHT);
 
-    public RankingWeightNode(Ctr ctr, Cvr cvr, Gmv gmv,
-                             CouponRoi couponRoi, BuyAgainCost buyAgainCost) {
+    public RankingWeightNode(ColumnStream<Double> ctr,
+                             ColumnStream<Double> cvr,
+                             ColumnStream<Double> gmv,
+                             ColumnStream<Double> couponRoi,
+                             ColumnStream<Double> buyAgainCost) {
         super(ctr, cvr, gmv, couponRoi, buyAgainCost);
         this.ctr = ctr;
         this.cvr = cvr;
@@ -381,17 +388,19 @@ public final class RankingWeightNode extends ColumnNode {
 
 ```java
 public final class FunnelMetricModule extends ColumnModule {
-    private final Impressions impressions = input(Impressions.class);
-    private final Clicks clicks = input(Clicks.class);
+    private final ColumnStream<Long> impressions =
+            input(RecSysMetrics.IMPRESSIONS);
+    private final ColumnStream<Long> clicks =
+            input(RecSysMetrics.CLICKS);
     private final CtrNode ctr = add(new CtrNode(clicks, impressions));
 
     public FunnelMetricModule() {
         output(ctr.out());
     }
 
-    public Impressions impressions() { return impressions; }
-    public Clicks clicks() { return clicks; }
-    public Ctr ctr() { return ctr.out(); }
+    public ColumnStream<Long> impressions() { return impressions; }
+    public ColumnStream<Long> clicks() { return clicks; }
+    public ColumnStream<Double> ctr() { return ctr.out(); }
 }
 ```
 
@@ -491,7 +500,7 @@ runtime dtype promotion to choose the typed implementation (`AddTensor` →
 | `io.lark.column.compute` | `Compute`, `VectorOps` |
 | `io.lark.column.op` | `OpTensor`, `OpContext`, `OpSpec`, `TensorOps`; typed ops: `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`, `LongMultiTensor`, … |
 | `io.lark.column.exec` | `ComputeNode`, `ComputeGraph`, `ExecutionContext` — hidden execution layer |
-| `io.lark.column.biz` | typed business API: `ColumnStream<T>`, `LongColumn` / `DoubleColumn` / `FloatColumn` / `IntColumn` / `BoolColumn`, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
+| `io.lark.column.biz` | typed business API: `Column<T>` definitions, `ColumnStream<T>` handles, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |
 

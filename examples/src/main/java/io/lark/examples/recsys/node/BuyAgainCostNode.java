@@ -6,16 +6,16 @@ package io.lark.examples.recsys.node;
 import io.lark.column.Tensor;
 import io.lark.column.biz.BinaryNode;
 import io.lark.column.biz.ColumnContext;
-import io.lark.examples.recsys.columns.BuyAgainCost;
-import io.lark.examples.recsys.columns.BuyAgainOrders;
-import io.lark.examples.recsys.columns.CouponCost;
+import io.lark.column.biz.ColumnStream;
+import io.lark.examples.recsys.schema.RecSysMetrics;
 
 /** Coupon spend per repeat order. */
 public final class BuyAgainCostNode
-        extends BinaryNode<CouponCost, BuyAgainOrders, BuyAgainCost> {
+        extends BinaryNode<ColumnStream<Double>, ColumnStream<Long>, Double> {
 
-    public BuyAgainCostNode(CouponCost cost, BuyAgainOrders repeatOrders) {
-        super(cost, repeatOrders, BuyAgainCost.class);
+    public BuyAgainCostNode(ColumnStream<Double> cost,
+                            ColumnStream<Long> repeatOrders) {
+        super(cost, repeatOrders, RecSysMetrics.BUYAGAIN_COST);
     }
 
     @Override

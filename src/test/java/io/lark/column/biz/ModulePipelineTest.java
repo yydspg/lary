@@ -21,47 +21,38 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ModulePipelineTest {
 
-    // ---- typed column schema ---------------------------------------------
+    // ---- column schema ---------------------------------------------------
 
-    static final class MetricValue extends LongColumn {
-    }
-
-    static final class Source extends LongColumn {
-    }
-
-    static final class Result extends LongColumn {
-    }
-
-    static final class Recovered extends LongColumn {
-    }
-
-    static final class RecoveredPlusOne extends LongColumn {
-    }
-
-    static final class Used extends LongColumn {
-    }
-
-    static final class Unused extends LongColumn {
-    }
-
-    static final class Li extends LongColumn {
-    }
-
-    static final class ProducerOut extends LongColumn {
-    }
-
-    static final class ConsumerOut extends LongColumn {
-    }
+    static final Column<Long> METRIC_VALUE =
+            new Column<>("metric_value", DType.INT64);
+    static final Column<Long> SOURCE =
+            new Column<>("source", DType.INT64);
+    static final Column<Long> RESULT =
+            new Column<>("result", DType.INT64);
+    static final Column<Long> RECOVERED =
+            new Column<>("recovered", DType.INT64);
+    static final Column<Long> RECOVERED_PLUS_ONE =
+            new Column<>("recovered_plus_one", DType.INT64);
+    static final Column<Long> USED =
+            new Column<>("used", DType.INT64);
+    static final Column<Long> UNUSED =
+            new Column<>("unused", DType.INT64);
+    static final Column<Long> LI =
+            new Column<>("li", DType.INT64);
+    static final Column<Long> PRODUCER_OUT =
+            new Column<>("producer_out", DType.INT64);
+    static final Column<Long> CONSUMER_OUT =
+            new Column<>("consumer_out", DType.INT64);
 
     // ---- nodes -----------------------------------------------------------
 
-    static final class PlusNode<O extends LongColumn>
-            extends UnaryNode<LongColumn, O> {
+    static final class PlusNode<O>
+            extends UnaryNode<ColumnStream<Long>, O> {
 
         private final double delta;
 
-        PlusNode(LongColumn feed, Class<O> outputType, double delta) {
-            super(feed, outputType);
+        PlusNode(ColumnStream<Long> feed, Column<O> output, double delta) {
+            super(feed, output);
             this.delta = delta;
         }
 
@@ -71,11 +62,11 @@ class ModulePipelineTest {
         }
     }
 
-    static final class ConsumerNode<O extends LongColumn>
-            extends UnaryNode<LongColumn, O> {
+    static final class ConsumerNode<O>
+            extends UnaryNode<ColumnStream<Long>, O> {
 
-        ConsumerNode(LongColumn feed, Class<O> outputType) {
-            super(feed, outputType);
+        ConsumerNode(ColumnStream<Long> feed, Column<O> output) {
+            super(feed, output);
         }
 
         @Override
@@ -84,10 +75,10 @@ class ModulePipelineTest {
         }
     }
 
-    static final class TimesTenNode extends UnaryNode<LongColumn, Li> {
+    static final class TimesTenNode extends UnaryNode<ColumnStream<Long>, Long> {
 
-        TimesTenNode(LongColumn input) {
-            super(input, Li.class);
+        TimesTenNode(ColumnStream<Long> input) {
+            super(input, LI);
         }
 
         @Override
@@ -96,10 +87,10 @@ class ModulePipelineTest {
         }
     }
 
-    static final class FailingNode extends SourceNode<Recovered> {
+    static final class FailingNode extends SourceNode<Long> {
 
         FailingNode() {
-            super(Recovered.class);
+            super(RECOVERED);
         }
 
         @Override
@@ -117,13 +108,14 @@ class ModulePipelineTest {
     // ---- modules ---------------------------------------------------------
 
     static final class FeatureModule extends ColumnModule {
-        final MetricValue metricValue = input(MetricValue.class);
-        final PlusNode<Source> source = add(new PlusNode<>(metricValue, Source.class, 1.0));
-        final ConsumerNode<Result> consumer =
-                add(new ConsumerNode<>(source.out(), Result.class));
+        final ColumnStream<Long> metricValue = input(METRIC_VALUE);
+        final PlusNode<Long> source =
+                add(new PlusNode<>(metricValue, SOURCE, 1.0));
+        final ConsumerNode<Long> consumer =
+                add(new ConsumerNode<>(source.out(), RESULT));
         final FailingNode failing = add(new FailingNode());
-        final ConsumerNode<RecoveredPlusOne> recovered =
-                add(new ConsumerNode<>(failing.out(), RecoveredPlusOne.class));
+        final ConsumerNode<Long> recovered =
+                add(new ConsumerNode<>(failing.out(), RECOVERED_PLUS_ONE));
 
         {
             output(source.out(), consumer.out(), failing.out(), recovered.out());
@@ -131,11 +123,13 @@ class ModulePipelineTest {
     }
 
     static final class PruneModule extends ColumnModule {
-        final MetricValue metricValue = input(MetricValue.class);
-        final PlusNode<Used> used = add(new PlusNode<>(metricValue, Used.class, 1.0));
-        final PlusNode<Unused> unused = add(new PlusNode<>(used.out(), Unused.class, 100.0));
-        final ConsumerNode<Result> result =
-                add(new ConsumerNode<>(used.out(), Result.class));
+        final ColumnStream<Long> metricValue = input(METRIC_VALUE);
+        final PlusNode<Long> used =
+                add(new PlusNode<>(metricValue, USED, 1.0));
+        final PlusNode<Long> unused =
+                add(new PlusNode<>(used.out(), UNUSED, 100.0));
+        final ConsumerNode<Long> result =
+                add(new ConsumerNode<>(used.out(), RESULT));
 
         {
             output(used.out(), unused.out(), result.out());
@@ -143,17 +137,17 @@ class ModulePipelineTest {
     }
 
     @Test
-    void columnClassDefinesNameAndDtype() {
-        MetricValue metricValue = new MetricValue();
-        assertEquals("metric_value", metricValue.name());
-        assertEquals(DType.INT64, metricValue.dtype());
+    void columnDefinitionProvidesNameAndDtype() {
+        assertEquals("metric_value", METRIC_VALUE.name());
+        assertEquals(DType.INT64, METRIC_VALUE.dtype());
     }
 
     @Test
     void dtypeMismatchFailsAtTheBusinessBoundary() {
         ColumnContext ctx = new ColumnContext(new TensorStore());
+        ColumnStream<Long> stream = new ColumnStream<>(METRIC_VALUE, null);
         assertThrows(IllegalArgumentException.class,
-                () -> ctx.write(new MetricValue(), Tensor.fromDoubles(1.0)));
+                () -> ctx.write(stream, Tensor.fromDoubles(1.0)));
     }
 
     @Test
@@ -165,7 +159,8 @@ class ModulePipelineTest {
 
             assertNotEquals(feature.source.id(), feature.consumer.id());
             assertTrue(feature.metricValue.isExternalFeed());
-            assertEquals(List.of("metric_value"), pipeline.requiredFeedColumns().stream().toList());
+            assertEquals(List.of("metric_value"),
+                    pipeline.requiredFeedColumns().stream().toList());
 
             pipeline.feed(FeedStream.of(feature.metricValue, rows(3)));
             pipeline.compute();
@@ -244,15 +239,16 @@ class ModulePipelineTest {
 
     @ColumnComponent
     public static final class ComponentModule extends ColumnModule {
-        final MetricValue metricValue = input(MetricValue.class);
-        final PlusNode<Source> source = add(new PlusNode<>(metricValue, Source.class, 1.0));
+        final ColumnStream<Long> metricValue = input(METRIC_VALUE);
+        final PlusNode<Long> source =
+                add(new PlusNode<>(metricValue, SOURCE, 1.0));
         final TimesTenNode li = add(new TimesTenNode(source.out()));
 
         {
             output(li.out());
         }
 
-        Li out() {
+        ColumnStream<Long> out() {
             return li.out();
         }
     }
@@ -275,29 +271,29 @@ class ModulePipelineTest {
     }
 
     static final class ProducerModule extends ColumnModule {
-        final MetricValue metricValue = input(MetricValue.class);
-        final PlusNode<ProducerOut> node =
-                add(new PlusNode<>(metricValue, ProducerOut.class, 1.0));
+        final ColumnStream<Long> metricValue = input(METRIC_VALUE);
+        final PlusNode<Long> node =
+                add(new PlusNode<>(metricValue, PRODUCER_OUT, 1.0));
 
         {
             output(node.out());
         }
 
-        ProducerOut out() {
+        ColumnStream<Long> out() {
             return node.out();
         }
     }
 
     static final class ConsumerModule extends ColumnModule {
-        final ConsumerNode<ConsumerOut> node;
+        final ConsumerNode<Long> node;
 
-        ConsumerModule(LongColumn feed) {
-            this.node = add(new ConsumerNode<>(feed, ConsumerOut.class));
+        ConsumerModule(ColumnStream<Long> feed) {
+            this.node = add(new ConsumerNode<>(feed, CONSUMER_OUT));
             dependsOn(ProducerModule.class);
             output(node.out());
         }
 
-        ConsumerOut out() {
+        ColumnStream<Long> out() {
             return node.out();
         }
     }

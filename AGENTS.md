@@ -26,9 +26,9 @@ Every behavior or API change must update, in the same commit:
   `--add-modules jdk.incubator.vector` flags in both `build.gradle.kts` files.
 - DAG business code uses virtual threads and blocking methods; do not turn
   `Node.run` / `Op.execute` back into callback-style APIs.
-- Column business code uses typed `ColumnStream` subclasses (`LongColumn`,
-  `DoubleColumn`, …), `ColumnNode` / `UnaryNode` / `BinaryNode` / `SourceNode`
-  and `ColumnContext`; keep `io.lark.column.exec` and `io.lark.column.op` out of
-  the business API. Business compute must not use string outputs or positional
-  `feeds()[n]`. `OpTensor` is a typed tensor operation (`FloatAddTensor`,
+- Column business code declares `Column<T>` schema constants and uses
+  `ColumnStream<T>` handles plus `ColumnNode` / `UnaryNode` / `BinaryNode` /
+  `SourceNode` and `ColumnContext`; keep `io.lark.column.exec` and
+  `io.lark.column.op` out of the business API. Business compute must not use
+  string outputs or positional `feeds()[n]`. `OpTensor` is a typed tensor operation (`FloatAddTensor`,
   `FloatMultiTensor`, …); `ComputeNode` is the execution node that wraps it.

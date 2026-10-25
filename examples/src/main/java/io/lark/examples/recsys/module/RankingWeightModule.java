@@ -4,7 +4,7 @@
 package io.lark.examples.recsys.module;
 
 import io.lark.column.biz.ColumnModule;
-import io.lark.examples.recsys.columns.Weight;
+import io.lark.column.biz.ColumnStream;
 import io.lark.examples.recsys.node.RankingWeightNode;
 
 /** Combines funnel and commercial metrics into a ranking weight. */
@@ -20,7 +20,7 @@ public final class RankingWeightModule extends ColumnModule {
         output(weight.out());
     }
 
-    public Weight weight() {
+    public ColumnStream<Double> weight() {
         return weight.out();
     }
 }

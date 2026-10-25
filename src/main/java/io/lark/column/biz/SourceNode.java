@@ -7,15 +7,15 @@ import io.lark.column.Tensor;
 
 /** A node with no inputs and one typed fetch output. */
 @SuppressWarnings("this-escape")
-public abstract class SourceNode<O extends ColumnStream<?>> extends ColumnNode {
+public abstract class SourceNode<O> extends ColumnNode {
 
-    private final O output;
+    private final ColumnStream<O> output;
 
-    protected SourceNode(Class<O> outputType) {
-        this.output = fetch(outputType);
+    protected SourceNode(Column<O> outputColumn) {
+        this.output = fetch(outputColumn);
     }
 
-    public final O out() {
+    public final ColumnStream<O> out() {
         return output;
     }
 

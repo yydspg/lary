@@ -13,12 +13,12 @@ import java.util.Objects;
  * Business module: a group of nodes with typed external feed streams, fetch
  * outputs and class-reference dependencies on other modules.
  *
- * <p>Inputs and outputs are typed column classes, not strings:
+ * <p>Inputs and outputs are typed column handles, not strings:
  *
  * <pre>{@code
  * final class FunnelMetricModule extends ColumnModule {
- *     final Impressions impressions = input(Impressions.class);
- *     final Clicks clicks = input(Clicks.class);
+ *     final ColumnStream<Long> impressions = input(Metrics.IMPRESSIONS);
+ *     final ColumnStream<Long> clicks = input(Metrics.CLICKS);
  *     final CtrNode ctr = add(new CtrNode(clicks, impressions));
  *     { output(ctr.out()); }
  * }
@@ -43,27 +43,26 @@ public abstract class ColumnModule {
     private boolean initialized;
 
     /**
-     * Declare a typed external feed input. The column class defines the name
-     * and dtype; repeated declarations of the same class return the same
-     * stream.
+     * Declare a typed external feed input. The column definition carries the
+     * name and dtype; repeated declarations of the same definition return the
+     * same handle.
      */
-    protected final <T extends ColumnStream<?>> T input(Class<T> type) {
-        T candidate = ColumnStreams.create(type);
-        String name = candidate.name();
-        ColumnStream<?> existing = inputByName.get(name);
+    @SuppressWarnings("unchecked")
+    protected final <T> ColumnStream<T> input(Column<T> column) {
+        ColumnStream<?> existing = inputByName.get(column.name());
         if (existing != null) {
-            if (!type.isInstance(existing)) {
+            if (!existing.definition().equals(column)) {
                 throw new IllegalArgumentException(
-                        "ColumnModule: input '" + name + "' declared as both "
-                                + existing.getClass().getName() + " and "
-                                + type.getName());
+                        "ColumnModule: input '" + column.name()
+                                + "' declared with conflicting definitions");
             }
-            return type.cast(existing);
+            return (ColumnStream<T>) existing;
         }
-        inputByName.put(name, candidate);
-        inputBuilder.add(candidate);
+        ColumnStream<T> stream = new ColumnStream<>(column, null);
+        inputByName.put(column.name(), stream);
+        inputBuilder.add(stream);
         inputs = null;
-        return candidate;
+        return stream;
     }
 
     /** Register a business node inside this module. */

@@ -4,13 +4,7 @@
 package io.lark.examples.recsys.module;
 
 import io.lark.column.biz.ColumnModule;
-import io.lark.examples.recsys.columns.AverageWeight;
-import io.lark.examples.recsys.columns.OverallBuyAgainCost;
-import io.lark.examples.recsys.columns.OverallCtr;
-import io.lark.examples.recsys.columns.OverallCvr;
-import io.lark.examples.recsys.columns.OverallRoi;
-import io.lark.examples.recsys.columns.TotalCouponCost;
-import io.lark.examples.recsys.columns.TotalGmv;
+import io.lark.column.biz.ColumnStream;
 import io.lark.examples.recsys.node.FunnelSummaryNode;
 import io.lark.examples.recsys.node.PortfolioSummaryNode;
 import io.lark.examples.recsys.node.RankingSummaryNode;
@@ -36,31 +30,31 @@ public final class PerformanceSummaryModule extends ColumnModule {
                 ranking.out());
     }
 
-    public OverallCtr overallCtr() {
+    public ColumnStream<Double> overallCtr() {
         return funnel.overallCtr();
     }
 
-    public OverallCvr overallCvr() {
+    public ColumnStream<Double> overallCvr() {
         return funnel.overallCvr();
     }
 
-    public TotalGmv totalGmv() {
+    public ColumnStream<Double> totalGmv() {
         return portfolio.totalGmv();
     }
 
-    public TotalCouponCost totalCouponCost() {
+    public ColumnStream<Double> totalCouponCost() {
         return portfolio.totalCouponCost();
     }
 
-    public OverallRoi overallRoi() {
+    public ColumnStream<Double> overallRoi() {
         return portfolio.overallRoi();
     }
 
-    public OverallBuyAgainCost overallBuyAgainCost() {
+    public ColumnStream<Double> overallBuyAgainCost() {
         return portfolio.overallBuyAgainCost();
     }
 
-    public AverageWeight averageWeight() {
+    public ColumnStream<Double> averageWeight() {
         return ranking.out();
     }
 }

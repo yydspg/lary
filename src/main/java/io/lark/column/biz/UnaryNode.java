@@ -10,28 +10,27 @@ import java.util.Objects;
 /**
  * A node with one typed input and one typed fetch output.
  *
- * <p>Business code only composes the stream classes and implements
+ * <p>Business code only composes the stream types and implements
  * {@link #compute(ColumnContext, Tensor)}. The framework handles node ids,
  * dependency wiring, output registration and read/write calls.
  */
 @SuppressWarnings("this-escape")
-public abstract class UnaryNode<I extends ColumnStream<?>,
-        O extends ColumnStream<?>> extends ColumnNode {
+public abstract class UnaryNode<I extends ColumnStream<?>, O> extends ColumnNode {
 
     private final I input;
-    private final O output;
+    private final ColumnStream<O> output;
 
-    protected UnaryNode(I input, Class<O> outputType) {
+    protected UnaryNode(I input, Column<O> outputColumn) {
         super(input);
         this.input = Objects.requireNonNull(input, "input");
-        this.output = fetch(outputType);
+        this.output = fetch(outputColumn);
     }
 
     public final I input() {
         return input;
     }
 
-    public final O out() {
+    public final ColumnStream<O> out() {
         return output;
     }
 
