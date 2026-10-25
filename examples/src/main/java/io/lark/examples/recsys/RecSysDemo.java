@@ -5,10 +5,8 @@ package io.lark.examples.recsys;
 
 import io.lark.column.Row;
 import io.lark.column.biz.ColumnPipeline;
-import io.lark.column.biz.ColumnStream;
-import io.lark.column.biz.FeedStream;
 import io.lark.column.biz.FetchStream;
-import io.lark.examples.recsys.data.MetricsRepository;
+import io.lark.examples.recsys.data.MetricsFeed;
 import io.lark.examples.recsys.module.FunnelMetricModule;
 import io.lark.examples.recsys.module.PerformanceSummaryModule;
 import io.lark.examples.recsys.module.RankingWeightModule;
@@ -38,14 +36,7 @@ public final class RecSysDemo {
         try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
             pipeline.add(metrics).add(ranking).add(summary);
             pipeline.compile();
-            pipeline.feed(FeedStream.of(new ColumnStream<?>[]{
-                    metrics.impressions(),
-                    metrics.clicks(),
-                    metrics.orders(),
-                    metrics.gmvFen(),
-                    metrics.couponCostFen(),
-                    metrics.buyAgainOrders()
-            }, MetricsRepository.rows()));
+            pipeline.feed(MetricsFeed.sample(metrics));
             pipeline.compute();
 
             List<Row> rows = pipeline.fetch(FetchStream.of(

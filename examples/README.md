@@ -29,4 +29,8 @@ The graph computes CTR, CVR, GMV, buy-again cost, coupon ROI and a ranking
 weight, then aggregates the portfolio. There are no user/item id columns: ids
 are lookup keys, not inputs to columnar metric computation.
 
+`MetricsRepository` contains six sample feed rows and `MetricsFeed.sample(...)`
+wraps them with the module's typed columns. `RecSysMetricTest` uses a separate
+`MockMetrics` fixture for all-zero and zero-denominator cases.
+
 `SimplePipeline` and `OpPipeline` are compact tours of the DAG layers.

@@ -141,6 +141,22 @@ All ratios return `0` when the denominator is zero.
 There are **no user/item id columns**: the rows are already item-level
 aggregates; ids are lookup keys, not inputs to columnar metric computation.
 
+Sample feed rows (`MetricsRepository`):
+
+| impressions | clicks | orders | gmv_fen | coupon_cost_fen | buy_again_orders |
+|---:|---:|---:|---:|---:|---:|
+| 1000 | 50 | 5 | 50000 | 1000 | 1 |
+| 2000 | 100 | 20 | 300000 | 5000 | 4 |
+| 500 | 10 | 1 | 8000 | 200 | 0 |
+| 1500 | 120 | 30 | 600000 | 8000 | 10 |
+| 800 | 40 | 8 | 120000 | 2000 | 2 |
+| 1200 | 90 | 18 | 250000 | 3000 | 6 |
+
+`MetricsFeed.sample(metrics)` builds the typed feed from those rows.
+`RecSysMetricTest` additionally uses a small `MockMetrics` fixture with
+all-zero rows and zero coupon cost / zero repeat orders to exercise the
+zero-denominator paths.
+
 Composition and typed wiring:
 
 ```java
@@ -152,11 +168,7 @@ PerformanceSummaryModule summary =
 try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
     pipeline.add(metrics).add(ranking).add(summary);
     pipeline.compile();
-    pipeline.feed(FeedStream.of(new ColumnStream<?>[]{
-            metrics.impressions(), metrics.clicks(), metrics.orders(),
-            metrics.gmvFen(), metrics.couponCostFen(),
-            metrics.buyAgainOrders()
-    }, MetricsRepository.rows()));
+    pipeline.feed(MetricsFeed.sample(metrics));
     pipeline.compute();
 
     List<Row> rows = pipeline.fetch(FetchStream.of(

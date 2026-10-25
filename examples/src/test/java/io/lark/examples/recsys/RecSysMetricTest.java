@@ -5,10 +5,8 @@ package io.lark.examples.recsys;
 
 import io.lark.column.Row;
 import io.lark.column.biz.ColumnPipeline;
-import io.lark.column.biz.ColumnStream;
-import io.lark.column.biz.FeedStream;
 import io.lark.column.biz.FetchStream;
-import io.lark.examples.recsys.data.MetricsRepository;
+import io.lark.examples.recsys.data.MetricsFeed;
 import io.lark.examples.recsys.module.FunnelMetricModule;
 import io.lark.examples.recsys.module.PerformanceSummaryModule;
 import io.lark.examples.recsys.module.RankingWeightModule;
@@ -30,14 +28,7 @@ class RecSysMetricTest {
         try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
             pipeline.add(metrics).add(ranking).add(summary);
             pipeline.compile();
-            pipeline.feed(FeedStream.of(new ColumnStream<?>[]{
-                    metrics.impressions(),
-                    metrics.clicks(),
-                    metrics.orders(),
-                    metrics.gmvFen(),
-                    metrics.couponCostFen(),
-                    metrics.buyAgainOrders()
-            }, MetricsRepository.rows()));
+            pipeline.feed(MetricsFeed.sample(metrics));
             pipeline.compute();
 
             List<Row> rows = pipeline.fetch(FetchStream.of(
@@ -76,6 +67,42 @@ class RecSysMetricTest {
                     pipeline.fetchScalar(summary.overallBuyAgainCost()), 1e-6);
             assertEquals(63.202_777,
                     pipeline.fetchScalar(summary.averageWeight()), 1e-5);
+        }
+    }
+
+    @Test
+    void mockFeedCoversZeroDenominators() {
+        FunnelMetricModule metrics = new FunnelMetricModule();
+        RankingWeightModule ranking = new RankingWeightModule(metrics);
+
+        try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
+            pipeline.add(metrics).add(ranking);
+            pipeline.compile();
+            pipeline.feed(MetricsFeed.of(metrics, MockMetrics.rows()));
+            pipeline.compute();
+
+            List<Row> rows = pipeline.fetch(FetchStream.of(
+                    metrics.ctr(), metrics.cvr(), metrics.gmv(),
+                    metrics.buyAgainCost(), metrics.couponRoi(),
+                    ranking.weight()));
+
+            assertEquals(0.10, rows.get(0).get(0).asDouble(), 1e-9);
+            assertEquals(0.20, rows.get(0).get(1).asDouble(), 1e-9);
+            assertEquals(100.0, rows.get(0).get(2).asDouble(), 1e-9);
+            assertEquals(1.0, rows.get(0).get(3).asDouble(), 1e-9);
+            assertEquals(100.0, rows.get(0).get(4).asDouble(), 1e-9);
+            assertEquals(70.5, rows.get(0).get(5).asDouble(), 1e-9);
+
+            // All-zero row: every ratio is defined as zero.
+            assertEquals(0.0, rows.get(1).get(0).asDouble(), 1e-9);
+            assertEquals(0.0, rows.get(1).get(1).asDouble(), 1e-9);
+            assertEquals(0.0, rows.get(1).get(3).asDouble(), 1e-9);
+            assertEquals(0.0, rows.get(1).get(4).asDouble(), 1e-9);
+
+            // Zero coupon cost / zero repeat orders.
+            assertEquals(0.0, rows.get(2).get(3).asDouble(), 1e-9);
+            assertEquals(0.0, rows.get(2).get(4).asDouble(), 1e-9);
+            assertEquals(20.5, rows.get(2).get(5).asDouble(), 1e-9);
         }
     }
 }

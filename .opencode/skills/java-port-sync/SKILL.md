@@ -92,7 +92,7 @@ test. Tests are the behavioral contract.
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java` |
 | DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
 | Realistic multi-class demo | `examples/src/main/java/io/lark/examples/recsys/**` (`:examples:runRecsys`), split into `columns/`, `node/`, `module/`, `data/` |
-| Realistic demo test | `examples/src/test/java/io/lark/examples/recsys/RecSysMetricTest.java` |
+| Realistic demo test | `examples/src/test/java/io/lark/examples/recsys/RecSysMetricTest.java`, mock edge-case feed `MockMetrics.java` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
 ## Workflow
@@ -181,6 +181,8 @@ test. Tests are the behavioral contract.
   weight = 100*ctr + 50*cvr + 0.01*gmv + 0.5*coupon_roi - 0.5*buyagain_cost.
   Ratios are zero when the denominator is zero. Rows contain metric
   aggregates, not user/item ids; ids are lookup keys, not columnar inputs.
+  Feed samples live in `MetricsRepository`/`MetricsFeed.sample`; tests add
+  edge-case mock rows via `MockMetrics`.
 - `@ColumnComponent` marks modules; `ColumnPipeline.scan(package)` discovers
   them without a Spring dependency. Modules need a no-arg constructor.
 - Graph pruning: `ColumnPipeline.compile(FetchStream)` keeps the transitive
