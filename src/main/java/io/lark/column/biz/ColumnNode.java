@@ -20,9 +20,7 @@ import java.util.Objects;
  * final class CtrNode
  *         extends BinaryNode<ColumnStream<Long>, ColumnStream<Long>, Double> {
  *
- *     CtrNode(ColumnStream<Long> clicks, ColumnStream<Long> impressions) {
- *         super(clicks, impressions, Metrics.CTR);
- *     }
+ *     public static final NodeSchema<Double> SCHEMA = NodeSchema.of(Metrics.CTR);
  *
  *     protected Tensor compute(ColumnContext ctx, Tensor clicks, Tensor impressions) {
  *         return Ratios.divide(clicks, impressions);
@@ -36,7 +34,7 @@ import java.util.Objects;
 public abstract class ColumnNode {
 
     private final String id = NodeIds.next(getClass());
-    private final ColumnStream<?>[] feeds;
+    private ColumnStream<?>[] feeds;
     private final List<ColumnStream<?>> fetchBuilder = new ArrayList<>();
     private ColumnStream<?>[] fetches;
 
@@ -45,6 +43,20 @@ public abstract class ColumnNode {
         for (ColumnStream<?> feed : this.feeds) {
             Objects.requireNonNull(feed, "feed stream");
         }
+    }
+
+    /** Bind input streams after construction; used by module wiring. */
+    final void bindFeeds(ColumnStream<?>... streams) {
+        if (feeds.length != 0) {
+            throw new IllegalStateException(
+                    "ColumnNode " + id + ": feeds are already bound");
+        }
+        ColumnStream<?>[] bound = streams == null
+                ? new ColumnStream<?>[0] : streams.clone();
+        for (ColumnStream<?> feed : bound) {
+            Objects.requireNonNull(feed, "feed stream");
+        }
+        this.feeds = bound;
     }
 
     public final String id() {
@@ -70,6 +82,11 @@ public abstract class ColumnNode {
         fetchBuilder.add(stream);
         fetches = null;
         return stream;
+    }
+
+    /** Declare a typed fetch output from a node schema. */
+    protected final <T> ColumnStream<T> fetch(NodeSchema<T> schema) {
+        return fetch(schema.output());
     }
 
     /** Business computation; read/write typed streams via {@link ColumnContext}. */

@@ -7,6 +7,7 @@ import io.lark.column.Tensor;
 import io.lark.column.biz.ColumnContext;
 import io.lark.column.biz.ColumnNode;
 import io.lark.column.biz.ColumnStream;
+import io.lark.column.biz.NodeSchema;
 import io.lark.column.compute.Compute;
 import io.lark.examples.recsys.schema.RecSysMetrics;
 
@@ -17,6 +18,9 @@ import io.lark.examples.recsys.schema.RecSysMetrics;
  * system would load the coefficients from experiment configuration.
  */
 public final class RankingWeightNode extends ColumnNode {
+
+    public static final NodeSchema<Double> SCHEMA =
+            NodeSchema.of(RecSysMetrics.WEIGHT);
 
     private static final double CTR_WEIGHT = 100.0;
     private static final double CVR_WEIGHT = 50.0;
@@ -29,7 +33,7 @@ public final class RankingWeightNode extends ColumnNode {
     private final ColumnStream<Double> gmv;
     private final ColumnStream<Double> couponRoi;
     private final ColumnStream<Double> buyAgainCost;
-    private final ColumnStream<Double> out = fetch(RecSysMetrics.WEIGHT);
+    private final ColumnStream<Double> out = fetch(SCHEMA);
 
     public RankingWeightNode(ColumnStream<Double> ctr,
                              ColumnStream<Double> cvr,

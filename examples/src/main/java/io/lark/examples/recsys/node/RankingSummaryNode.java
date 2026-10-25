@@ -6,6 +6,7 @@ package io.lark.examples.recsys.node;
 import io.lark.column.Tensor;
 import io.lark.column.biz.ColumnContext;
 import io.lark.column.biz.ColumnStream;
+import io.lark.column.biz.NodeSchema;
 import io.lark.column.biz.UnaryNode;
 import io.lark.column.compute.Compute;
 import io.lark.examples.recsys.schema.RecSysMetrics;
@@ -14,9 +15,8 @@ import io.lark.examples.recsys.schema.RecSysMetrics;
 public final class RankingSummaryNode
         extends UnaryNode<ColumnStream<Double>, Double> {
 
-    public RankingSummaryNode(ColumnStream<Double> weight) {
-        super(weight, RecSysMetrics.AVERAGE_WEIGHT);
-    }
+    public static final NodeSchema<Double> SCHEMA =
+            NodeSchema.of(RecSysMetrics.AVERAGE_WEIGHT);
 
     @Override
     protected Tensor compute(ColumnContext ctx, Tensor weight) {

@@ -7,15 +7,15 @@ import io.lark.column.Tensor;
 import io.lark.column.biz.BinaryNode;
 import io.lark.column.biz.ColumnContext;
 import io.lark.column.biz.ColumnStream;
+import io.lark.column.biz.NodeSchema;
 import io.lark.examples.recsys.schema.RecSysMetrics;
 
 /** Click-through rate: clicks / impressions. */
 public final class CtrNode
         extends BinaryNode<ColumnStream<Long>, ColumnStream<Long>, Double> {
 
-    public CtrNode(ColumnStream<Long> clicks, ColumnStream<Long> impressions) {
-        super(clicks, impressions, RecSysMetrics.CTR);
-    }
+    public static final NodeSchema<Double> SCHEMA =
+            NodeSchema.of(RecSysMetrics.CTR);
 
     @Override
     protected Tensor compute(ColumnContext ctx, Tensor clicks, Tensor impressions) {

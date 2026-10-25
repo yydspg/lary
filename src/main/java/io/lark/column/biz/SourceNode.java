@@ -11,6 +11,15 @@ public abstract class SourceNode<O> extends ColumnNode {
 
     private final ColumnStream<O> output;
 
+    /** Reads the subclass's public static {@code SCHEMA} property. */
+    protected SourceNode() {
+        this.output = fetch(NodeSchemas.schemaOf(getClass()));
+    }
+
+    protected SourceNode(NodeSchema<O> schema) {
+        this.output = fetch(schema);
+    }
+
     protected SourceNode(Column<O> outputColumn) {
         this.output = fetch(outputColumn);
     }

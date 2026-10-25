@@ -4,6 +4,7 @@
 package io.lark.column.biz;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,15 +18,17 @@ import java.util.Objects;
  *
  * <pre>{@code
  * final class FunnelMetricModule extends ColumnModule {
- *     final ColumnStream<Long> impressions = input(Metrics.IMPRESSIONS);
- *     final ColumnStream<Long> clicks = input(Metrics.CLICKS);
- *     final CtrNode ctr = add(new CtrNode(clicks, impressions));
- *     { output(ctr.out()); }
+ *     final ColumnStream<Long> impressions = feed(Metrics.IMPRESSIONS);
+ *     final ColumnStream<Long> clicks = feed(Metrics.CLICKS);
+ *     final CtrNode ctr = node(new CtrNode(clicks, impressions));
+ *     { fetch(ctr.out()); }
  * }
  * }</pre>
  *
  * <p>Nodes, inputs, outputs and dependencies are exposed as arrays; their
- * cardinality is fixed after module construction.
+ * cardinality is fixed after module construction. `feedMap()` and `fetchMap()`
+ * are read-only name views; use `published(Column)` for typed module-to-module
+ * wiring.
  */
 public abstract class ColumnModule {
 
@@ -65,11 +68,36 @@ public abstract class ColumnModule {
         return stream;
     }
 
+    /** Declarative alias for {@link #input(Column)}. */
+    protected final <T> ColumnStream<T> feed(Column<T> column) {
+        return input(column);
+    }
+
     /** Register a business node inside this module. */
     protected final <T extends ColumnNode> T add(T node) {
         nodeBuilder.add(Objects.requireNonNull(node, "node"));
         nodes = null;
         return node;
+    }
+
+    /** Declarative alias for {@link #add(ColumnNode)}. */
+    protected final <T extends ColumnNode> T node(T node) {
+        return add(node);
+    }
+
+    /** Register a no-arg unary node and bind its typed input. */
+    protected final <N extends UnaryNode<I, O>,
+            I extends ColumnStream<?>, O> N node(N node, I input) {
+        node.bind(input);
+        return add(node);
+    }
+
+    /** Register a no-arg binary node and bind its typed inputs. */
+    protected final <N extends BinaryNode<A, B, O>,
+            A extends ColumnStream<?>, B extends ColumnStream<?>, O>
+            N node(N node, A left, B right) {
+        node.bind(left, right);
+        return add(node);
     }
 
     /** Expose typed node streams as module fetch outputs. */
@@ -78,6 +106,11 @@ public abstract class ColumnModule {
             outputBuilder.add(Objects.requireNonNull(stream, "stream"));
         }
         outputs = null;
+    }
+
+    /** Declarative alias for {@link #output(ColumnStream...)}. */
+    protected final void fetch(ColumnStream<?>... streams) {
+        output(streams);
     }
 
     /** Class-reference dependencies on other modules (ordering, no data flow). */
@@ -91,6 +124,53 @@ public abstract class ColumnModule {
 
     /** Optional imperative definition hook. */
     protected void define() {
+    }
+
+    /**
+     * Look up one of this module's published fetch outputs by schema definition.
+     *
+     * <p>This is the typed form of {@link #fetchMap()} for module-to-module
+     * wiring: the column name is still the runtime key, but the dtype is
+     * checked and the returned handle needs no cast at the call site.
+     */
+    @SuppressWarnings("unchecked")
+    public final <T> ColumnStream<T> published(Column<T> column) {
+        Objects.requireNonNull(column, "column");
+        initialize();
+        for (ColumnStream<?> output : outputs()) {
+            if (!output.name().equals(column.name())) {
+                continue;
+            }
+            if (!output.definition().equals(column)) {
+                throw new IllegalArgumentException(
+                        "ColumnModule " + getClass().getName() + ": output '"
+                                + column.name() + "' has a different definition");
+            }
+            return (ColumnStream<T>) output;
+        }
+        throw new IllegalArgumentException(
+                "ColumnModule " + getClass().getName() + ": output '"
+                        + column.name() + "' is not published");
+    }
+
+    /** Read-only view of this module's external feed handles, keyed by name. */
+    public final Map<String, ColumnStream<?>> feedMap() {
+        initialize();
+        Map<String, ColumnStream<?>> map = new LinkedHashMap<>();
+        for (ColumnStream<?> input : inputs()) {
+            map.put(input.name(), input);
+        }
+        return Collections.unmodifiableMap(map);
+    }
+
+    /** Read-only view of this module's published fetch handles, keyed by name. */
+    public final Map<String, ColumnStream<?>> fetchMap() {
+        initialize();
+        Map<String, ColumnStream<?>> map = new LinkedHashMap<>();
+        for (ColumnStream<?> output : outputs()) {
+            map.put(output.name(), output);
+        }
+        return Collections.unmodifiableMap(map);
     }
 
     final void initialize() {

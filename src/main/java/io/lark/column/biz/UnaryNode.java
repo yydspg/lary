@@ -10,20 +10,52 @@ import java.util.Objects;
 /**
  * A node with one typed input and one typed fetch output.
  *
- * <p>Business code only composes the stream types and implements
- * {@link #compute(ColumnContext, Tensor)}. The framework handles node ids,
+ * <p>Business code only declares the node schema with a static
+ * {@link NodeSchema} property and implements
+ * {@link #compute(ColumnContext, Tensor)}. The input is bound by
+ * {@code ColumnModule.node(node, input)}; the framework handles node ids,
  * dependency wiring, output registration and read/write calls.
  */
 @SuppressWarnings("this-escape")
 public abstract class UnaryNode<I extends ColumnStream<?>, O> extends ColumnNode {
 
-    private final I input;
+    private I input;
     private final ColumnStream<O> output;
+
+    /**
+     * No-arg form for module wiring. The input is bound by
+     * {@code ColumnModule.node(node, input)}; {@code SCHEMA} comes from the
+     * subclass.
+     */
+    protected UnaryNode() {
+        super();
+        this.output = fetch(NodeSchemas.schemaOf(getClass()));
+    }
+
+    /** Reads the subclass's public static {@code SCHEMA} property. */
+    protected UnaryNode(I input) {
+        super(input);
+        this.input = Objects.requireNonNull(input, "input");
+        this.output = fetch(NodeSchemas.schemaOf(getClass()));
+    }
+
+    protected UnaryNode(I input, NodeSchema<O> schema) {
+        this(input, schema.output());
+    }
 
     protected UnaryNode(I input, Column<O> outputColumn) {
         super(input);
         this.input = Objects.requireNonNull(input, "input");
         this.output = fetch(outputColumn);
+    }
+
+    final void bind(I input) {
+        if (this.input != null) {
+            throw new IllegalStateException(
+                    "UnaryNode " + id() + ": input is already bound");
+        }
+        this.input = Objects.requireNonNull(input, "input");
+        bindFeeds(input);
     }
 
     public final I input() {

@@ -25,7 +25,9 @@ import java.util.stream.Stream;
  * {@link ColumnModule}s.
  *
  * <p>Scans class directories and jars; instantiates annotated modules via a
- * no-argument constructor. No Spring dependency is required.
+ * no-argument constructor. No Spring dependency is required. The optional
+ * {@code :spring} module uses Spring's scanner and container instead, which
+ * supports constructor injection.
  */
 public final class ColumnComponentScanner {
 

@@ -3,6 +3,7 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.Cell;
 import io.lark.column.FeedFetch;
 import io.lark.column.Row;
 import io.lark.column.Tensor;
@@ -54,6 +55,8 @@ public final class ColumnPipeline implements AutoCloseable {
     private ExecutorService pool;
     private boolean compiled;
     private Set<String> requiredFeedColumns = Set.of();
+    private List<String> requiredFeedColumnOrder = List.of();
+    private Map<String, ColumnStream<?>> feedColumnsByName = Map.of();
     private List<String> compiledOutputs = List.of();
 
     public ColumnPipeline() {
@@ -79,7 +82,12 @@ public final class ColumnPipeline implements AutoCloseable {
         return this;
     }
 
-    /** Spring-style discovery of {@link ColumnComponent} modules. */
+    /**
+     * Dependency-free discovery of {@link ColumnComponent} modules.
+     *
+     * <p>Modules must have a no-argument constructor. For Spring constructor
+     * injection use the optional {@code :spring} module instead.
+     */
     public ColumnPipeline scan(String... packages) {
         for (ColumnModule module : ColumnComponentScanner.scanModules(packages)) {
             add(module);
@@ -133,6 +141,20 @@ public final class ColumnPipeline implements AutoCloseable {
             module.initialize();
         }
         validateModuleDependencies();
+
+        Map<String, ColumnStream<?>> feedDefinitions = new LinkedHashMap<>();
+        for (ColumnModule module : modules) {
+            for (ColumnStream<?> input : module.inputs()) {
+                ColumnStream<?> previous =
+                        feedDefinitions.putIfAbsent(input.name(), input);
+                if (previous != null
+                        && !previous.definition().equals(input.definition())) {
+                    throw new IllegalArgumentException(
+                            "ColumnPipeline: feed column '" + input.name()
+                                    + "' declared with conflicting definitions");
+                }
+            }
+        }
 
         Map<ColumnNode, ColumnModule> nodeModules = new IdentityHashMap<>();
         Map<String, ColumnNode> producers = new LinkedHashMap<>();
@@ -239,6 +261,8 @@ public final class ColumnPipeline implements AutoCloseable {
 
         this.graph = newGraph;
         this.requiredFeedColumns = Set.copyOf(feedColumns);
+        this.requiredFeedColumnOrder = List.copyOf(feedColumns);
+        this.feedColumnsByName = Map.copyOf(feedDefinitions);
         this.compiledOutputs = List.copyOf(outputs);
         this.compiled = true;
     }
@@ -332,21 +356,42 @@ public final class ColumnPipeline implements AutoCloseable {
     /** Feed one or more typed external streams. Rows contain one cell per stream. */
     public void feed(FeedStream stream) {
         Objects.requireNonNull(stream, "stream");
-        TensorTable table = FeedFetch.feedTable(stream.names(), stream.rows());
-        for (ColumnStream<?> column : stream.streams()) {
-            Tensor tensor = table.get(column.name());
-            if (tensor.dtype() != column.dtype()) {
-                table.set(column.name(), tensor.castTo(column.dtype()));
-            }
-        }
-        feed(table);
+        feed(FeedFetch.feedTable(stream.names(), stream.rows()));
     }
 
     public void feed(List<String> names, List<Row> rows) {
         feed(FeedFetch.feedTable(names, rows));
     }
 
+    /**
+     * Feed rows in the compiled required-column order.
+     *
+     * <p>The order comes from {@link #compile()}, so callers do not need to
+     * repeat the module input list at the feed boundary.
+     */
+    public void feedRows(List<Row> rows) {
+        if (!compiled) {
+            compile();
+        }
+        feed(requiredFeedColumnOrder, rows);
+    }
+
+    /** Feed already column-oriented data, keyed by column name. */
+    public void feed(Map<String, List<Cell>> columns) {
+        feed(FeedFetch.feedTable(columns));
+    }
+
     private void feed(TensorTable table) {
+        for (Map.Entry<String, ColumnStream<?>> entry : feedColumnsByName.entrySet()) {
+            String name = entry.getKey();
+            if (!table.has(name)) {
+                continue;
+            }
+            Tensor tensor = table.get(name);
+            if (tensor.dtype() != entry.getValue().dtype()) {
+                table.set(name, tensor.castTo(entry.getValue().dtype()));
+            }
+        }
         ctx.beginPhase(ExecutionContext.RunPhase.FEED);
         emitStart("feed.start", "feed");
         ctx.setFeed(table);
@@ -404,6 +449,25 @@ public final class ColumnPipeline implements AutoCloseable {
     }
 
     public List<Row> fetch(List<String> names) {
+        return FeedFetch.fetchRows(fetchTable(names), names);
+    }
+
+    /** Fetch a column-oriented view keyed by column name. */
+    public Map<String, List<Cell>> fetchColumns(FetchStream stream) {
+        return fetchColumns(stream.names());
+    }
+
+    /** Fetch a column-oriented view keyed by column name. */
+    public Map<String, List<Cell>> fetchColumns(List<String> names) {
+        return FeedFetch.fetchColumns(fetchTable(names), names);
+    }
+
+    /** Fetch a column-oriented view keyed by column name. */
+    public Map<String, List<Cell>> fetchColumns(ColumnStream<?>... columns) {
+        return fetchColumns(FetchStream.of(columns));
+    }
+
+    private TensorTable fetchTable(List<String> names) {
         if (!compiled) {
             throw new IllegalStateException("ColumnPipeline: compile first");
         }
@@ -416,10 +480,9 @@ public final class ColumnPipeline implements AutoCloseable {
         emitStart("fetch.start", "fetch");
         TensorTable table = ctx.store().toTable(names);
         ctx.setFetch(table);
-        List<Row> rows = FeedFetch.fetchRows(table, names);
         ctx.endPhase();
         emitEnd("fetch.end", "fetch", ExecutionContext.RunPhase.FETCH);
-        return rows;
+        return table;
     }
 
     public List<Row> fetch(String... names) {

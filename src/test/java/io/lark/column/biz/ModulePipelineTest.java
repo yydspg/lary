@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -77,9 +78,7 @@ class ModulePipelineTest {
 
     static final class TimesTenNode extends UnaryNode<ColumnStream<Long>, Long> {
 
-        TimesTenNode(ColumnStream<Long> input) {
-            super(input, LI);
-        }
+        public static final NodeSchema<Long> SCHEMA = NodeSchema.of(LI);
 
         @Override
         protected Tensor compute(ColumnContext ctx, Tensor input) {
@@ -89,8 +88,10 @@ class ModulePipelineTest {
 
     static final class FailingNode extends SourceNode<Long> {
 
+        public static final NodeSchema<Long> SCHEMA = NodeSchema.of(RECOVERED);
+
         FailingNode() {
-            super(RECOVERED);
+            super();
         }
 
         @Override
@@ -237,12 +238,71 @@ class ModulePipelineTest {
         }
     }
 
+    @Test
+    void moduleMapsAndPublishedOutputsStayTyped() {
+        ComponentModule component = new ComponentModule();
+
+        assertEquals(component.metricValue,
+                component.feedMap().get(METRIC_VALUE.name()));
+        assertEquals(component.out(),
+                component.fetchMap().get(LI.name()));
+        assertEquals(component.out(), component.published(LI));
+    }
+
+    @Test
+    void feedRowsUsesCompiledColumnOrder() {
+        ComponentModule component = new ComponentModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline()) {
+            pipeline.add(component);
+            pipeline.compile(FetchStream.of(component.out()));
+            pipeline.feedRows(rows(2));
+            pipeline.compute();
+
+            assertEquals(List.of(20L, 30L),
+                    pipeline.fetch(FetchStream.of(component.out())).stream()
+                            .map(row -> row.get(0).asLong()).toList());
+        }
+    }
+
+    @Test
+    void feedAndFetchColumnsUseNames() {
+        ComponentModule component = new ComponentModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline()) {
+            pipeline.add(component);
+            pipeline.compile(FetchStream.of(component.out()));
+            pipeline.feed(Map.of(METRIC_VALUE.name(),
+                    List.of(Cell.of(1), Cell.of(2))));
+            pipeline.compute();
+
+            Map<String, List<Cell>> columns =
+                    pipeline.fetchColumns(component.out());
+            assertEquals(List.of(Cell.of(20), Cell.of(30)),
+                    columns.get(LI.name()));
+        }
+    }
+
+    @Test
+    void feedColumnsAreCoercedToDeclaredDtype() {
+        ComponentModule component = new ComponentModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline()) {
+            pipeline.add(component);
+            pipeline.compile(FetchStream.of(component.out()));
+            pipeline.feed(Map.of(METRIC_VALUE.name(),
+                    List.of(Cell.of(1.0), Cell.of(2.0))));
+            pipeline.compute();
+
+            assertEquals(List.of(20L, 30L),
+                    pipeline.fetch(FetchStream.of(component.out())).stream()
+                            .map(row -> row.get(0).asLong()).toList());
+        }
+    }
+
     @ColumnComponent
     public static final class ComponentModule extends ColumnModule {
         final ColumnStream<Long> metricValue = input(METRIC_VALUE);
         final PlusNode<Long> source =
                 add(new PlusNode<>(metricValue, SOURCE, 1.0));
-        final TimesTenNode li = add(new TimesTenNode(source.out()));
+        final TimesTenNode li = node(new TimesTenNode(), source.out());
 
         {
             output(li.out());

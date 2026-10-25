@@ -15,6 +15,9 @@ applications are separate Gradle modules.
   multi-dtype tensors, Q8_0 quantization and monitoring.
 - **SIMD**: column arithmetic, scalar broadcasting, comparisons, reductions and
   unary kernels use **`jdk.incubator.vector`**.
+- **Spring Boot (optional)**: the separate `:spring` module provides auto-configuration,
+  `@ColumnComponent` bean discovery, constructor injection between modules and a
+  `ColumnPipelineFactory`. The core library and `:examples` stay dependency-free.
 
 Package names remain `io.lark.*`; the project/repository is `lary`.
 
@@ -23,7 +26,7 @@ Package names remain `io.lark.*`; the project/repository is `lary`.
 ```text
 lary/
 ├─ build.gradle.kts              # library
-├─ settings.gradle.kts           # includes :examples
+├─ settings.gradle.kts           # includes :examples and :spring
 ├─ src/main/java/io/lark/
 │  ├─ metric/      Event / Monitor abstraction
 │  ├─ dag/         DAG framework (Node + Op layers)
@@ -32,22 +35,30 @@ lary/
 │  ├─ metric/
 │  ├─ dag/
 │  └─ column/
-└─ examples/                     # separate Gradle application module
+├─ examples/                     # separate Gradle application module
+│  ├─ build.gradle.kts
+│  └─ src/main/java/io/lark/examples/
+│     ├─ SimplePipeline.java     # DAG Node tour
+│     ├─ OpPipeline.java         # Op / Aspect tour
+│     └─ recsys/                 # search / recommendation metrics project
+│        ├─ RecSysDemo.java
+│        ├─ MetricResultPrinter.java
+│        ├─ schema/              # Column<T> definitions (one file)
+│        ├─ node/                # one file per business node
+│        ├─ module/              # one file per module
+│        └─ data/                # item-level metric repository
+└─ spring/                       # optional Spring Boot integration
    ├─ build.gradle.kts
-   └─ src/main/java/io/lark/examples/
-      ├─ SimplePipeline.java     # DAG Node tour
-      ├─ OpPipeline.java         # Op / Aspect tour
-      └─ recsys/                 # search / recommendation metrics project
-         ├─ RecSysDemo.java
-         ├─ MetricResultPrinter.java
-         ├─ schema/              # Column<T> definitions (one file)
-         ├─ node/                # one file per business node
-         ├─ module/              # one file per module
-         └─ data/                # item-level metric repository
+   └─ src/main/java/io/lark/spring/
+      ├─ EnableLaryColumns.java
+      ├─ ColumnComponentRegistrar.java
+      ├─ LaryColumnAutoConfiguration.java
+      └─ ColumnPipelineFactory.java
 ```
 
 The root project is the reusable library; `:examples` is an independent
-application module that depends on it.
+application module that depends on it. `:spring` depends on the library and
+Spring Boot but is not pulled in by either of them.
 
 ## Requirements
 
@@ -79,18 +90,21 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 
 ```sh
 ./gradlew clean test :examples:build
-./gradlew build :examples:build
+./gradlew build :examples:build :spring:build
 
 ./gradlew :examples:runRecsys    # search/recommendation metric project
 ./gradlew :examples:runSimple    # DAG Node layer
 ./gradlew :examples:runOp        # DAG Op + Aspect layer
+./gradlew :spring:runSpringRecsys # same recsys demo through Spring Boot
 ```
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
 `TimeoutTest`, `ModulePipelineTest` and `OpTensorTest`. `DagTest` also covers
 wide/deep ready-queue scheduling and array/varargs node definitions. The
-`:examples` module has `RecSysMetricTest` for the search/recommendation graph.
+`:examples` module has `RecSysMetricTest` for the search/recommendation graph;
+`:spring` has Spring context tests for scanning, constructor injection and the
+prototype pipeline.
 
 ## Search / recommendation metrics demo
 
@@ -339,10 +353,8 @@ the computation.
 public final class CtrNode
         extends BinaryNode<ColumnStream<Long>, ColumnStream<Long>, Double> {
 
-    public CtrNode(ColumnStream<Long> clicks,
-                   ColumnStream<Long> impressions) {
-        super(clicks, impressions, RecSysMetrics.CTR);
-    }
+    public static final NodeSchema<Double> SCHEMA =
+            NodeSchema.of(RecSysMetrics.CTR);
 
     @Override
     protected Tensor compute(ColumnContext ctx, Tensor clicks, Tensor impressions) {
@@ -351,31 +363,29 @@ public final class CtrNode
 }
 ```
 
+The node has no explicit constructor. Each node owns a public static
+`NodeSchema<O>` property; the typed base reads `SCHEMA` once per class and
+caches it. The module supplies the typed inputs when it registers the node:
+
+```java
+private final CtrNode ctr = node(new CtrNode(), clicks, impressions);
+```
+
+The schema field must be `public static final`. The explicit base constructors
+(`super(inputs...)` / `super(..., outputColumn)`) remain for custom nodes and
+dynamic schemas.
+
 Use `UnaryNode<I, O>` and `BinaryNode<A, B, O>` for the common shapes, or
-`SourceNode<O>` for a source. Custom nodes extend `ColumnNode` and keep typed
-fields; outputs are declared with `fetch(Column<T>)`:
+`SourceNode<O>` for a source. Custom nodes keep typed fields and can also fetch
+from a schema:
 
 ```java
 public final class RankingWeightNode extends ColumnNode {
-    private final ColumnStream<Double> ctr;
-    private final ColumnStream<Double> cvr;
-    private final ColumnStream<Double> gmv;
-    private final ColumnStream<Double> couponRoi;
-    private final ColumnStream<Double> buyAgainCost;
-    private final ColumnStream<Double> out = fetch(RecSysMetrics.WEIGHT);
 
-    public RankingWeightNode(ColumnStream<Double> ctr,
-                             ColumnStream<Double> cvr,
-                             ColumnStream<Double> gmv,
-                             ColumnStream<Double> couponRoi,
-                             ColumnStream<Double> buyAgainCost) {
-        super(ctr, cvr, gmv, couponRoi, buyAgainCost);
-        this.ctr = ctr;
-        this.cvr = cvr;
-        this.gmv = gmv;
-        this.couponRoi = couponRoi;
-        this.buyAgainCost = buyAgainCost;
-    }
+    public static final NodeSchema<Double> SCHEMA =
+            NodeSchema.of(RecSysMetrics.WEIGHT);
+
+    private final ColumnStream<Double> out = fetch(SCHEMA);
 
     public void compute(ColumnContext ctx) {
         // Business formula — no feeds()[0] or string output names.
@@ -389,21 +399,32 @@ public final class RankingWeightNode extends ColumnNode {
 ```java
 public final class FunnelMetricModule extends ColumnModule {
     private final ColumnStream<Long> impressions =
-            input(RecSysMetrics.IMPRESSIONS);
+            feed(RecSysMetrics.IMPRESSIONS);
     private final ColumnStream<Long> clicks =
-            input(RecSysMetrics.CLICKS);
-    private final CtrNode ctr = add(new CtrNode(clicks, impressions));
+            feed(RecSysMetrics.CLICKS);
+    private final CtrNode ctr = node(new CtrNode(clicks, impressions));
 
     public FunnelMetricModule() {
-        output(ctr.out());
+        fetch(ctr.out());
     }
 
     public ColumnStream<Long> impressions() { return impressions; }
     public ColumnStream<Long> clicks() { return clicks; }
-    public ColumnStream<Double> ctr() { return ctr.out(); }
+    public ColumnStream<Double> ctr() {
+        return published(RecSysMetrics.CTR);
+    }
 }
 ```
 
+`feed` / `node` / `fetch` are the declarative forms of `input` / `add` /
+`output`; the older names remain as aliases. Nodes are still independent
+classes and the module only composes them.
+
+- `published(Column<T>)` exposes one fetch output by schema definition, so a
+  consumer module gets a typed `ColumnStream<T>` without casts or strings.
+- `feedMap()` / `fetchMap()` are read-only `name -> ColumnStream<?>` views for
+  boundary adapters and inspection. Business compute should keep using typed
+  fields; the maps do not remove dtype checks by themselves.
 - Node ids are generated by the framework.
 - Dependencies are **class/stream references** (`new CtrNode(clicks, impressions)`),
   never node names.
@@ -414,6 +435,23 @@ public final class FunnelMetricModule extends ColumnModule {
 - Rows contain metric data, not user/item ids. Ids are lookup keys; column
   computation operates on measurable business columns.
 
+Module-to-module wiring stays typed:
+
+```java
+public final class RankingWeightModule extends ColumnModule {
+    public RankingWeightModule(FunnelMetricModule funnel) {
+        RankingWeightNode weight = node(new RankingWeightNode(
+                funnel.published(RecSysMetrics.CTR),
+                funnel.published(RecSysMetrics.CVR),
+                funnel.published(RecSysMetrics.GMV),
+                funnel.published(RecSysMetrics.COUPON_ROI),
+                funnel.published(RecSysMetrics.BUYAGAIN_COST)));
+        dependsOn(FunnelMetricModule.class);
+        fetch(weight.out());
+    }
+}
+```
+
 ### Compile, feed, compute, fetch
 
 ```java
@@ -422,25 +460,32 @@ try (ColumnPipeline pipeline = new ColumnPipeline()) {
     pipeline.add(metrics);              // or pipeline.scan("com.example")
     pipeline.compile();
 
-    pipeline.feed(FeedStream.of(new ColumnStream<?>[]{
-            metrics.impressions(), metrics.clicks(), metrics.orders(),
-            metrics.gmvFen(), metrics.couponCostFen(), metrics.buyAgainOrders()
-    }, rows));
+    // Uses the compiled required-feed order; no manual column list.
+    pipeline.feedRows(rows);
+
+    // Or feed already column-oriented data by name.
+    // pipeline.feed(Map.of("impressions", List.of(Cell.of(1000)), ...));
+
     pipeline.compute();
 
     List<Row> out = pipeline.fetch(FetchStream.of(metrics.ctr()));
     double firstCtr = pipeline.fetchScalar(metrics.ctr());
+
+    // Column-oriented result, keyed by name.
+    Map<String, List<Cell>> columns =
+            pipeline.fetchColumns(metrics.ctr());
 }
 ```
 
-`FeedStream` / `FetchStream` carry `ColumnStream<?>[]`, so no names are needed
-at the API boundary. Missing required feed columns are rejected before
-execution.
+`FeedStream` / `FetchStream` remain the typed API and carry
+`ColumnStream<?>[]`. `feedRows` builds the feed from the compiled required
+columns; `feed(Map)` accepts named cell lists; `fetchColumns` returns named cell
+lists. Missing required feed columns are rejected before execution.
 
-### Spring-style modules
+### Classpath discovery without Spring
 
-`@ColumnComponent` marks a `ColumnModule`; the scanner supports class
-directories and jars, and needs no Spring dependency:
+`@ColumnComponent` marks a `ColumnModule`; the built-in scanner supports class
+directories and jars and needs no Spring dependency:
 
 ```java
 @ColumnComponent
@@ -449,6 +494,77 @@ public final class RecSysModule extends ColumnModule { ... }
 pipeline.scan("com.example.features");
 RecSysModule recsys = pipeline.module(RecSysModule.class);
 ```
+
+This scanner requires a no-argument constructor. It is not the Spring
+integration; use the `:spring` module when modules need constructor injection.
+
+### Spring Boot integration (optional `:spring` module)
+
+The core library and `:examples` stay dependency-free. Add the separate module
+in a Spring Boot application:
+
+```kotlin
+implementation(project(":spring"))
+```
+
+Then enable scanning:
+
+```java
+@SpringBootApplication
+@EnableLaryColumns(basePackages = "com.example.features")
+class Application {
+}
+```
+
+`@EnableLaryColumns` registers `@ColumnComponent` modules as Spring beans with
+constructor autowiring, so this works:
+
+```java
+@ColumnComponent
+public final class RankingWeightModule extends ColumnModule {
+    public RankingWeightModule(FunnelMetricModule funnel) { ... }
+}
+```
+
+If no packages are given, the annotated class's package is used.
+`lary.column.scan-packages` is always added; modules registered with ordinary
+Spring `@Component` or `@Bean` definitions are collected as well.
+
+Auto-configuration exposes:
+
+- `ColumnPipelineFactory` — creates a fresh pipeline from the managed modules.
+  Inject this rather than sharing a mutable pipeline.
+- `ColumnPipeline` — a prototype bean for convenience; prefer the factory for
+  one run per feed/compute/fetch cycle.
+
+```java
+try (ColumnPipeline pipeline = context.getBean(ColumnPipelineFactory.class).create()) {
+    pipeline.compile();
+    pipeline.feed(feed);
+    pipeline.compute();
+    return pipeline.fetch(FetchStream.of(metrics.ctr()));
+}
+```
+
+Configuration:
+
+```yaml
+lary:
+  column:
+    scan-packages: [com.example.features]
+    compute-workers: 4   # 0 = available processors
+    enabled: true
+```
+
+Run the Spring version of the recsys demo:
+
+```sh
+./gradlew :spring:runSpringRecsys
+```
+
+The demo lives in `spring/src/test/java/io/lark/spring/example/` and uses the
+same schema, nodes and modules as `:examples:runRecsys`.
+
 
 ### Graph pruning and cycle detection
 
@@ -503,6 +619,7 @@ runtime dtype promotion to choose the typed implementation (`AddTensor` →
 | `io.lark.column.biz` | typed business API: `Column<T>` definitions, `ColumnStream<T>` handles, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |
+| `io.lark.spring` (`:spring` module) | `EnableLaryColumns`, `ColumnComponentRegistrar`, `LaryColumnAutoConfiguration`, `ColumnPipelineFactory` — optional Spring Boot integration |
 
 ## Maintenance rule
 

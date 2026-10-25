@@ -3,6 +3,7 @@
 
 package io.lark.examples.recsys.module;
 
+import io.lark.column.biz.ColumnComponent;
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnStream;
 import io.lark.examples.recsys.node.FunnelSummaryNode;
@@ -10,6 +11,7 @@ import io.lark.examples.recsys.node.PortfolioSummaryNode;
 import io.lark.examples.recsys.node.RankingSummaryNode;
 
 /** Portfolio-level summary over the per-row metrics. */
+@ColumnComponent
 public final class PerformanceSummaryModule extends ColumnModule {
 
     private final FunnelSummaryNode funnel;
@@ -18,13 +20,13 @@ public final class PerformanceSummaryModule extends ColumnModule {
 
     public PerformanceSummaryModule(FunnelMetricModule metrics,
                                     RankingWeightModule weight) {
-        funnel = add(new FunnelSummaryNode(
+        funnel = node(new FunnelSummaryNode(
                 metrics.impressions(), metrics.clicks(), metrics.orders()));
-        portfolio = add(new PortfolioSummaryNode(
+        portfolio = node(new PortfolioSummaryNode(
                 metrics.gmv(), metrics.couponCost(), metrics.buyAgainOrders()));
-        ranking = add(new RankingSummaryNode(weight.weight()));
+        ranking = node(new RankingSummaryNode(), weight.weight());
         dependsOn(FunnelMetricModule.class, RankingWeightModule.class);
-        output(funnel.overallCtr(), funnel.overallCvr(),
+        fetch(funnel.overallCtr(), funnel.overallCvr(),
                 portfolio.totalGmv(), portfolio.totalCouponCost(),
                 portfolio.overallRoi(), portfolio.overallBuyAgainCost(),
                 ranking.out());

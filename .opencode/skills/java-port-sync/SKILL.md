@@ -80,9 +80,10 @@ test. Tests are the behavioral contract.
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
 | Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `BusinessNodeOp.java` |
 | Typed column schema (Java-first) | `biz/Column.java` (`Column<T>` value definitions), `biz/ColumnStream.java` (graph handles); schema constants e.g. `RecSysMetrics.COUPON_ROI` |
-| Typed node bases (Java-first) | `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`; custom nodes extend `ColumnNode` with typed fields |
+| Typed node bases (Java-first) | `biz/NodeSchema.java`, `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`; custom nodes extend `ColumnNode` with typed fields |
 | Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream<?>[]`) |
-| Spring-style components | `biz/ColumnComponent.java`, `biz/ColumnComponentScanner.java` (on modules) |
+| Dependency-free components | `biz/ColumnComponent.java`, `biz/ColumnComponentScanner.java` (on modules; no-arg constructors only) |
+| Spring Boot integration (optional `:spring`) | `spring/src/main/java/io/lark/spring/`: `EnableLaryColumns.java`, `ColumnComponentRegistrar.java`, `LaryColumnAutoConfiguration.java`, `ColumnPipelineFactory.java`; auto-config imports file under `META-INF/spring` |
 | C++ `biz::Module` / `SubGraph` / DSL / `Pipeline` | **intentionally removed in Java**; replaced by `ColumnModule` + `ColumnNode` + `ColumnStream` |
 | `backend/backend.h`, `backend.cpp` | `backend/Backend.java`, `CpuBackend.java`, `BackendFactory.java` |
 | `monitor.h`, `monitor.cpp` | `monitor/RunStats.java`, `monitor/ColumnStatsCollector.java` |
@@ -93,6 +94,7 @@ test. Tests are the behavioral contract.
 | DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
 | Realistic multi-class demo | `examples/src/main/java/io/lark/examples/recsys/**` (`:examples:runRecsys`), split into `schema/`, `node/`, `module/`, `data/` |
 | Realistic demo test | `examples/src/test/java/io/lark/examples/recsys/RecSysMetricTest.java`, mock edge-case feed `MockMetrics.java` |
+| Spring demo / tests | `spring/src/test/java/io/lark/spring/example/SpringRecSysDemo.java` (`:spring:runSpringRecsys`), `LaryColumnAutoConfigurationTest.java`, `LaryColumnPropertyScanTest.java`, fixtures under `spring/src/test/java/io/lark/spring/fixture/` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
 ## Workflow
@@ -152,7 +154,7 @@ test. Tests are the behavioral contract.
 - Execution: dependency ordering, independent nodes concurrent, failed op does
   not poison dependents; placeholder replacement for forward references;
   duplicate column producer / duplicate write / cycle rejection.
-- Business API: typed `ColumnStream<T>` subclasses + `ColumnNode` /
+- Business API: typed `ColumnStream<T>` handles + `ColumnNode` /
   `ColumnContext` / `ColumnModule` / `ColumnPipeline`. Node ids are generated;
   there is no `name()`/`inputs()`/`outputs()` override.
 - Schema is declared once as immutable `Column<T>` constants
@@ -160,21 +162,35 @@ test. Tests are the behavioral contract.
   `ColumnContext` validates read/write dtype; typed feed columns are coerced to
   their declared dtype.
 - `ColumnStream<T>` handles are created by `fetch(Column<T>)` on nodes and
-  `input(Column<T>)` on modules. Outputs are declared with
-  `fetch(RecSysMetrics.CTR)`. Common node shapes use `UnaryNode<I,O>`,
-  `BinaryNode<A,B,O>` and `SourceNode<O>`; custom nodes extend `ColumnNode` and
-  keep typed handles. Business compute must not use string output names or
-  `feeds()[0]`.
+  `feed(Column<T>)` (alias `input`) on modules. Module outputs are declared with
+  `fetch(streams...)` (alias `output`), and `node(...)` aliases `add(...)`.
+  Common node shapes use `UnaryNode<I,O>`, `BinaryNode<A,B,O>` and
+  `SourceNode<O>`; custom nodes extend `ColumnNode` and keep typed handles.
+  Business compute must not use string output names or `feeds()[0]`.
+- `NodeSchema<O>` is a record wrapping a single output column. Each typed node
+  exposes a `public static final SCHEMA` property built with
+  `NodeSchema.of(Column<T>)` and needs no explicit constructor. The no-arg base
+  constructor reads that field once per class (cached); the module binds inputs
+  with `node(new XNode(), inputs...)` (typed `UnaryNode` / `BinaryNode`
+  overloads). The explicit constructor forms remain for custom nodes and dynamic
+  output schemas. Custom nodes fetch outputs with `fetch(NodeSchema<T>)`.
+- `ColumnModule.published(Column<T>)` returns a typed fetch output by schema
+  definition for module-to-module wiring. `feedMap()` / `fetchMap()` are
+  read-only `name -> ColumnStream<?>` views for boundary adapters and
+  inspection, not for business compute.
 - Data dependency is handle/reference based (`new BNode(a.out())`), never
   node-name based. Node `feeds()`/`fetches()` are arrays.
 - `ColumnModule` groups nodes and exposes `inputs()`, `outputs()`, `nodes()`,
-  `dependencies()` as arrays. Module inputs use `input(Column<T>)`.
-  Modules depend on modules with `dependsOn(OtherModule.class)`; module cycles
-  are rejected.
+  `dependencies()` as arrays. Module inputs use `feed(Column<T>)` (alias
+  `input`). Modules depend on modules with `dependsOn(OtherModule.class)`;
+  module cycles are rejected.
 - `FeedStream` / `FetchStream` are the row-in / row-out boundaries and carry
   `ColumnStream<?>[]`. Missing required feed columns are rejected before
   compute. Use `compile(FetchStream)` / `fetchScalar(ColumnStream<?>)` to keep
-  pruning and scalar reads typed.
+  pruning and scalar reads typed. `feedRows(List<Row>)` uses the compiled
+  required-column order; `feed(Map<String, List<Cell>>)` accepts named columns;
+  `fetchColumns(...)` returns named cell lists. `FeedFetch` owns the row/column
+  conversion helpers.
 - The realistic demo targets search/recommendation metrics: CTR =
   clicks/impressions, CVR = orders/clicks, GMV = gmv_fen/100,
   buyagain_cost = coupon_cost/buy_again_orders, coupon_roi = gmv/coupon_cost,
@@ -184,7 +200,17 @@ test. Tests are the behavioral contract.
   Feed samples live in `MetricsRepository`/`MetricsFeed.sample`; tests add
   edge-case mock rows via `MockMetrics`.
 - `@ColumnComponent` marks modules; `ColumnPipeline.scan(package)` discovers
-  them without a Spring dependency. Modules need a no-arg constructor.
+  them without a Spring dependency. That core scanner requires a no-arg
+  constructor.
+- The optional `:spring` module is the only place with Spring dependencies.
+  `@EnableLaryColumns` scans `@ColumnComponent` modules through Spring's
+  scanner, registers them with constructor autowiring, and always adds
+  `lary.column.scan-packages`. Auto-configuration collects `ColumnModule` beans
+  (including ordinary `@Component`/`@Bean` modules) into a
+  `ColumnPipelineFactory`. `ColumnPipeline` is mutable, so expose it as a
+  prototype bean and prefer a fresh factory-created pipeline per run.
+- Keep Spring out of the root library and `:examples`; `:spring` may depend on
+  `:examples` only from its test source set for the demo.
 - Graph pruning: `ColumnPipeline.compile(FetchStream)` keeps the transitive
   producers of requested module outputs; `run(FeedStream, FetchStream)` prunes
   before execution. Module cycles and node-graph cycles are always detected,
@@ -211,9 +237,10 @@ test. Tests are the behavioral contract.
 ## Verification
 
 ```sh
-JAVA_HOME=/path/to/jdk-25 ./gradlew clean test :examples:build
+JAVA_HOME=/path/to/jdk-25 ./gradlew clean test :examples:build :spring:build
 JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runSimple :examples:runOp
 JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRecsys
+JAVA_HOME=/path/to/jdk-25 ./gradlew :spring:test :spring:runSpringRecsys
 ```
 
 Use JDK 25. If Gradle cannot find it, set `org.gradle.java.installations.paths`

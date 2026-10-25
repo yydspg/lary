@@ -1,7 +1,9 @@
 # lary examples
 
 This Gradle module depends on the root `lary` library and contains runnable
-examples. It is intentionally separate from the library build.
+examples. It is intentionally separate from the library build and has no Spring
+dependency. The optional `:spring` module runs the same recsys graph through
+Spring Boot (`./gradlew :spring:runSpringRecsys`).
 
 ```sh
 ./gradlew :examples:test
