@@ -67,15 +67,59 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 ./gradlew clean test
 ./gradlew build
 
-./gradlew runSimple     # DAG Node layer
-./gradlew runOp         # DAG Op + Aspect layer
-./gradlew runNodes      # column business ColumnNode API (hidden ComputeNode)
-./gradlew runColumn     # declarative column feed/compute/fetch + Vector API
+./gradlew runDemo      # end-to-end layered demo (recommended)
+./gradlew runSimple    # DAG Node layer
+./gradlew runOp        # DAG Op + Aspect layer
+./gradlew runNodes     # column business ColumnNode API (hidden ComputeNode)
+./gradlew runColumn    # declarative column feed/compute/fetch + Vector API
 ```
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
 `TimeoutTest`, `BusinessNodeTest` and `OpTensorTest`.
+
+## End-to-end demo
+
+```sh
+./gradlew runDemo
+```
+
+`LaryDemo` demonstrates the complete layering:
+
+1. **Business layer** — seven `ColumnNode`s with automatic column dependency
+   wiring, a deliberate failure + fallback, aggregate outputs, fetch and run
+   statistics.
+2. **Tensor-op layer** — direct `FloatAddTensor` / `FloatMultiTensor` execution
+   and runtime dtype dispatch through `TensorOps.create`.
+3. **DAG timeout** — a slow node is interrupted, `Node.fallback` produces a
+   degraded result, and the run returns quickly.
+
+Sample output:
+
+```text
+SIMD: JDK Vector API (jdk.incubator.vector) {double=2, float=4, int=4, long=2}
+
+=== 1. Business ColumnNode pipeline ===
+user  = [110, 120, 130, 140, 150, 160]
+score = [220, 240, 260, 280, 300, 320]
+mask  = [0, 0, 1, 1, 1, 1]
+high  = [260, 280, 300, 320]
+total = 1620.0
+mean  = 270.0
+max   = 320.0
+fallback output = 8.0
+fallback events = 1
+
+=== 2. Typed OpTensor layer ===
+FloatAddTensor   sum     = [11.0, 22.0, 33.0]
+FloatMultiTensor product = [10.0, 40.0, 90.0]
+dispatched add: dtype=float64, values=[1.5, 3.5, 5.5]
+
+=== 3. DAG timeout + business fallback ===
+status    = fallback
+fallback  = true
+elapsed   = 87ms
+```
 
 ## DAG quick start
 

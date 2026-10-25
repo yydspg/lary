@@ -60,7 +60,7 @@ java {
 }
 
 application {
-    mainClass.set("io.lark.examples.SimplePipeline")
+    mainClass.set("io.lark.examples.LaryDemo")
     applicationDefaultJvmArgs = listOf("--add-modules", "jdk.incubator.vector")
 }
 
@@ -94,6 +94,13 @@ tasks.withType<Test>().configureEach {
         // test-process streams; failures still show in reports and events.
         showStandardStreams = false
     }
+}
+
+tasks.register<JavaExec>("runDemo") {
+    group = "application"
+    description = "Run the end-to-end layered demo."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("io.lark.examples.LaryDemo")
 }
 
 tasks.register<JavaExec>("runSimple") {

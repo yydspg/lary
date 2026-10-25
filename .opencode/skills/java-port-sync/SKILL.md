@@ -85,6 +85,7 @@ test. Tests are the behavioral contract.
 | `tests/test_column.cpp` | `TensorComputeTest.java` |
 | Tensor-op coverage | `OpTensorTest.java` |
 | Business Node coverage | `BusinessNodeTest.java` |
+| End-to-end demo | `src/main/java/io/lark/examples/LaryDemo.java` (`./gradlew runDemo`) |
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java`, `PipelineTest.java` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
@@ -178,6 +179,7 @@ test. Tests are the behavioral contract.
 
 ```sh
 JAVA_HOME=/path/to/jdk-25 ./gradlew clean test
+JAVA_HOME=/path/to/jdk-25 ./gradlew runDemo
 JAVA_HOME=/path/to/jdk-25 ./gradlew runSimple runOp
 JAVA_HOME=/path/to/jdk-25 ./gradlew runNodes
 JAVA_HOME=/path/to/jdk-25 ./gradlew runColumn
