@@ -41,12 +41,14 @@ public final class StatsCollector implements Monitor {
 
     private void handleNodeEvent(Event event) {
         String status = event.get("status").orElse(null);
-        if (status == null || "running".equals(status)) {
+        if (status == null || "running".equals(status)
+                || "quarantined".equals(status)) {
             return;
         }
 
         NodeStatus nodeStatus = switch (status) {
             case "failed" -> NodeStatus.FAILED;
+            case "timed_out" -> NodeStatus.TIMED_OUT;
             case "fallback" -> NodeStatus.FALLBACK;
             case "skipped" -> NodeStatus.SKIPPED;
             default -> NodeStatus.SUCCESS;

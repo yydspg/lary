@@ -13,22 +13,22 @@ import java.util.concurrent.atomic.AtomicReference;
  * Execution-layer node. Binds exactly one {@link TensorOp}, plus framework
  * wiring (id, module, dependency edges) and per-run state.
  */
-public final class ComputeNode {
+public final class OpTensor {
 
     public enum Status {
-        PENDING, SUCCESS, FAILED
+        PENDING, SUCCESS, FAILED, FALLBACK
     }
 
     private final String id;
     private final String module;
     private final TensorOp op;
-    private final List<ComputeNode> dependencies = new ArrayList<>();
+    private final List<OpTensor> dependencies = new ArrayList<>();
     private final AtomicReference<Status> status = new AtomicReference<>(Status.PENDING);
     private volatile CompletableFuture<Void> doneEvent = new CompletableFuture<>();
     private volatile long elapsedNanos;
     private volatile Throwable error;
 
-    public ComputeNode(String id, String module, TensorOp op) {
+    public OpTensor(String id, String module, TensorOp op) {
         this.id = Objects.requireNonNull(id, "id");
         this.module = Objects.requireNonNull(module, "module");
         this.op = Objects.requireNonNull(op, "op");
@@ -46,11 +46,11 @@ public final class ComputeNode {
         return op;
     }
 
-    public void addDependency(ComputeNode dependency) {
+    public void addDependency(OpTensor dependency) {
         dependencies.add(Objects.requireNonNull(dependency, "dependency"));
     }
 
-    public List<ComputeNode> dependencies() {
+    public List<OpTensor> dependencies() {
         return List.copyOf(dependencies);
     }
 
@@ -58,14 +58,14 @@ public final class ComputeNode {
      * Rewire every edge pointing at {@code from} to {@code to} (used when a
      * placeholder is replaced by the real producer); de-duplicates.
      */
-    public void replaceDependency(ComputeNode from, ComputeNode to) {
+    public void replaceDependency(OpTensor from, OpTensor to) {
         for (int i = 0; i < dependencies.size(); i++) {
             if (dependencies.get(i) == from) {
                 dependencies.set(i, to);
             }
         }
-        List<ComputeNode> unique = new ArrayList<>();
-        for (ComputeNode dependency : dependencies) {
+        List<OpTensor> unique = new ArrayList<>();
+        for (OpTensor dependency : dependencies) {
             if (!unique.contains(dependency)) {
                 unique.add(dependency);
             }

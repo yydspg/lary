@@ -116,3 +116,10 @@ tasks.register<JavaExec>("runColumn") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("io.lark.examples.ColumnPipelineExample")
 }
+
+tasks.register<JavaExec>("runNodes") {
+    group = "application"
+    description = "Run the business ColumnNode example (hidden OpTensor execution)."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("io.lark.examples.BusinessNodeExample")
+}

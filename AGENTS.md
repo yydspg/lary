@@ -1,5 +1,14 @@
 # Repository Rules
 
+## Maintenance contract
+
+Every behavior or API change must update, in the same commit:
+
+1. `README.md` — feature, usage and limitations.
+2. `.opencode/skills/java-port-sync/SKILL.md` — mapping, invariants and
+   verification steps.
+3. Tests, plus an example when the change is user-facing.
+
 ## Java port of lark
 
 - The C++ `dag/` and `column/` modules in the sibling `../lark` repository are
@@ -14,3 +23,5 @@
   `--add-modules jdk.incubator.vector` flags in `build.gradle.kts`.
 - DAG business code uses virtual threads and blocking methods; do not turn
   `Node.run` / `Op.execute` back into callback-style APIs.
+- Column business code uses `ColumnNode` + `ColumnContext`; keep `OpTensor` and
+  the rest of `io.lark.column.exec` hidden from the business-facing API.

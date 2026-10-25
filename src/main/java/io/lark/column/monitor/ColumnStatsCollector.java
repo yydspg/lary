@@ -36,7 +36,7 @@ public final class ColumnStatsCollector implements Monitor {
                     stats.fetchElapsedNanos = event.durationNanos();
                 }
             }
-            case "node.end", "node.error" -> handleNode(event);
+            case "node.end", "node.error", "node.fallback" -> handleNode(event);
             case "module.end" -> handleModule(event);
             case "cpu.pressure" -> handlePressure(event);
             default -> {

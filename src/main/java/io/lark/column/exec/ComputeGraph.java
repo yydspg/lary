@@ -26,7 +26,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 /**
- * Execution-layer DAG of {@link ComputeNode}s.
+ * Execution-layer DAG of {@link OpTensor}s.
  *
  * <p>{@link #execute(ExecutionContext)} runs sequentially in topological
  * order. {@link #executeAsync(ExecutorService, ExecutionContext)} gives every
@@ -38,31 +38,31 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class ComputeGraph {
 
-    private final List<ComputeNode> nodes = new ArrayList<>();
-    private final Map<String, ComputeNode> byId = new LinkedHashMap<>();
-    private List<ComputeNode> topo = List.of();
+    private final List<OpTensor> nodes = new ArrayList<>();
+    private final Map<String, OpTensor> byId = new LinkedHashMap<>();
+    private List<OpTensor> topo = List.of();
     private boolean finalized;
 
-    public ComputeNode addNode(String id, String module, TensorOp op) {
+    public OpTensor addNode(String id, String module, TensorOp op) {
         Objects.requireNonNull(id, "id");
         if (byId.containsKey(id)) {
             throw new IllegalArgumentException(
                     "ComputeGraph: duplicate node id '" + id + "'");
         }
-        ComputeNode node = new ComputeNode(id, module, op);
+        OpTensor node = new OpTensor(id, module, op);
         byId.put(id, node);
         nodes.add(node);
         finalized = false;
         return node;
     }
 
-    public ComputeNode addPlaceholder(String output, String id) {
+    public OpTensor addPlaceholder(String output, String id) {
         return addNode(id, "@placeholder", TensorOps.placeholder(output));
     }
 
     public void replacePlaceholder(String placeholderId, String realId) {
-        ComputeNode placeholder = byId.get(placeholderId);
-        ComputeNode real = byId.get(realId);
+        OpTensor placeholder = byId.get(placeholderId);
+        OpTensor real = byId.get(realId);
         if (placeholder == null) {
             throw new NoSuchElementException(
                     "ComputeGraph.replacePlaceholder: unknown placeholder '"
@@ -75,7 +75,7 @@ public final class ComputeGraph {
         if (placeholder == real) {
             return;
         }
-        for (ComputeNode node : nodes) {
+        for (OpTensor node : nodes) {
             node.replaceDependency(placeholder, real);
         }
         byId.remove(placeholderId);
@@ -84,7 +84,7 @@ public final class ComputeGraph {
     }
 
     public boolean hasPlaceholders() {
-        for (ComputeNode node : nodes) {
+        for (OpTensor node : nodes) {
             if ("placeholder".equals(node.op().opType())) {
                 return true;
             }
@@ -92,11 +92,11 @@ public final class ComputeGraph {
         return false;
     }
 
-    public Optional<ComputeNode> find(String id) {
+    public Optional<OpTensor> find(String id) {
         return Optional.ofNullable(byId.get(id));
     }
 
-    public List<ComputeNode> nodes() {
+    public List<OpTensor> nodes() {
         return List.copyOf(nodes);
     }
 
@@ -114,8 +114,8 @@ public final class ComputeGraph {
 
     /** Wire a dependency edge (both ids must exist); idempotent. */
     public void addDependency(String id, String dependencyId) {
-        ComputeNode node = byId.get(id);
-        ComputeNode dependency = byId.get(dependencyId);
+        OpTensor node = byId.get(id);
+        OpTensor dependency = byId.get(dependencyId);
         if (node == null) {
             throw new NoSuchElementException(
                     "ComputeGraph.addDependency: unknown node '" + id + "'");
@@ -132,31 +132,31 @@ public final class ComputeGraph {
 
     /** Topologically sort and detect cycles (Kahn's algorithm). */
     public void finalizeGraph() {
-        Map<ComputeNode, Integer> inDegree = new IdentityHashMap<>();
-        Map<ComputeNode, List<ComputeNode>> outgoing = new IdentityHashMap<>();
+        Map<OpTensor, Integer> inDegree = new IdentityHashMap<>();
+        Map<OpTensor, List<OpTensor>> outgoing = new IdentityHashMap<>();
 
-        for (ComputeNode node : nodes) {
+        for (OpTensor node : nodes) {
             inDegree.put(node, 0);
         }
-        for (ComputeNode node : nodes) {
-            for (ComputeNode dependency : node.dependencies()) {
+        for (OpTensor node : nodes) {
+            for (OpTensor dependency : node.dependencies()) {
                 outgoing.computeIfAbsent(dependency, key -> new ArrayList<>()).add(node);
                 inDegree.merge(node, 1, Integer::sum);
             }
         }
 
-        Deque<ComputeNode> ready = new ArrayDeque<>();
-        for (ComputeNode node : nodes) {
+        Deque<OpTensor> ready = new ArrayDeque<>();
+        for (OpTensor node : nodes) {
             if (inDegree.get(node) == 0) {
                 ready.add(node);
             }
         }
 
-        List<ComputeNode> order = new ArrayList<>(nodes.size());
+        List<OpTensor> order = new ArrayList<>(nodes.size());
         while (!ready.isEmpty()) {
-            ComputeNode node = ready.poll();
+            OpTensor node = ready.poll();
             order.add(node);
-            for (ComputeNode next : outgoing.getOrDefault(node, List.of())) {
+            for (OpTensor next : outgoing.getOrDefault(node, List.of())) {
                 int degree = inDegree.merge(next, -1, Integer::sum);
                 if (degree == 0) {
                     ready.add(next);
@@ -187,7 +187,7 @@ public final class ComputeGraph {
         RunState state = new RunState(nodes.size());
         state.execStartNanos = System.nanoTime();
 
-        for (ComputeNode node : topo) {
+        for (OpTensor node : topo) {
             long start = System.nanoTime();
             emitNode(ctx, "node.start", node, 0, true);
             ModuleAcc acc = state.module(node.module());
@@ -212,10 +212,14 @@ public final class ComputeGraph {
             synchronized (acc) {
                 acc.endNanos = Math.max(acc.endNanos, start + elapsed);
             }
-            emitNode(ctx, error == null ? "node.end" : "node.error",
-                    node, elapsed, error == null);
-            node.setStatus(error == null
-                    ? ComputeNode.Status.SUCCESS : ComputeNode.Status.FAILED);
+            boolean recovered = error != null
+                    && invokeFallback(node, ctx, error);
+            emitNode(ctx, error == null ? "node.end"
+                            : recovered ? "node.fallback" : "node.error",
+                    node, elapsed, error == null || recovered);
+            node.setStatus(error == null ? OpTensor.Status.SUCCESS
+                    : recovered ? OpTensor.Status.FALLBACK
+                    : OpTensor.Status.FAILED);
             if (error != null) {
                 node.setError(error);
             }
@@ -255,12 +259,12 @@ public final class ComputeGraph {
         RunState state = new RunState(nodes.size());
         state.execStartNanos = System.nanoTime();
 
-        for (ComputeNode node : nodes) {
+        for (OpTensor node : nodes) {
             try {
                 Thread.ofVirtual().name("lark-column-" + node.id()).start(() ->
                         runNodeAsync(node, pool, ctx, state));
             } catch (Throwable t) {
-                node.setStatus(ComputeNode.Status.FAILED);
+                node.setStatus(OpTensor.Status.FAILED);
                 node.setError(t);
                 node.doneEvent().complete(null);
                 state.completeOne();
@@ -272,10 +276,10 @@ public final class ComputeGraph {
         reportRunSummary(ctx, state, wall, workers);
     }
 
-    private void runNodeAsync(ComputeNode node, ExecutorService pool,
+    private void runNodeAsync(OpTensor node, ExecutorService pool,
                               ExecutionContext ctx, RunState state) {
         try {
-            for (ComputeNode dependency : node.dependencies()) {
+            for (OpTensor dependency : node.dependencies()) {
                 dependency.doneEvent().join();
             }
 
@@ -311,15 +315,19 @@ public final class ComputeGraph {
             synchronized (acc) {
                 acc.endNanos = Math.max(acc.endNanos, start + elapsed);
             }
-            emitNode(ctx, error == null ? "node.end" : "node.error",
-                    node, elapsed, error == null);
-            node.setStatus(error == null
-                    ? ComputeNode.Status.SUCCESS : ComputeNode.Status.FAILED);
+            boolean recovered = error != null
+                    && invokeFallback(node, ctx, error);
+            emitNode(ctx, error == null ? "node.end"
+                            : recovered ? "node.fallback" : "node.error",
+                    node, elapsed, error == null || recovered);
+            node.setStatus(error == null ? OpTensor.Status.SUCCESS
+                    : recovered ? OpTensor.Status.FALLBACK
+                    : OpTensor.Status.FAILED);
             if (error != null) {
                 node.setError(error);
             }
         } catch (Throwable t) {
-            node.setStatus(ComputeNode.Status.FAILED);
+            node.setStatus(OpTensor.Status.FAILED);
             node.setError(unwrap(t));
         } finally {
             node.doneEvent().complete(null);
@@ -328,13 +336,13 @@ public final class ComputeGraph {
     }
 
     private void resetRunState() {
-        for (ComputeNode node : nodes) {
+        for (OpTensor node : nodes) {
             node.resetRunState();
         }
     }
 
     private void reserveOutputs(TensorStore store) {
-        for (ComputeNode node : nodes) {
+        for (OpTensor node : nodes) {
             for (String output : node.op().outputs()) {
                 if (output != null && !output.isEmpty()) {
                     store.ensureNames(List.of(output));
@@ -349,7 +357,7 @@ public final class ComputeGraph {
                 : Math.max(1, Runtime.getRuntime().availableProcessors());
     }
 
-    private void emitNode(ExecutionContext ctx, String action, ComputeNode node,
+    private void emitNode(ExecutionContext ctx, String action, OpTensor node,
                           long elapsedNanos, boolean ok) {
         if (!ctx.hasMonitor()) {
             return;
@@ -398,6 +406,18 @@ public final class ComputeGraph {
         } catch (Throwable ignored) {
             // Monitoring must never break computation.
         }
+    }
+
+    private static boolean invokeFallback(OpTensor node, ExecutionContext ctx,
+                                          Throwable error) {
+        if (node.op() instanceof FallibleTensorOp fallible) {
+            try {
+                return fallible.fallback(new OpContext(ctx.store()), error);
+            } catch (Throwable ignored) {
+                return false;
+            }
+        }
+        return false;
     }
 
     private static Throwable unwrap(Throwable error) {

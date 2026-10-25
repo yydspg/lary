@@ -10,6 +10,16 @@ source of truth. `lary` is a single-project Java 25 port of both (plus the
 minimal metric surface they need). Keep behavior, public names, monitoring
 vocabulary, validation semantics and event attributes aligned.
 
+## Maintenance contract
+
+Every behavior or API change must update, in the same commit:
+
+1. `README.md` — feature, usage and limitations.
+2. This `SKILL.md` — mapping, invariants and verification.
+3. Tests, plus an example when the change is user-facing.
+
+Do not treat documentation/skill updates as optional follow-ups.
+
 ## When to use this skill
 
 - A change touches `../lark/dag/include/`, `../lark/dag/src/`,
@@ -43,9 +53,11 @@ test. Tests are the behavioral contract.
 | `dag/include/dag/op_executor.h` | `OpExecutor.java` |
 | `dag/include/dag/op_registry.h` | `OpRegistry.java` |
 | `dag/include/dag/op_graph_builder.h`, `src/op_graph_builder.cpp` | `OpGraphBuilder.java`, `OpDef.java`, `DslParser.java` |
+| Timeout / cancellation (Java-first) | `TimeoutPolicy.java`, `TimeoutAction.java`, `TimeoutTracker.java`, `DagTimeoutException.java`, `GraphAbortedException.java` |
 | `tests/test_dag.cpp` | `DagTest.java` |
 | `tests/test_op.cpp` | `OpTest.java` |
 | `tests/test_op_dsl.cpp` | `OpDslTest.java` |
+| Java timeout coverage | `TimeoutTest.java` |
 
 ### Column mapping
 
@@ -57,10 +69,11 @@ test. Tests are the behavioral contract.
 | `feed_fetch.h`, `src/feed_fetch.cpp` | `Cell.java`, `Row.java`, `FeedFetch.java` |
 | `column/include/column/compute/*`, `src/compute/*` | `compute/Compute.java`, `compute/VectorOps.java` |
 | `compute/simd.h` | `Simd.java` + `compute/VectorOps.java` (`jdk.incubator.vector`) |
-| `exec/tensor_op.h`, `exec/ops*.cpp` | `exec/TensorOp.java`, `exec/TensorOps.java`, `exec/OpSpec.java`, `exec/OpContext.java` |
-| `exec/exec_node.h`, `exec_node.cpp` | `exec/ComputeNode.java` |
+| `exec/tensor_op.h`, `exec/ops*.cpp` | `exec/TensorOp.java`, `exec/TensorOps.java`, `exec/OpSpec.java`, `exec/OpContext.java`, `exec/FallibleTensorOp.java` |
+| `exec/exec_node.h`, `exec_node.cpp` | `exec/OpTensor.java` (hidden execution node) |
 | `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
+| Business Node layer (Java-first) | `biz/ColumnNode.java`, `biz/ColumnContext.java`, `biz/ColumnGraph.java`, `biz/NodePipeline.java`, `biz/BusinessNodeOp.java` |
 | `biz/module.h`, `module.cpp` | `biz/Module.java`, `biz/SubGraph.java` |
 | `biz/dsl.h`, `dsl.cpp` | `biz/ColumnDsl.java` |
 | `biz/sub_graph.h` (`ops::`) | `biz/Ops.java` |
@@ -84,7 +97,9 @@ test. Tests are the behavioral contract.
 3. **Mirror the tests** under `src/test/java/io/lark/...`. Port the assertion,
    not just the happy path.
 4. **Update examples/docs** if the user-facing API changed:
-   `src/main/java/io/lark/examples`, `README.md` mapping/limitations.
+   `src/main/java/io/lark/examples`, `README.md` mapping/limitations, and this
+   `SKILL.md` (mapping/invariants/verification). This is mandatory for every
+   change.
 5. **Run the Java suite** (see Verification) and report the result.
 6. **Do not modify the C++ side** unless the user explicitly asks for a
    cross-language change.
@@ -93,13 +108,20 @@ test. Tests are the behavioral contract.
 
 ### DAG
 
-- `NodeStatus`: PENDING, RUNNING, SUCCESS, FAILED, FALLBACK, SKIPPED.
-- `OpStatus`: PENDING, RUNNING, SUCCESS, SKIPPED, FAILED.
-- Monitor source `"dag"`; node actions `node.start/success/failure/fallback/skipped`;
-  op actions `op.start/end/error/skipped`.
-- Event attributes: `type`, `status`, `started_ns`, `elapsed_ns`, `error`.
+- `NodeStatus`: PENDING, RUNNING, SUCCESS, FAILED, TIMED_OUT, FALLBACK, SKIPPED.
+- `OpStatus`: PENDING, RUNNING, SUCCESS, SKIPPED, FAILED, TIMED_OUT, FALLBACK.
+- Monitor source `"dag"`; node actions `node.start/success/failure/fallback/timeout/quarantined/skipped`;
+  op actions `op.start/end/error/fallback/timeout/quarantined/skipped`.
+- Event attributes: `type`, `status`, `started_ns`, `elapsed_ns`, `error`;
+  timeout events also carry `timeout_ms`, `consecutive_timeouts`,
+  `total_timeouts`, `quarantined`, and optionally `quarantine_until_ns`.
 - Failed op does not poison dependents; skipped still completes; fallback
-  `true` → FALLBACK, `false` → FAILED; batch-disable keeps timing zero.
+  `true` → FALLBACK, `false` → FAILED; timeout without fallback → TIMED_OUT;
+  batch-disable keeps timing zero.
+- Timeout behavior: interrupt the worker, invoke business fallback, then
+  quarantine on `maxConsecutiveTimeouts` (`TimeoutTracker`, keyed by node
+  type / op name) or abort the run when `TimeoutAction.ABORT_GRAPH` is set.
+  Graph deadline is `TimeoutPolicy.graphTimeout`.
 - Validation: unknown type, duplicate id, missing dependency, self-dependency,
   cycle. Aspect auto-skip before `onBefore`; `onAfter` gets final status.
 - Op DSL: `id:Type -> id:Type`, `;`/newline separators, bare name means
@@ -122,10 +144,19 @@ test. Tests are the behavioral contract.
 - Execution: dependency ordering, independent nodes concurrent, failed op does
   not poison dependents; placeholder replacement for forward references;
   duplicate column producer / duplicate write / cycle rejection.
+- Business API: `ColumnNode` + `ColumnContext` only. Each business node is
+  compiled to a hidden `OpTensor`; business code must not import
+  `io.lark.column.exec`. Dependencies are derived from declared input/output
+  columns; `ColumnGraph.dependsOn` adds ordering-only edges.
+- `OpTensor` status: PENDING, SUCCESS, FAILED, FALLBACK. A business
+  `ColumnNode.fallback` success yields FALLBACK; the failure is still visible
+  through the hidden node's error.
+- `ColumnGraph.compile` rejects duplicate node names, duplicate column
+  producers, unknown explicit dependencies, self-dependencies and cycles.
 - Monitoring source `"column"`; phase events `feed.start/end`,
-  `compute.start/end`, `fetch.start/end`; node events `node.start/end/error`;
-  `module.end` with `node_count`; `cpu.pressure` with `pool`,
-  `utilization`, `busy_ns`, `wall_ns`, `workers`.
+  `compute.start/end`, `fetch.start/end`; node events
+  `node.start/end/error/fallback`; `module.end` with `node_count`;
+  `cpu.pressure` with `pool`, `utilization`, `busy_ns`, `wall_ns`, `workers`.
 - DSL: same operators/precedence, literal folding into `*_scalar`, functions
   select/filter/cast/dot/quantize/dequantize and the unary/reduce set.
 - Vector API: use `jdk.incubator.vector` for element-wise arithmetic, scalar
@@ -140,6 +171,7 @@ test. Tests are the behavioral contract.
 ```sh
 JAVA_HOME=/path/to/jdk-25 ./gradlew clean test
 JAVA_HOME=/path/to/jdk-25 ./gradlew runSimple runOp
+JAVA_HOME=/path/to/jdk-25 ./gradlew runNodes
 JAVA_HOME=/path/to/jdk-25 ./gradlew runColumn
 ```
 
@@ -151,6 +183,9 @@ in `~/.gradle/gradle.properties`.
 - [ ] C++ change/test read and understood.
 - [ ] Java implementation updated.
 - [ ] Java test added/updated for the behavior.
+- [ ] `README.md` updated (feature, usage, limitations).
+- [ ] This `SKILL.md` updated (mapping, invariants, verification).
+- [ ] Column business code still uses `ColumnNode`; `OpTensor` stays hidden.
 - [ ] `./gradlew clean test` is green.
 - [ ] Column examples run with `--add-modules jdk.incubator.vector`.
 - [ ] Examples still compile; docs/mapping updated if API changed.

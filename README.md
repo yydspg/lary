@@ -4,9 +4,12 @@ A standalone, single-project Java 25 implementation of the DAG framework and
 column engine originally developed in the C++ **lark** repository.
 
 - **DAG**: virtual threads (Project Loom) for coroutine-style blocking business
-  code, Node / Op layers, aspects, registries, KV + arrow DSL, statistics.
-- **Column engine**: feed → compute → fetch, multi-dtype tensors, Q8_0
-  quantization, global graph compilation, DSL modules, monitoring.
+  code, Node / Op layers, aspects, registries, KV + arrow DSL, statistics, and
+  optional timeout / cancellation with business fallback and repeated-timeout
+  quarantine.
+- **Column engine**: feed → compute → fetch, a business `ColumnNode` API,
+  hidden `OpTensor` execution nodes, multi-dtype tensors, Q8_0 quantization,
+  declarative DSL modules, monitoring.
 - **SIMD**: column arithmetic, scalar broadcasting, comparisons, reductions and
   unary kernels use **`jdk.incubator.vector`**.
 
@@ -65,11 +68,13 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 
 ./gradlew runSimple     # DAG Node layer
 ./gradlew runOp         # DAG Op + Aspect layer
-./gradlew runColumn     # column feed/compute/fetch + Vector API
+./gradlew runNodes      # column business ColumnNode API (hidden OpTensor)
+./gradlew runColumn     # declarative column feed/compute/fetch + Vector API
 ```
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
-`test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`.
+`test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
+`TimeoutTest` and `BusinessNodeTest`.
 
 ## DAG quick start
 
@@ -94,6 +99,34 @@ try (Executor executor = new Executor(2, 4)) {
 `Schedule.run(ctx, PoolKind.COMPUTE, work)` is the pool-hop equivalent of the
 C++ `co_await Schedule(...)`.
 
+### Timeouts, fallback and quarantine
+
+Timeouts are opt-in:
+
+```java
+try (Executor executor = new Executor(2, 4)) {
+    executor.setTimeoutPolicy(TimeoutPolicy.builder()
+            .defaultTimeout(Duration.ofMillis(500))
+            .maxConsecutiveTimeouts(3)
+            .quarantineDuration(Duration.ofMinutes(1))
+            .repeatedAction(TimeoutAction.QUARANTINE) // or ABORT_GRAPH
+            .build());
+    executor.execute(graph, ctx);
+}
+```
+
+- On timeout the worker is interrupted (configurable) and `Node.fallback(ctx,
+  error)` runs with a `DagTimeoutException`. A successful fallback sets
+  `NodeStatus.FALLBACK`; otherwise the node becomes `TIMED_OUT`.
+- A node can override `timeout()` per instance.
+- `TimeoutTracker` counts consecutive timeouts by node type. When the threshold
+  is reached the key is quarantined, and later runs skip it quickly (still
+  invoking fallback) until the quarantine expires or `timeoutTracker().reset`.
+- `TimeoutAction.ABORT_GRAPH` cancels running bodies and drains the current run;
+  inspect `executor.lastRunAborted()` / `lastAbortReason()`.
+- `graphTimeout(...)` sets a whole-run deadline.
+- `Op` has the same `timeout()` / `fallback()` hooks, handled by `OpExecutor`.
+
 ## Op-layer quick start
 
 ```java
@@ -108,7 +141,50 @@ try (OpExecutor executor = new OpExecutor()) {
 }
 ```
 
-## Column engine quick start
+## Column engine — business Node API (recommended)
+
+Business code subclasses `ColumnNode` and implements only `name()`,
+`inputs()`, `outputs()` and `execute(ColumnContext)`. The framework derives
+dependency edges from column names and compiles every business node into a
+hidden `OpTensor` execution node — business code never constructs or sees one.
+
+```java
+final class ScoreNode extends ColumnNode {
+    public String name() { return "score"; }
+    public List<String> inputs() { return List.of("user"); }
+    public List<String> outputs() { return List.of("score"); }
+
+    public void execute(ColumnContext ctx) {
+        ctx.output("score", Compute.mulScalar(ctx.input("user"), 2.0));
+    }
+}
+
+try (NodePipeline pipeline = new NodePipeline()) {
+    pipeline.addNode(new FetchUserNode())
+            .addNode(new ScoreNode());
+    pipeline.compile();
+
+    pipeline.feed(List.of("user_id"), rows);
+    pipeline.compute();
+    List<Row> scores = pipeline.fetch(List.of("score"));
+}
+```
+
+- Dependencies are implicit: if B reads a column A writes, A runs first.
+- `pipeline.dependsOn("b", "a")` adds ordering without data flow.
+- `ColumnGraph.compile()` rejects duplicate producers, unknown dependencies,
+  self-dependencies and cycles.
+- `ColumnNode.fallback(ColumnContext, Throwable)` produces a degraded result on
+  failure; the framework sets the hidden OpTensor status to `FALLBACK`.
+- `OpTensor` is the execution-layer node that actually runs the business
+  adapter; it is not part of the public business API.
+
+`Simd.summary()` reports the active Vector API species. The SIMD-backed kernels
+live in `io.lark.column.compute.VectorOps`.
+
+## Column engine — declarative Module / DSL API (advanced)
+
+The declarative API remains available for prebuilt kernel graphs:
 
 ```java
 Module feature = new Module("feature");
@@ -131,19 +207,28 @@ try (Pipeline pipeline = new Pipeline()) {
 }
 ```
 
-`Simd.summary()` reports the active Vector API species. The SIMD-backed kernels
-live in `io.lark.column.compute.VectorOps`.
-
 ## Column architecture
 
 | Package | Responsibility |
 |---|---|
 | `io.lark.column` | `DType`, `Tensor`, `TensorTable`, `TensorStore`, `Cell`, `Row`, `FeedFetch`, `Simd` |
 | `io.lark.column.compute` | `Compute`, `VectorOps` |
-| `io.lark.column.exec` | `OpSpec`, `TensorOp`, `TensorOps`, `ComputeNode`, `ComputeGraph`, `ExecutionContext` |
-| `io.lark.column.biz` | `Module`, `SubGraph`, `ColumnDsl`, `Ops`, `Pipeline`, `PipelineCompiler` |
+| `io.lark.column.exec` | `OpSpec`, `TensorOp`, `TensorOps`, `OpTensor`, `ComputeGraph`, `ExecutionContext`, `FallibleTensorOp` — hidden execution layer |
+| `io.lark.column.biz` | `ColumnNode`, `ColumnContext`, `ColumnGraph`, `NodePipeline` (business API); `Module`, `SubGraph`, `ColumnDsl`, `Ops`, `Pipeline`, `PipelineCompiler` (declarative API) |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |
+
+## Maintenance rule
+
+Every behavior or API change must be committed together with:
+
+1. an updated `README.md` (feature, usage, limitations);
+2. an updated `.opencode/skills/java-port-sync/SKILL.md` (mapping, invariants,
+   verification);
+3. tests and, when user-facing, an example.
+
+The sync skill is the operational checklist for mirroring changes from the
+upstream C++ `lark` modules.
 
 ## Licensing
 

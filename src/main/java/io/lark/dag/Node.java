@@ -3,6 +3,7 @@
 
 package io.lark.dag;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -59,11 +60,23 @@ public class Node {
     }
 
     /**
-     * Fallback / degradation hook, invoked when {@link #run} fails.
+     * Per-node deadline. Zero (the default) means "use the executor's
+     * {@link TimeoutPolicy}"; a positive value overrides it. When the deadline
+     * expires the executor interrupts the body and invokes
+     * {@link #fallback}.
+     */
+    public Duration timeout() {
+        return Duration.ZERO;
+    }
+
+    /**
+     * Fallback / degradation hook, invoked when {@link #run} fails or times
+     * out.
      *
      * @return {@code true} if a usable degraded result was produced (status
      *     becomes {@link NodeStatus#FALLBACK}); {@code false} to propagate the
-     *     failure (status becomes {@link NodeStatus#FAILED})
+     *     failure (status becomes {@link NodeStatus#FAILED} for errors or
+     *     {@link NodeStatus#TIMED_OUT} for timeouts)
      */
     public boolean fallback(IContext ctx, Throwable error) {
         return false;

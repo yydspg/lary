@@ -15,6 +15,8 @@ public enum NodeStatus {
     SUCCESS,
     /** Threw and had no (or a failed) fallback. */
     FAILED,
+    /** Exceeded its deadline and had no successful fallback. */
+    TIMED_OUT,
     /** Threw but {@link Node#fallback} produced a degraded result. */
     FALLBACK,
     /** Explicitly disabled for this run (batch-disable). */

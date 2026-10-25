@@ -11,7 +11,11 @@ public enum OpStatus {
     RUNNING,
     SUCCESS,
     SKIPPED,
-    FAILED;
+    FAILED,
+    /** Exceeded its deadline and had no successful fallback. */
+    TIMED_OUT,
+    /** Threw but {@link Op#fallback} produced a degraded result. */
+    FALLBACK;
 
     public String displayName() {
         return name().toLowerCase(Locale.ROOT);
