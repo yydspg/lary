@@ -9,9 +9,9 @@ import io.lark.column.biz.Pipeline;
 import io.lark.column.compute.Compute;
 import io.lark.column.exec.ComputeGraph;
 import io.lark.column.exec.ExecutionContext;
-import io.lark.column.exec.OpContext;
-import io.lark.column.exec.OpSpec;
-import io.lark.column.exec.TensorOps;
+import io.lark.column.op.OpContext;
+import io.lark.column.op.OpSpec;
+import io.lark.column.op.TensorOps;
 import io.lark.column.monitor.RunStats;
 import org.junit.jupiter.api.Test;
 

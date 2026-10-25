@@ -3,7 +3,7 @@
 
 package io.lark.column.biz;
 
-import io.lark.column.exec.OpSpec;
+import io.lark.column.op.OpSpec;
 
 import java.util.ArrayList;
 import java.util.List;

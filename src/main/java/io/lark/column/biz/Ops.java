@@ -4,7 +4,7 @@
 package io.lark.column.biz;
 
 import io.lark.column.DType;
-import io.lark.column.exec.OpSpec;
+import io.lark.column.op.OpSpec;
 
 import java.util.List;
 import java.util.Map;

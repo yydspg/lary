@@ -1,7 +1,7 @@
 // Copyright (c) 2024 LARK Contributors
 // SPDX-License-Identifier: MIT
 
-package io.lark.column.exec;
+package io.lark.column.op;
 
 import io.lark.column.DType;
 import io.lark.column.Tensor;
@@ -9,20 +9,23 @@ import io.lark.column.compute.Compute;
 
 import java.util.List;
 
-/** Built-in execution-layer op factory (CPU backend). */
+/** Built-in tensor-operation factory (CPU backend). */
 public final class TensorOps {
 
     private TensorOps() {
     }
 
     /**
-     * Create a {@link TensorOp} for a spec.
+     * Create an {@link OpTensor} for a spec.
      *
      * @throws IllegalArgumentException on an unknown type or missing attr/input
      */
-    public static TensorOp create(OpSpec spec) {
+    public static OpTensor create(OpSpec spec) {
         return switch (spec.type()) {
-            case "add", "sub", "mul", "div" -> new BinaryArithOp(spec);
+            case "add" -> new AddTensor(spec.inputs(), spec.outputs());
+            case "sub" -> new SubTensor(spec.inputs(), spec.outputs());
+            case "mul" -> new MultiTensor(spec.inputs(), spec.outputs());
+            case "div" -> new DivTensor(spec.inputs(), spec.outputs());
             case "add_scalar", "sub_scalar", "mul_scalar", "div_scalar" ->
                     new ScalarArithOp(spec);
             case "neg", "abs", "square", "sqrt", "exp", "log" -> new UnaryOp(spec);
@@ -44,55 +47,20 @@ public final class TensorOps {
         };
     }
 
-    static TensorOp placeholder(String output) {
+    public static OpTensor placeholder(String output) {
         return new PlaceholderOp(new OpSpec("placeholder", List.of(), List.of(output)));
     }
 
-    private abstract static class BaseOp implements TensorOp {
+    private abstract static class BaseOp extends OpTensor {
         protected final String type;
         protected final List<String> inputs;
         protected final List<String> outputs;
 
         private BaseOp(OpSpec spec) {
+            super(spec.type(), spec.inputs(), spec.outputs());
             this.type = spec.type();
             this.inputs = spec.inputs();
             this.outputs = spec.outputs();
-        }
-
-        @Override
-        public String opType() {
-            return type;
-        }
-
-        @Override
-        public List<String> inputs() {
-            return inputs;
-        }
-
-        @Override
-        public List<String> outputs() {
-            return outputs;
-        }
-    }
-
-    private static final class BinaryArithOp extends BaseOp {
-        private BinaryArithOp(OpSpec spec) {
-            super(spec);
-            requireInputs(inputs, 2, type);
-        }
-
-        @Override
-        public void compute(OpContext ctx) {
-            Tensor a = ctx.input(inputs.get(0));
-            Tensor b = ctx.input(inputs.get(1));
-            Tensor result = switch (type) {
-                case "add" -> Compute.add(a, b);
-                case "sub" -> Compute.sub(a, b);
-                case "mul" -> Compute.mul(a, b);
-                case "div" -> Compute.div(a, b);
-                default -> throw new IllegalStateException("unreachable");
-            };
-            ctx.set(outputs.get(0), result);
         }
     }
 

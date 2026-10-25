@@ -4,8 +4,8 @@
 package io.lark.column.backend;
 
 import io.lark.column.DType;
-import io.lark.column.exec.OpSpec;
-import io.lark.column.exec.TensorOp;
+import io.lark.column.op.OpSpec;
+import io.lark.column.op.OpTensor;
 
 /** Pluggable compute backend. */
 public interface Backend {
@@ -14,5 +14,5 @@ public interface Backend {
 
     boolean supports(DType dtype);
 
-    TensorOp createOp(OpSpec spec);
+    OpTensor createOp(OpSpec spec);
 }

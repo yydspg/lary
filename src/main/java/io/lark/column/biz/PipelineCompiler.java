@@ -5,7 +5,7 @@ package io.lark.column.biz;
 
 import io.lark.column.backend.Backend;
 import io.lark.column.exec.ComputeGraph;
-import io.lark.column.exec.OpSpec;
+import io.lark.column.op.OpSpec;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;

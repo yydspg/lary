@@ -3,43 +3,24 @@
 
 package io.lark.column.biz;
 
-import io.lark.column.exec.FallibleTensorOp;
-import io.lark.column.exec.OpContext;
-import io.lark.column.exec.TensorOp;
+import io.lark.column.op.FallibleOpTensor;
+import io.lark.column.op.OpContext;
+import io.lark.column.op.OpTensor;
 
-import java.util.List;
 import java.util.Objects;
 
-/** Hidden adapter: business {@link ColumnNode} → execution {@code OpTensor}. */
-final class BusinessNodeOp implements FallibleTensorOp {
+/** Hidden adapter: business {@link ColumnNode} → tensor operation. */
+final class BusinessNodeOp extends OpTensor implements FallibleOpTensor {
 
     private final ColumnNode node;
-    private final List<String> inputs;
-    private final List<String> outputs;
 
     BusinessNodeOp(ColumnNode node) {
+        super("business", node.inputs(), node.outputs());
         this.node = Objects.requireNonNull(node, "node");
-        this.inputs = List.copyOf(node.inputs());
-        this.outputs = List.copyOf(node.outputs());
     }
 
     ColumnNode node() {
         return node;
-    }
-
-    @Override
-    public String opType() {
-        return "business";
-    }
-
-    @Override
-    public List<String> inputs() {
-        return inputs;
-    }
-
-    @Override
-    public List<String> outputs() {
-        return outputs;
     }
 
     @Override

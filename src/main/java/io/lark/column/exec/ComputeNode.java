@@ -3,6 +3,8 @@
 
 package io.lark.column.exec;
 
+import io.lark.column.op.OpTensor;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -10,10 +12,16 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * Execution-layer node. Binds exactly one {@link TensorOp}, plus framework
- * wiring (id, module, dependency edges) and per-run state.
+ * Execution-layer node. Wraps exactly one tensor operation
+ * ({@link io.lark.column.op.OpTensor}) together with graph wiring (id, module,
+ * dependency edges) and per-run state.
+ *
+ * <p>This is deliberately not the tensor operation itself: tensor ops live in
+ * {@code io.lark.column.op} (for example
+ * {@code FloatAddTensor}/{@code FloatMultiTensor}); this node only schedules
+ * them.
  */
-public final class OpTensor {
+public final class ComputeNode {
 
     public enum Status {
         PENDING, SUCCESS, FAILED, FALLBACK
@@ -21,14 +29,14 @@ public final class OpTensor {
 
     private final String id;
     private final String module;
-    private final TensorOp op;
-    private final List<OpTensor> dependencies = new ArrayList<>();
+    private final OpTensor op;
+    private final List<ComputeNode> dependencies = new ArrayList<>();
     private final AtomicReference<Status> status = new AtomicReference<>(Status.PENDING);
     private volatile CompletableFuture<Void> doneEvent = new CompletableFuture<>();
     private volatile long elapsedNanos;
     private volatile Throwable error;
 
-    public OpTensor(String id, String module, TensorOp op) {
+    public ComputeNode(String id, String module, OpTensor op) {
         this.id = Objects.requireNonNull(id, "id");
         this.module = Objects.requireNonNull(module, "module");
         this.op = Objects.requireNonNull(op, "op");
@@ -42,15 +50,15 @@ public final class OpTensor {
         return module;
     }
 
-    public TensorOp op() {
+    public OpTensor op() {
         return op;
     }
 
-    public void addDependency(OpTensor dependency) {
+    public void addDependency(ComputeNode dependency) {
         dependencies.add(Objects.requireNonNull(dependency, "dependency"));
     }
 
-    public List<OpTensor> dependencies() {
+    public List<ComputeNode> dependencies() {
         return List.copyOf(dependencies);
     }
 
@@ -58,14 +66,14 @@ public final class OpTensor {
      * Rewire every edge pointing at {@code from} to {@code to} (used when a
      * placeholder is replaced by the real producer); de-duplicates.
      */
-    public void replaceDependency(OpTensor from, OpTensor to) {
+    public void replaceDependency(ComputeNode from, ComputeNode to) {
         for (int i = 0; i < dependencies.size(); i++) {
             if (dependencies.get(i) == from) {
                 dependencies.set(i, to);
             }
         }
-        List<OpTensor> unique = new ArrayList<>();
-        for (OpTensor dependency : dependencies) {
+        List<ComputeNode> unique = new ArrayList<>();
+        for (ComputeNode dependency : dependencies) {
             if (!unique.contains(dependency)) {
                 unique.add(dependency);
             }

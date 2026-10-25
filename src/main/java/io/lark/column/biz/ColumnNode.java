@@ -12,7 +12,7 @@ import java.util.List;
  * <p>Business code subclasses this and implements only {@link #name()},
  * {@link #inputs()}, {@link #outputs()} and {@link #execute(ColumnContext)}.
  * The framework compiles each business node into a hidden
- * {@code io.lark.column.exec.OpTensor} execution node, derives dependency
+ * {@code io.lark.column.exec.ComputeNode} execution node, derives dependency
  * edges from column names and runs the resulting graph.
  *
  * <p>Inputs that are produced by another registered business node create an

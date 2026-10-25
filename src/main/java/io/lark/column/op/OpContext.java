@@ -1,14 +1,14 @@
 // Copyright (c) 2024 LARK Contributors
 // SPDX-License-Identifier: MIT
 
-package io.lark.column.exec;
+package io.lark.column.op;
 
 import io.lark.column.Tensor;
 import io.lark.column.TensorStore;
 
 import java.util.Objects;
 
-/** Read/write view handed to a {@link TensorOp} during compute. */
+/** Read/write view handed to a {@link OpTensor} during compute. */
 public final class OpContext {
 
     private final TensorStore store;

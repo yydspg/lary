@@ -8,10 +8,10 @@ import io.lark.column.backend.BackendFactory;
 import io.lark.column.biz.ColumnDsl;
 import io.lark.column.exec.ComputeGraph;
 import io.lark.column.exec.ExecutionContext;
-import io.lark.column.exec.OpContext;
-import io.lark.column.exec.OpSpec;
-import io.lark.column.exec.TensorOp;
-import io.lark.column.exec.TensorOps;
+import io.lark.column.op.OpContext;
+import io.lark.column.op.OpSpec;
+import io.lark.column.op.OpTensor;
+import io.lark.column.op.TensorOps;
 import io.lark.column.monitor.ColumnStatsCollector;
 import org.junit.jupiter.api.Test;
 
@@ -29,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ExecutionGraphTest {
 
     private static Tensor run(TensorStore store, OpSpec spec) {
-        TensorOp op = TensorOps.create(spec);
+        OpTensor op = TensorOps.create(spec);
         op.compute(new OpContext(store));
         return store.get(spec.outputs().get(0));
     }
@@ -107,7 +107,7 @@ class ExecutionGraphTest {
         assertTrue(backend.supports(DType.INT32));
         assertTrue(backend.supports(DType.Q8_0));
 
-        TensorOp op = backend.createOp(new OpSpec("add",
+        OpTensor op = backend.createOp(new OpSpec("add",
                 List.of("a", "b"), List.of("c")));
         assertEquals("add", op.opType());
 

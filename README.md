@@ -8,7 +8,8 @@ column engine originally developed in the C++ **lark** repository.
   optional timeout / cancellation with business fallback and repeated-timeout
   quarantine.
 - **Column engine**: feed → compute → fetch, a business `ColumnNode` API,
-  hidden `OpTensor` execution nodes, multi-dtype tensors, Q8_0 quantization,
+  typed tensor operations (`OpTensor`, `FloatAddTensor`, `FloatMultiTensor`, …),
+  hidden `ComputeNode` execution nodes, multi-dtype tensors, Q8_0 quantization,
   declarative DSL modules, monitoring.
 - **SIMD**: column arithmetic, scalar broadcasting, comparisons, reductions and
   unary kernels use **`jdk.incubator.vector`**.
@@ -24,7 +25,7 @@ lary/
 ├─ src/main/java/io/lark/
 │  ├─ metric/      Event / Monitor abstraction
 │  ├─ dag/         DAG framework (Node + Op layers)
-│  ├─ column/      column engine (data, compute, exec, biz, backend, monitor)
+│  ├─ column/      column engine (data, compute, op, exec, biz, backend, monitor)
 │  └─ examples/    runnable pipelines
 └─ src/test/java/io/lark/
    ├─ metric/
@@ -68,13 +69,13 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 
 ./gradlew runSimple     # DAG Node layer
 ./gradlew runOp         # DAG Op + Aspect layer
-./gradlew runNodes      # column business ColumnNode API (hidden OpTensor)
+./gradlew runNodes      # column business ColumnNode API (hidden ComputeNode)
 ./gradlew runColumn     # declarative column feed/compute/fetch + Vector API
 ```
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
-`TimeoutTest` and `BusinessNodeTest`.
+`TimeoutTest`, `BusinessNodeTest` and `OpTensorTest`.
 
 ## DAG quick start
 
@@ -146,7 +147,8 @@ try (OpExecutor executor = new OpExecutor()) {
 Business code subclasses `ColumnNode` and implements only `name()`,
 `inputs()`, `outputs()` and `execute(ColumnContext)`. The framework derives
 dependency edges from column names and compiles every business node into a
-hidden `OpTensor` execution node — business code never constructs or sees one.
+hidden `ComputeNode` execution node — business code never constructs or sees
+one.
 
 ```java
 final class ScoreNode extends ColumnNode {
@@ -175,9 +177,32 @@ try (NodePipeline pipeline = new NodePipeline()) {
 - `ColumnGraph.compile()` rejects duplicate producers, unknown dependencies,
   self-dependencies and cycles.
 - `ColumnNode.fallback(ColumnContext, Throwable)` produces a degraded result on
-  failure; the framework sets the hidden OpTensor status to `FALLBACK`.
-- `OpTensor` is the execution-layer node that actually runs the business
-  adapter; it is not part of the public business API.
+  failure; the framework sets the hidden ComputeNode status to `FALLBACK`.
+- `ComputeNode` is the execution-layer node that actually runs the business
+  adapter. `OpTensor` is the typed tensor-operation layer it wraps — e.g.
+  `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`.
+  Neither is part of the public business API.
+
+### Typed tensor operations
+
+The operation layer is deliberately separate from execution nodes:
+
+```java
+TensorStore store = new TensorStore();
+store.set("a", Tensor.fromFloats(1, 2, 3));
+store.set("b", Tensor.fromFloats(10, 20, 30));
+
+OpTensor add = new FloatAddTensor(List.of("a", "b"), List.of("sum"));
+add.compute(new OpContext(store));       // dtype stays FLOAT32
+
+OpTensor mul = new FloatMultiTensor(List.of("a", "b"), List.of("product"));
+mul.compute(new OpContext(store));
+```
+
+`TensorOps.create(spec)` uses runtime dtype promotion to choose the typed
+implementation (`AddTensor` → `IntAddTensor` / `LongAddTensor` /
+`FloatAddTensor` / `DoubleAddTensor`); `MultiTensor`, `SubTensor` and
+`DivTensor` follow the same pattern.
 
 `Simd.summary()` reports the active Vector API species. The SIMD-backed kernels
 live in `io.lark.column.compute.VectorOps`.
@@ -213,7 +238,8 @@ try (Pipeline pipeline = new Pipeline()) {
 |---|---|
 | `io.lark.column` | `DType`, `Tensor`, `TensorTable`, `TensorStore`, `Cell`, `Row`, `FeedFetch`, `Simd` |
 | `io.lark.column.compute` | `Compute`, `VectorOps` |
-| `io.lark.column.exec` | `OpSpec`, `TensorOp`, `TensorOps`, `OpTensor`, `ComputeGraph`, `ExecutionContext`, `FallibleTensorOp` — hidden execution layer |
+| `io.lark.column.op` | `OpTensor`, `OpContext`, `OpSpec`, `TensorOps`; typed ops: `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`, `LongMultiTensor`, … |
+| `io.lark.column.exec` | `ComputeNode`, `ComputeGraph`, `ExecutionContext` — hidden execution layer |
 | `io.lark.column.biz` | `ColumnNode`, `ColumnContext`, `ColumnGraph`, `NodePipeline` (business API); `Module`, `SubGraph`, `ColumnDsl`, `Ops`, `Pipeline`, `PipelineCompiler` (declarative API) |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |

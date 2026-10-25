@@ -69,10 +69,11 @@ test. Tests are the behavioral contract.
 | `feed_fetch.h`, `src/feed_fetch.cpp` | `Cell.java`, `Row.java`, `FeedFetch.java` |
 | `column/include/column/compute/*`, `src/compute/*` | `compute/Compute.java`, `compute/VectorOps.java` |
 | `compute/simd.h` | `Simd.java` + `compute/VectorOps.java` (`jdk.incubator.vector`) |
-| `exec/tensor_op.h`, `exec/ops*.cpp` | `exec/TensorOp.java`, `exec/TensorOps.java`, `exec/OpSpec.java`, `exec/OpContext.java`, `exec/FallibleTensorOp.java` |
-| `exec/exec_node.h`, `exec_node.cpp` | `exec/OpTensor.java` (hidden execution node) |
-| `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
-| `context/execution_context.h` | `exec/ExecutionContext.java` |
+| `exec/tensor_op.h`, `exec/ops*.cpp` | `src/main/java/io/lark/column/op/OpTensor.java`, `TensorOps.java`, `OpSpec.java`, `OpContext.java`, `FallibleOpTensor.java` |
+| Typed tensor ops (Java-first) | `src/main/java/io/lark/column/op/FloatAddTensor.java`, `FloatMultiTensor.java`, `FloatSubTensor.java`, `DoubleAddTensor.java`, `IntAddTensor.java`, `LongMultiTensor.java`, … |
+| `exec/exec_node.h`, `exec_node.cpp` | `src/main/java/io/lark/column/exec/ComputeNode.java` (hidden execution node) |
+| `exec/compute_graph.h`, `compute_graph.cpp` | `src/main/java/io/lark/column/exec/ComputeGraph.java` |
+| `context/execution_context.h` | `src/main/java/io/lark/column/exec/ExecutionContext.java` |
 | Business Node layer (Java-first) | `biz/ColumnNode.java`, `biz/ColumnContext.java`, `biz/ColumnGraph.java`, `biz/NodePipeline.java`, `biz/BusinessNodeOp.java` |
 | `biz/module.h`, `module.cpp` | `biz/Module.java`, `biz/SubGraph.java` |
 | `biz/dsl.h`, `dsl.cpp` | `biz/ColumnDsl.java` |
@@ -82,6 +83,8 @@ test. Tests are the behavioral contract.
 | `backend/backend.h`, `backend.cpp` | `backend/Backend.java`, `CpuBackend.java`, `BackendFactory.java` |
 | `monitor.h`, `monitor.cpp` | `monitor/RunStats.java`, `monitor/ColumnStatsCollector.java` |
 | `tests/test_column.cpp` | `TensorComputeTest.java` |
+| Tensor-op coverage | `OpTensorTest.java` |
+| Business Node coverage | `BusinessNodeTest.java` |
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java`, `PipelineTest.java` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
@@ -145,10 +148,15 @@ test. Tests are the behavioral contract.
   not poison dependents; placeholder replacement for forward references;
   duplicate column producer / duplicate write / cycle rejection.
 - Business API: `ColumnNode` + `ColumnContext` only. Each business node is
-  compiled to a hidden `OpTensor`; business code must not import
-  `io.lark.column.exec`. Dependencies are derived from declared input/output
-  columns; `ColumnGraph.dependsOn` adds ordering-only edges.
-- `OpTensor` status: PENDING, SUCCESS, FAILED, FALLBACK. A business
+  compiled to a hidden `exec.ComputeNode`; business code must not import
+  `io.lark.column.exec` or `io.lark.column.op`. Dependencies are derived from
+  declared input/output columns; `ColumnGraph.dependsOn` adds ordering-only
+  edges.
+- Tensor ops live in `io.lark.column.op`: `OpTensor` is the typed operation
+  abstraction (e.g. `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`);
+  `exec.ComputeNode` wraps an `OpTensor` and handles scheduling/status. Do not
+  name execution nodes `OpTensor`.
+- `ComputeNode` status: PENDING, SUCCESS, FAILED, FALLBACK. A business
   `ColumnNode.fallback` success yields FALLBACK; the failure is still visible
   through the hidden node's error.
 - `ColumnGraph.compile` rejects duplicate node names, duplicate column
@@ -185,7 +193,8 @@ in `~/.gradle/gradle.properties`.
 - [ ] Java test added/updated for the behavior.
 - [ ] `README.md` updated (feature, usage, limitations).
 - [ ] This `SKILL.md` updated (mapping, invariants, verification).
-- [ ] Column business code still uses `ColumnNode`; `OpTensor` stays hidden.
+- [ ] Column business code still uses `ColumnNode`; execution (`ComputeNode`)
+      and tensor ops (`OpTensor`) stay out of the business API.
 - [ ] `./gradlew clean test` is green.
 - [ ] Column examples run with `--add-modules jdk.incubator.vector`.
 - [ ] Examples still compile; docs/mapping updated if API changed.
