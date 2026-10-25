@@ -37,6 +37,10 @@ Everything is one Gradle project — no subprojects.
 - Gradle wrapper is checked in (Gradle 9.8.2)
 - Column kernels require the incubator Vector API. The build adds
   `--add-modules jdk.incubator.vector` for compilation, tests and JavaExec runs.
+  The JVM prints `WARNING: Using incubator modules: jdk.incubator.vector` once
+  at startup and offers no flag to disable it. Gradle `JavaExec` output is
+  filtered for this line; tests hide raw test-process streams (results remain in
+  the reports). Direct `java` launches will still print it.
 
 If JDK 25 is not your default:
 

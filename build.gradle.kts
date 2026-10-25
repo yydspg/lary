@@ -3,6 +3,48 @@ plugins {
     application
 }
 
+/**
+ * The JVM itself prints "WARNING: Using incubator modules: ..." when an
+ * incubator module is resolved, and there is no JVM flag to disable it.
+ * Filter that exact stderr line for Gradle-launched examples.
+ */
+class IncubatorWarningFilter(
+    private val delegate: java.io.OutputStream,
+    private val blocked: String
+) : java.io.OutputStream() {
+    private val line = StringBuilder()
+
+    override fun write(b: Int) {
+        if (b == 10) {
+            emitLine()
+        } else {
+            line.append(b.toChar())
+        }
+    }
+
+    override fun flush() {
+        if (line.isNotEmpty()) {
+            emitLine()
+        }
+        delegate.flush()
+    }
+
+    override fun close() {
+        flush()
+    }
+
+    private fun emitLine() {
+        val text = line.toString()
+        if (!text.contains(blocked)) {
+            delegate.write((text + "\n").toByteArray(Charsets.UTF_8))
+            delegate.flush()
+        }
+        line.setLength(0)
+    }
+}
+
+val incubatorWarning = "WARNING: Using incubator modules: jdk.incubator.vector"
+
 group = "io.lark"
 version = "0.2.0"
 
@@ -32,6 +74,7 @@ tasks.withType<JavaCompile>().configureEach {
     options.encoding = "UTF-8"
     options.compilerArgs.addAll(listOf(
         "-Xlint:all",
+        "-Xlint:-incubating",
         "-parameters",
         "--add-modules", "jdk.incubator.vector"
     ))
@@ -39,6 +82,7 @@ tasks.withType<JavaCompile>().configureEach {
 
 tasks.withType<JavaExec>().configureEach {
     jvmArgs("--add-modules", "jdk.incubator.vector")
+    errorOutput = IncubatorWarningFilter(System.err, incubatorWarning)
 }
 
 tasks.withType<Test>().configureEach {
@@ -46,7 +90,9 @@ tasks.withType<Test>().configureEach {
     jvmArgs("--add-modules", "jdk.incubator.vector")
     testLogging {
         events("passed", "failed", "skipped")
-        showStandardStreams = true
+        // The incubator warning is emitted by the test JVM itself. Hide raw
+        // test-process streams; failures still show in reports and events.
+        showStandardStreams = false
     }
 }
 
