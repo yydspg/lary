@@ -6,59 +6,67 @@ package io.lark.examples;
 import io.lark.column.Cell;
 import io.lark.column.Row;
 import io.lark.column.Simd;
+import io.lark.column.Tensor;
 import io.lark.column.biz.ColumnContext;
 import io.lark.column.biz.ColumnModule;
-import io.lark.column.biz.ColumnNode;
 import io.lark.column.biz.ColumnPipeline;
-import io.lark.column.biz.ColumnStream;
 import io.lark.column.biz.FeedStream;
 import io.lark.column.biz.FetchStream;
+import io.lark.column.biz.LongColumn;
+import io.lark.column.biz.UnaryNode;
 import io.lark.column.compute.Compute;
 
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- * Minimal business-node quick start: node ids are generated, streams are
- * passed by reference, and the module exposes fetch outputs.
+ * Minimal typed business-node quick start. Column classes define stream names
+ * and dtypes; node inputs are typed fields and outputs are fetch streams.
  *
- * <p>Run with {@code ./gradlew runNodes}.
+ * <p>Run with {@code ./gradlew :examples:runNodes}.
  */
 public final class BusinessNodeExample {
 
-    static final class FetchNode extends ColumnNode {
-        final ColumnStream out = output("user");
+    static final class UserId extends LongColumn {
+    }
 
-        FetchNode(ColumnStream userId) {
-            super(userId);
+    static final class User extends LongColumn {
+    }
+
+    static final class Score extends LongColumn {
+    }
+
+    static final class FetchNode extends UnaryNode<UserId, User> {
+
+        FetchNode(UserId userId) {
+            super(userId, User.class);
         }
 
         @Override
-        public void compute(ColumnContext ctx) {
-            ctx.write(out, Compute.addScalar(ctx.read(feeds()[0]), 100.0));
+        protected Tensor compute(ColumnContext ctx, Tensor userId) {
+            return Compute.addScalar(userId, 100.0);
         }
     }
 
-    static final class ScoreNode extends ColumnNode {
-        final ColumnStream out = output("score");
+    static final class ScoreNode extends UnaryNode<User, Score> {
 
-        ScoreNode(ColumnStream user) {
-            super(user);
+        ScoreNode(User user) {
+            super(user, Score.class);
         }
 
         @Override
-        public void compute(ColumnContext ctx) {
-            ctx.write(out, Compute.mulScalar(ctx.read(feeds()[0]), 2.0));
+        protected Tensor compute(ColumnContext ctx, Tensor user) {
+            return Compute.mulScalar(user, 2.0);
         }
     }
 
     static final class FeatureModule extends ColumnModule {
-        final ColumnStream userId = input("user_id");
+        final UserId userId = input(UserId.class);
         final FetchNode fetch = add(new FetchNode(userId));
-        final ScoreNode score = add(new ScoreNode(fetch.out));
+        final ScoreNode score = add(new ScoreNode(fetch.out()));
 
         {
-            output(score.out);
+            output(score.out());
         }
     }
 
@@ -80,7 +88,7 @@ public final class BusinessNodeExample {
             pipeline.feed(FeedStream.of(feature.userId, rows));
             pipeline.compute();
 
-            List<Row> scores = pipeline.fetch(FetchStream.of(feature.score.out));
+            List<Row> scores = pipeline.fetch(FetchStream.of(feature.score.out()));
             System.out.println("scores = " + scores.stream()
                     .map(row -> row.get(0).asLong()).toList());
             System.out.print(pipeline.stats().summary());

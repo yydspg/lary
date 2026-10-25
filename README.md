@@ -1,14 +1,16 @@
 # lary — Java 25 DAG + column engine
 
-A standalone, single-project Java 25 implementation of the DAG framework and
-column engine originally developed in the C++ **lark** repository.
+A standalone Java 25 implementation of the DAG framework and column engine
+originally developed in the C++ **lark** repository. The library and the demo
+applications are separate Gradle modules.
 
 - **DAG**: virtual threads (Project Loom) for coroutine-style blocking business
   code, Node / Op layers, aspects, registries, KV + arrow DSL, statistics, and
   optional timeout / cancellation with business fallback and repeated-timeout
   quarantine.
-- **Column engine**: feed → compute → fetch, a business `ColumnNode` /
-  `ColumnModule` / `ColumnStream` API, typed tensor operations (`OpTensor`,
+- **Column engine**: feed → compute → fetch, class-based typed columns
+  (`LongColumn`, `DoubleColumn`, …), `ColumnNode` / `ColumnModule` /
+  `ColumnStream` business API, typed tensor operations (`OpTensor`,
   `FloatAddTensor`, `FloatMultiTensor`, …), hidden `ComputeNode` execution nodes,
   multi-dtype tensors, Q8_0 quantization and monitoring.
 - **SIMD**: column arithmetic, scalar broadcasting, comparisons, reductions and
@@ -20,20 +22,34 @@ Package names remain `io.lark.*`; the project/repository is `lary`.
 
 ```text
 lary/
-├─ build.gradle.kts
-├─ settings.gradle.kts
+├─ build.gradle.kts              # library
+├─ settings.gradle.kts           # includes :examples
 ├─ src/main/java/io/lark/
 │  ├─ metric/      Event / Monitor abstraction
 │  ├─ dag/         DAG framework (Node + Op layers)
-│  ├─ column/      column engine (data, compute, op, exec, biz, backend, monitor)
-│  └─ examples/    runnable pipelines
-└─ src/test/java/io/lark/
-   ├─ metric/
-   ├─ dag/
-   └─ column/
+│  └─ column/      column engine (data, compute, op, exec, biz, backend, monitor)
+├─ src/test/java/io/lark/
+│  ├─ metric/
+│  ├─ dag/
+│  └─ column/
+└─ examples/                     # separate Gradle application module
+   ├─ build.gradle.kts
+   └─ src/main/java/io/lark/examples/
+      ├─ LaryDemo.java           # compact end-to-end tour
+      ├─ SimplePipeline.java
+      ├─ OpPipeline.java
+      ├─ BusinessNodeExample.java
+      └─ risk/                   # realistic multi-class demo project
+         ├─ RiskEngineDemo.java
+         ├─ RiskResultPrinter.java
+         ├─ columns/             # typed ColumnStream subclasses
+         ├─ node/                # one file per business node
+         ├─ module/              # one file per module
+         └─ data/                # transaction repository
 ```
 
-Everything is one Gradle project — no subprojects.
+The root project is the reusable library; `:examples` is an independent
+application module that depends on it.
 
 ## Requirements
 
@@ -64,32 +80,33 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 ## Build / test / run
 
 ```sh
-./gradlew clean test
-./gradlew build
+./gradlew clean test :examples:build
+./gradlew build :examples:build
 
-./gradlew runDemo      # end-to-end layered demo (recommended)
-./gradlew runSimple    # DAG Node layer
-./gradlew runOp        # DAG Op + Aspect layer
-./gradlew runNodes     # column module / stream business API
-./gradlew runRisk      # realistic payment risk-engine example
+./gradlew :examples:runDemo      # end-to-end layered demo (recommended)
+./gradlew :examples:runSimple    # DAG Node layer
+./gradlew :examples:runOp        # DAG Op + Aspect layer
+./gradlew :examples:runNodes     # typed column-node quick start
+./gradlew :examples:runRisk      # realistic payment risk-engine project
 ```
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `test_op_dsl.cpp`, `test_column.cpp`, `test_engine.cpp`, plus Java-specific
 `TimeoutTest`, `ModulePipelineTest` and `OpTensorTest`. `DagTest` also covers
-wide/deep ready-queue scheduling and array/varargs node definitions.
+wide/deep ready-queue scheduling and array/varargs node definitions. The
+`:examples` module has `RiskEngineTest` for the realistic risk graph.
 
 ## End-to-end demo
 
 ```sh
-./gradlew runDemo
+./gradlew :examples:runDemo
 ```
 
 `LaryDemo` demonstrates the complete layering:
 
-1. **Business layer** — `ColumnNode` / `ColumnModule` / `ColumnStream` graph
-   with constructor-injected streams, `FeedStream`/`FetchStream`, weight and
-   unit-conversion nodes, `@ColumnComponent` module scanning, a deliberate
+1. **Business layer** — typed `ColumnNode` / `ColumnModule` / `ColumnStream`
+   graph with constructor-injected streams, `FeedStream`/`FetchStream`, weight
+   and unit-conversion nodes, `@ColumnComponent` module scanning, a deliberate
    failure + fallback, aggregate outputs and run statistics.
 2. **Graph pruning / cycle detection** — compile only the branch needed for
    `score`, then detect a cyclic module graph.
@@ -103,7 +120,7 @@ Sample output:
 ```text
 SIMD: JDK Vector API (jdk.incubator.vector) {double=2, float=4, int=4, long=2}
 
-=== 1. Business module / stream pipeline ===
+=== 1. Business module / typed stream pipeline ===
 user     = [110, 120, 130, 140, 150, 160]
 score    = [220, 240, 260, 280, 300, 320]
 mask     = [0, 0, 1, 1, 1, 1]
@@ -136,10 +153,23 @@ elapsed   = 87ms
 ## Realistic example — payment risk engine
 
 ```sh
-./gradlew runRisk
+./gradlew :examples:runRisk
 ```
 
-`RiskEngineExample` models a production-shaped pipeline with three modules:
+The risk demo lives in the independent `:examples` module and is split like a
+normal Java service, not packed into one demo class:
+
+```text
+io.lark.examples.risk
+├─ RiskEngineDemo.java        # main / composition
+├─ RiskResultPrinter.java     # console presentation
+├─ columns/                   # one class per typed column
+├─ node/                      # one class per business node
+├─ module/                    # one class per module
+└─ data/                      # transaction repository
+```
+
+The graph has three modules:
 
 1. **TransactionFeatureModule** — raw transactions → `amount_yuan`,
    `txn_velocity`, `chargeback_ratio`, `weighted_amount` and `merchant_tier`.
@@ -150,8 +180,8 @@ elapsed   = 87ms
 3. **RiskReportModule** — `dependsOn(RiskScoreModule.class)`; aggregates total,
    mean, max and high-risk count.
 
-The modules are composed with constructor data wiring and class-reference
-dependencies:
+The modules are composed with constructor data wiring, typed columns and
+class-reference dependencies:
 
 ```java
 TransactionFeatureModule features = new TransactionFeatureModule();
@@ -161,16 +191,34 @@ RiskReportModule report = new RiskReportModule(risk);
 try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
     pipeline.add(features).add(risk).add(report);
     pipeline.compile();
-    pipeline.feed(FeedStream.of(new ColumnStream[]{
-            features.userId, features.amountFen, features.txnCount,
-            features.chargebackCount, features.merchantId
-    }, rows));
+    pipeline.feed(FeedStream.of(new ColumnStream<?>[]{
+            features.userId(), features.amountFen(), features.txnCount(),
+            features.chargebackCount(), features.merchantId()
+    }, TransactionRepository.transactions()));
     pipeline.compute();
 
     List<Row> scored = pipeline.fetch(FetchStream.of(
-            features.userId, features.amount.out, risk.score.out,
-            risk.band.level, risk.approval.out, features.tier.out));
-    System.out.println(pipeline.fetchScalar("total_risk_score"));
+            features.userId(), features.amount().out(), risk.score().out(),
+            risk.band().level(), risk.approval().out(),
+            features.merchantTier().out()));
+    System.out.println(pipeline.fetchScalar(report.summary().total()));
+}
+```
+
+A node is a small class with typed inputs and outputs; for example:
+
+```java
+public final class AmountToYuanNode
+        extends UnaryNode<AmountFen, AmountYuan> {
+
+    public AmountToYuanNode(AmountFen input) {
+        super(input, AmountYuan.class);
+    }
+
+    @Override
+    protected Tensor compute(ColumnContext ctx, Tensor amountFen) {
+        return Compute.divScalar(amountFen, 100.0);
+    }
 }
 ```
 
@@ -266,85 +314,130 @@ try (OpExecutor executor = new OpExecutor()) {
 }
 ```
 
-## Column engine — modules, nodes and streams
+## Column engine — typed modules, nodes and streams
 
-Business nodes have **no `name()` / `inputs()` / `outputs()` overrides**:
-the framework generates a unique node id, inputs are `ColumnStream` references
-passed to the constructor, and outputs are `ColumnStream` fields.
+Business code does not use string outputs or positional feed indexes. Columns
+are classes, nodes have typed input/output fields, and modules expose typed
+fetch streams.
+
+### Define columns as classes
 
 ```java
-final class ScoreNode extends ColumnNode {
-    final ColumnStream out = output("score");
+public final class AmountFen extends LongColumn {
+}
 
-    ScoreNode(ColumnStream user) {
-        super(user);
+public final class AmountYuan extends DoubleColumn {
+}
+
+// Physical / external names can be explicit; otherwise the class name is
+// converted to snake_case (AmountYuan → amount_yuan).
+public final class TxnCount24h extends LongColumn {
+    public TxnCount24h() {
+        super("txn_count_24h");
+    }
+}
+```
+
+`LongColumn`, `DoubleColumn`, `FloatColumn`, `IntColumn` and `BoolColumn` carry
+the tensor dtype. `ColumnContext` validates the dtype on every read/write, and
+typed feed columns are coerced to their declared dtype.
+
+Classes are preferred over a global column enum: a node constructor can require
+`AmountFen` specifically, so passing the wrong column is a compile error. An
+enum can still be used as a schema factory that returns these classes if a
+project prefers that style.
+
+### Nodes define the business logic
+
+```java
+public final class AmountToYuanNode
+        extends UnaryNode<AmountFen, AmountYuan> {
+
+    public AmountToYuanNode(AmountFen input) {
+        super(input, AmountYuan.class);
+    }
+
+    @Override
+    protected Tensor compute(ColumnContext ctx, Tensor amountFen) {
+        return Compute.divScalar(amountFen, 100.0);
+    }
+}
+```
+
+Use `UnaryNode<I, O>` and `BinaryNode<A, B, O>` for the common shapes, or
+`SourceNode<O>` for a source. Custom nodes extend `ColumnNode` and keep typed
+fields; outputs are declared with `fetch(SomeColumn.class)`:
+
+```java
+public final class RiskBandNode extends ColumnNode {
+    private final RiskScore score;
+    private final RiskLevel level = fetch(RiskLevel.class);
+    private final HighMask highMask = fetch(HighMask.class);
+
+    public RiskBandNode(RiskScore score) {
+        super(score);
+        this.score = score;
     }
 
     public void compute(ColumnContext ctx) {
-        ctx.write(out, Compute.mulScalar(ctx.read(feeds()[0]), 2.0));
+        Tensor scores = ctx.read(score); // named, typed — no feeds()[0]
+        // ...
     }
 }
 ```
 
-A `ColumnModule` groups nodes and exposes its fetch outputs:
+### Modules compose typed columns
 
 ```java
-@ColumnComponent
-final class FeatureModule extends ColumnModule {
-    final ColumnStream userId = input("user_id");
-    final FetchUserNode fetch = add(new FetchUserNode(userId));
-    final ScoreNode score = add(new ScoreNode(fetch.out));
+public final class TransactionFeatureModule extends ColumnModule {
+    private final AmountFen amountFen = input(AmountFen.class);
+    private final AmountToYuanNode amount = add(new AmountToYuanNode(amountFen));
+    private final ScaleNode<WeightedAmount> weighted =
+            add(new ScaleNode<>(amount.out(), WeightedAmount.class, 0.4));
 
-    {
-        output(fetch.out, score.out);
+    public TransactionFeatureModule() {
+        output(amount.out(), weighted.out());
     }
+
+    public AmountToYuanNode amount() { return amount; }
 }
 ```
 
-Wire and run the module:
+- Node ids are generated by the framework.
+- Dependencies are **class/stream references** (`new AmountToYuanNode(amountFen)`),
+  never node names.
+- Modules depend on modules with `dependsOn(OtherModule.class)`; cycles are
+  rejected.
+- `ColumnNode.feeds()` / `fetches()` and module `nodes()`, `inputs()`,
+  `outputs()`, `dependencies()` are arrays because their arity is fixed.
+
+### Compile, feed, compute, fetch
 
 ```java
-FeatureModule feature = new FeatureModule();
+TransactionFeatureModule features = new TransactionFeatureModule();
 try (ColumnPipeline pipeline = new ColumnPipeline()) {
-    pipeline.add(feature);                 // or pipeline.scan("com.example")
+    pipeline.add(features);             // or pipeline.scan("com.example")
     pipeline.compile();
 
-    pipeline.feed(FeedStream.of(feature.userId, rows));
+    pipeline.feed(FeedStream.of(features.amountFen(), rows));
     pipeline.compute();
 
-    List<Row> out = pipeline.fetch(FetchStream.of(feature.score.out));
+    List<Row> out = pipeline.fetch(FetchStream.of(features.amount().out()));
+    double first = pipeline.fetchScalar(features.amount().out());
 }
 ```
 
-- Dependencies are **class/stream references** (`new ScoreNode(fetch.out)`),
-  never node names.
-- `ColumnNode.feeds()` / `fetches()` return arrays. `ColumnModule.nodes()`,
-  `inputs()`, `outputs()` and `dependencies()` also return arrays; arity is
-  fixed after construction.
-- A module depends on another module with
-  `dependsOn(OtherModule.class)`; module cycles are rejected.
-- `ColumnPipeline` builds the hidden `ComputeNode` graph internally; the
-  business API never imports execution or tensor-op internals.
-
-### Feed / fetch streams
-
-`FeedStream` is the row-data input boundary; `FetchStream` is the output
-boundary. Both carry `ColumnStream[]`:
-
-```java
-pipeline.feed(FeedStream.of(feature.userId, rows));
-List<Row> out = pipeline.fetch(FetchStream.of(feature.score.out));
-pipeline.run(FeedStream.of(feature.userId, rows),
-             FetchStream.of(feature.score.out));
-```
-
-Missing required feed columns are rejected before execution.
+`FeedStream` / `FetchStream` carry `ColumnStream<?>[]`, so no names are needed
+at the API boundary. Missing required feed columns are rejected before
+execution.
 
 ### Built-in business transforms
 
 ```java
-UnitConvertNode li = new UnitConvertNode(fetch.out, "amount_li", 10.0); // fen → li
-ScaleNode weighted = new ScaleNode(li.out, "weighted", 0.3);           // weight
+UnitConvertNode<AmountLi> li =
+        new UnitConvertNode<>(amount.out(), AmountLi.class, 10.0); // fen → li
+ScaleNode<WeightedAmount> weighted =
+        new ScaleNode<>(li.out(), WeightedAmount.class, 0.3);      // weight
 ```
 
 ### Spring-style modules
@@ -354,7 +447,7 @@ directories and jars, and needs no Spring dependency:
 
 ```java
 @ColumnComponent
-final class RiskModule extends ColumnModule { ... }
+public final class RiskModule extends ColumnModule { ... }
 
 pipeline.scan("com.example.features");
 RiskModule risk = pipeline.module(RiskModule.class);
@@ -363,16 +456,16 @@ RiskModule risk = pipeline.module(RiskModule.class);
 ### Graph pruning and cycle detection
 
 ```java
-// Keep only nodes needed for the "score" module output.
-pipeline.compile(Set.of("score"));
+// Keep only nodes needed for a typed fetch stream.
+pipeline.compile(FetchStream.of(features.amount().out()));
 
-// Or prune as part of run.
-pipeline.run(FeedStream.of(feature.userId, rows),
-             FetchStream.of(feature.score.out));
+// Type-safe forms; names are an internal detail.
+pipeline.run(FeedStream.of(features.amountFen(), rows),
+             FetchStream.of(features.amount().out()));
 ```
 
-- `compile(requiredOutputs)` keeps the transitive producers of requested
-  module outputs and drops unreachable branches.
+- `compile(FetchStream)` keeps the transitive producers of requested module
+  outputs and drops unreachable branches.
 - Module dependency cycles and node graph cycles are both detected.
 - The full graph is validated before pruning, so a cyclic unused branch still
   fails compilation.
@@ -410,7 +503,7 @@ runtime dtype promotion to choose the typed implementation (`AddTensor` →
 | `io.lark.column.compute` | `Compute`, `VectorOps` |
 | `io.lark.column.op` | `OpTensor`, `OpContext`, `OpSpec`, `TensorOps`; typed ops: `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`, `LongMultiTensor`, … |
 | `io.lark.column.exec` | `ComputeNode`, `ComputeGraph`, `ExecutionContext` — hidden execution layer |
-| `io.lark.column.biz` | `ColumnNode`, `ColumnContext`, `ColumnStream`, `ColumnModule`, `ColumnPipeline`, `FeedStream`, `FetchStream`, `ScaleNode`, `UnitConvertNode`, `ColumnComponent`, `ColumnComponentScanner` — business API |
+| `io.lark.column.biz` | typed business API: `ColumnStream<T>`, `LongColumn` / `DoubleColumn` / `FloatColumn` / `IntColumn` / `BoolColumn`, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `FeedStream`, `FetchStream`, `ScaleNode`, `UnitConvertNode`, `ColumnComponent`, `ColumnComponentScanner` |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |
 

@@ -19,7 +19,7 @@ final class BusinessNodeOp extends OpTensor implements FallibleOpTensor {
         this.node = Objects.requireNonNull(node, "node");
     }
 
-    private static String[] names(ColumnStream[] streams) {
+    private static String[] names(ColumnStream<?>[] streams) {
         String[] names = new String[streams.length];
         for (int i = 0; i < streams.length; i++) {
             names[i] = streams[i].name();

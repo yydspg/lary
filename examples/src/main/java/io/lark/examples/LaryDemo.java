@@ -8,15 +8,20 @@ import io.lark.column.Row;
 import io.lark.column.Simd;
 import io.lark.column.Tensor;
 import io.lark.column.TensorStore;
+import io.lark.column.biz.BinaryNode;
+import io.lark.column.biz.BoolColumn;
 import io.lark.column.biz.ColumnComponent;
 import io.lark.column.biz.ColumnContext;
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnNode;
 import io.lark.column.biz.ColumnPipeline;
-import io.lark.column.biz.ColumnStream;
+import io.lark.column.biz.DoubleColumn;
 import io.lark.column.biz.FeedStream;
 import io.lark.column.biz.FetchStream;
+import io.lark.column.biz.LongColumn;
 import io.lark.column.biz.ScaleNode;
+import io.lark.column.biz.SourceNode;
+import io.lark.column.biz.UnaryNode;
 import io.lark.column.biz.UnitConvertNode;
 import io.lark.column.compute.Compute;
 import io.lark.column.op.FloatAddTensor;
@@ -37,174 +42,215 @@ import io.lark.dag.TimeoutPolicy;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
- * End-to-end demo for the simplified module / stream API.
+ * End-to-end demo for the typed module / stream API.
  *
- * <p>Business nodes have no name/inputs/outputs overrides. Dependencies are
- * stream references; modules group nodes and expose fetch streams.
+ * <p>Business nodes have no string outputs or positional feeds. Column classes
+ * define the data contract, nodes are typed unary/binary classes, and modules
+ * expose typed fetch streams.
  *
- * <p>Run with {@code ./gradlew runDemo}.
+ * <p>Run with {@code ./gradlew :examples:runDemo}.
  */
 public final class LaryDemo {
 
-    // ─────────────────────────────────────────────────────────────────────
-    // Nodes: streams are passed by reference, ids are auto-generated.
-    // ─────────────────────────────────────────────────────────────────────
+    // ---- typed schema ----------------------------------------------------
 
-    static final class FetchUserNode extends ColumnNode {
-        final ColumnStream out = output("user");
+    static final class UserId extends LongColumn {
+    }
 
-        FetchUserNode(ColumnStream userId) {
-            super(userId);
+    static final class User extends LongColumn {
+    }
+
+    static final class Score extends LongColumn {
+    }
+
+    static final class HighMask extends BoolColumn {
+    }
+
+    static final class HighScores extends LongColumn {
+    }
+
+    static final class Total extends DoubleColumn {
+    }
+
+    static final class Mean extends DoubleColumn {
+    }
+
+    static final class Max extends LongColumn {
+    }
+
+    static final class Recovered extends LongColumn {
+    }
+
+    static final class RecoveredPlusOne extends LongColumn {
+    }
+
+    static final class UserLi extends LongColumn {
+    }
+
+    static final class Weighted extends LongColumn {
+    }
+
+    static final class Bonus extends LongColumn {
+    }
+
+    // ---- nodes -----------------------------------------------------------
+
+    static final class FetchUserNode extends UnaryNode<UserId, User> {
+
+        FetchUserNode(UserId userId) {
+            super(userId, User.class);
         }
 
         @Override
-        public void compute(ColumnContext ctx) {
-            ctx.write(out, Compute.addScalar(
-                    Compute.mulScalar(ctx.read(feeds()[0]), 10.0), 100.0));
+        protected Tensor compute(ColumnContext ctx, Tensor userId) {
+            return Compute.addScalar(Compute.mulScalar(userId, 10.0), 100.0);
         }
     }
 
-    static final class ScoreNode extends ColumnNode {
-        final ColumnStream out = output("score");
+    static final class ScoreNode extends UnaryNode<User, Score> {
 
-        ScoreNode(ColumnStream user) {
-            super(user);
+        ScoreNode(User user) {
+            super(user, Score.class);
         }
 
         @Override
-        public void compute(ColumnContext ctx) {
-            ctx.write(out, Compute.mulScalar(ctx.read(feeds()[0]), 2.0));
+        protected Tensor compute(ColumnContext ctx, Tensor user) {
+            return Compute.mulScalar(user, 2.0);
         }
     }
 
-    static final class HighScoreMaskNode extends ColumnNode {
-        final ColumnStream out = output("high_mask");
+    static final class HighScoreMaskNode extends UnaryNode<Score, HighMask> {
 
-        HighScoreMaskNode(ColumnStream score) {
-            super(score);
+        HighScoreMaskNode(Score score) {
+            super(score, HighMask.class);
         }
 
         @Override
-        public void compute(ColumnContext ctx) {
-            ctx.write(out, Compute.gtScalar(ctx.read(feeds()[0]), 250.0));
+        protected Tensor compute(ColumnContext ctx, Tensor score) {
+            return Compute.gtScalar(score, 250.0);
         }
     }
 
-    static final class FilterHighScoresNode extends ColumnNode {
-        final ColumnStream out = output("high_scores");
+    static final class FilterHighScoresNode
+            extends BinaryNode<Score, HighMask, HighScores> {
 
-        FilterHighScoresNode(ColumnStream score, ColumnStream mask) {
-            super(score, mask);
+        FilterHighScoresNode(Score score, HighMask mask) {
+            super(score, mask, HighScores.class);
         }
 
         @Override
-        public void compute(ColumnContext ctx) {
-            ctx.write(out, Compute.filter(ctx.read(feeds()[0]),
-                    ctx.read(feeds()[1])));
+        protected Tensor compute(ColumnContext ctx, Tensor score, Tensor mask) {
+            return Compute.filter(score, mask);
         }
     }
 
     static final class AggregateNode extends ColumnNode {
-        final ColumnStream total = output("total");
-        final ColumnStream mean = output("mean");
-        final ColumnStream max = output("max");
 
-        AggregateNode(ColumnStream score) {
+        private final Score score;
+        private final Total total = fetch(Total.class);
+        private final Mean mean = fetch(Mean.class);
+        private final Max max = fetch(Max.class);
+
+        AggregateNode(Score score) {
             super(score);
+            this.score = score;
         }
 
         @Override
         public void compute(ColumnContext ctx) {
-            Tensor score = ctx.read(feeds()[0]);
-            ctx.write(total, Compute.sumTensor(score));
-            ctx.write(mean, Compute.meanTensor(score));
-            ctx.write(max, Compute.maxTensor(score));
+            Tensor scores = ctx.read(score);
+            ctx.write(total, Compute.sumTensor(scores));
+            ctx.write(mean, Compute.meanTensor(scores));
+            ctx.write(max, Compute.maxTensor(scores));
         }
     }
 
-    static final class FailingNode extends ColumnNode {
-        final ColumnStream out = output("recovered");
+    static final class FailingNode extends SourceNode<Recovered> {
+
+        FailingNode() {
+            super(Recovered.class);
+        }
 
         @Override
-        public void compute(ColumnContext ctx) {
+        protected Tensor produce(ColumnContext ctx) {
             throw new IllegalStateException("simulated business failure");
         }
 
         @Override
         public boolean fallback(ColumnContext ctx, Throwable error) {
-            ctx.write(out, Tensor.fromLongs(7));
+            ctx.write(out(), Tensor.fromLongs(7));
             return true;
         }
     }
 
-    static final class UseRecoveredNode extends ColumnNode {
-        final ColumnStream out = output("recovered_plus_one");
+    static final class UseRecoveredNode
+            extends UnaryNode<Recovered, RecoveredPlusOne> {
 
-        UseRecoveredNode(ColumnStream recovered) {
-            super(recovered);
+        UseRecoveredNode(Recovered recovered) {
+            super(recovered, RecoveredPlusOne.class);
         }
 
         @Override
-        public void compute(ColumnContext ctx) {
-            ctx.write(out, Compute.addScalar(ctx.read(feeds()[0]), 1.0));
+        protected Tensor compute(ColumnContext ctx, Tensor recovered) {
+            return Compute.addScalar(recovered, 1.0);
         }
     }
 
-    static final class BonusNode extends ColumnNode {
-        final ColumnStream out = output("bonus");
+    static final class BonusNode extends UnaryNode<Weighted, Bonus> {
 
-        BonusNode(ColumnStream weighted) {
-            super(weighted);
+        BonusNode(Weighted weighted) {
+            super(weighted, Bonus.class);
         }
 
         @Override
-        public void compute(ColumnContext ctx) {
-            ctx.write(out, Compute.addScalar(ctx.read(feeds()[0]), 1.0));
+        protected Tensor compute(ColumnContext ctx, Tensor weighted) {
+            return Compute.addScalar(weighted, 1.0);
         }
     }
 
-    /** A business module: nodes wired by stream references, outputs exposed. */
+    /** A business module: typed nodes wired by column classes. */
     @ColumnComponent
     static final class FeatureModule extends ColumnModule {
-        final ColumnStream userId = input("user_id");
+        final UserId userId = input(UserId.class);
         final FetchUserNode fetch = add(new FetchUserNode(userId));
-        final ScoreNode score = add(new ScoreNode(fetch.out));
-        final HighScoreMaskNode mask = add(new HighScoreMaskNode(score.out));
-        final FilterHighScoresNode filter = add(
-                new FilterHighScoresNode(score.out, mask.out));
-        final AggregateNode aggregate = add(new AggregateNode(score.out));
+        final ScoreNode score = add(new ScoreNode(fetch.out()));
+        final HighScoreMaskNode mask = add(new HighScoreMaskNode(score.out()));
+        final FilterHighScoresNode filter =
+                add(new FilterHighScoresNode(score.out(), mask.out()));
+        final AggregateNode aggregate = add(new AggregateNode(score.out()));
         final FailingNode failing = add(new FailingNode());
-        final UseRecoveredNode recovered = add(new UseRecoveredNode(failing.out));
-        final UnitConvertNode li = add(new UnitConvertNode(fetch.out, "user_li", 10.0));
-        final ScaleNode weighted = add(new ScaleNode(li.out, "weighted", 2.0));
-        final BonusNode bonus = add(new BonusNode(weighted.out));
+        final UseRecoveredNode recovered =
+                add(new UseRecoveredNode(failing.out()));
+        final UnitConvertNode<UserLi> li =
+                add(new UnitConvertNode<>(fetch.out(), UserLi.class, 10.0));
+        final ScaleNode<Weighted> weighted =
+                add(new ScaleNode<>(li.out(), Weighted.class, 2.0));
+        final BonusNode bonus = add(new BonusNode(weighted.out()));
 
         {
-            output(fetch.out, score.out, mask.out, filter.out,
+            output(fetch.out(), score.out(), mask.out(), filter.out(),
                     aggregate.total, aggregate.mean, aggregate.max,
-                    failing.out, recovered.out, li.out, weighted.out, bonus.out);
+                    failing.out(), recovered.out(), li.out(), weighted.out(),
+                    bonus.out());
         }
     }
 
     /** A module with an unused branch, used to demonstrate pruning. */
     static final class PruneModule extends ColumnModule {
-        final ColumnStream userId = input("user_id");
+        final UserId userId = input(UserId.class);
         final FetchUserNode fetch = add(new FetchUserNode(userId));
-        final ScoreNode score = add(new ScoreNode(fetch.out));
-        final HighScoreMaskNode unused = add(new HighScoreMaskNode(score.out));
+        final ScoreNode score = add(new ScoreNode(fetch.out()));
+        final HighScoreMaskNode unused = add(new HighScoreMaskNode(score.out()));
 
         {
-            output(score.out, unused.out);
+            output(score.out(), unused.out());
         }
     }
 
-    // ─────────────────────────────────────────────────────────────────────
-    // DAG timeout demo
-    // ─────────────────────────────────────────────────────────────────────
+    // ---- DAG timeout demo ------------------------------------------------
 
     static final class SlowDagNode extends io.lark.dag.Node {
         @Override
@@ -237,7 +283,7 @@ public final class LaryDemo {
     }
 
     private static void businessModuleDemo() {
-        System.out.println("\n=== 1. Business module / stream pipeline ===");
+        System.out.println("\n=== 1. Business module / typed stream pipeline ===");
 
         AtomicInteger fallbackEvents = new AtomicInteger();
         try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
@@ -259,8 +305,8 @@ public final class LaryDemo {
             pipeline.compute();
 
             List<Row> scoreRows = pipeline.fetch(FetchStream.of(
-                    feature.fetch.out, feature.score.out, feature.mask.out,
-                    feature.li.out, feature.weighted.out, feature.bonus.out));
+                    feature.fetch.out(), feature.score.out(), feature.mask.out(),
+                    feature.li.out(), feature.weighted.out(), feature.bonus.out()));
             System.out.println("user     = " + longs(scoreRows, 0));
             System.out.println("score    = " + longs(scoreRows, 1));
             System.out.println("mask     = " + longs(scoreRows, 2));
@@ -268,12 +314,15 @@ public final class LaryDemo {
             System.out.println("weighted = " + longs(scoreRows, 4));
             System.out.println("bonus    = " + longs(scoreRows, 5));
             System.out.println("high     = " + longs(pipeline.fetch(
-                    FetchStream.of(feature.filter.out)), 0));
-            System.out.println("total    = " + pipeline.fetchScalar("total"));
-            System.out.println("mean     = " + pipeline.fetchScalar("mean"));
-            System.out.println("max      = " + pipeline.fetchScalar("max"));
+                    FetchStream.of(feature.filter.out())), 0));
+            System.out.println("total    = "
+                    + pipeline.fetchScalar(feature.aggregate.total));
+            System.out.println("mean     = "
+                    + pipeline.fetchScalar(feature.aggregate.mean));
+            System.out.println("max      = "
+                    + pipeline.fetchScalar(feature.aggregate.max));
             System.out.println("fallback output = "
-                    + pipeline.fetchScalar("recovered_plus_one"));
+                    + pipeline.fetchScalar(feature.recovered.out()));
             System.out.println("fallback events = " + fallbackEvents.get());
             System.out.print(pipeline.stats().summary());
         }
@@ -286,14 +335,15 @@ public final class LaryDemo {
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
             pipeline.add(module);
             // Only score is requested; the unused mask branch is pruned.
-            pipeline.compile(Set.of(module.score.out.name()));
+            pipeline.compile(FetchStream.of(module.score.out()));
             System.out.println("registered nodes = " + pipeline.nodeCount()
                     + ", compiled nodes = " + pipeline.compiledNodeCount());
 
             pipeline.feed(FeedStream.of(module.userId,
                     List.of(Row.of(Cell.of(7)))));
             pipeline.compute();
-            System.out.println("pruned score = " + pipeline.fetchScalar("score"));
+            System.out.println("pruned score = "
+                    + pipeline.fetchScalar(module.score.out()));
         }
 
         // Module-level cycle: A depends on B, B depends on A.

@@ -3,34 +3,29 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.Tensor;
 import io.lark.column.compute.Compute;
 
 /**
- * Business transformation node: multiply a stream by a weight.
+ * Business transformation: multiply a typed stream by a weight.
  *
  * <pre>{@code
- * ScaleNode weighted = new ScaleNode(score.out, "weighted_score", 0.3);
+ * ScaleNode<WeightedAmount> weighted =
+ *         new ScaleNode<>(amount.out(), WeightedAmount.class, 0.4);
  * }</pre>
  */
-public final class ScaleNode extends ColumnNode {
+public final class ScaleNode<O extends ColumnStream<?>>
+        extends UnaryNode<ColumnStream<?>, O> {
 
-    private final ColumnStream feed;
-    public final ColumnStream out;
     private final double weight;
 
-    public ScaleNode(ColumnStream feed, String outputName, double weight) {
-        super(feed);
-        this.feed = feed;
-        this.out = output(outputName);
+    public ScaleNode(ColumnStream<?> input, Class<O> outputType, double weight) {
+        super(input, outputType);
         this.weight = weight;
     }
 
-    public ColumnStream out() {
-        return out;
-    }
-
     @Override
-    public void compute(ColumnContext ctx) {
-        ctx.write(out, Compute.mulScalar(ctx.read(feed), weight));
+    protected Tensor compute(ColumnContext ctx, Tensor input) {
+        return Compute.mulScalar(input, weight);
     }
 }

@@ -6,9 +6,10 @@ description: Use when changing the C++ dag or column modules or the Java port in
 # Java Port Sync
 
 The C++ `dag/` and `column/` modules in the sibling `../lark` repository are the
-source of truth. `lary` is a single-project Java 25 port of both (plus the
-minimal metric surface they need). Keep behavior, public names, monitoring
-vocabulary, validation semantics and event attributes aligned.
+source of truth. `lary` is a Java 25 port of both (plus the minimal metric
+surface they need), split into the root library and the independent `:examples`
+application module. Keep behavior, public names, monitoring vocabulary,
+validation semantics and event attributes aligned.
 
 ## Maintenance contract
 
@@ -29,8 +30,10 @@ Do not treat documentation/skill updates as optional follow-ups.
   `test_column.cpp`, `test_engine.cpp`).
 - A change touches `src/main/java/io/lark/dag`,
   `src/main/java/io/lark/column`, `src/main/java/io/lark/metric`, or
-  `src/main/java/io/lark/examples`.
+  `examples/src/main/java/io/lark/examples`.
 - Someone asks to port a DAG / column feature to Java or verify parity.
+- A change touches the Gradle modules (`settings.gradle.kts`,
+  `examples/build.gradle.kts`) or the example project layout.
 
 ## Read the reference first
 
@@ -76,8 +79,10 @@ test. Tests are the behavioral contract.
 | `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
 | Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `BusinessNodeOp.java` |
-| Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream[]`) |
-| Business transforms | `biz/ScaleNode.java`, `biz/UnitConvertNode.java` |
+| Typed column classes (Java-first) | `biz/LongColumn.java`, `DoubleColumn.java`, `FloatColumn.java`, `IntColumn.java`, `BoolColumn.java`; business schema subclasses e.g. `AmountYuan` |
+| Typed node bases (Java-first) | `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`; custom nodes extend `ColumnNode` with typed fields |
+| Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream<?>[]`) |
+| Business transforms | `biz/ScaleNode.java`, `biz/UnitConvertNode.java` (generic output column class) |
 | Spring-style components | `biz/ColumnComponent.java`, `biz/ColumnComponentScanner.java` (on modules) |
 | C++ `biz::Module` / `SubGraph` / DSL / `Pipeline` | **intentionally removed in Java**; replaced by `ColumnModule` + `ColumnNode` + `ColumnStream` |
 | `backend/backend.h`, `backend.cpp` | `backend/Backend.java`, `CpuBackend.java`, `BackendFactory.java` |
@@ -86,7 +91,9 @@ test. Tests are the behavioral contract.
 | Tensor-op coverage | `OpTensorTest.java` |
 | Module / stream / pruning / component coverage | `ModulePipelineTest.java` |
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java` |
-| End-to-end demos | `examples/LaryDemo.java` (`runDemo`), `examples/RiskEngineExample.java` (`runRisk`) |
+| End-to-end demos | `examples/src/main/java/io/lark/examples/LaryDemo.java` (`:examples:runDemo`) |
+| Realistic multi-class demo | `examples/src/main/java/io/lark/examples/risk/**` (`:examples:runRisk`), split into `columns/`, `node/`, `module/`, `data/` |
+| Realistic demo test | `examples/src/test/java/io/lark/examples/risk/RiskEngineTest.java` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
 ## Workflow
@@ -146,22 +153,35 @@ test. Tests are the behavioral contract.
 - Execution: dependency ordering, independent nodes concurrent, failed op does
   not poison dependents; placeholder replacement for forward references;
   duplicate column producer / duplicate write / cycle rejection.
-- Business API: `ColumnNode` + `ColumnContext` + `ColumnStream` +
-  `ColumnModule` + `ColumnPipeline`. Node ids are generated; there is no
-  `name()`/`inputs()`/`outputs()` override. Inputs are constructor stream
-  references; outputs are `output("name")` fields.
-- Data dependency is class/stream-reference based (`new BNode(a.out)`), never
-  node-name based. Node `feeds()`/`fetches()` are arrays.
+- Business API: typed `ColumnStream<T>` subclasses + `ColumnNode` /
+  `ColumnContext` / `ColumnModule` / `ColumnPipeline`. Node ids are generated;
+  there is no `name()`/`inputs()`/`outputs()` override.
+- Columns are classes extending `LongColumn`, `DoubleColumn`, `FloatColumn`,
+  `IntColumn` or `BoolColumn`. The default name is derived from the class
+  (`AmountYuan` → `amount_yuan`); explicit physical names use the
+  `(String)` constructor. `ColumnContext` validates read/write dtype; typed
+  feed columns are coerced to their declared dtype.
+- Outputs are declared with `fetch(ColumnClass.class)`. Common node shapes use
+  `UnaryNode<I,O>`, `BinaryNode<A,B,O>` and `SourceNode<O>`; custom nodes extend
+  `ColumnNode` and keep typed input fields. Business compute must not use
+  `output("name")` or `feeds()[0]`.
+- Data dependency is class/stream-reference based
+  (`new BNode(a.out())`), never node-name based. Node `feeds()`/`fetches()` are
+  arrays.
 - `ColumnModule` groups nodes and exposes `inputs()`, `outputs()`, `nodes()`,
-  `dependencies()` as arrays. Modules depend on modules with
-  `dependsOn(OtherModule.class)`; module cycles are rejected.
+  `dependencies()` as arrays. Module inputs use `input(ColumnClass.class)`.
+  Modules depend on modules with `dependsOn(OtherModule.class)`; module cycles
+  are rejected.
 - `FeedStream` / `FetchStream` are the row-in / row-out boundaries and carry
-  `ColumnStream[]`. Missing required feed columns are rejected before compute.
-- Built-in business transforms: `ScaleNode` (weight) and `UnitConvertNode`
-  (factor, e.g. fen → li).
+  `ColumnStream<?>[]`. Missing required feed columns are rejected before
+  compute. Use `compile(FetchStream)` / `fetchScalar(ColumnStream<?>)` to keep
+  pruning and scalar reads typed.
+- Built-in business transforms: generic `ScaleNode<O>` (weight) and
+  `UnitConvertNode<O>` (factor, e.g. fen → li), both configured with the
+  output column class.
 - `@ColumnComponent` marks modules; `ColumnPipeline.scan(package)` discovers
   them without a Spring dependency. Modules need a no-arg constructor.
-- Graph pruning: `ColumnPipeline.compile(requiredOutputs)` keeps the transitive
+- Graph pruning: `ColumnPipeline.compile(FetchStream)` keeps the transitive
   producers of requested module outputs; `run(FeedStream, FetchStream)` prunes
   before execution. Module cycles and node-graph cycles are always detected,
   even in a pruned branch.
@@ -187,11 +207,11 @@ test. Tests are the behavioral contract.
 ## Verification
 
 ```sh
-JAVA_HOME=/path/to/jdk-25 ./gradlew clean test
-JAVA_HOME=/path/to/jdk-25 ./gradlew runDemo
-JAVA_HOME=/path/to/jdk-25 ./gradlew runSimple runOp
-JAVA_HOME=/path/to/jdk-25 ./gradlew runNodes
-JAVA_HOME=/path/to/jdk-25 ./gradlew runRisk
+JAVA_HOME=/path/to/jdk-25 ./gradlew clean test :examples:build
+JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runDemo
+JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runSimple :examples:runOp
+JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runNodes
+JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRisk
 ```
 
 Use JDK 25. If Gradle cannot find it, set `org.gradle.java.installations.paths`
@@ -204,10 +224,14 @@ in `~/.gradle/gradle.properties`.
 - [ ] Java test added/updated for the behavior.
 - [ ] `README.md` updated (feature, usage, limitations).
 - [ ] This `SKILL.md` updated (mapping, invariants, verification).
-- [ ] Column business code still uses `ColumnNode`; execution (`ComputeNode`)
-      and tensor ops (`OpTensor`) stay out of the business API.
-- [ ] `./gradlew clean test` is green.
+- [ ] Column business code uses typed column classes and `ColumnNode` /
+      `UnaryNode` / `BinaryNode` / `SourceNode`; execution (`ComputeNode`) and
+      tensor ops (`OpTensor`) stay out of the business API.
+- [ ] No business compute uses string outputs or positional `feeds()[n]`.
+- [ ] `./gradlew clean test :examples:build` is green.
 - [ ] DAG tests cover wide and deep graphs and the ready-queue scheduler.
 - [ ] Column examples run with `--add-modules jdk.incubator.vector`.
-- [ ] Examples still compile; docs/mapping updated if API changed.
+- [ ] `:examples` still compiles; realistic demo classes remain separated into
+      columns/nodes/modules instead of one catch-all class.
+- [ ] Docs/mapping updated if API or module layout changed.
 - [ ] No C++ edits unless explicitly requested.

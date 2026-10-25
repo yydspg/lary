@@ -5,6 +5,7 @@ package io.lark.column.biz;
 
 import io.lark.column.FeedFetch;
 import io.lark.column.Row;
+import io.lark.column.Tensor;
 import io.lark.column.TensorTable;
 import io.lark.column.exec.ComputeGraph;
 import io.lark.column.exec.ExecutionContext;
@@ -53,7 +54,7 @@ public final class ColumnPipeline implements AutoCloseable {
     private ExecutorService pool;
     private boolean compiled;
     private Set<String> requiredFeedColumns = Set.of();
-    private Map<String, ColumnStream> fetchableOutputs = Map.of();
+    private Map<String, ColumnStream<?>> fetchableOutputs = Map.of();
     private List<String> compiledOutputs = List.of();
 
     public ColumnPipeline() {
@@ -115,7 +116,12 @@ public final class ColumnPipeline implements AutoCloseable {
     // ---- compile --------------------------------------------------------
 
     public void compile() {
-        compile(null);
+        compile((Collection<String>) null);
+    }
+
+    /** Prune to the typed streams in a fetch request. */
+    public void compile(FetchStream requiredOutputs) {
+        compile(requiredOutputs == null ? null : requiredOutputs.names());
     }
 
     /**
@@ -131,10 +137,10 @@ public final class ColumnPipeline implements AutoCloseable {
 
         Map<ColumnNode, ColumnModule> nodeModules = new IdentityHashMap<>();
         Map<String, ColumnNode> producers = new LinkedHashMap<>();
-        Map<ColumnStream, ColumnModule> moduleInputs = new IdentityHashMap<>();
+        Map<ColumnStream<?>, ColumnModule> moduleInputs = new IdentityHashMap<>();
 
         for (ColumnModule module : modules) {
-            for (ColumnStream input : module.inputs()) {
+            for (ColumnStream<?> input : module.inputs()) {
                 moduleInputs.put(input, module);
             }
             for (ColumnNode node : module.nodes()) {
@@ -142,7 +148,7 @@ public final class ColumnPipeline implements AutoCloseable {
                     throw new IllegalArgumentException(
                             "ColumnPipeline: node added to multiple modules " + node.id());
                 }
-                for (ColumnStream fetch : node.fetches()) {
+                for (ColumnStream<?> fetch : node.fetches()) {
                     ColumnNode previous = producers.putIfAbsent(fetch.name(), node);
                     if (previous != null && previous != node) {
                         throw new IllegalArgumentException(
@@ -158,7 +164,7 @@ public final class ColumnPipeline implements AutoCloseable {
         Set<String> neededFeedColumns = new LinkedHashSet<>();
         for (ColumnNode node : nodeModules.keySet()) {
             deps.put(node, new ArrayList<>());
-            for (ColumnStream feed : node.feeds()) {
+            for (ColumnStream<?> feed : node.feeds()) {
                 ColumnNode producer = feed.producer().orElse(null);
                 if (producer != null) {
                     if (!nodeModules.containsKey(producer)) {
@@ -180,10 +186,10 @@ public final class ColumnPipeline implements AutoCloseable {
             }
         }
 
-        Map<String, ColumnStream> allOutputs = new LinkedHashMap<>();
+        Map<String, ColumnStream<?>> allOutputs = new LinkedHashMap<>();
         for (ColumnModule module : modules) {
-            for (ColumnStream output : module.outputs()) {
-                ColumnStream previous = allOutputs.putIfAbsent(output.name(), output);
+            for (ColumnStream<?> output : module.outputs()) {
+                ColumnStream<?> previous = allOutputs.putIfAbsent(output.name(), output);
                 if (previous != null && previous != output) {
                     throw new IllegalArgumentException(
                             "ColumnPipeline: duplicate module output stream '"
@@ -205,14 +211,14 @@ public final class ColumnPipeline implements AutoCloseable {
 
         Set<String> feedColumns = new LinkedHashSet<>();
         for (ColumnNode node : kept) {
-            for (ColumnStream feed : node.feeds()) {
+            for (ColumnStream<?> feed : node.feeds()) {
                 if (feed.producer().isEmpty()) {
                     feedColumns.add(feed.name());
                 }
             }
         }
         for (String output : outputs) {
-            ColumnStream stream = allOutputs.get(output);
+            ColumnStream<?> stream = allOutputs.get(output);
             if (stream != null && stream.producer().isEmpty()) {
                 feedColumns.add(stream.name());
             }
@@ -283,16 +289,16 @@ public final class ColumnPipeline implements AutoCloseable {
 
     private static Set<ColumnNode> requiredNodes(
             List<String> requiredOutputs,
-            Map<String, ColumnStream> allOutputs,
+            Map<String, ColumnStream<?>> allOutputs,
             Map<String, ColumnNode> producers,
             Map<ColumnNode, List<ColumnNode>> deps,
             Set<String> feedColumns,
-            Map<ColumnStream, ColumnModule> moduleInputs) {
+            Map<ColumnStream<?>, ColumnModule> moduleInputs) {
         Set<ColumnNode> needed = new LinkedHashSet<>();
         Deque<ColumnNode> pending = new ArrayDeque<>();
 
         for (String output : requiredOutputs) {
-            ColumnStream stream = allOutputs.get(output);
+            ColumnStream<?> stream = allOutputs.get(output);
             if (stream == null) {
                 throw new IllegalArgumentException(
                         "ColumnPipeline: unknown fetch output '" + output + "'");
@@ -325,13 +331,24 @@ public final class ColumnPipeline implements AutoCloseable {
 
     // ---- feed / compute / fetch ----------------------------------------
 
-    /** Feed one or more external streams. Rows contain one cell per stream. */
+    /** Feed one or more typed external streams. Rows contain one cell per stream. */
     public void feed(FeedStream stream) {
-        feed(stream.names(), stream.rows());
+        Objects.requireNonNull(stream, "stream");
+        TensorTable table = FeedFetch.feedTable(stream.names(), stream.rows());
+        for (ColumnStream<?> column : stream.streams()) {
+            Tensor tensor = table.get(column.name());
+            if (tensor.dtype() != column.dtype()) {
+                table.set(column.name(), tensor.castTo(column.dtype()));
+            }
+        }
+        feed(table);
     }
 
     public void feed(List<String> names, List<Row> rows) {
-        TensorTable table = FeedFetch.feedTable(names, rows);
+        feed(FeedFetch.feedTable(names, rows));
+    }
+
+    private void feed(TensorTable table) {
         ctx.beginPhase(ExecutionContext.RunPhase.FEED);
         emitStart("feed.start", "feed");
         ctx.setFeed(table);
@@ -411,8 +428,16 @@ public final class ColumnPipeline implements AutoCloseable {
         return fetch(List.of(names));
     }
 
+    public List<Row> fetch(ColumnStream<?>... columns) {
+        return fetch(FetchStream.of(columns));
+    }
+
     public List<Row> fetch() {
         return fetch(compiledOutputs);
+    }
+
+    public double fetchScalar(ColumnStream<?> column) {
+        return fetchScalar(column.name());
     }
 
     public double fetchScalar(String name) {
@@ -429,7 +454,7 @@ public final class ColumnPipeline implements AutoCloseable {
     }
 
     public List<Row> run(FeedStream feedStream, FetchStream fetchStream) {
-        compile(fetchStream.names());
+        compile(fetchStream);
         feed(feedStream);
         compute();
         return fetch(fetchStream);
@@ -477,7 +502,7 @@ public final class ColumnPipeline implements AutoCloseable {
     public List<String> outputColumns() {
         List<String> names = new ArrayList<>();
         for (ColumnModule module : modules) {
-            for (ColumnStream stream : module.outputs()) {
+            for (ColumnStream<?> stream : module.outputs()) {
                 if (!names.contains(stream.name())) {
                     names.add(stream.name());
                 }

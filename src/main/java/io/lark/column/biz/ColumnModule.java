@@ -10,44 +10,59 @@ import java.util.Map;
 import java.util.Objects;
 
 /**
- * Business module: a group of nodes with external feed streams, fetch streams,
- * and class-reference dependencies on other modules.
+ * Business module: a group of nodes with typed external feed streams, fetch
+ * outputs and class-reference dependencies on other modules.
+ *
+ * <p>Inputs and outputs are typed column classes, not strings:
+ *
+ * <pre>{@code
+ * final class TransactionFeatureModule extends ColumnModule {
+ *     final AmountFen amountFen = input(AmountFen.class);
+ *     final AmountToYuanNode amount = add(new AmountToYuanNode(amountFen));
+ *     { output(amount.out()); }
+ * }
+ * }</pre>
  *
  * <p>Nodes, inputs, outputs and dependencies are exposed as arrays; their
  * cardinality is fixed after module construction.
- *
- * <pre>{@code
- * final class FeatureModule extends ColumnModule {
- *     final ColumnStream userId = input("user_id");
- *     final FetchUserNode fetch = add(new FetchUserNode(userId));
- *     final ScoreNode score = add(new ScoreNode(fetch.out));
- *     { output(score.out); }
- * }
- * }</pre>
  */
 public abstract class ColumnModule {
 
     private final String id = NodeIds.next(getClass());
     private final List<ColumnNode> nodeBuilder = new ArrayList<>();
-    private final List<ColumnStream> inputBuilder = new ArrayList<>();
-    private final List<ColumnStream> outputBuilder = new ArrayList<>();
+    private final List<ColumnStream<?>> inputBuilder = new ArrayList<>();
+    private final List<ColumnStream<?>> outputBuilder = new ArrayList<>();
     private final List<Class<? extends ColumnModule>> dependencyBuilder = new ArrayList<>();
-    private final Map<String, ColumnStream> inputByName = new LinkedHashMap<>();
+    private final Map<String, ColumnStream<?>> inputByName = new LinkedHashMap<>();
 
     private ColumnNode[] nodes;
-    private ColumnStream[] inputs;
-    private ColumnStream[] outputs;
+    private ColumnStream<?>[] inputs;
+    private ColumnStream<?>[] outputs;
     private Class<? extends ColumnModule>[] dependencies;
     private boolean initialized;
 
-    /** Declare an external feed input stream (row data). */
-    protected final ColumnStream input(String name) {
-        return inputByName.computeIfAbsent(name, key -> {
-            ColumnStream stream = new ColumnStream(key, null);
-            inputBuilder.add(stream);
-            inputs = null;
-            return stream;
-        });
+    /**
+     * Declare a typed external feed input. The column class defines the name
+     * and dtype; repeated declarations of the same class return the same
+     * stream.
+     */
+    protected final <T extends ColumnStream<?>> T input(Class<T> type) {
+        T candidate = ColumnStreams.create(type);
+        String name = candidate.name();
+        ColumnStream<?> existing = inputByName.get(name);
+        if (existing != null) {
+            if (!type.isInstance(existing)) {
+                throw new IllegalArgumentException(
+                        "ColumnModule: input '" + name + "' declared as both "
+                                + existing.getClass().getName() + " and "
+                                + type.getName());
+            }
+            return type.cast(existing);
+        }
+        inputByName.put(name, candidate);
+        inputBuilder.add(candidate);
+        inputs = null;
+        return candidate;
     }
 
     /** Register a business node inside this module. */
@@ -57,9 +72,9 @@ public abstract class ColumnModule {
         return node;
     }
 
-    /** Expose node streams as module fetch outputs. */
-    protected final void output(ColumnStream... streams) {
-        for (ColumnStream stream : streams) {
+    /** Expose typed node streams as module fetch outputs. */
+    protected final void output(ColumnStream<?>... streams) {
+        for (ColumnStream<?> stream : streams) {
             outputBuilder.add(Objects.requireNonNull(stream, "stream"));
         }
         outputs = null;
@@ -93,16 +108,16 @@ public abstract class ColumnModule {
         return nodes;
     }
 
-    public final ColumnStream[] inputs() {
+    public final ColumnStream<?>[] inputs() {
         if (inputs == null) {
-            inputs = inputBuilder.toArray(ColumnStream[]::new);
+            inputs = inputBuilder.toArray(ColumnStream<?>[]::new);
         }
         return inputs;
     }
 
-    public final ColumnStream[] outputs() {
+    public final ColumnStream<?>[] outputs() {
         if (outputs == null) {
-            outputs = outputBuilder.toArray(ColumnStream[]::new);
+            outputs = outputBuilder.toArray(ColumnStream<?>[]::new);
         }
         return outputs;
     }

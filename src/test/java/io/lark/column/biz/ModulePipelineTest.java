@@ -4,14 +4,15 @@
 package io.lark.column.biz;
 
 import io.lark.column.Cell;
+import io.lark.column.DType;
 import io.lark.column.Row;
 import io.lark.column.Tensor;
+import io.lark.column.TensorStore;
 import io.lark.column.compute.Compute;
 import org.junit.jupiter.api.Test;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Set;
-import java.util.concurrent.atomic.AtomicInteger;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -20,73 +21,127 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ModulePipelineTest {
 
-    static final class PlusNode extends ColumnNode {
-        final ColumnStream out;
+    // ---- typed column schema ---------------------------------------------
 
-        PlusNode(ColumnStream feed, String output, double delta) {
-            super(feed);
-            this.out = output(output);
-            this.delta = delta;
-        }
+    static final class UserId extends LongColumn {
+    }
+
+    static final class Source extends LongColumn {
+    }
+
+    static final class Result extends LongColumn {
+    }
+
+    static final class Recovered extends LongColumn {
+    }
+
+    static final class RecoveredPlusOne extends LongColumn {
+    }
+
+    static final class Used extends LongColumn {
+    }
+
+    static final class Unused extends LongColumn {
+    }
+
+    static final class Li extends LongColumn {
+    }
+
+    static final class ProducerOut extends LongColumn {
+    }
+
+    static final class ConsumerOut extends LongColumn {
+    }
+
+    // ---- nodes -----------------------------------------------------------
+
+    static final class PlusNode<O extends LongColumn>
+            extends UnaryNode<LongColumn, O> {
 
         private final double delta;
 
+        PlusNode(LongColumn feed, Class<O> outputType, double delta) {
+            super(feed, outputType);
+            this.delta = delta;
+        }
+
         @Override
-        public void compute(ColumnContext ctx) {
-            ctx.write(out, Compute.addScalar(ctx.read(feeds()[0]), delta));
+        protected Tensor compute(ColumnContext ctx, Tensor input) {
+            return Compute.addScalar(input, delta);
         }
     }
 
-    static final class FailingNode extends ColumnNode {
-        final ColumnStream out = output("recovered");
+    static final class ConsumerNode<O extends LongColumn>
+            extends UnaryNode<LongColumn, O> {
+
+        ConsumerNode(LongColumn feed, Class<O> outputType) {
+            super(feed, outputType);
+        }
 
         @Override
-        public void compute(ColumnContext ctx) {
+        protected Tensor compute(ColumnContext ctx, Tensor input) {
+            return Compute.addScalar(input, 1.0);
+        }
+    }
+
+    static final class FailingNode extends SourceNode<Recovered> {
+
+        FailingNode() {
+            super(Recovered.class);
+        }
+
+        @Override
+        protected Tensor produce(ColumnContext ctx) {
             throw new IllegalStateException("boom");
         }
 
         @Override
         public boolean fallback(ColumnContext ctx, Throwable error) {
-            ctx.write(out, Tensor.fromLongs(7));
+            ctx.write(out(), Tensor.fromLongs(7));
             return true;
         }
     }
 
-    static final class ConsumerNode extends ColumnNode {
-        final ColumnStream out;
-
-        ConsumerNode(ColumnStream feed, String output) {
-            super(feed);
-            this.out = output(output);
-        }
-
-        @Override
-        public void compute(ColumnContext ctx) {
-            ctx.write(out, Compute.addScalar(ctx.read(feeds()[0]), 1.0));
-        }
-    }
+    // ---- modules ---------------------------------------------------------
 
     static final class FeatureModule extends ColumnModule {
-        final ColumnStream userId = input("user_id");
-        final PlusNode source = add(new PlusNode(userId, "source", 1.0));
-        final ConsumerNode consumer = add(new ConsumerNode(source.out, "result"));
+        final UserId userId = input(UserId.class);
+        final PlusNode<Source> source = add(new PlusNode<>(userId, Source.class, 1.0));
+        final ConsumerNode<Result> consumer =
+                add(new ConsumerNode<>(source.out(), Result.class));
         final FailingNode failing = add(new FailingNode());
-        final ConsumerNode recovered = add(new ConsumerNode(failing.out, "recovered_plus_one"));
+        final ConsumerNode<RecoveredPlusOne> recovered =
+                add(new ConsumerNode<>(failing.out(), RecoveredPlusOne.class));
 
         {
-            output(source.out, consumer.out, failing.out, recovered.out);
+            output(source.out(), consumer.out(), failing.out(), recovered.out());
         }
     }
 
     static final class PruneModule extends ColumnModule {
-        final ColumnStream userId = input("user_id");
-        final PlusNode used = add(new PlusNode(userId, "used", 1.0));
-        final PlusNode unused = add(new PlusNode(used.out, "unused", 100.0));
-        final ConsumerNode result = add(new ConsumerNode(used.out, "result"));
+        final UserId userId = input(UserId.class);
+        final PlusNode<Used> used = add(new PlusNode<>(userId, Used.class, 1.0));
+        final PlusNode<Unused> unused = add(new PlusNode<>(used.out(), Unused.class, 100.0));
+        final ConsumerNode<Result> result =
+                add(new ConsumerNode<>(used.out(), Result.class));
 
         {
-            output(used.out, unused.out, result.out);
+            output(used.out(), unused.out(), result.out());
         }
+    }
+
+    @Test
+    void columnClassDefinesNameAndDtype() {
+        UserId userId = new UserId();
+        assertEquals("user_id", userId.name());
+        assertEquals(DType.INT64, userId.dtype());
+    }
+
+    @Test
+    void dtypeMismatchFailsAtTheBusinessBoundary() {
+        ColumnContext ctx = new ColumnContext(new TensorStore());
+        assertThrows(IllegalArgumentException.class,
+                () -> ctx.write(new UserId(), Tensor.fromDoubles(1.0)));
     }
 
     @Test
@@ -103,10 +158,11 @@ class ModulePipelineTest {
             pipeline.feed(FeedStream.of(feature.userId, rows(3)));
             pipeline.compute();
 
-            List<Row> out = pipeline.fetch(FetchStream.of(feature.consumer.out));
+            List<Row> out = pipeline.fetch(FetchStream.of(feature.consumer.out()));
             assertEquals(List.of(3L, 4L, 5L),
                     out.stream().map(row -> row.get(0).asLong()).toList());
-            assertEquals(8.0, pipeline.fetchScalar("recovered_plus_one"), 1e-9);
+            assertEquals(8.0,
+                    pipeline.fetchScalar(feature.recovered.out()), 1e-9);
         }
     }
 
@@ -115,7 +171,7 @@ class ModulePipelineTest {
         PruneModule module = new PruneModule();
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
             pipeline.add(module);
-            pipeline.compile(Set.of("result"));
+            pipeline.compile(FetchStream.of(module.result.out()));
 
             assertEquals(3, pipeline.nodeCount());
             assertEquals(2, pipeline.compiledNodeCount());
@@ -123,7 +179,7 @@ class ModulePipelineTest {
             pipeline.feed(FeedStream.of(module.userId, rows(2)));
             pipeline.compute();
             assertEquals(List.of(3L, 4L),
-                    pipeline.fetch(FetchStream.of(module.result.out)).stream()
+                    pipeline.fetch(FetchStream.of(module.result.out())).stream()
                             .map(row -> row.get(0).asLong()).toList());
         }
     }
@@ -168,7 +224,7 @@ class ModulePipelineTest {
             pipeline.feed(FeedStream.of(component.userId, rows(2)));
             pipeline.compute();
 
-            List<Row> out = pipeline.fetch(FetchStream.of(component.out));
+            List<Row> out = pipeline.fetch(FetchStream.of(component.out()));
             assertEquals(20L, out.get(0).get(0).asLong());
             assertEquals(30L, out.get(1).get(0).asLong());
         }
@@ -176,20 +232,24 @@ class ModulePipelineTest {
 
     @ColumnComponent
     public static final class ComponentModule extends ColumnModule {
-        final ColumnStream userId = input("user_id");
-        final PlusNode source = add(new PlusNode(userId, "source", 1.0));
-        final UnitConvertNode li = add(new UnitConvertNode(source.out, "li", 10.0));
-        final ColumnStream out = li.out;
+        final UserId userId = input(UserId.class);
+        final PlusNode<Source> source = add(new PlusNode<>(userId, Source.class, 1.0));
+        final UnitConvertNode<Li> li =
+                add(new UnitConvertNode<>(source.out(), Li.class, 10.0));
 
         {
-            output(li.out);
+            output(li.out());
+        }
+
+        Li out() {
+            return li.out();
         }
     }
 
     @Test
     void modulesCanDependOnOtherModulesAndStreams() {
         ProducerModule producer = new ProducerModule();
-        ConsumerModule consumer = new ConsumerModule(producer.out);
+        ConsumerModule consumer = new ConsumerModule(producer.out());
 
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
             pipeline.add(producer).add(consumer);
@@ -198,35 +258,41 @@ class ModulePipelineTest {
             pipeline.compute();
 
             assertEquals(List.of(3L, 4L),
-                    pipeline.fetch(FetchStream.of(consumer.out)).stream()
+                    pipeline.fetch(FetchStream.of(consumer.out())).stream()
                             .map(row -> row.get(0).asLong()).toList());
         }
     }
 
     static final class ProducerModule extends ColumnModule {
-        final ColumnStream userId = input("user_id");
-        final PlusNode node = add(new PlusNode(userId, "producer_out", 1.0));
-        final ColumnStream out = node.out;
+        final UserId userId = input(UserId.class);
+        final PlusNode<ProducerOut> node =
+                add(new PlusNode<>(userId, ProducerOut.class, 1.0));
 
         {
-            output(out);
+            output(node.out());
+        }
+
+        ProducerOut out() {
+            return node.out();
         }
     }
 
     static final class ConsumerModule extends ColumnModule {
-        final ColumnStream out;
-        final ConsumerNode node;
+        final ConsumerNode<ConsumerOut> node;
 
-        ConsumerModule(ColumnStream feed) {
-            this.node = add(new ConsumerNode(feed, "consumer_out"));
-            this.out = node.out;
+        ConsumerModule(LongColumn feed) {
+            this.node = add(new ConsumerNode<>(feed, ConsumerOut.class));
             dependsOn(ProducerModule.class);
-            output(out);
+            output(node.out());
+        }
+
+        ConsumerOut out() {
+            return node.out();
         }
     }
 
     private static List<Row> rows(int count) {
-        java.util.List<Row> rows = new java.util.ArrayList<>();
+        List<Row> rows = new ArrayList<>();
         for (int i = 1; i <= count; i++) {
             rows.add(Row.of(Cell.of(i)));
         }
