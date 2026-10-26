@@ -3,7 +3,7 @@
 
 package io.lark.examples.search.schema;
 
-import io.lark.column.DType;
+import io.lark.column.data.DType;
 import io.lark.column.biz.Column;
 
 /** Typed schema for the search/retargeting sample. */

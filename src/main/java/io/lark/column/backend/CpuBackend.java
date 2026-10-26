@@ -3,10 +3,11 @@
 
 package io.lark.column.backend;
 
-import io.lark.column.DType;
+import io.lark.column.data.DType;
+import io.lark.column.kernel.TensorKernel;
+import io.lark.column.kernel.TensorKernels;
 import io.lark.column.op.OpSpec;
 import io.lark.column.op.OpTensor;
-import io.lark.column.op.TensorOps;
 
 /** CPU backend: all scalar dtypes and Q8_0 are supported. */
 public final class CpuBackend implements Backend {
@@ -22,7 +23,13 @@ public final class CpuBackend implements Backend {
     }
 
     @Override
+    public TensorKernel createKernel(OpSpec spec) {
+        return TensorKernels.create(spec);
+    }
+
+    @Override
+    @Deprecated
     public OpTensor createOp(OpSpec spec) {
-        return TensorOps.create(spec);
+        return io.lark.column.op.TensorOps.create(spec);
     }
 }

@@ -3,7 +3,7 @@
 
 package io.lark.examples.search.data;
 
-import io.lark.column.Row;
+import io.lark.column.data.Row;
 import io.lark.column.biz.ColumnStream;
 import io.lark.column.biz.FeedStream;
 import io.lark.examples.search.module.SearchInputModule;

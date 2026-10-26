@@ -3,7 +3,7 @@
 
 package io.lark.examples.search.node;
 
-import io.lark.column.Tensor;
+import io.lark.column.data.Tensor;
 import io.lark.column.biz.Column;
 import io.lark.column.biz.ColumnContext;
 import io.lark.column.biz.ColumnStream;

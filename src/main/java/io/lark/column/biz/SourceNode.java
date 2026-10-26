@@ -3,7 +3,7 @@
 
 package io.lark.column.biz;
 
-import io.lark.column.Tensor;
+import io.lark.column.data.Tensor;
 
 /** A node with no inputs and one typed fetch output. */
 @SuppressWarnings("this-escape")

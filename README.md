@@ -12,10 +12,10 @@ applications are separate Gradle modules.
   quarantine.
 - **Column engine**: feed → compute → fetch, `Column<T>` schema definitions and
   typed `ColumnStream<T>` handles, `ColumnNode` / `ColumnModule` business API,
-  typed tensor operations (`OpTensor`,
-  `FloatAddTensor`, `FloatMultiTensor`, …), hidden `ComputeNode` execution nodes,
-  multi-dtype tensors with 1–3-D shapes, zero-tensor nodes, Q8_0 quantization and
-  monitoring.
+  graph ops (`OpSpec`) plus executable tensor kernels (`TensorKernel`), hidden
+  `ComputeNode` execution nodes, multi-dtype tensors with 1–3-D shapes,
+  zero-tensor nodes, Q8_0 quantization and monitoring. Legacy `OpTensor` /
+  `FloatAddTensor` APIs remain as compatibility adapters.
 - **SIMD**: column arithmetic, scalar broadcasting, comparisons, reductions and
   unary kernels use **`jdk.incubator.vector`**.
 - **Spring Boot (optional)**: the separate `:spring` module provides auto-configuration,
@@ -33,7 +33,15 @@ lary/
 ├─ src/main/java/io/lark/
 │  ├─ metric/      Event / Monitor abstraction
 │  ├─ dag/         DAG framework (Node + Op layers)
-│  └─ column/      column engine (data, compute, op, exec, biz, backend, monitor)
+│  └─ column/
+│     ├─ data/      Tensor / TensorShape / store / row-cell
+│     ├─ compute/   Compute / VectorOps / Simd
+│     ├─ kernel/    TensorKernel / KernelContext / TensorKernels
+│     ├─ op/        OpSpec + legacy OpTensor/TensorOps
+│     ├─ exec/      ComputeNode / ComputeGraph
+│     ├─ biz/       ColumnNode / Module / Pipeline
+│     ├─ backend/   backend registry
+│     └─ monitor/   RunStats / ColumnStatsCollector
 ├─ src/test/java/io/lark/
 │  ├─ metric/
 │  ├─ dag/
@@ -112,10 +120,12 @@ The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 `TimeoutTest`, `ModulePipelineTest` and `OpTensorTest`. `DagTest` and `OpTest`
 also cover wide/deep ready-queue scheduling and array/varargs node definitions;
 `ModulePipelineTest` covers fluent/columnar boundaries, plan reuse after a
-failed recompile, module snapshots, and retryable module definitions. The
-`:examples` module has `RecSysMetricTest` and `SearchDemoTest` for the
-search/recommendation and tensor-aware search graphs; `:spring` has Spring
-context tests for scanning, constructor injection and the prototype pipeline.
+failed recompile, module snapshots, and retryable module definitions;
+`ExecutionGraphTest` covers the separated `OpSpec` + `TensorKernel` path and
+the compatibility `OpTensor` path. The `:examples` module has
+`RecSysMetricTest` and `SearchDemoTest` for the search/recommendation and
+tensor-aware search graphs; `:spring` has Spring context tests for scanning,
+constructor injection and the prototype pipeline.
 
 ## Search / recommendation metrics demo
 
@@ -742,10 +752,20 @@ assert broadcast.shape().equals(TensorShape.of(2, 3));
 
 Element-wise binary add/sub/mul/div and comparisons use right-aligned NumPy-style
 broadcasting; add/mul are commutative in operand order, while sub/div keep
-operand order. Scalar ops, unary kernels, casts and quantization preserve the
-input shape. Incompatible dimensions fail fast, even when flat element counts
-happen to match. `Tensor.zeros(shape, dtype)` creates a zero tensor without
-going through a business module.
+operand order. The common ranking expression `score * perturbation +
+originalScore` is available as a three-input operation:
+
+```java
+Tensor adjusted = Compute.mulAdd(score, perturbation, originalScore);
+// equivalently: Compute.fma(...); not a hardware fused-rounding operation
+```
+
+The same operation is available declaratively as `OpSpec("mul_add", ...)` (or
+`"fma"`), and the legacy `TensorOps` factory accepts both names. Scalar ops,
+unary kernels, casts and quantization preserve input shape. Incompatible
+dimensions fail fast, even when flat element counts happen to match.
+`Tensor.zeros(shape, dtype)` creates a zero tensor without going through a
+business module.
 
 The op layer supports both declarative and typed zeros:
 
@@ -774,16 +794,52 @@ TensorStore store = new TensorStore();
 store.set("a", Tensor.fromFloats(1, 2, 3));
 store.set("b", Tensor.fromFloats(10, 20, 30));
 
-OpTensor add = new FloatAddTensor(List.of("a", "b"), List.of("sum"));
-add.compute(new OpContext(store));       // dtype stays FLOAT32
+OpSpec addSpec = new OpSpec("add", List.of("a", "b"), List.of("sum"));
+TensorKernel add = TensorKernels.create(addSpec);
+add.compute(new KernelContext(store,
+        new Tensor[]{store.get("a"), store.get("b")},
+        result -> store.set("sum", result)));
 
-OpTensor mul = new FloatMultiTensor(List.of("a", "b"), List.of("product"));
-mul.compute(new OpContext(store));
+OpSpec mulSpec = new OpSpec("mul", List.of("a", "b"), List.of("product"));
+TensorKernels.create(mulSpec).compute(new KernelContext(store,
+        new Tensor[]{store.get("a"), store.get("b")},
+        result -> store.set("product", result)));
 ```
 
-`OpTensor` stores inputs/outputs as arrays. `TensorOps.create(spec)` uses
-runtime dtype promotion to choose the typed implementation (`AddTensor` →
-`IntAddTensor` / `LongAddTensor` / `FloatAddTensor` / `DoubleAddTensor`).
+New code should use `OpSpec` + `TensorKernel`. The legacy `OpTensor` /
+`FloatAddTensor` / `TensorOps` APIs remain available as compatibility adapters;
+`ComputeNode` can bind either form.
+
+### Layered execution: OpSpec → ComputeNode → TensorKernel → Tensor
+
+```text
+ColumnNode / ColumnModule / ColumnPipeline   business orchestration
+             ↓
+OpSpec                                      low-level graph description
+  type / inputs / outputs / attrs
+             ↓
+ComputeNode / ComputeGraph                  scheduling + store binding
+             ↓
+TensorKernel / KernelContext                actual computation logic
+             ↓
+Tensor (data package)                       flat storage + shape
+```
+
+`OpSpec` describes what the graph should run. `TensorKernel` receives resolved
+inputs through `KernelContext` and emits a tensor result; it does not know node
+ids, dependency edges, or input/output names. `ComputeNode` binds named inputs,
+calls the kernel, and writes the declared output.
+
+```java
+OpSpec spec = new OpSpec("add", List.of("a", "b"), List.of("sum"));
+TensorKernel kernel = TensorKernels.create(spec);
+graph.addNode("sum", "module", spec, kernel);
+```
+
+Business modules compile to an `OpSpec("business", ...)` plus
+`BusinessNodeKernel`; the rest of the pipeline never sees business-node
+internals. `OpTensor` / `TensorOps` are kept for source compatibility and are
+marked legacy in the source documentation.
 
 `Simd.summary()` reports the active Vector API species. SIMD kernels live in
 `io.lark.column.compute.VectorOps`.
@@ -792,10 +848,11 @@ runtime dtype promotion to choose the typed implementation (`AddTensor` →
 
 | Package | Responsibility |
 |---|---|
-| `io.lark.column` | `DType`, `Tensor`, `TensorShape`, `TensorTable`, `TensorStore`, `Cell`, `Row`, `FeedFetch`, `Simd` |
-| `io.lark.column.compute` | `Compute`, `VectorOps` |
-| `io.lark.column.op` | `OpTensor`, `OpContext`, `OpSpec`, `TensorOps`, `ZerosTensor`; typed ops: `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`, `LongMultiTensor`, … |
-| `io.lark.column.exec` | `ComputeNode`, `ComputeGraph`, `ExecutionContext` — hidden execution layer |
+| `io.lark.column.data` | `DType`, `Tensor`, `TensorShape`, `TensorTable`, `TensorStore`, `Cell`, `Row`, `FeedFetch` |
+| `io.lark.column.compute` | `Compute`, `VectorOps`, `Simd` |
+| `io.lark.column.kernel` | `TensorKernel`, `KernelContext`, `TensorKernels`, `FallibleTensorKernel` — pure execution operators |
+| `io.lark.column.op` | `OpSpec` graph descriptor; legacy `OpTensor`, `OpContext`, `TensorOps`, `ZerosTensor` and typed compatibility ops (`FloatAddTensor`, …) |
+| `io.lark.column.exec` | `ComputeNode` (binds `OpSpec` + `TensorKernel`), `ComputeGraph`, `ExecutionContext` — scheduling layer |
 | `io.lark.column.biz` | typed business API: `Column<T>` definitions, `ColumnStream<T>` handles, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode` / `ZerosNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `PipelineCompiler` / `PipelinePlan`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |

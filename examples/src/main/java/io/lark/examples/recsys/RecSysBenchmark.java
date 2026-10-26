@@ -3,7 +3,7 @@
 
 package io.lark.examples.recsys;
 
-import io.lark.column.Row;
+import io.lark.column.data.Row;
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.FetchStream;
 import io.lark.column.biz.FeedStream;

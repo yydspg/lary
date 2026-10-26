@@ -7,25 +7,16 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * Tensor operation layer.
+ * Legacy tensor operation adapter.
  *
- * <p>An {@code OpTensor} is a concrete, typed operation over tensors — for
- * example {@link FloatAddTensor} or {@link FloatMultiTensor}. It is NOT an
- * execution-graph node: {@code io.lark.column.exec.ComputeNode} wraps an
- * {@code OpTensor} and handles scheduling/dependencies/status.
+ * <p>New code separates graph construction from execution:
+ * {@link OpSpec} describes the graph op and
+ * {@link io.lark.column.kernel.TensorKernel} contains computation logic.
+ * {@code ComputeNode} binds the two. This class is retained so existing
+ * {@code FloatAddTensor}/{@code TensorOps} code keeps compiling; it still
+ * combines metadata and a legacy {@code compute} method.
  *
- * <p>Inputs/outputs are stored as arrays because the arity is fixed once the
- * operation is constructed. This avoids list allocation/iteration on the hot
- * execution path.
- *
- * <p>Layering:
- * <pre>
- *   business : ColumnNode / ColumnModule / ColumnPipeline
- *   execution: ComputeNode / ComputeGraph
- *   tensor op: OpTensor + FloatAddTensor / FloatMultiTensor / ...
- *   compute  : Compute / VectorOps (Vector API kernels)
- *   data     : Tensor / TensorStore
- * </pre>
+ * <p>Prefer {@code OpSpec} + {@code TensorKernels.create(spec)} for new code.
  */
 public abstract class OpTensor {
 

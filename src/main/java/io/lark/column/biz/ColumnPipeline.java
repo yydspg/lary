@@ -3,11 +3,11 @@
 
 package io.lark.column.biz;
 
-import io.lark.column.Cell;
-import io.lark.column.FeedFetch;
-import io.lark.column.Row;
-import io.lark.column.Tensor;
-import io.lark.column.TensorTable;
+import io.lark.column.data.Cell;
+import io.lark.column.data.FeedFetch;
+import io.lark.column.data.Row;
+import io.lark.column.data.Tensor;
+import io.lark.column.data.TensorTable;
 import io.lark.column.exec.ExecutionContext;
 import io.lark.column.monitor.ColumnStatsCollector;
 import io.lark.column.monitor.RunStats;

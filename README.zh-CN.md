@@ -11,6 +11,8 @@ Spring；`:examples` 是示例工程；`:spring` 是可选的 Spring Boot 集成
   注册表、KV 与箭头 DSL、统计、超时、fallback 和连续超时隔离。
 - **列式计算**：`Column<T>` schema、`ColumnStream<T>`、`ColumnNode` /
   `ColumnModule`、`ColumnPipeline`。
+- **分层执行**：`OpSpec`（图描述）→ `ComputeNode`（调度/绑定）→
+  `TensorKernel`（纯执行算子）→ `Tensor`（数据）。
 - **张量**：底层仍是一维原始数组，通过 `TensorShape` 描述 1–3 维形状，例如
   `[batch, candidate, feature]`。
 - **SIMD**：算术、标量广播、比较、归约和一元运算使用
@@ -49,9 +51,32 @@ assert sum.shape().equals(shape);
 - 二元 add/sub/mul/div 和比较支持右对齐的 NumPy 风格广播，例如
   `[2,3] + [3]`、`[2,3] + [2,1]`。
 - add/mul 满足交换律；sub/div 保持操作数顺序。无法广播的维度会立即报错。
+- 三元运算 `score * perturbation + originalScore` 使用
+  `Compute.mulAdd(score, perturbation, originalScore)`；Op 层对应
+  `mul_add` / `fma`。
 - 标量运算、一元运算、cast、quantize/dequantize 会保留输入形状。
 - `Tensor.zeros(shape, dtype)` 创建任意 1–3 维置零张量。
 - `fetchTensor(...)` 直接返回列式 `Tensor`，不经过行/单元格转换。
+
+## 分层执行
+
+```text
+ColumnNode / ColumnModule / ColumnPipeline   业务编排
+             ↓
+OpSpec                                      底层计算图描述
+             ↓
+ComputeNode / ComputeGraph                  调度与 store 绑定
+             ↓
+TensorKernel / KernelContext                实际执行算子
+             ↓
+Tensor                                      数据容器（扁平数组 + shape）
+```
+
+新的内部执行路径使用 `OpSpec` + `TensorKernel`。`TensorKernel` 只接收
+`KernelContext` 中已解析的输入并输出张量，不接触节点 id、依赖边或输入输出名。
+二元和三元算子共享广播规则；`mul_add` 就是常见的
+`score * perturbation + originalScore`。`OpTensor` / `TensorOps` 作为兼容
+API 保留。
 
 Op 层支持声明式零张量：
 
@@ -128,7 +153,14 @@ lary/
 ├─ src/main/java/io/lark/
 │  ├─ metric/      Event / Monitor
 │  ├─ dag/         DAG / Op 调度
-│  └─ column/      张量、计算、执行、业务 API、监控
+│  └─ column/
+│     ├─ data/      Tensor / TensorShape / store / row-cell
+│     ├─ compute/   Compute / VectorOps / Simd
+│     ├─ kernel/    TensorKernel / KernelContext / TensorKernels
+│     ├─ op/        OpSpec + 兼容 OpTensor/TensorOps
+│     ├─ exec/      ComputeNode / ComputeGraph
+│     ├─ biz/       ColumnNode / Module / Pipeline
+│     └─ monitor/   RunStats / ColumnStatsCollector
 ├─ examples/
 │  └─ src/main/java/io/lark/examples/
 │     ├─ search/   张量感知的搜索/重定向示例

@@ -3,9 +3,9 @@
 
 package io.lark.column.compute;
 
-import io.lark.column.DType;
-import io.lark.column.Tensor;
-import io.lark.column.TensorShape;
+import io.lark.column.data.DType;
+import io.lark.column.data.Tensor;
+import io.lark.column.data.TensorShape;
 
 /**
  * Public compute-layer facade.
@@ -66,6 +66,25 @@ public final class Compute {
     /** Division always produces float64, matching both compute and exec layers. */
     public static Tensor div(Tensor a, Tensor b) {
         return VectorOps.binary(a, b, DType.FLOAT64, VectorOps.Binary.DIV);
+    }
+
+    /**
+     * Common ranking formula {@code score * perturbation + originalScore}.
+     *
+     * <p>All three operands use the same broadcasting and dtype-promotion rules
+     * as {@link #mul} and {@link #add}. The result is computed as
+     * {@code (score * perturbation) + originalScore}; it is not a hardware
+     * fused multiply-add with a single rounding step.
+     */
+    public static Tensor mulAdd(Tensor score, Tensor perturbation,
+                                Tensor originalScore) {
+        return add(mul(score, perturbation), originalScore);
+    }
+
+    /** Alias for {@link #mulAdd}; not a fused-rounding operation. */
+    public static Tensor fma(Tensor score, Tensor perturbation,
+                             Tensor originalScore) {
+        return mulAdd(score, perturbation, originalScore);
     }
 
     public static Tensor addScalar(Tensor a, double value) {

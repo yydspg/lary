@@ -3,8 +3,8 @@
 
 package io.lark.examples.recsys;
 
-import io.lark.column.Cell;
-import io.lark.column.Row;
+import io.lark.column.data.Cell;
+import io.lark.column.data.Row;
 
 import java.util.List;
 

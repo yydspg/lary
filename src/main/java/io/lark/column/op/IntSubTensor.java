@@ -3,8 +3,8 @@
 
 package io.lark.column.op;
 
-import io.lark.column.DType;
-import io.lark.column.Tensor;
+import io.lark.column.data.DType;
+import io.lark.column.data.Tensor;
 import io.lark.column.compute.Compute;
 
 import java.util.List;

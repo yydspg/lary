@@ -3,7 +3,7 @@
 
 package io.lark.examples.search;
 
-import io.lark.column.Row;
+import io.lark.column.data.Row;
 
 import java.util.List;
 

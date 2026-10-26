@@ -3,7 +3,7 @@
 
 package io.lark.spring.fixture;
 
-import io.lark.column.DType;
+import io.lark.column.data.DType;
 import io.lark.column.biz.Column;
 
 /** Minimal schema for the Spring integration tests. */

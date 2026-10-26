@@ -3,10 +3,10 @@
 
 package io.lark.column.op;
 
-import io.lark.column.DType;
-import io.lark.column.Tensor;
-import io.lark.column.TensorShape;
-import io.lark.column.TensorStore;
+import io.lark.column.data.DType;
+import io.lark.column.data.Tensor;
+import io.lark.column.data.TensorShape;
+import io.lark.column.data.TensorStore;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
@@ -135,6 +135,20 @@ class OpTensorTest {
                 .compute(new OpContext(store));
         assertEquals(TensorShape.of(2, 2), store.get("shaped").shape());
         assertEquals(4.0, store.get("shaped").getDouble(3), 1e-9);
+    }
+
+    @Test
+    void legacyMulAddSupportsThreeInputs() {
+        TensorStore store = new TensorStore();
+        store.set("a", Tensor.fromDoubles(1, 2, 3));
+        store.set("b", Tensor.fromDoubles(10, 20, 30));
+        store.set("c", Tensor.fromDoubles(100, 200, 300));
+        OpTensor op = TensorOps.create(new OpSpec("mul_add",
+                List.of("a", "b", "c"), List.of("r")));
+        op.compute(new OpContext(store));
+
+        assertEquals(110.0, store.get("r").getDouble(0), 1e-9);
+        assertEquals(390.0, store.get("r").getDouble(2), 1e-9);
     }
 
     @Test

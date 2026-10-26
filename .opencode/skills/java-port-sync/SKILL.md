@@ -68,20 +68,20 @@ test. Tests are the behavioral contract.
 
 | C++ | Java |
 |---|---|
-| `column/include/column/types.h` | `src/main/java/io/lark/column/.../DType.java`, `BlockQ8_0.java` |
-| `column/include/column/tensor.h`, `src/tensor.cpp` | `Tensor.java`, `TensorShape.java` (flat storage + 1–3-D row-major shape) |
-| `tensor_table.h`, `tensor_store.h` | `TensorTable.java`, `TensorStore.java` |
-| `feed_fetch.h`, `src/feed_fetch.cpp` | `Cell.java`, `Row.java`, `FeedFetch.java` |
+| `column/include/column/types.h` | `data/DType.java`, `data/BlockQ8_0.java` |
+| `column/include/column/tensor.h`, `src/tensor.cpp` | `data/Tensor.java`, `data/TensorShape.java` (flat storage + 1–3-D row-major shape) |
+| `tensor_table.h`, `tensor_store.h` | `data/TensorTable.java`, `data/TensorStore.java` |
+| `feed_fetch.h`, `src/feed_fetch.cpp` | `data/Cell.java`, `data/Row.java`, `data/FeedFetch.java` |
 | `column/include/column/compute/*`, `src/compute/*` | `compute/Compute.java`, `compute/VectorOps.java` |
-| `compute/simd.h` | `Simd.java` + `compute/VectorOps.java` (`jdk.incubator.vector`) |
-| `exec/tensor_op.h`, `exec/ops*.cpp` | `op/OpTensor.java`, `TensorOps.java`, `OpSpec.java`, `OpContext.java`, `FallibleOpTensor.java` |
+| `compute/simd.h` | `compute/Simd.java` + `compute/VectorOps.java` (`jdk.incubator.vector`) |
+| `exec/tensor_op.h`, `exec/ops*.cpp` | graph: `op/OpSpec.java`; execution kernels: `kernel/TensorKernel.java`, `kernel/KernelContext.java`, `kernel/TensorKernels.java`; compatibility: `op/OpTensor.java`, `TensorOps.java`, `OpContext.java`, `FallibleOpTensor.java` |
 | Typed tensor ops (Java-first) | `op/FloatAddTensor.java`, `FloatMultiTensor.java`, `FloatSubTensor.java`, `DoubleAddTensor.java`, `IntAddTensor.java`, `LongMultiTensor.java`, …; `op/ZerosTensor.java` |
 | Zero-tensor business node | `biz/ZerosNode.java` |
-| `exec/exec_node.h`, `exec_node.cpp` | `exec/ComputeNode.java` (hidden execution node) |
+| `exec/exec_node.h`, `exec_node.cpp` | `exec/ComputeNode.java` (binds `OpSpec` + `TensorKernel`) |
 | `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
 | Column ready-queue scheduler (Java-first) | `exec/ComputeGraph.java` dependency counters + `ComputeNode.dependencyView()`; fixed platform pool sized by `ColumnPipeline.computeWorkers`, optional virtual compute threads for blocking nodes |
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
-| Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `PipelineCompiler.java`, `PipelinePlan.java`, `BusinessNodeOp.java` |
+| Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `PipelineCompiler.java`, `PipelinePlan.java`, `BusinessNodeKernel.java` |
 | Typed column schema (Java-first) | `biz/Column.java` (`Column<T>` value definitions), `biz/ColumnStream.java` (graph handles); schema constants e.g. `RecSysMetrics.COUPON_ROI` |
 | Typed node bases (Java-first) | `biz/NodeSchema.java`, `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`; custom nodes extend `ColumnNode` with typed fields |
 | Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream<?>[]`) |
@@ -91,7 +91,7 @@ test. Tests are the behavioral contract.
 | `backend/backend.h`, `backend.cpp` | `backend/Backend.java`, `CpuBackend.java`, `BackendFactory.java` |
 | `monitor.h`, `monitor.cpp` | `monitor/RunStats.java`, `monitor/ColumnStatsCollector.java` |
 | `tests/test_column.cpp` | `TensorComputeTest.java` |
-| Tensor-op coverage | `OpTensorTest.java` |
+| Tensor-op / kernel coverage | `OpTensorTest.java`, `ExecutionGraphTest.java` (separated `OpSpec` + `TensorKernel` path) |
 | Module / stream / pruning / component coverage | `ModulePipelineTest.java` |
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java` |
 | DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
@@ -106,9 +106,10 @@ test. Tests are the behavioral contract.
 
 1. Read the matching C++ header/source and test before editing Java.
 2. Update layers in dependency order: data (`Tensor`/store) → compute →
-   `op` → `exec` → `biz` → examples/docs.
-3. Keep the business API free of `io.lark.column.exec` and
-   `io.lark.column.op` imports; `BusinessNodeOp` is the only adapter.
+   `kernel` → `op` (graph) → `exec` → `biz` → examples/docs.
+3. Keep the business API free of `io.lark.column.exec`, `io.lark.column.kernel`
+   and `io.lark.column.op` imports; `BusinessNodeKernel` is the only bridge into
+   the kernel layer.
 4. Add or update a test for every behavior change, plus a runnable example for
    user-facing API changes.
 5. Update `README.md` and this file in the same commit.
@@ -160,6 +161,8 @@ test. Tests are the behavioral contract.
 - `TensorShape` stores 1–3 row-major dimensions; storage remains one flat
   primitive array. Element-wise binary ops use right-aligned NumPy-style
   broadcasting; add/mul are commutative in operand order, sub/div keep order.
+  Three-input `mul_add` / `fma` computes `score * perturbation + originalScore`
+  with the same broadcasting and promotion rules (not hardware fused rounding).
   Scalar/unary/cast/quantize operations preserve shape. `Tensor.zeros(TensorShape,
   dtype)` and `ZerosTensor` / `ZerosNode` create zero tensors. `TensorOps`
   `const` and `zeros` accept a `shape` attr.
@@ -270,10 +273,14 @@ test. Tests are the behavioral contract.
   even in a pruned branch.
 - `ColumnPipeline.nodeCount()` is registered nodes; `compiledNodeCount()` is
   the pruned execution graph size.
-- Tensor ops live in `io.lark.column.op`: `OpTensor` is the typed operation
-  abstraction (e.g. `FloatAddTensor`, `FloatMultiTensor`); it stores
-  inputs/outputs as arrays. `exec.ComputeNode` wraps an `OpTensor` and handles
-  scheduling/status. Do not name execution nodes `OpTensor`.
+- Graph construction uses `op.OpSpec` (type, input names, output names,
+  attrs). Execution uses `kernel.TensorKernel` via `KernelContext` (resolved
+  inputs + output sink); kernels contain computation logic only. `exec.ComputeNode`
+  binds `OpSpec` + `TensorKernel` and handles scheduling/status/fallback.
+  Support two- and three-input kernels (`mul_add`/`fma` included) without
+  putting graph names into the kernel.
+  `op.OpTensor` / `TensorOps` are compatibility adapters; do not put new graph
+  metadata or node names into kernels.
 - `ComputeNode` status: PENDING, SUCCESS, FAILED, FALLBACK. A business
   `ColumnNode.fallback` success yields FALLBACK.
 - Monitoring source `"column"`; phase events `feed.start/end`,
@@ -320,19 +327,22 @@ in `~/.gradle/gradle.properties`.
 - [ ] `README.md` updated (feature, usage, limitations).
 - [ ] This `SKILL.md` updated (mapping, invariants, verification).
 - [ ] Column business code uses `Column<T>` schema definitions and
-      `ColumnNode` / `UnaryNode` / `BinaryNode` / `SourceNode`; execution
-      (`ComputeNode`) and tensor ops (`OpTensor`) stay out of the business API.
+      `ColumnNode` / `UnaryNode` / `BinaryNode` / `SourceNode`; graph ops
+      (`OpSpec`) and tensor kernels (`TensorKernel`) stay out of the business API.
+      New code uses `OpSpec` + `TensorKernel`; `OpTensor` is compatibility only.
 - [ ] No business compute uses string outputs or positional `feeds()[n]`.
 - [ ] `./gradlew clean test :examples:build` is green.
 - [ ] DAG tests cover wide and deep graphs and both ready-queue schedulers
       (`Executor` and `OpExecutor`).
 - [ ] Column tests cover the ready-queue scheduler, monitoring `module`
       attribution, no-copy feed/fetch overload semantics, fluent/columnar
-      boundaries, pipeline-plan reuse and module snapshots.
+      boundaries, pipeline-plan reuse, module snapshots and the separated
+      `OpSpec` + `TensorKernel` execution path.
 - [ ] Blocking-column behavior is covered when the virtual-thread option
       changes; the benchmark still compiles and runs.
 - [ ] Tensor shape/arithmetic changes cover broadcasting, commutativity of
-      add/mul, 1-D/2-D/3-D shapes and zero-tensor ops/nodes.
+      add/mul, three-input `mul_add`/`fma`, 1-D/2-D/3-D shapes and zero-tensor
+      ops/nodes.
 - [ ] Repeated-run/timing changes are checked with
       `:examples:runRecsysBenchmark`, not a single `RunStats` sample.
 - [ ] Chinese docs (`README.zh-CN.md`) are updated for user-facing changes.

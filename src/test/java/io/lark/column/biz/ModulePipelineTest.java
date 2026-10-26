@@ -3,12 +3,12 @@
 
 package io.lark.column.biz;
 
-import io.lark.column.Cell;
-import io.lark.column.DType;
-import io.lark.column.Row;
-import io.lark.column.Tensor;
-import io.lark.column.TensorShape;
-import io.lark.column.TensorStore;
+import io.lark.column.data.Cell;
+import io.lark.column.data.DType;
+import io.lark.column.data.Row;
+import io.lark.column.data.Tensor;
+import io.lark.column.data.TensorShape;
+import io.lark.column.data.TensorStore;
 import io.lark.column.compute.Compute;
 import org.junit.jupiter.api.Test;
 

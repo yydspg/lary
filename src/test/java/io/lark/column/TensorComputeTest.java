@@ -3,6 +3,9 @@
 
 package io.lark.column;
 
+import io.lark.column.data.*;
+import io.lark.column.compute.Simd;
+
 import io.lark.column.compute.Compute;
 import org.junit.jupiter.api.Test;
 
@@ -163,6 +166,28 @@ class TensorComputeTest {
         for (int i = 0; i < expected.length; i++) {
             assertEquals(expected[i], first.getDouble(i), 1e-9);
             assertEquals(expected[i], second.getDouble(i), 1e-9);
+        }
+    }
+
+    @Test
+    void mulAddSupportsThreeTensorsAndBroadcasting() {
+        Tensor score = Tensor.fromDoubles(TensorShape.of(2, 3),
+                1, 2, 3, 4, 5, 6);
+        Tensor perturbation = Tensor.fromDoubles(TensorShape.of(2, 1), 10, 20);
+        Tensor original = Tensor.fromDoubles(TensorShape.of(3), 100, 200, 300);
+
+        Tensor adjusted = Compute.mulAdd(score, perturbation, original);
+        assertEquals(TensorShape.of(2, 3), adjusted.shape());
+        assertEquals(110.0, adjusted.getDouble(0), 1e-9);
+        assertEquals(220.0, adjusted.getDouble(1), 1e-9);
+        assertEquals(330.0, adjusted.getDouble(2), 1e-9);
+        assertEquals(180.0, adjusted.getDouble(3), 1e-9);
+        assertEquals(300.0, adjusted.getDouble(4), 1e-9);
+        assertEquals(420.0, adjusted.getDouble(5), 1e-9);
+
+        Tensor same = Compute.fma(score, perturbation, original);
+        for (int i = 0; i < adjusted.size(); i++) {
+            assertEquals(adjusted.getDouble(i), same.getDouble(i), 1e-9);
         }
     }
 

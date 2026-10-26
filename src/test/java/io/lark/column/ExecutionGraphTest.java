@@ -3,6 +3,9 @@
 
 package io.lark.column;
 
+import io.lark.column.data.*;
+import io.lark.column.compute.Simd;
+
 import io.lark.column.backend.Backend;
 import io.lark.column.backend.BackendFactory;
 import io.lark.column.exec.ComputeGraph;
@@ -12,6 +15,9 @@ import io.lark.column.op.OpContext;
 import io.lark.column.op.OpSpec;
 import io.lark.column.op.OpTensor;
 import io.lark.column.op.TensorOps;
+import io.lark.column.kernel.KernelContext;
+import io.lark.column.kernel.TensorKernel;
+import io.lark.column.kernel.TensorKernels;
 import io.lark.column.monitor.ColumnStatsCollector;
 import org.junit.jupiter.api.Test;
 
@@ -26,6 +32,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+@SuppressWarnings("deprecation")
 class ExecutionGraphTest {
 
     private static Tensor run(TensorStore store, OpSpec spec) {
@@ -190,6 +197,64 @@ class ExecutionGraphTest {
         }
         assertTrue(graph.nodes().stream()
                 .allMatch(node -> node.status() == ComputeNode.Status.SUCCESS));
+    }
+
+    @Test
+    void opSpecAndKernelLayersAreSeparated() {
+        ComputeGraph graph = new ComputeGraph();
+        OpSpec source = new OpSpec("const", List.of(), List.of("a"),
+                Map.of("value", "2", "dtype", "float64", "shape", "2x2"));
+        graph.addNode("a", "m", source, TensorKernels.create(source));
+
+        OpSpec add = new OpSpec("add", List.of("a", "a"), List.of("b"));
+        graph.addNode("b", "m", add, TensorKernels.create(add));
+        graph.addDependency("b", "a");
+
+        ExecutionContext ctx = new ExecutionContext();
+        try (ExecutorService pool = Executors.newFixedThreadPool(2)) {
+            graph.executeAsync(pool, ctx);
+        }
+
+        assertEquals(2.0, ctx.store().get("a").getDouble(0), 1e-9);
+        assertEquals(4.0, ctx.store().get("b").getDouble(0), 1e-9);
+        assertEquals("const", graph.nodes().get(0).opSpec().type());
+        assertNotNull(graph.nodes().get(0).kernel());
+    }
+
+    @Test
+    void tensorKernelsCoverScalarUnaryAndReductionOps() {
+        TensorStore store = new TensorStore();
+        store.set("a", Tensor.fromDoubles(1, 2, 3));
+
+        runKernel(store, new OpSpec("mul_scalar", List.of("a"), List.of("b"),
+                Map.of("scalar", "2")));
+        assertEquals(6.0, store.get("b").getDouble(2), 1e-9);
+
+        runKernel(store, new OpSpec("square", List.of("b"), List.of("c")));
+        assertEquals(36.0, store.get("c").getDouble(2), 1e-9);
+
+        runKernel(store, new OpSpec("sum", List.of("c"), List.of("total")));
+        assertEquals(56.0, store.get("total").getDouble(0), 1e-9);
+
+        runKernel(store, new OpSpec("gt_scalar", List.of("b"), List.of("mask"),
+                Map.of("scalar", "4")));
+        assertEquals(1L, store.get("mask").getLong(2));
+
+        runKernel(store, new OpSpec("mul_add", List.of("a", "a", "a"),
+                List.of("adjusted")));
+        assertEquals(2.0, store.get("adjusted").getDouble(0), 1e-9);
+        assertEquals(12.0, store.get("adjusted").getDouble(2), 1e-9);
+    }
+
+    private static void runKernel(TensorStore store, OpSpec spec) {
+        TensorKernel kernel = TensorKernels.create(spec);
+        Tensor[] inputs = new Tensor[spec.inputs().size()];
+        for (int i = 0; i < inputs.length; i++) {
+            inputs[i] = store.get(spec.inputs().get(i));
+        }
+        KernelContext ctx = new KernelContext(store, inputs,
+                tensor -> store.set(spec.outputs().get(0), tensor));
+        kernel.compute(ctx);
     }
 
     @Test

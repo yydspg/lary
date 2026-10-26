@@ -3,9 +3,9 @@
 
 package io.lark.column.compute;
 
-import io.lark.column.DType;
-import io.lark.column.Tensor;
-import io.lark.column.TensorShape;
+import io.lark.column.data.DType;
+import io.lark.column.data.Tensor;
+import io.lark.column.data.TensorShape;
 
 import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.FloatVector;

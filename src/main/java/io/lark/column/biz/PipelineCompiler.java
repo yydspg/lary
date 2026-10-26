@@ -4,6 +4,7 @@
 package io.lark.column.biz;
 
 import io.lark.column.exec.ComputeGraph;
+import io.lark.column.op.OpSpec;
 
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -156,7 +157,10 @@ final class PipelineCompiler {
         ComputeGraph graph = new ComputeGraph();
         for (ColumnNode node : kept) {
             ColumnModule module = nodeModules.get(node);
-            graph.addNode(node.id(), module.id(), new BusinessNodeOp(node));
+            graph.addNode(node.id(), module.id(),
+                    new OpSpec("business", names(node.feedView()),
+                            names(node.fetchView()), Map.of()),
+                    new BusinessNodeKernel(node));
         }
         for (ColumnNode node : kept) {
             for (ColumnNode dependency : deps.get(node)) {
@@ -218,6 +222,14 @@ final class PipelineCompiler {
             throw new IllegalStateException(
                     "ColumnPipeline: module dependency cycle detected");
         }
+    }
+
+    private static List<String> names(ColumnStream<?>[] streams) {
+        List<String> names = new ArrayList<>(streams.length);
+        for (ColumnStream<?> stream : streams) {
+            names.add(stream.name());
+        }
+        return names;
     }
 
     private static Set<ColumnNode> requiredNodes(

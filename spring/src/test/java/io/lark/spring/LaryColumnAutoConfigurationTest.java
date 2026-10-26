@@ -3,8 +3,8 @@
 
 package io.lark.spring;
 
-import io.lark.column.Cell;
-import io.lark.column.Row;
+import io.lark.column.data.Cell;
+import io.lark.column.data.Row;
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.ColumnStream;

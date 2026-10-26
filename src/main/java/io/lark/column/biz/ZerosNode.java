@@ -3,8 +3,8 @@
 
 package io.lark.column.biz;
 
-import io.lark.column.Tensor;
-import io.lark.column.TensorShape;
+import io.lark.column.data.Tensor;
+import io.lark.column.data.TensorShape;
 
 import java.util.Objects;
 

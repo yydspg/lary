@@ -3,9 +3,12 @@
 
 package io.lark.column.backend;
 
-import io.lark.column.DType;
+import io.lark.column.data.DType;
+import io.lark.column.kernel.TensorKernel;
+import io.lark.column.op.OpContext;
 import io.lark.column.op.OpSpec;
 import io.lark.column.op.OpTensor;
+import io.lark.column.op.TensorOps;
 
 /** Pluggable compute backend. */
 public interface Backend {
@@ -14,5 +17,14 @@ public interface Backend {
 
     boolean supports(DType dtype);
 
-    OpTensor createOp(OpSpec spec);
+    /** Create the execution kernel for a graph-level op. */
+    default TensorKernel createKernel(OpSpec spec) {
+        return ctx -> createOp(spec).compute(new OpContext(ctx.store()));
+    }
+
+    /** Compatibility pre-kernel API. */
+    @Deprecated
+    default OpTensor createOp(OpSpec spec) {
+        return TensorOps.create(spec);
+    }
 }

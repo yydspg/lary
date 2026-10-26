@@ -3,7 +3,7 @@
 
 package io.lark.column.biz;
 
-import io.lark.column.Row;
+import io.lark.column.data.Row;
 
 import java.util.Arrays;
 import java.util.List;

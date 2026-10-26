@@ -1,7 +1,7 @@
 // Copyright (c) 2024 LARK Contributors
 // SPDX-License-Identifier: MIT
 
-package io.lark.column;
+package io.lark.column.data;
 
 import java.util.Objects;
 

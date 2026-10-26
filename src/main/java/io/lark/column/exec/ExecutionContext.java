@@ -3,8 +3,8 @@
 
 package io.lark.column.exec;
 
-import io.lark.column.TensorStore;
-import io.lark.column.TensorTable;
+import io.lark.column.data.TensorStore;
+import io.lark.column.data.TensorTable;
 import io.lark.metric.Monitor;
 
 import java.util.Objects;

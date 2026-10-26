@@ -3,11 +3,11 @@
 
 package io.lark.column.exec;
 
-import io.lark.column.TensorStore;
-import io.lark.column.op.FallibleOpTensor;
-import io.lark.column.op.OpContext;
+import io.lark.column.data.TensorStore;
+import io.lark.column.kernel.TensorKernel;
+import io.lark.column.kernel.TensorKernels;
+import io.lark.column.op.OpSpec;
 import io.lark.column.op.OpTensor;
-import io.lark.column.op.TensorOps;
 import io.lark.metric.Event;
 import io.lark.metric.Monitor;
 
@@ -38,8 +38,10 @@ import java.util.concurrent.atomic.AtomicLong;
 /**
  * Execution-layer DAG of {@link ComputeNode}s.
  *
- * <p>{@link #execute(ExecutionContext)} runs sequentially in topological
- * order. {@link #executeAsync(ExecutorService, ExecutionContext)} uses a
+ * <p>Each node binds an {@link OpSpec} graph description to a
+ * {@link TensorKernel} execution operator. {@link #execute(ExecutionContext)}
+ * runs sequentially in topological order.
+ * {@link #executeAsync(ExecutorService, ExecutionContext)} uses a
  * dependency-counter ready queue: a node is submitted to the supplied pool only
  * after all of its dependencies completed, and its op body runs directly on a
  * pool thread. Independent nodes run concurrently and no thread is parked while
@@ -55,21 +57,30 @@ public final class ComputeGraph {
     private List<ComputeNode> topo = List.of();
     private boolean finalized;
 
-    public ComputeNode addNode(String id, String module, OpTensor op) {
+    public ComputeNode addNode(String id, String module, OpSpec op,
+                               TensorKernel kernel) {
         Objects.requireNonNull(id, "id");
         if (byId.containsKey(id)) {
             throw new IllegalArgumentException(
                     "ComputeGraph: duplicate node id '" + id + "'");
         }
-        ComputeNode node = new ComputeNode(id, module, op);
+        ComputeNode node = new ComputeNode(id, module, op, kernel);
         byId.put(id, node);
         nodes.add(node);
         finalized = false;
         return node;
     }
 
+    /** Compatibility overload for the pre-kernel op API. */
+    @Deprecated
+    public ComputeNode addNode(String id, String module, OpTensor op) {
+        return addNode(id, module, TensorKernels.spec(op),
+                TensorKernels.legacy(op));
+    }
+
     public ComputeNode addPlaceholder(String output, String id) {
-        return addNode(id, "@placeholder", TensorOps.placeholder(output));
+        OpSpec op = new OpSpec("placeholder", List.of(), List.of(output), Map.of());
+        return addNode(id, "@placeholder", op, TensorKernels.create(op));
     }
 
     public void replacePlaceholder(String placeholderId, String realId) {
@@ -97,7 +108,7 @@ public final class ComputeGraph {
 
     public boolean hasPlaceholders() {
         for (ComputeNode node : nodes) {
-            if ("placeholder".equals(node.op().opType())) {
+            if ("placeholder".equals(node.opType())) {
                 return true;
             }
         }
@@ -213,7 +224,7 @@ public final class ComputeGraph {
 
             Throwable error = null;
             try {
-                node.op().compute(new OpContext(ctx.store()));
+                node.execute(ctx.store());
             } catch (Throwable t) {
                 error = t;
             }
@@ -295,7 +306,7 @@ public final class ComputeGraph {
 
             Throwable error = null;
             try {
-                node.op().compute(new OpContext(ctx.store()));
+                node.execute(ctx.store());
             } catch (Throwable t) {
                 error = unwrap(t);
             }
@@ -337,7 +348,7 @@ public final class ComputeGraph {
 
     private void reserveOutputs(TensorStore store) {
         for (ComputeNode node : nodes) {
-            store.ensureNames(node.op().outputs());
+            store.ensureNames(node.opSpec().outputs());
         }
     }
 
@@ -355,7 +366,7 @@ public final class ComputeGraph {
         Monitor monitor = ctx.monitor();
         try {
             monitor.emit(new Event("column", action, node.id())
-                    .attr("op", node.op().opType())
+                    .attr("op", node.opType())
                     .attr("module", node.module())
                     .attrNanos("elapsed_ns", elapsedNanos)
                     .durationNanos(Math.max(0, elapsedNanos))
@@ -401,14 +412,11 @@ public final class ComputeGraph {
 
     private static boolean invokeFallback(ComputeNode node, ExecutionContext ctx,
                                           Throwable error) {
-        if (node.op() instanceof FallibleOpTensor fallible) {
-            try {
-                return fallible.fallback(new OpContext(ctx.store()), error);
-            } catch (Throwable ignored) {
-                return false;
-            }
+        try {
+            return node.fallback(ctx.store(), error);
+        } catch (Throwable ignored) {
+            return false;
         }
-        return false;
     }
 
     private static Throwable unwrap(Throwable error) {

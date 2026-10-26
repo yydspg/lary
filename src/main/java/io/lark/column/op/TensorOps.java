@@ -3,14 +3,19 @@
 
 package io.lark.column.op;
 
-import io.lark.column.DType;
-import io.lark.column.Tensor;
-import io.lark.column.TensorShape;
+import io.lark.column.data.DType;
+import io.lark.column.data.Tensor;
+import io.lark.column.data.TensorShape;
 import io.lark.column.compute.Compute;
 
 import java.util.List;
 
-/** Built-in tensor-operation factory (CPU backend). */
+/**
+ * Legacy tensor-operation factory.
+ *
+ * <p>Use {@link io.lark.column.kernel.TensorKernels#create(OpSpec)} for the
+ * separated graph-op/kernel path. This factory is kept for source compatibility.
+ */
 public final class TensorOps {
 
     private TensorOps() {
@@ -27,6 +32,7 @@ public final class TensorOps {
             case "sub" -> new SubTensor(spec.inputs(), spec.outputs());
             case "mul" -> new MultiTensor(spec.inputs(), spec.outputs());
             case "div" -> new DivTensor(spec.inputs(), spec.outputs());
+            case "mul_add", "fma" -> new MulAddOp(spec);
             case "add_scalar", "sub_scalar", "mul_scalar", "div_scalar" ->
                     new ScalarArithOp(spec);
             case "neg", "abs", "square", "sqrt", "exp", "log" -> new UnaryOp(spec);
@@ -63,6 +69,21 @@ public final class TensorOps {
             this.type = spec.type();
             this.inputs = spec.inputs().toArray(String[]::new);
             this.outputs = spec.outputs().toArray(String[]::new);
+        }
+    }
+
+    private static final class MulAddOp extends BaseOp {
+        private MulAddOp(OpSpec spec) {
+            super(spec);
+            requireInputs(inputs, 3, "mul_add");
+        }
+
+        @Override
+        public void compute(OpContext ctx) {
+            ctx.set(outputs[0], Compute.mulAdd(
+                    ctx.input(inputs[0]),
+                    ctx.input(inputs[1]),
+                    ctx.input(inputs[2])));
         }
     }
 
