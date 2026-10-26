@@ -3,12 +3,14 @@
 
 package io.lark.examples.search.module;
 
+import io.lark.column.biz.ColumnComponent;
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnStream;
 import io.lark.examples.search.node.SearchOps;
 import io.lark.examples.search.schema.SearchMetrics;
 
 /** Same-item rebuy loss: {@code 1 - buyagain}. */
+@ColumnComponent
 public final class RebuySameLossModule extends ColumnModule {
 
     private final BuyAgainModule buyAgain;

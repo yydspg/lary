@@ -12,6 +12,16 @@ public final class SearchMetrics {
     private SearchMetrics() {
     }
 
+    // Search request / goods row identifiers and model inputs.
+    public static final Column<Long> PV_ID =
+            new Column<>("pv_id", DType.INT64);
+    public static final Column<Long> GOODS_ID =
+            new Column<>("goods_id", DType.INT64);
+    public static final Column<Double> PERTURBATION =
+            new Column<>("perturbation", DType.FLOAT64);
+    public static final Column<Double> ORIGINAL_SCORE =
+            new Column<>("original_score", DType.FLOAT64);
+
     // Raw search inputs.
     public static final Column<Long> IMPRESSIONS =
             new Column<>("impressions", DType.INT64);
@@ -53,6 +63,14 @@ public final class SearchMetrics {
             new Column<>("gmv", DType.FLOAT64);
     public static final Column<Double> DELAY =
             new Column<>("delay", DType.FLOAT64);
+
+    // PV-level ranking outputs.
+    public static final Column<Double> RANKING_SCORE =
+            new Column<>("ranking_score", DType.FLOAT64);
+    public static final Column<Double> ADJUSTED_SCORE =
+            new Column<>("adjusted_score", DType.FLOAT64);
+    public static final Column<Long> SELECTED =
+            new Column<>("selected", DType.INT64);
 
     // Internal derived columns.
     public static final Column<Double> COUPON_COST =

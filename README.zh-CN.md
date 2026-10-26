@@ -25,12 +25,13 @@ Spring；`:examples` 是示例工程；`:spring` 是可选的 Spring Boot 集成
 ```sh
 ./gradlew clean test :examples:build :spring:build
 
-./gradlew :examples:runSearch          # 张量感知的搜索/重定向示例
+./gradlew :examples:runSearch          # 行数据输入 -> PV top-k 搜索示例
 ./gradlew :examples:runRecsys          # 搜索推荐指标示例
 ./gradlew :examples:runRecsysBenchmark # warm-up 后的稳定基准
 ./gradlew :examples:runSimple          # DAG Node 示例
 ./gradlew :examples:runOp              # DAG Op + Aspect 示例
 ./gradlew :spring:runSpringRecsys      # Spring Boot 版本
+./gradlew :spring:runSpringSearch      # Spring 自动发现搜索图版本
 ```
 
 需要 JDK 25。列式计算和测试使用 `jdk.incubator.vector`，构建脚本已经配置。
@@ -110,14 +111,60 @@ private final ColumnStream<Double> ctcvr =
 - 每个 node 只绑定一个 `ColumnOp`。
 - node 输入可以是 module feed，也可以是其他 node 的 `ColumnStream` 输出。
 - `feed(...)` / `output(...)` 属于 module，描述整个模块的输入输出边界。
+- 内置算子包括 `add`、`sub`、`mul`、`ratio`、`mulAdd`、`oneMinus`、
+  `scale`、`topK`；`topK` 按 PV/分组列选取并输出 INT64 标记。
 - 复杂自定义公式可以通过扩展 `ColumnOp` 实现，`OpNode`/`TensorKernel` 是框架内部细节。
 
 ## 搜索系统示例
 
-`SearchDemo` 模拟一个搜索/重定向系统，主要模块如下：
+`SearchDemo` 模拟一次完整搜索请求：
+
+1. `SearchContext` 保存 `pvId`、`userId`、`query` 和 `topK`。
+2. `SearchRepository` 生成一个包含 1,000 个 `GoodsDO` 的 `GoodsList`，
+   每行带曝光、点击、订单、GMV、优惠券成本、重定向和延迟计数；`GoodsDO`
+   还提供 `ctr()`、`cvr()`、`gmv()`、`couponCost()` 行级访问方法。
+3. `SearchFeed` 把 context 和 goods 行展开为带类型的输入流并喂给计算图。
+4. 模块图计算指标、生成排序分、执行
+   `score * perturbation + originalScore`，最后按 `pv_id` 选出 top 30。
+5. 选中的 `goods_id`、调整后分数和选择标记先取回为行数据，再由
+   `SearchRankingService` 映射成类型化的 `RankedGoods`。
+
+业务代码不需要自己组装 module，也不需要读 `Row.get(2)` 这种位置化字段：
+
+```java
+SearchContext context = SearchRepository.sampleContext();
+SearchRequest request = SearchRepository.simulate(context, 1_000);
+
+SearchRankingService service = SearchRankingService.create(context.topK(), 4);
+SearchResult result = service.search(request);
+
+for (RankedGoods goods : result.ranked()) {
+    System.out.printf("%d. goods=%d score=%.4f%n",
+            goods.rank(), goods.goodsId(), goods.adjustedScore());
+}
+```
+
+使用 Spring 时，模块构造可以完全交给容器。搜索模块都标了
+`@ColumnComponent`，`@EnableLaryColumns` 会扫描并注册，`ColumnPipelineFactory`
+会自动收集所有 module 并注入构造函数依赖，业务代码不需要手写 module 列表。
+仍然显式保留的只有运行时数据和配置：
+
+```java
+@SpringBootApplication
+@EnableLaryColumns(basePackages = "io.lark.examples.search.module")
+class App {
+    @Bean SearchRankingOptions options() { return new SearchRankingOptions(30); }
+    // SearchInputModule、AdjustedScoreModule、TopKModule 等由 Spring 注入
+}
+```
+
+`SearchRankingService` 本身也是普通 Spring Bean，pipeline 通过
+`ColumnPipelineFactory::create` 按请求创建，避免共享可变 pipeline。运行：
+`./gradlew :spring:runSpringSearch`。
 
 | 模块 | 计算 | 输出形状 |
 |---|---|---|
+| `SearchInputModule` | `pv_id`、`goods_id`、原始计数、perturbation、original_score 输入流；id 同时发布供结果回取 | 1 维输入流 |
 | `CtrModule` | `clicks / impressions` | 1 维 |
 | `CvrModule` | `orders / clicks` | 1 维 |
 | `CtCvrModule` | `ctr * cvr` | 1 维 |
@@ -127,6 +174,14 @@ private final ColumnStream<Double> ctcvr =
 | `RetargetAdModule` | 点击占比、成本占比、ROI | 2 维 `[rows, 3]` |
 | `GmvModule` | `gmv_fen / 100` | 1 维 |
 | `DelayModule` | 订单/GMV 准时与延迟占比 | 3 维 `[rows, 2, 2]` |
+| `RankingScoreModule` | `100*ctr + 50*cvr + 0.01*gmv + 0.5*couponroi - 0.5*rebuy_same_loss` | 1 维 |
+| `AdjustedScoreModule` | `ranking_score * perturbation + original_score` | 1 维 |
+| `TopKModule` | 按 `pv_id` 分组的 top-k 选择标记 | 1 维 INT64 |
+
+PV 级别整合也是一个普通框架节点：`ColumnOps.topK` 接收分数列和 `pv_id`
+分组列，输出每行的 INT64 选择标记。示例运行单个 PV、1,000 个候选商品；测试
+会喂入两个 PV、每个 1,000 个商品，并校验每个 PV 恰好选中 30 行。分数相同
+时按原始行序稳定排序，因此重复运行结果一致。
 
 运行：
 
@@ -136,9 +191,9 @@ private final ColumnStream<Double> ctcvr =
 
 示例会输出：
 
-- CTR、CVR、CTCVR、buyagain、rebuy_same_loss、couponroi、GMV 的一维结果表；
-- `retargetAd` 的 `5x3` 张量形状及每行三个指标；
-- `delay` 的 `5x2x2` 张量形状及订单/GMV 的准时/延迟占比；
+- 按调整后分数排序的 top 30 商品及其 `goods_id`；
+- `retargetAd` 的 `1000x3` 张量形状及前几行指标；
+- `delay` 的 `1000x2x2` 张量形状及前几行订单/GMV 的准时/延迟占比；
 - `RunStats` 阶段耗时、节点数、成功/失败状态和 CPU 压力。
 
 ## 业务 API 使用建议
@@ -183,7 +238,7 @@ lary/
 │     └─ monitor/   RunStats / ColumnStatsCollector
 ├─ examples/
 │  └─ src/main/java/io/lark/examples/
-│     ├─ search/   张量感知的搜索/重定向示例
+│     ├─ search/   搜索排序示例（行数据输入 -> PV top-k）
 │     └─ recsys/   搜索推荐指标示例
 └─ spring/         可选 Spring Boot 集成
 ```

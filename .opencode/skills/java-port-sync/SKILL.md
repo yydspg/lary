@@ -97,9 +97,10 @@ test. Tests are the behavioral contract.
 | DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
 | Realistic multi-class demo | `examples/src/main/java/io/lark/examples/recsys/**` (`:examples:runRecsys`), split into `schema/`, `node/`, `module/`, `data/` |
 | Warmed-up benchmark | `examples/src/main/java/io/lark/examples/recsys/RecSysBenchmark.java` (`:examples:runRecsysBenchmark`), median/p95 after warm-up |
-| Tensor-aware search demo | `examples/src/main/java/io/lark/examples/search/**` (`:examples:runSearch`), modules `CtrModule`, `CvrModule`, `CtCvrModule`, `RebuySameLossModule`, `BuyAgainModule`, `CouponRoiModule`, `RetargetAdModule`, `GmvModule`, `DelayModule`; 2-D/3-D outputs |
+| Tensor-aware search demo | `examples/src/main/java/io/lark/examples/search/**` (`:examples:runSearch`), `SearchContext`/`GoodsList`/`GoodsDO` request rows, `SearchRankingService`/`SearchResult`/`RankedGoods` typed facade, `@ColumnComponent` modules `SearchInputModule`, `CtrModule`, `CvrModule`, `CtCvrModule`, `RebuySameLossModule`, `BuyAgainModule`, `CouponRoiModule`, `RetargetAdModule`, `GmvModule`, `DelayModule`, `RankingScoreModule`, `AdjustedScoreModule`, `TopKModule`; 2-D/3-D outputs and PV-grouped top-k |
 | Realistic demo test | `examples/src/test/java/io/lark/examples/recsys/RecSysMetricTest.java`, mock edge-case feed `MockMetrics.java` |
-| Spring demo / tests | `spring/src/test/java/io/lark/spring/example/SpringRecSysDemo.java` (`:spring:runSpringRecsys`), `LaryColumnAutoConfigurationTest.java`, `LaryColumnPropertyScanTest.java`, fixtures under `spring/src/test/java/io/lark/spring/fixture/` |
+| Search ranking demo test | `examples/src/test/java/io/lark/examples/search/SearchDemoTest.java`, hand-authored metrics, two simulated PVs with 1,000 goods each, and typed `SearchResult` |
+| Spring demo / tests | `spring/src/test/java/io/lark/spring/example/SpringRecSysDemo.java` (`:spring:runSpringRecsys`), `spring/src/test/java/io/lark/spring/example/search/SpringSearchDemo.java` (`:spring:runSpringSearch`), `SpringSearchDemoTest.java`, `LaryColumnAutoConfigurationTest.java`, `LaryColumnPropertyScanTest.java`, fixtures under `spring/src/test/java/io/lark/spring/fixture/` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
 ## Workflow
@@ -258,6 +259,19 @@ test. Tests are the behavioral contract.
   aggregates, not user/item ids; ids are lookup keys, not columnar inputs.
   Feed samples live in `MetricsRepository`/`MetricsFeed.sample`; tests add
   edge-case mock rows via `MockMetrics`.
+- The tensor-aware search demo models a request as `SearchContext` +
+  `GoodsList`/`GoodsDO`, feeds the rows, computes CTR/CVR/GMV/coupon/rebuy
+  metrics, then scores and selects the top-k goods per `PV_ID`. Selection uses
+  `ColumnOps.topK`, which groups scores by the PV column and emits a stable
+  INT64 flag per row; the selected columns are fetched back into `Row`s.
+  `SearchDemoTest` covers one hand-authored request and two simulated PVs with
+  1,000 goods each.
+- Search modules are `@ColumnComponent`s. In Spring, `@EnableLaryColumns` plus
+  `ColumnPipelineFactory` discover/inject every module; `SearchRankingOptions`
+  and `SearchRankingService` are the only `@Bean`s needed for the demo.
+  `SearchRankingService` creates a fresh pipeline per request and maps fetched
+  rows to typed `RankedGoods`; business code must not use positional
+  `Row.get(n)` or manual module lists when the Spring integration is available.
 - `@ColumnComponent` marks modules; `ColumnPipeline.scan(package)` discovers
   them without a Spring dependency. That core scanner requires a no-arg
   constructor.
@@ -317,6 +331,7 @@ JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runSearch
 JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRecsysBenchmark \
     -Plary.bench.rows=50000 -Plary.bench.iterations=10
 JAVA_HOME=/path/to/jdk-25 ./gradlew :spring:test :spring:runSpringRecsys
+JAVA_HOME=/path/to/jdk-25 ./gradlew :spring:runSpringSearch
 ```
 
 Use JDK 25. If Gradle cannot find it, set `org.gradle.java.installations.paths`
@@ -348,6 +363,9 @@ in `~/.gradle/gradle.properties`.
       ops/nodes.
 - [ ] Repeated-run/timing changes are checked with
       `:examples:runRecsysBenchmark`, not a single `RunStats` sample.
+- [ ] Spring search demo/test proves `@ColumnComponent` discovery and the
+      typed `SearchRankingService` facade; application code has no manual
+      module list.
 - [ ] Chinese docs (`README.zh-CN.md`) are updated for user-facing changes.
 - [ ] Column examples run with `--add-modules jdk.incubator.vector`.
 - [ ] `:examples` still compiles; realistic demo classes remain separated into

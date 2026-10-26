@@ -51,9 +51,9 @@ lary/
 │  └─ src/main/java/io/lark/examples/
 │     ├─ SimplePipeline.java     # DAG Node tour
 │     ├─ OpPipeline.java         # Op / Aspect tour
-│     ├─ search/                 # tensor-aware search/retargeting project
+│     ├─ search/                 # search ranking project
 │     │  ├─ SearchDemo.java
-│     │  ├─ schema/ node/ module/ data/
+│     │  ├─ schema/ node/ module/ data/  # rows, modules, PV top-k
 │     └─ recsys/                 # search / recommendation metrics project
 │        ├─ RecSysDemo.java      # single-run demo
 │        ├─ RecSysBenchmark.java # warmed-up steady-state benchmark
@@ -109,10 +109,11 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 
 ./gradlew :examples:runRecsys    # search/recommendation metric project
 ./gradlew :examples:runRecsysBenchmark # warmed-up steady-state benchmark
-./gradlew :examples:runSearch    # tensor-aware search/retargeting demo
+./gradlew :examples:runSearch    # row feed -> PV top-k ranking demo
 ./gradlew :examples:runSimple    # DAG Node layer
 ./gradlew :examples:runOp        # DAG Op + Aspect layer
-./gradlew :spring:runSpringRecsys # same recsys demo through Spring Boot
+./gradlew :spring:runSpringRecsys # recsys demo through Spring Boot
+./gradlew :spring:runSpringSearch # auto-discovered search graph through Spring Boot
 ```
 
 The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
@@ -123,8 +124,8 @@ also cover wide/deep ready-queue scheduling and array/varargs node definitions;
 failed recompile, module snapshots, and retryable module definitions;
 `ExecutionGraphTest` covers the separated `OpSpec` + `TensorKernel` path and
 the compatibility `OpTensor` path. The `:examples` module has
-`RecSysMetricTest` and `SearchDemoTest` for the search/recommendation and
-tensor-aware search graphs; `:spring` has Spring context tests for scanning,
+`RecSysMetricTest` and `SearchDemoTest` for the metric and row-fed
+search/top-k graphs; `:spring` has Spring context tests for scanning,
 constructor injection and the prototype pipeline.
 
 ## Search / recommendation metrics demo
@@ -277,10 +278,57 @@ numbers as a hardware-independent baseline.
 ./gradlew :examples:runSearch
 ```
 
-`SearchDemo` models a search system with nine business modules:
+`SearchDemo` models a search request end to end:
+
+1. `SearchContext` carries `pvId`, `userId`, `query` and `topK`.
+2. `SearchRepository` simulates a `GoodsList` of 1,000 `GoodsDO` rows with
+   impressions, clicks, orders, GMV, coupon cost, retargeting counters and
+   delay counters. `GoodsDO` also exposes row-level `ctr()`, `cvr()`, `gmv()`
+   and `couponCost()` helpers; the graph recomputes metrics from the raw feed.
+3. `SearchFeed` flattens the context and goods rows into typed feed streams.
+4. The module graph computes metrics, composes a ranking score, applies
+   `score * perturbation + originalScore`, and selects the top 30 goods for
+   each `pv_id`.
+5. The selected columns are fetched back as rows, then mapped to typed
+   `RankedGoods` items inside `SearchRankingService`.
+
+Business code does not need to assemble modules or read positional `Row`
+cells:
+
+```java
+SearchContext context = SearchRepository.sampleContext();
+SearchRequest request = SearchRepository.simulate(context, 1_000);
+
+SearchRankingService service = SearchRankingService.create(context.topK(), 4);
+SearchResult result = service.search(request);
+
+for (RankedGoods goods : result.ranked()) {
+    System.out.printf("%d. goods=%d score=%.4f%n",
+            goods.rank(), goods.goodsId(), goods.adjustedScore());
+}
+```
+
+With Spring, the same graph is discovered automatically. Search modules are
+`@ColumnComponent`s, so `@EnableLaryColumns` and `ColumnPipelineFactory`
+collect and inject them; application code does not list modules. Only runtime
+data and configuration remain explicit:
+
+```java
+@SpringBootApplication
+@EnableLaryColumns(basePackages = "io.lark.examples.search.module")
+class App {
+    @Bean SearchRankingOptions options() { return new SearchRankingOptions(30); }
+    // Spring injects SearchInputModule, AdjustedScoreModule, TopKModule, ...
+}
+```
+
+`SearchRankingService` is a normal bean; its pipeline supplier is
+`ColumnPipelineFactory::create`, so each request gets a fresh mutable pipeline.
+The Spring demo runs with `./gradlew :spring:runSpringSearch`.
 
 | Module | Output | Shape |
 |---|---|---|
+| `SearchInputModule` | feed handles for `pv_id`, `goods_id`, raw counters, perturbation and original score; ids are published for result fetch | 1-D feeds |
 | `CtrModule` | `ctr = clicks / impressions` | 1-D |
 | `CvrModule` | `cvr = orders / clicks` | 1-D |
 | `CtCvrModule` | `ctcvr = ctr * cvr` | 1-D |
@@ -290,9 +338,18 @@ numbers as a hardware-independent baseline.
 | `RetargetAdModule` | click share, cost share, ROI per row | 2-D `[rows, 3]` |
 | `GmvModule` | `gmv = gmv_fen / 100` | 1-D |
 | `DelayModule` | order/GMV on-time and delayed shares | 3-D `[rows, 2, 2]` |
+| `RankingScoreModule` | `100*ctr + 50*cvr + 0.01*gmv + 0.5*couponroi - 0.5*rebuy_same_loss` | 1-D |
+| `AdjustedScoreModule` | `ranking_score * perturbation + original_score` | 1-D |
+| `TopKModule` | top-`k` selection flag per `pv_id` | 1-D INT64 |
 
-Rows are sample search aggregates. The demo prints the scalar metric table,
-then fetches the retargeting and delay tensors with `fetchTensor(...)` so their
+PV-level integration is a regular framework node: `ColumnOps.topK` receives
+the score column and the `pv_id` group column, then emits an INT64 selection
+flag per row. The demo runs one PV with 1,000 candidates; the test feeds two
+PVs with 1,000 goods each and verifies 30 selected rows per PV. Ties are
+broken by original row order, so repeated runs are deterministic.
+
+The demo prints the selected top-30 goods with their adjusted scores, then
+fetches the retargeting and delay tensors with `fetchTensor(...)` so their
 shapes and row-major values are visible.
 
 ## DAG quick start
@@ -429,7 +486,9 @@ private final ColumnStream<Double> ctcvr =
 
 `ctcvr` is a node output wired from two other node outputs. Each node binds one
 op; the module owns the graph structure and its feed/fetch streams. No
-`Tensor`, tensor shape or kernel type appears in normal module code.
+`Tensor`, tensor shape or kernel type appears in normal module code. Built-ins
+include `add`, `sub`, `mul`, `ratio`, `mulAdd`, `oneMinus`, `scale` and
+`topK`; `topK` groups by a PV/group column and emits INT64 selection flags.
 
 For custom formulas or aggregations, `ColumnOps` can be extended with a
 domain-specific `ColumnOp`; `OpNode` and `TensorKernel` remain internal
@@ -672,14 +731,17 @@ lary:
     enabled: true
 ```
 
-Run the Spring version of the recsys demo:
+Run the Spring demos:
 
 ```sh
 ./gradlew :spring:runSpringRecsys
+./gradlew :spring:runSpringSearch
 ```
 
-The demo lives in `spring/src/test/java/io/lark/spring/example/` and uses the
-same schema, nodes and modules as `:examples:runRecsys`.
+They live in `spring/src/test/java/io/lark/spring/example/` and use the same
+schema, nodes and modules as the `:examples` demos. The search demo has no
+manual module list: component scanning supplies every `ColumnModule` bean and
+`SearchRankingService` wraps the per-request pipeline.
 
 
 ### Graph pruning and cycle detection

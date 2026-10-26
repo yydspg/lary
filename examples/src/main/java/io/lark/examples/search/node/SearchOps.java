@@ -33,6 +33,33 @@ public final class SearchOps {
         return ColumnOps.scale(output, divisor);
     }
 
+    public static ColumnOp<Long> topK(Column<Long> output, int k) {
+        return ColumnOps.topK(output, k);
+    }
+
+    /**
+     * Ranking score from funnel, commercial and rebuy signals.
+     *
+     * <p>Inputs: ctr, cvr, gmv, couponroi, rebuy_same_loss.
+     */
+    public static ColumnOp<Double> rankingScore(Column<Double> output) {
+        return new ColumnOp<>(output, ctx -> {
+            Tensor ctr = ctx.input(0);
+            Tensor cvr = ctx.input(1);
+            Tensor gmv = ctx.input(2);
+            Tensor couponRoi = ctx.input(3);
+            Tensor rebuyLoss = ctx.input(4);
+
+            Tensor score = Compute.add(
+                    Compute.mulScalar(ctr, 100.0),
+                    Compute.mulScalar(cvr, 50.0));
+            score = Compute.add(score, Compute.mulScalar(gmv, 0.01));
+            score = Compute.add(score, Compute.mulScalar(couponRoi, 0.5));
+            score = Compute.sub(score, Compute.mulScalar(rebuyLoss, 0.5));
+            ctx.output(score);
+        });
+    }
+
     /** 2-D retargeting tensor: [click_share, cost_share, roi]. */
     public static ColumnOp<Double> retargetAd() {
         return new ColumnOp<>(SearchMetrics.RETARGET_AD, ctx -> {
