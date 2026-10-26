@@ -3,6 +3,7 @@
 
 package io.lark.examples.search.data;
 
+import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Cell;
 import io.lark.column.data.Row;
 
@@ -17,7 +18,21 @@ public final class SearchRepository {
     }
 
     public static SearchContext sampleContext() {
-        return new SearchContext(1_001L, 42L, "red shoes", 30);
+        return new SearchContext(1_001L, 42L, "red shoes", 30,
+                sampleExperiment());
+    }
+
+    /** Experiment assignment/parameters for the demo rerank layer. */
+    public static ExperimentContext sampleExperiment() {
+        return ExperimentContext.builder()
+                .variant("rerank", "coupon_boost")
+                .param("rerank.ctr_w", 100.0)
+                .param("rerank.cvr_w", 50.0)
+                .param("rerank.gmv_w", 0.01)
+                .param("rerank.coupon_roi_w", 0.5)
+                .param("rerank.rebuy_w", 0.5)
+                .param("rerank.coupon_boost_w", 0.02)
+                .build();
     }
 
     /** Small hand-authored request for formula tests. */

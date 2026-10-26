@@ -3,8 +3,17 @@
 
 package io.lark.examples.search.data;
 
-/** One search page-view request. */
-public record SearchContext(long pvId, long userId, String query, int topK) {
+import io.lark.column.context.ExperimentContext;
+
+import java.util.Objects;
+
+/** One search page-view request, including its experiment assignment. */
+public record SearchContext(long pvId, long userId, String query, int topK,
+                            ExperimentContext experiment) {
+
+    public SearchContext(long pvId, long userId, String query, int topK) {
+        this(pvId, userId, query, topK, ExperimentContext.empty());
+    }
 
     public SearchContext {
         if (pvId < 0) {
@@ -16,5 +25,6 @@ public record SearchContext(long pvId, long userId, String query, int topK) {
         if (topK <= 0) {
             throw new IllegalArgumentException("topK must be positive");
         }
+        experiment = Objects.requireNonNull(experiment, "experiment");
     }
 }

@@ -3,6 +3,7 @@
 
 package io.lark.column.exec;
 
+import io.lark.column.context.ExperimentContext;
 import io.lark.column.tensor.Tensor;
 import io.lark.column.tensor.TensorStore;
 import io.lark.column.tensor.FallibleTensorKernel;
@@ -130,26 +131,37 @@ public final class ComputeNode {
     }
 
     void execute(TensorStore store) {
-        KernelContext ctx = context(store);
+        execute(store, ExperimentContext.empty());
+    }
+
+    void execute(TensorStore store, ExperimentContext experiment) {
+        KernelContext ctx = context(store, experiment);
         kernel.compute(ctx);
     }
 
     boolean fallback(TensorStore store, Throwable failure) {
+        return fallback(store, failure, ExperimentContext.empty());
+    }
+
+    boolean fallback(TensorStore store, Throwable failure,
+                     ExperimentContext experiment) {
         if (kernel instanceof FallibleTensorKernel fallible) {
             return fallible.fallback(
-                    new KernelContext(store, new Tensor[0], null), failure);
+                    new KernelContext(store, new Tensor[0], null, experiment),
+                    failure);
         }
         return false;
     }
 
-    private KernelContext context(TensorStore store) {
+    private KernelContext context(TensorStore store,
+                                  ExperimentContext experiment) {
         Tensor[] inputs = new Tensor[op.inputs().size()];
         for (int i = 0; i < inputs.length; i++) {
             inputs[i] = store.get(op.inputs().get(i));
         }
         Consumer<Tensor> sink = op.outputs().isEmpty()
                 ? null : tensor -> store.set(op.outputs().get(0), tensor);
-        return new KernelContext(store, inputs, sink);
+        return new KernelContext(store, inputs, sink, experiment);
     }
 
     void setStatus(Status newStatus) {

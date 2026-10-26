@@ -8,44 +8,35 @@ import io.lark.column.tensor.Tensor;
 import java.util.Objects;
 
 /**
- * A node with two typed inputs and one typed fetch output.
+ * A typed single-output node with two inputs.
  *
- * <p>The no-arg constructor reads the subclass's static {@link NodeSchema}
- * {@code SCHEMA} property; inputs are bound by
- * {@code ColumnModule.node(node, left, right)}. The explicit input /
- * {@code outputColumn} constructors remain for custom nodes and dynamic
- * schemas.
+ * <p>Business code declares the schema through a static
+ * {@link NodeSchema} property or an explicit output column and implements
+ * {@link #compute(ColumnContext, Tensor, Tensor)}. Inputs may be bound by
+ * {@code ColumnModule.node(node, left, right)}.
  */
 @SuppressWarnings("this-escape")
 public abstract class BinaryNode<A extends ColumnStream<?>,
-        B extends ColumnStream<?>, O> extends ColumnNode {
+        B extends ColumnStream<?>, O> extends ModuleNode<O> {
 
     private A left;
     private B right;
-    private final ColumnStream<O> output;
 
-    /**
-     * No-arg form for module wiring. Inputs are bound by
-     * {@code ColumnModule.node(node, left, right)}; {@code SCHEMA} comes from
-     * the subclass.
-     */
     protected BinaryNode() {
         super();
-        this.output = fetch(NodeSchemas.schemaOf(getClass()));
+        bindOutput(NodeSchemas.<O>schemaOf(getClass()).output());
     }
 
-    /** No-arg wiring form with an explicit output definition. */
     protected BinaryNode(Column<O> outputColumn) {
-        super();
-        this.output = fetch(outputColumn);
+        super(outputColumn);
     }
 
-    /** Reads the subclass's public static {@code SCHEMA} property. */
     protected BinaryNode(A left, B right) {
-        super(left, right);
+        super();
+        bindOutput(NodeSchemas.<O>schemaOf(getClass()).output());
         this.left = Objects.requireNonNull(left, "left");
         this.right = Objects.requireNonNull(right, "right");
-        this.output = fetch(NodeSchemas.schemaOf(getClass()));
+        bindFeeds(left, right);
     }
 
     protected BinaryNode(A left, B right, NodeSchema<O> schema) {
@@ -53,10 +44,9 @@ public abstract class BinaryNode<A extends ColumnStream<?>,
     }
 
     protected BinaryNode(A left, B right, Column<O> outputColumn) {
-        super(left, right);
+        super(outputColumn, left, right);
         this.left = Objects.requireNonNull(left, "left");
         this.right = Objects.requireNonNull(right, "right");
-        this.output = fetch(outputColumn);
     }
 
     final void bind(A left, B right) {
@@ -77,13 +67,9 @@ public abstract class BinaryNode<A extends ColumnStream<?>,
         return right;
     }
 
-    public final ColumnStream<O> out() {
-        return output;
-    }
-
     @Override
     public final void compute(ColumnContext ctx) {
-        ctx.write(output, compute(ctx, ctx.read(left), ctx.read(right)));
+        ctx.write(out(), compute(ctx, ctx.read(left), ctx.read(right)));
     }
 
     /** Implement the business transformation for the typed inputs. */

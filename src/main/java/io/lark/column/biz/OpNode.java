@@ -23,19 +23,13 @@ import io.lark.column.tensor.TensorKernel;
  * <p>The node itself contains no formula: it resolves its bound input tensors,
  * invokes the op kernel, and writes the single output.
  */
-final class OpNode<O> extends ColumnNode {
+final class OpNode<O> extends ModuleNode<O> {
 
     private final TensorKernel kernel;
-    private final ColumnStream<O> out;
 
     OpNode(ColumnOp<O> op, ColumnStream<?>... inputs) {
-        super(inputs);
+        super(op.output(), inputs);
         this.kernel = op.kernel();
-        this.out = fetch(op.output());
-    }
-
-    ColumnStream<O> out() {
-        return out;
     }
 
     @Override
@@ -48,19 +42,20 @@ final class OpNode<O> extends ColumnNode {
 
         Tensor[] result = new Tensor[1];
         kernel.compute(new KernelContext(ctx.store(), inputs,
-                value -> result[0] = value));
+                value -> result[0] = value, ctx.experiment()));
         if (result[0] == null) {
             throw new IllegalStateException(
                     "OpNode " + id() + ": kernel produced no output");
         }
-        ctx.write(out, result[0]);
+        ctx.write(out(), result[0]);
     }
 
     @Override
     public boolean fallback(ColumnContext ctx, Throwable error) {
         if (kernel instanceof FallibleTensorKernel fallible) {
             return fallible.fallback(
-                    new KernelContext(ctx.store(), new Tensor[0], null), error);
+                    new KernelContext(ctx.store(), new Tensor[0], null,
+                            ctx.experiment()), error);
         }
         return false;
     }

@@ -8,41 +8,33 @@ import io.lark.column.tensor.Tensor;
 import java.util.Objects;
 
 /**
- * A node with one typed input and one typed fetch output.
+ * A typed single-output node with one input.
  *
- * <p>Business code only declares the node schema with a static
- * {@link NodeSchema} property and implements
- * {@link #compute(ColumnContext, Tensor)}. The input is bound by
- * {@code ColumnModule.node(node, input)}; the framework handles node ids,
- * dependency wiring, output registration and read/write calls.
+ * <p>Business code declares the schema through a static
+ * {@link NodeSchema} property or an explicit output column and implements
+ * {@link #compute(ColumnContext, Tensor)}. The input may be bound by
+ * {@code ColumnModule.node(node, input)}.
  */
 @SuppressWarnings("this-escape")
-public abstract class UnaryNode<I extends ColumnStream<?>, O> extends ColumnNode {
+public abstract class UnaryNode<I extends ColumnStream<?>, O>
+        extends ModuleNode<O> {
 
     private I input;
-    private final ColumnStream<O> output;
 
-    /**
-     * No-arg form for module wiring. The input is bound by
-     * {@code ColumnModule.node(node, input)}; {@code SCHEMA} comes from the
-     * subclass.
-     */
     protected UnaryNode() {
         super();
-        this.output = fetch(NodeSchemas.schemaOf(getClass()));
+        bindOutput(NodeSchemas.<O>schemaOf(getClass()).output());
     }
 
-    /** No-arg wiring form with an explicit output definition. */
     protected UnaryNode(Column<O> outputColumn) {
-        super();
-        this.output = fetch(outputColumn);
+        super(outputColumn);
     }
 
-    /** Reads the subclass's public static {@code SCHEMA} property. */
     protected UnaryNode(I input) {
-        super(input);
+        super();
+        bindOutput(NodeSchemas.<O>schemaOf(getClass()).output());
         this.input = Objects.requireNonNull(input, "input");
-        this.output = fetch(NodeSchemas.schemaOf(getClass()));
+        bindFeeds(input);
     }
 
     protected UnaryNode(I input, NodeSchema<O> schema) {
@@ -50,9 +42,8 @@ public abstract class UnaryNode<I extends ColumnStream<?>, O> extends ColumnNode
     }
 
     protected UnaryNode(I input, Column<O> outputColumn) {
-        super(input);
+        super(outputColumn, input);
         this.input = Objects.requireNonNull(input, "input");
-        this.output = fetch(outputColumn);
     }
 
     final void bind(I input) {
@@ -68,13 +59,9 @@ public abstract class UnaryNode<I extends ColumnStream<?>, O> extends ColumnNode
         return input;
     }
 
-    public final ColumnStream<O> out() {
-        return output;
-    }
-
     @Override
     public final void compute(ColumnContext ctx) {
-        ctx.write(output, compute(ctx, ctx.read(input)));
+        ctx.write(out(), compute(ctx, ctx.read(input)));
     }
 
     /** Implement the business transformation for the typed input. */

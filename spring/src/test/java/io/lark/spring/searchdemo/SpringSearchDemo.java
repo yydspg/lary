@@ -1,7 +1,7 @@
 // Copyright (c) 2024 LARK Contributors
 // SPDX-License-Identifier: MIT
 
-package io.lark.spring.example.search;
+package io.lark.spring.searchdemo;
 
 import io.lark.examples.search.SearchRankingOptions;
 import io.lark.examples.search.SearchRankingService;

@@ -29,7 +29,8 @@ import java.util.Objects;
  * }</pre>
  *
  * <p>Feeds and fetches are exposed as arrays because their arity is fixed once
- * the node is constructed.
+ * the node is constructed. Prefer {@link ModuleNode} for new single-output
+ * nodes; this base remains for multi-output and legacy custom nodes.
  */
 public abstract class ColumnNode {
 

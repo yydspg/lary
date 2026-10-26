@@ -3,6 +3,7 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Cell;
 import io.lark.column.tensor.FeedFetch;
 import io.lark.column.data.Row;
@@ -53,6 +54,7 @@ public final class ColumnPipeline implements AutoCloseable {
     private int computeWorkers = Math.max(1,
             Runtime.getRuntime().availableProcessors());
     private boolean virtualComputeThreads;
+    private ExperimentContext experiment = ExperimentContext.empty();
 
     private PipelinePlan plan;
     private List<String> planRequestedOutputs;
@@ -127,6 +129,16 @@ public final class ColumnPipeline implements AutoCloseable {
             pool = null;
         }
         return this;
+    }
+
+    /** Install per-run experiment assignments and parameters. */
+    public ColumnPipeline setExperiment(ExperimentContext experiment) {
+        this.experiment = Objects.requireNonNull(experiment, "experiment");
+        return this;
+    }
+
+    public ExperimentContext experiment() {
+        return experiment;
     }
 
     /**
@@ -284,6 +296,7 @@ public final class ColumnPipeline implements AutoCloseable {
         }
         coerceFeed(ctx.feed(), true);
         validateFeed(ctx.feed());
+        ctx.setExperiment(experiment);
         if (pool == null) {
             if (virtualComputeThreads) {
                 // Blocking nodes: one virtual thread per ready node. The ready

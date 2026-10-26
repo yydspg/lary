@@ -59,6 +59,6 @@ tasks.register<JavaExec>("runSpringSearch") {
     group = "application"
     description = "Run the search ranking demo as a Spring Boot application."
     classpath = sourceSets["test"].runtimeClasspath
-    mainClass.set("io.lark.spring.example.search.SpringSearchDemo")
+    mainClass.set("io.lark.spring.searchdemo.SpringSearchDemo")
     jvmArgs("--add-modules", "jdk.incubator.vector")
 }

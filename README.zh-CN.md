@@ -9,7 +9,7 @@ Spring；`:examples` 是示例工程；`:spring` 是可选的 Spring Boot 集成
 
 - **DAG / Op**：虚拟线程承载阻塞式业务代码，支持 Node / Op 两层 API、Aspect、
   注册表、KV 与箭头 DSL、统计、超时、fallback 和连续超时隔离。
-- **列式计算**：`Column<T>` schema、`ColumnStream<T>`、`ColumnNode` /
+- **列式计算**：`Column<T>` schema、`ColumnStream<T>`、`ModuleNode<O>` /
   `ColumnModule`、`ColumnPipeline`。
 - **分层执行**：`OpSpec`（图描述）→ `ComputeNode`（调度/绑定）→
   `TensorKernel`（纯执行算子）→ `Tensor`（数据）。
@@ -62,7 +62,7 @@ assert sum.shape().equals(shape);
 ## 分层执行
 
 ```text
-ColumnNode / ColumnModule / ColumnPipeline   业务编排
+ModuleNode / ColumnModule / ColumnPipeline   业务编排
              ↓
 OpSpec                                      底层计算图描述
              ↓
@@ -183,6 +183,60 @@ PV 级别整合也是一个普通框架节点：`ColumnOps.topK` 接收分数列
 会喂入两个 PV、每个 1,000 个商品，并校验每个 PV 恰好选中 30 行。分数相同
 时按原始行序稳定排序，因此重复运行结果一致。
 
+### 复杂公式与实验编排
+
+`ModuleNode<O>` 是带泛型的单输出节点基类。模块可以直接声明公式节点，
+`FormulaNode` 会自动收集公式引用到的列，因此 graph 依赖仍然自动建立：
+
+```java
+NumExpr control = F.sum(
+        F.weighted(F.col(ctr), "rerank.ctr_w", 100.0),
+        F.weighted(F.col(cvr), "rerank.cvr_w", 50.0),
+        F.weighted(F.col(gmv), "rerank.gmv_w", 0.01));
+
+NumExpr couponBoost = F.when(
+        F.and(
+                F.variant("rerank", "coupon_boost"),
+                F.gt(F.col(couponRoi), F.val(0.0))),
+        F.weighted(F.col(gmv), "rerank.coupon_boost_w", 0.02),
+        F.val(0.0));
+
+score = formula(SearchMetrics.RANKING_SCORE,
+        F.chooseVariant("rerank",
+                Map.of("control", control,
+                        "coupon_boost", control.add(couponBoost)),
+                control));
+```
+
+每个请求通过 `ExperimentContext` 携带实验层和参数（demo 放在
+`SearchContext` 中），`ColumnPipeline.setExperiment(...)` 将其传给所有公式
+节点。`F.param(...)` 控制系数，`F.variant(...)` 控制实验层，`F.when(...)`
+控制行级条件，`F.caseWhen(...)` 支持多分支，`F.chooseVariant(...)` 选择整段
+公式。`NumExpr` / `BoolExpr` 是类型化表达式，使用列式算子和广播计算，
+分支切换不需要重新构图。
+
+需要配置化时使用 `FormulaConfig.of(map)`；它接受 JSON/YAML 友好的树结构，
+再绑定到类型化列。搜索 demo 的公式放在 `SearchFormulaConfig` 中，应用可以
+用 Jackson、SnakeYAML 或自己的配置加载器反序列化同样的结构：
+
+```java
+FormulaConfig config = FormulaConfig.of(Map.of(
+        "op", "sum",
+        "terms", List.of(
+                Map.of("op", "weighted", "column", "ctr",
+                        "key", "rerank.ctr_w", "default", 100.0),
+                Map.of("op", "weighted", "column", "cvr",
+                        "key", "rerank.cvr_w", "default", 50.0))));
+
+NumExpr score = config.compileNum(Map.of("ctr", ctr, "cvr", cvr));
+```
+
+边界也要说清楚：这一层解决行级打分/资格公式；PV 聚合、模型推理和跨行窗口
+仍然应使用自定义 `ModuleNode`。如果实验需要完全不同的图拓扑，用
+`ExperimentPipelines` 为每个变体注册一个 pipeline supplier，再按请求路由到
+对应的新 pipeline。`ColumnNode` 保留给旧的多输出节点，新业务单输出节点应
+继承 `ModuleNode<O>`。
+
 运行：
 
 ```sh
@@ -234,7 +288,7 @@ lary/
 │     ├─ compute/   Compute / VectorOps / Simd
 │     ├─ op/        OpSpec + 兼容 OpTensor/TensorOps
 │     ├─ exec/      ComputeNode / ComputeGraph
-│     ├─ biz/       ColumnNode / Module / Pipeline
+│     ├─ biz/       ModuleNode / Formula / Module / Pipeline
 │     └─ monitor/   RunStats / ColumnStatsCollector
 ├─ examples/
 │  └─ src/main/java/io/lark/examples/

@@ -8,6 +8,7 @@ import io.lark.column.tensor.Tensor;
 import io.lark.column.tensor.TensorShape;
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.FetchStream;
+import io.lark.column.context.ExperimentContext;
 import io.lark.examples.search.data.GoodsDO;
 import io.lark.examples.search.data.SearchContext;
 import io.lark.examples.search.data.SearchFeed;
@@ -165,6 +166,45 @@ class SearchDemoTest {
                     .toList();
             assertTrue(top.get(0).get(2).asDouble()
                     >= top.get(1).get(2).asDouble());
+        }
+    }
+
+    @Test
+    void experimentVariantChangesRerankFormula() {
+        SearchInputModule inputs = new SearchInputModule();
+        CtrModule ctr = new CtrModule();
+        CvrModule cvr = new CvrModule();
+        GmvModule gmv = new GmvModule();
+        CouponRoiModule coupon = new CouponRoiModule(gmv);
+        BuyAgainModule buyAgain = new BuyAgainModule();
+        RebuySameLossModule rebuy = new RebuySameLossModule(buyAgain);
+        RankingScoreModule ranking = new RankingScoreModule(
+                ctr, cvr, gmv, coupon, rebuy);
+
+        ExperimentContext control = ExperimentContext.builder()
+                .variant("rerank", "control")
+                .build();
+        ExperimentContext boost = ExperimentContext.builder()
+                .variant("rerank", "coupon_boost")
+                .build();
+
+        try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
+            pipeline.addAll(inputs, ctr, cvr, gmv, coupon, buyAgain, rebuy,
+                            ranking)
+                    .setExperiment(control)
+                    .compile()
+                    .feed(SearchFeed.sample(inputs))
+                    .compute();
+            double controlScore = pipeline.fetch(FetchStream.of(ranking.score()))
+                    .get(0).get(0).asDouble();
+
+            pipeline.setExperiment(boost).compute();
+            double boostScore = pipeline.fetch(FetchStream.of(ranking.score()))
+                    .get(0).get(0).asDouble();
+
+            // Row 0 has GMV 500 and coupon ROI > 0, so coupon_boost adds
+            // exactly 500 * 0.02 before later adjusted-score stages.
+            assertEquals(controlScore + 10.0, boostScore, 1e-9);
         }
     }
 

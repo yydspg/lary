@@ -16,10 +16,11 @@ public final class SearchResultPrinter {
 
     public static void print(SearchResult result) {
         System.out.printf("=== search ranking (pv=%d, user=%d, query=%s, "
-                        + "candidates=%d, topK=%d) ===%n",
+                        + "candidates=%d, topK=%d, experiment=%s) ===%n",
                 result.context().pvId(), result.context().userId(),
                 result.context().query(), result.candidateCount(),
-                result.context().topK());
+                result.context().topK(),
+                result.context().experiment().variants());
         printRanking(result.ranked());
 
         Tensor retarget = result.retargetAd();

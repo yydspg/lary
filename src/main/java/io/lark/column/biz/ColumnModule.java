@@ -93,6 +93,16 @@ public abstract class ColumnModule {
         return add(new OpNode<>(op, inputs)).out();
     }
 
+    /**
+     * Register a typed formula node. The expression tree is columnar and can
+     * branch on experiment assignments and row conditions without rebuilding
+     * the graph.
+     */
+    protected final <O> ColumnStream<O> formula(Column<O> output,
+                                                Expr<O> expression) {
+        return add(new FormulaNode<>(output, expression)).out();
+    }
+
     /** Register a business node inside this module. */
     protected final <T extends ColumnNode> T add(T node) {
         nodeBuilder.add(Objects.requireNonNull(node, "node"));

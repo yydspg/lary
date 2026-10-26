@@ -224,7 +224,7 @@ public final class ComputeGraph {
 
             Throwable error = null;
             try {
-                node.execute(ctx.store());
+                node.execute(ctx.store(), ctx.experiment());
             } catch (Throwable t) {
                 error = t;
             }
@@ -306,7 +306,7 @@ public final class ComputeGraph {
 
             Throwable error = null;
             try {
-                node.execute(ctx.store());
+                node.execute(ctx.store(), ctx.experiment());
             } catch (Throwable t) {
                 error = unwrap(t);
             }
@@ -413,7 +413,7 @@ public final class ComputeGraph {
     private static boolean invokeFallback(ComputeNode node, ExecutionContext ctx,
                                           Throwable error) {
         try {
-            return node.fallback(ctx.store(), error);
+            return node.fallback(ctx.store(), error, ctx.experiment());
         } catch (Throwable ignored) {
             return false;
         }

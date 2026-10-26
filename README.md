@@ -11,7 +11,7 @@ applications are separate Gradle modules.
   optional timeout / cancellation with business fallback and repeated-timeout
   quarantine.
 - **Column engine**: feed → compute → fetch, `Column<T>` schema definitions and
-  typed `ColumnStream<T>` handles, `ColumnNode` / `ColumnModule` business API,
+  typed `ColumnStream<T>` handles, `ModuleNode<O>` / `ColumnModule` business API,
   graph ops (`OpSpec`) plus executable tensor kernels (`TensorKernel`), hidden
   `ComputeNode` execution nodes, multi-dtype tensors with 1–3-D shapes,
   zero-tensor nodes, Q8_0 quantization and monitoring. Legacy `OpTensor` /
@@ -39,7 +39,7 @@ lary/
 │     ├─ compute/   Compute / VectorOps / Simd
 │     ├─ op/        OpSpec + legacy OpTensor/TensorOps
 │     ├─ exec/      ComputeNode / ComputeGraph
-│     ├─ biz/       ColumnNode / Module / Pipeline
+│     ├─ biz/       ModuleNode / Formula / Module / Pipeline
 │     ├─ backend/   backend registry
 │     └─ monitor/   RunStats / ColumnStatsCollector
 ├─ src/test/java/io/lark/
@@ -352,6 +352,65 @@ The demo prints the selected top-30 goods with their adjusted scores, then
 fetches the retargeting and delay tensors with `fetchTensor(...)` so their
 shapes and row-major values are visible.
 
+### Formula and experiment orchestration
+
+`ModuleNode<O>` is the typed single-output node base. A module can declare a
+formula node directly; `FormulaNode` collects its column inputs, so the graph
+dependency wiring stays automatic:
+
+```java
+NumExpr control = F.sum(
+        F.weighted(F.col(ctr), "rerank.ctr_w", 100.0),
+        F.weighted(F.col(cvr), "rerank.cvr_w", 50.0),
+        F.weighted(F.col(gmv), "rerank.gmv_w", 0.01));
+
+NumExpr couponBoost = F.when(
+        F.and(
+                F.variant("rerank", "coupon_boost"),
+                F.gt(F.col(couponRoi), F.val(0.0))),
+        F.weighted(F.col(gmv), "rerank.coupon_boost_w", 0.02),
+        F.val(0.0));
+
+score = formula(SearchMetrics.RANKING_SCORE,
+        F.chooseVariant("rerank",
+                Map.of("control", control,
+                        "coupon_boost", control.add(couponBoost)),
+                control));
+```
+
+`ExperimentContext` is installed per request (`SearchContext` carries it in
+the demo), and `ColumnPipeline.setExperiment(...)` exposes it to every formula
+node. `F.param(...)` changes coefficients, `F.variant(...)` selects an
+experiment layer, `F.when(...)` gates by row features, `F.caseWhen(...)` covers
+multi-branch rules, and `F.chooseVariant(...)` selects a whole formula branch.
+Expressions are typed (`NumExpr`, `BoolExpr`) and evaluated with columnar
+compute primitives; branches do not rebuild the graph.
+
+For configuration-driven formulas, `FormulaConfig.of(map)` accepts a
+JSON/YAML-friendly tree and compiles it against typed column handles. The
+search demo keeps the formula in `SearchFormulaConfig` rather than hard-coding
+it in the module; applications can deserialize the same shape with Jackson,
+SnakeYAML or their own configuration loader:
+
+```java
+FormulaConfig config = FormulaConfig.of(Map.of(
+        "op", "sum",
+        "terms", List.of(
+                Map.of("op", "weighted", "column", "ctr",
+                        "key", "rerank.ctr_w", "default", 100.0),
+                Map.of("op", "weighted", "column", "cvr",
+                        "key", "rerank.cvr_w", "default", 50.0))));
+
+NumExpr score = config.compileNum(Map.of("ctr", ctr, "cvr", cvr));
+```
+
+Limits are explicit: this layer is for row-level score/eligibility formulas.
+PV-level aggregation, model inference and cross-row windows still belong in
+custom `ModuleNode`s. For a genuinely different graph topology, register one
+pipeline supplier per variant with `ExperimentPipelines` and route the request
+to the matching fresh pipeline. `ColumnNode` remains for legacy multi-output
+nodes; new single-output business nodes should extend `ModuleNode<O>`.
+
 ## DAG quick start
 
 ```java
@@ -532,7 +591,7 @@ classes and the module only composes them.
 - Modules may depend on multiple modules with
   `dependsOn(FirstModule.class, SecondModule.class, ...)`; the module graph is a
   DAG and cycles are rejected.
-- `ColumnNode.feeds()` / `fetches()` and module `nodes()`, `inputs()`,
+- `ColumnNode` / `ModuleNode` `feeds()` / `fetches()` and module `nodes()`, `inputs()`,
   `outputs()`, `dependencies()` return snapshots; their arity is fixed after
   construction. Internal scheduler/compiler paths use package-private views.
 - Rows contain metric data, not user/item ids. Ids are lookup keys; column
@@ -738,9 +797,9 @@ Run the Spring demos:
 ./gradlew :spring:runSpringSearch
 ```
 
-They live in `spring/src/test/java/io/lark/spring/example/` and use the same
-schema, nodes and modules as the `:examples` demos. The search demo has no
-manual module list: component scanning supplies every `ColumnModule` bean and
+They live under `spring/src/test/java/io/lark/spring/` and use the same schema,
+nodes and modules as the `:examples` demos. The search demo has no manual module
+list: component scanning supplies every `ColumnModule` bean and
 `SearchRankingService` wraps the per-request pipeline.
 
 
@@ -847,7 +906,7 @@ New code should use `OpSpec` + `TensorKernel`. The legacy `OpTensor` /
 ### Layered execution: OpSpec → ComputeNode → TensorKernel → Tensor
 
 ```text
-ColumnNode / ColumnModule / ColumnPipeline   business orchestration
+ModuleNode / ColumnModule / ColumnPipeline   business orchestration
              ↓
 OpSpec                                      low-level graph description
   type / inputs / outputs / attrs
@@ -887,7 +946,8 @@ marked legacy in the source documentation.
 | `io.lark.column.compute` | `Compute`, `VectorOps`, `Simd` |
 | `io.lark.column.op` | `OpSpec` graph descriptor; legacy `OpTensor`, `OpContext`, `TensorOps`, `ZerosTensor` and typed compatibility ops (`FloatAddTensor`, …) |
 | `io.lark.column.exec` | `ComputeNode` (binds `OpSpec` + `TensorKernel`), `ComputeGraph`, `ExecutionContext` — scheduling layer |
-| `io.lark.column.biz` | typed business API: `Column<T>`, `ColumnStream<T>`, `ColumnOp` / `ColumnOps` (one-op nodes), `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode` / `ZerosNode` (advanced), `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `PipelineCompiler` / `PipelinePlan`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
+| `io.lark.column.biz` | typed business API: `Column<T>`, `ColumnStream<T>`, `ColumnOp` / `ColumnOps` (one-op nodes), `ModuleNode<O>` / `FormulaNode` / `F` / `FormulaConfig` (typed formulas, external config and experiments), `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode` / `ZerosNode` (advanced), `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `PipelineCompiler` / `PipelinePlan`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
+| `io.lark.column.context` | `ExperimentContext` (per-run variants and parameters) |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |
 | `io.lark.spring` (`:spring` module) | `EnableLaryColumns`, `ColumnComponentRegistrar`, `LaryColumnAutoConfiguration`, `ColumnPipelineFactory` — optional Spring Boot integration |

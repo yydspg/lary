@@ -106,7 +106,8 @@ public final class SearchRankingService {
         Objects.requireNonNull(request, "request");
         try (ColumnPipeline pipeline = Objects.requireNonNull(
                 pipelines.get(), "pipeline")) {
-            pipeline.compile()
+            pipeline.setExperiment(request.context().experiment())
+                    .compile()
                     .feed(SearchFeed.of(inputs, request))
                     .compute();
 

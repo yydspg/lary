@@ -3,6 +3,7 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.context.ExperimentContext;
 import io.lark.column.tensor.Tensor;
 import io.lark.column.tensor.TensorStore;
 
@@ -24,9 +25,15 @@ import java.util.Objects;
 public final class ColumnContext {
 
     private final TensorStore store;
+    private final ExperimentContext experiment;
 
     public ColumnContext(TensorStore store) {
+        this(store, ExperimentContext.empty());
+    }
+
+    public ColumnContext(TensorStore store, ExperimentContext experiment) {
         this.store = Objects.requireNonNull(store, "store");
+        this.experiment = Objects.requireNonNull(experiment, "experiment");
     }
 
     public Tensor read(ColumnStream<?> stream) {
@@ -46,6 +53,11 @@ public final class ColumnContext {
         Objects.requireNonNull(tensor, "tensor");
         checkDtype(stream, tensor);
         store.set(stream.name(), tensor);
+    }
+
+    /** Experiment assignments/parameters for this run. */
+    public ExperimentContext experiment() {
+        return experiment;
     }
 
     /** Advanced escape hatch for custom tensor plumbing. */

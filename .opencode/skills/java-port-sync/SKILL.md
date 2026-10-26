@@ -81,18 +81,20 @@ test. Tests are the behavioral contract.
 | `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
 | Column ready-queue scheduler (Java-first) | `exec/ComputeGraph.java` dependency counters + `ComputeNode.dependencyView()`; fixed platform pool sized by `ColumnPipeline.computeWorkers`, optional virtual compute threads for blocking nodes |
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
-| Business Node / Module / Stream (Java-first) | `biz/ColumnNode.java`, `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `PipelineCompiler.java`, `PipelinePlan.java`, `BusinessNodeKernel.java` |
+| Business Node / Module / Stream (Java-first) | `biz/ModuleNode.java` (typed single output), `biz/ColumnNode.java` (legacy multi-output), `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `PipelineCompiler.java`, `PipelinePlan.java`, `BusinessNodeKernel.java` |
 | Typed column schema (Java-first) | `biz/Column.java` (`Column<T>` value definitions), `biz/ColumnStream.java` (graph handles); schema constants e.g. `RecSysMetrics.COUPON_ROI` |
-| Typed node bases (Java-first) | `biz/NodeSchema.java`, `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`; custom nodes extend `ColumnNode` with typed fields |
+| Typed node bases (Java-first) | `biz/NodeSchema.java`, `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`, `FormulaNode.java`; new single-output nodes extend `ModuleNode<O>` |
+| Formula DSL / experiment control (Java-first) | `biz/Expr.java`, `NumExpr.java`, `BoolExpr.java`, `F.java`, `FormulaNode.java`, `FormulaConfig.java` (map/JSON/YAML-friendly external tree), `ExperimentPipelines.java` (graph-topology variant routing); `context/ExperimentContext.java`; pipeline/context plumbing |
 | Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream<?>[]`) |
 | Dependency-free components | `biz/ColumnComponent.java`, `biz/ColumnComponentScanner.java` (on modules; no-arg constructors only) |
 | Spring Boot integration (optional `:spring`) | `spring/src/main/java/io/lark/spring/`: `EnableLaryColumns.java`, `ColumnComponentRegistrar.java`, `LaryColumnAutoConfiguration.java`, `ColumnPipelineFactory.java`; auto-config imports file under `META-INF/spring` |
-| C++ `biz::Module` / `SubGraph` / DSL / `Pipeline` | **intentionally removed in Java**; replaced by `ColumnModule` + `ColumnNode` + `ColumnStream` |
+| C++ `biz::Module` / `SubGraph` / DSL / `Pipeline` | **intentionally removed in Java**; replaced by `ColumnModule` + `ModuleNode`/`ColumnNode` + `ColumnStream` |
 | `backend/backend.h`, `backend.cpp` | `backend/Backend.java`, `CpuBackend.java`, `BackendFactory.java` |
 | `monitor.h`, `monitor.cpp` | `monitor/RunStats.java`, `monitor/ColumnStatsCollector.java` |
 | `tests/test_column.cpp` | `TensorComputeTest.java` |
 | Tensor-op / kernel coverage | `OpTensorTest.java`, `ExecutionGraphTest.java` (separated `OpSpec` + `TensorKernel` path) |
 | Module / stream / pruning / component coverage | `ModulePipelineTest.java` |
+| Formula / experiment coverage | `FormulaTest.java`; search demo experiment variant test in `SearchDemoTest.java` |
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java` |
 | DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
 | Realistic multi-class demo | `examples/src/main/java/io/lark/examples/recsys/**` (`:examples:runRecsys`), split into `schema/`, `node/`, `module/`, `data/` |
@@ -100,7 +102,7 @@ test. Tests are the behavioral contract.
 | Tensor-aware search demo | `examples/src/main/java/io/lark/examples/search/**` (`:examples:runSearch`), `SearchContext`/`GoodsList`/`GoodsDO` request rows, `SearchRankingService`/`SearchResult`/`RankedGoods` typed facade, `@ColumnComponent` modules `SearchInputModule`, `CtrModule`, `CvrModule`, `CtCvrModule`, `RebuySameLossModule`, `BuyAgainModule`, `CouponRoiModule`, `RetargetAdModule`, `GmvModule`, `DelayModule`, `RankingScoreModule`, `AdjustedScoreModule`, `TopKModule`; 2-D/3-D outputs and PV-grouped top-k |
 | Realistic demo test | `examples/src/test/java/io/lark/examples/recsys/RecSysMetricTest.java`, mock edge-case feed `MockMetrics.java` |
 | Search ranking demo test | `examples/src/test/java/io/lark/examples/search/SearchDemoTest.java`, hand-authored metrics, two simulated PVs with 1,000 goods each, and typed `SearchResult` |
-| Spring demo / tests | `spring/src/test/java/io/lark/spring/example/SpringRecSysDemo.java` (`:spring:runSpringRecsys`), `spring/src/test/java/io/lark/spring/example/search/SpringSearchDemo.java` (`:spring:runSpringSearch`), `SpringSearchDemoTest.java`, `LaryColumnAutoConfigurationTest.java`, `LaryColumnPropertyScanTest.java`, fixtures under `spring/src/test/java/io/lark/spring/fixture/` |
+| Spring demo / tests | `spring/src/test/java/io/lark/spring/example/SpringRecSysDemo.java` (`:spring:runSpringRecsys`), `spring/src/test/java/io/lark/spring/searchdemo/SpringSearchDemo.java` (`:spring:runSpringSearch`), `spring/src/test/java/io/lark/spring/searchtest/SpringSearchDemoTest.java`, `LaryColumnAutoConfigurationTest.java`, `LaryColumnPropertyScanTest.java`, fixtures under `spring/src/test/java/io/lark/spring/fixture/` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
 ## Workflow
@@ -192,7 +194,7 @@ test. Tests are the behavioral contract.
   pool becomes virtual-thread-per-task and `computeWorkers` stays a monitoring
   hint. A rejected submit drains serially instead of deadlocking; sequential
   `execute` stays on the calling thread.
-- Business API: typed `ColumnStream<T>` handles + `ColumnNode` /
+- Business API: typed `ColumnStream<T>` handles + `ModuleNode<O>` / `ColumnNode` /
   `ColumnContext` / `ColumnModule` / `ColumnPipeline`. Node ids are generated;
   there is no `name()`/`inputs()`/`outputs()` override.
 - Schema is declared once as immutable `Column<T>` constants
@@ -272,6 +274,22 @@ test. Tests are the behavioral contract.
   `SearchRankingService` creates a fresh pipeline per request and maps fetched
   rows to typed `RankedGoods`; business code must not use positional
   `Row.get(n)` or manual module lists when the Spring integration is available.
+- Complex scoring uses typed formula trees, not long `ColumnOps` chains:
+  `ModuleNode<O>` + `FormulaNode`; `F` composes columns, experiment parameters
+  (`F.param`), variants (`F.variant`), row gates (`F.when`), multi-branch
+  (`F.caseWhen`) and whole-formula variants (`F.chooseVariant`). Formula inputs
+  are collected into graph dependencies; formula branches do not rebuild the
+  graph. `ExperimentContext` is per run and reaches formula nodes through
+  `ColumnPipeline.setExperiment`, `ExecutionContext`, `KernelContext` and
+  `ColumnContext`. `FormulaConfig` keeps the same tree JSON/YAML-friendly and
+  compiles it against typed columns; configuration loaders belong to the
+  application layer, not the root library. `ExperimentPipelines` is only for
+  genuinely different graph topology: it routes to a fresh registered pipeline;
+  it does not make formula branches lazy or rebuild a graph per request.
+- Formula expression limits: row-level score/eligibility expressions only.
+  PV aggregates, windows, model inference and different graph topology remain
+  custom `ModuleNode`/module variants. Do not fake graph-level experiment
+  rewiring with `F`.
 - `@ColumnComponent` marks modules; `ColumnPipeline.scan(package)` discovers
   them without a Spring dependency. That core scanner requires a no-arg
   constructor.
@@ -361,6 +379,8 @@ in `~/.gradle/gradle.properties`.
 - [ ] Tensor shape/arithmetic changes cover broadcasting, commutativity of
       add/mul, three-input `mul_add`/`fma`, 1-D/2-D/3-D shapes and zero-tensor
       ops/nodes.
+- [ ] Formula/experiment changes cover `ModuleNode<O>`, `FormulaNode`, `F`
+      conditions/variants/parameters, and document the row-level formula limits.
 - [ ] Repeated-run/timing changes are checked with
       `:examples:runRecsysBenchmark`, not a single `RunStats` sample.
 - [ ] Spring search demo/test proves `@ColumnComponent` discovery and the

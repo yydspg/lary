@@ -3,6 +3,7 @@
 
 package io.lark.column.exec;
 
+import io.lark.column.context.ExperimentContext;
 import io.lark.column.tensor.TensorStore;
 import io.lark.column.tensor.TensorTable;
 import io.lark.metric.Monitor;
@@ -41,6 +42,7 @@ public final class ExecutionContext {
     private TensorTable feed = new TensorTable();
     private TensorTable fetch = new TensorTable();
     private final TensorStore store = new TensorStore();
+    private ExperimentContext experiment = ExperimentContext.empty();
     private volatile Monitor monitor;
 
     public RunPhase phase() {
@@ -92,6 +94,14 @@ public final class ExecutionContext {
 
     public void clearStore() {
         store.clear();
+    }
+
+    public ExperimentContext experiment() {
+        return experiment;
+    }
+
+    public void setExperiment(ExperimentContext experiment) {
+        this.experiment = Objects.requireNonNull(experiment, "experiment");
     }
 
     public void setMonitor(Monitor monitor) {

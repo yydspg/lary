@@ -5,32 +5,27 @@ package io.lark.column.biz;
 
 import io.lark.column.tensor.Tensor;
 
-/** A node with no inputs and one typed fetch output. */
+/** A typed single-output node with no inputs. */
 @SuppressWarnings("this-escape")
-public abstract class SourceNode<O> extends ColumnNode {
-
-    private final ColumnStream<O> output;
+public abstract class SourceNode<O> extends ModuleNode<O> {
 
     /** Reads the subclass's public static {@code SCHEMA} property. */
     protected SourceNode() {
-        this.output = fetch(NodeSchemas.schemaOf(getClass()));
+        super();
+        bindOutput(NodeSchemas.<O>schemaOf(getClass()).output());
     }
 
     protected SourceNode(NodeSchema<O> schema) {
-        this.output = fetch(schema);
+        super(schema.output());
     }
 
     protected SourceNode(Column<O> outputColumn) {
-        this.output = fetch(outputColumn);
-    }
-
-    public final ColumnStream<O> out() {
-        return output;
+        super(outputColumn);
     }
 
     @Override
     public final void compute(ColumnContext ctx) {
-        ctx.write(output, produce(ctx));
+        ctx.write(out(), produce(ctx));
     }
 
     /** Produce the source column. */

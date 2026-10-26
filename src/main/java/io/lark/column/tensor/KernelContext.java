@@ -3,6 +3,7 @@
 
 package io.lark.column.tensor;
 
+import io.lark.column.context.ExperimentContext;
 
 import java.util.Objects;
 import java.util.function.Consumer;
@@ -19,12 +20,20 @@ public final class KernelContext {
     private final TensorStore store;
     private final Tensor[] inputs;
     private final Consumer<Tensor> output;
+    private final ExperimentContext experiment;
 
     public KernelContext(TensorStore store, Tensor[] inputs,
                          Consumer<Tensor> output) {
+        this(store, inputs, output, ExperimentContext.empty());
+    }
+
+    public KernelContext(TensorStore store, Tensor[] inputs,
+                         Consumer<Tensor> output,
+                         ExperimentContext experiment) {
         this.store = Objects.requireNonNull(store, "store");
         this.inputs = inputs == null ? new Tensor[0] : inputs;
         this.output = output;
+        this.experiment = Objects.requireNonNull(experiment, "experiment");
     }
 
     public Tensor input(int index) {
@@ -46,6 +55,11 @@ public final class KernelContext {
                     "This kernel context does not accept a tensor output");
         }
         output.accept(Objects.requireNonNull(tensor, "tensor"));
+    }
+
+    /** Experiment assignments/parameters for this run. */
+    public ExperimentContext experiment() {
+        return experiment;
     }
 
     /** Store escape hatch for business-node adapters and fallback handlers. */
