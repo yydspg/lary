@@ -5,6 +5,7 @@ package io.lark.column.op;
 
 import io.lark.column.DType;
 import io.lark.column.Tensor;
+import io.lark.column.TensorShape;
 import io.lark.column.compute.Compute;
 
 import java.util.List;
@@ -40,6 +41,7 @@ public final class TensorOps {
             case "dequantize" -> new DequantizeOp(spec);
             case "dot" -> new DotQ8Op(spec);
             case "const" -> new ConstOp(spec);
+            case "zeros" -> zeros(spec);
             case "identity" -> new IdentityOp(spec);
             case "placeholder" -> new PlaceholderOp(spec);
             default -> throw new IllegalArgumentException(
@@ -276,7 +278,7 @@ public final class TensorOps {
     private static final class ConstOp extends BaseOp {
         private final String value;
         private final DType dtype;
-        private final int size;
+        private final TensorShape shape;
 
         private ConstOp(OpSpec spec) {
             super(spec);
@@ -285,13 +287,29 @@ public final class TensorOps {
             }
             this.value = spec.attr("value");
             this.dtype = DType.parse(spec.attr("dtype", "float64"));
-            this.size = Integer.parseInt(spec.attr("size", "1"));
+            this.shape = spec.hasAttr("shape")
+                    ? TensorShape.parse(spec.attr("shape"))
+                    : value.indexOf(',') < 0
+                            ? TensorShape.vector(Integer.parseInt(spec.attr("size", "1")))
+                            : TensorShape.vector(value.split(",").length);
         }
 
         @Override
         public void compute(OpContext ctx) {
-            ctx.set(outputs[0], Compute.constant(value, dtype, size));
+            ctx.set(outputs[0], Compute.constant(value, dtype, shape));
         }
+    }
+
+    private static OpTensor zeros(OpSpec spec) {
+        if (spec.outputs().size() != 1) {
+            throw new IllegalArgumentException(
+                    "zeros requires exactly one output");
+        }
+        DType dtype = DType.parse(spec.attr("dtype", "float64"));
+        TensorShape shape = spec.hasAttr("shape")
+                ? TensorShape.parse(spec.attr("shape"))
+                : TensorShape.vector(Integer.parseInt(spec.attr("size", "1")));
+        return new ZerosTensor(spec.outputs(), dtype, shape);
     }
 
     private static final class IdentityOp extends BaseOp {

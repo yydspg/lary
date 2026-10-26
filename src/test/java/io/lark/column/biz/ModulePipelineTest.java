@@ -7,6 +7,7 @@ import io.lark.column.Cell;
 import io.lark.column.DType;
 import io.lark.column.Row;
 import io.lark.column.Tensor;
+import io.lark.column.TensorShape;
 import io.lark.column.TensorStore;
 import io.lark.column.compute.Compute;
 import org.junit.jupiter.api.Test;
@@ -46,6 +47,8 @@ class ModulePipelineTest {
             new Column<>("producer_out", DType.INT64);
     static final Column<Long> CONSUMER_OUT =
             new Column<>("consumer_out", DType.INT64);
+    static final Column<Double> ZEROS =
+            new Column<>("zeros", DType.FLOAT64);
 
     // ---- nodes -----------------------------------------------------------
 
@@ -210,6 +213,19 @@ class ModulePipelineTest {
             assertThrows(IllegalArgumentException.class,
                     () -> pipeline.compile(List.of("missing_output")));
             assertEquals(compiled, pipeline.compiledNodeCount());
+        }
+    }
+
+    @Test
+    void zerosNodeProducesAShapedTensor() {
+        ZeroModule module = new ZeroModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
+            pipeline.add(module).compile().compute();
+
+            Tensor zeros = pipeline.fetchTensor(module.zeros.out());
+            assertEquals(TensorShape.of(2, 3), zeros.shape());
+            assertEquals(6, zeros.size());
+            assertEquals(0.0, zeros.getDouble(5), 1e-9);
         }
     }
 
@@ -463,6 +479,15 @@ class ModulePipelineTest {
 
         ColumnStream<Long> out() {
             return node.out();
+        }
+    }
+
+    static final class ZeroModule extends ColumnModule {
+        final ZerosNode<Double> zeros =
+                node(new ZerosNode<>(ZEROS, TensorShape.of(2, 3)));
+
+        {
+            output(zeros.out());
         }
     }
 

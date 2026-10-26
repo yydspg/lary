@@ -102,6 +102,13 @@ tasks.register<JavaExec>("runOp") {
     mainClass.set("io.lark.examples.OpPipeline")
 }
 
+tasks.register<JavaExec>("runSearch") {
+    group = "application"
+    description = "Run the tensor-aware search/retargeting demo."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("io.lark.examples.search.SearchDemo")
+}
+
 tasks.register<JavaExec>("runRecsys") {
     group = "application"
     description = "Run the search/recommendation metric demo."

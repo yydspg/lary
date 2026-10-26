@@ -10,25 +10,34 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 
-/** A collection of named tensors (columns) with equal length. */
+/**
+ * A collection of named tensors (columns) with equal shape.
+ *
+ * <p>{@link #numRows()} remains the flat element count for backward
+ * compatibility; {@link #shape()} exposes the shared tensor shape for shaped
+ * results. Row-oriented fetch of a 2-D/3-D table treats elements as a flat
+ * stream; use {@code fetchTensors} for logical tensor results.
+ */
 public final class TensorTable {
 
     private final Map<String, Tensor> tensors = new LinkedHashMap<>();
     private final List<String> order = new ArrayList<>();
+    private TensorShape shape;
     private int numRows;
 
     public void add(String name, Tensor tensor) {
         Objects.requireNonNull(name, "name");
         Objects.requireNonNull(tensor, "tensor");
-        if (!tensors.isEmpty() && tensor.size() != numRows) {
+        if (shape != null && !shape.equals(tensor.shape())) {
             throw new IllegalArgumentException(
-                    "Tensor size mismatch: expected " + numRows
-                            + ", got " + tensor.size());
+                    "Tensor shape mismatch: expected " + shape
+                            + ", got " + tensor.shape());
         }
         if (!tensors.containsKey(name)) {
             order.add(name);
         }
         tensors.put(name, tensor);
+        shape = tensor.shape();
         numRows = tensor.size();
     }
 
@@ -54,12 +63,18 @@ public final class TensorTable {
         }
         order.remove(name);
         if (tensors.isEmpty()) {
+            shape = null;
             numRows = 0;
         }
     }
 
     public int numRows() {
         return numRows;
+    }
+
+    /** Shared shape of all columns, or a zero-length vector when empty. */
+    public TensorShape shape() {
+        return shape == null ? TensorShape.vector(0) : shape;
     }
 
     public int numCols() {

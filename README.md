@@ -1,5 +1,7 @@
 # lary — Java 25 DAG + column engine
 
+中文文档：[README.zh-CN.md](README.zh-CN.md)
+
 A standalone Java 25 implementation of the DAG framework and column engine
 originally developed in the C++ **lark** repository. The library and the demo
 applications are separate Gradle modules.
@@ -12,7 +14,8 @@ applications are separate Gradle modules.
   typed `ColumnStream<T>` handles, `ColumnNode` / `ColumnModule` business API,
   typed tensor operations (`OpTensor`,
   `FloatAddTensor`, `FloatMultiTensor`, …), hidden `ComputeNode` execution nodes,
-  multi-dtype tensors, Q8_0 quantization and monitoring.
+  multi-dtype tensors with 1–3-D shapes, zero-tensor nodes, Q8_0 quantization and
+  monitoring.
 - **SIMD**: column arithmetic, scalar broadcasting, comparisons, reductions and
   unary kernels use **`jdk.incubator.vector`**.
 - **Spring Boot (optional)**: the separate `:spring` module provides auto-configuration,
@@ -40,6 +43,9 @@ lary/
 │  └─ src/main/java/io/lark/examples/
 │     ├─ SimplePipeline.java     # DAG Node tour
 │     ├─ OpPipeline.java         # Op / Aspect tour
+│     ├─ search/                 # tensor-aware search/retargeting project
+│     │  ├─ SearchDemo.java
+│     │  ├─ schema/ node/ module/ data/
 │     └─ recsys/                 # search / recommendation metrics project
 │        ├─ RecSysDemo.java      # single-run demo
 │        ├─ RecSysBenchmark.java # warmed-up steady-state benchmark
@@ -95,6 +101,7 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 
 ./gradlew :examples:runRecsys    # search/recommendation metric project
 ./gradlew :examples:runRecsysBenchmark # warmed-up steady-state benchmark
+./gradlew :examples:runSearch    # tensor-aware search/retargeting demo
 ./gradlew :examples:runSimple    # DAG Node layer
 ./gradlew :examples:runOp        # DAG Op + Aspect layer
 ./gradlew :spring:runSpringRecsys # same recsys demo through Spring Boot
@@ -106,9 +113,9 @@ The test suite mirrors the C++ suites: `test_dag.cpp`, `test_op.cpp`,
 also cover wide/deep ready-queue scheduling and array/varargs node definitions;
 `ModulePipelineTest` covers fluent/columnar boundaries, plan reuse after a
 failed recompile, module snapshots, and retryable module definitions. The
-`:examples` module has `RecSysMetricTest` for the search/recommendation graph;
-`:spring` has Spring context tests for scanning, constructor injection and the
-prototype pipeline.
+`:examples` module has `RecSysMetricTest` and `SearchDemoTest` for the
+search/recommendation and tensor-aware search graphs; `:spring` has Spring
+context tests for scanning, constructor injection and the prototype pipeline.
 
 ## Search / recommendation metrics demo
 
@@ -257,6 +264,30 @@ run. Defaults are 100,000 rows, 10 warm-up iterations, 30 measured iterations
 and 4 compute workers. The benchmark still uses a synthetic dataset; compare
 configurations on the same machine and JDK rather than treating the absolute
 numbers as a hardware-independent baseline.
+
+## Tensor-aware search / retargeting demo
+
+```sh
+./gradlew :examples:runSearch
+```
+
+`SearchDemo` models a search system with nine business modules:
+
+| Module | Output | Shape |
+|---|---|---|
+| `CtrModule` | `ctr = clicks / impressions` | 1-D |
+| `CvrModule` | `cvr = orders / clicks` | 1-D |
+| `CtCvrModule` | `ctcvr = ctr * cvr` | 1-D |
+| `RebuySameLossModule` | `rebuy_same_loss = 1 - buyagain` | 1-D |
+| `BuyAgainModule` (buyagain) | `buyagain = buy_again_orders / orders` | 1-D |
+| `CouponRoiModule` | `couponroi = gmv / coupon_cost` | 1-D |
+| `RetargetAdModule` | click share, cost share, ROI per row | 2-D `[rows, 3]` |
+| `GmvModule` | `gmv = gmv_fen / 100` | 1-D |
+| `DelayModule` | order/GMV on-time and delayed shares | 3-D `[rows, 2, 2]` |
+
+Rows are sample search aggregates. The demo prints the scalar metric table,
+then fetches the retargeting and delay tensors with `fetchTensor(...)` so their
+shapes and row-major values are visible.
 
 ## DAG quick start
 
@@ -509,11 +540,11 @@ try (ColumnPipeline pipeline = new ColumnPipeline()) {
 `FeedStream` / `FetchStream` remain the typed API and carry
 `ColumnStream<?>[]`. `feedRows` builds the feed from the compiled required
 columns; `feed(Map)` accepts named cell lists; `feedTensors` accepts pre-built
-columnar tensors; `fetchColumns` returns named cell lists and `fetchTensor`
-returns a read-only tensor without row conversion. `fetchColumns()` (no args)
-returns every compiled output and supports outputs with different row counts,
-unlike the row-oriented `fetch()`. Missing required feed columns are rejected
-before execution.
+columnar tensors; `fetchColumns` returns named cell lists and `fetchTensor` /
+`fetchTensors` return read-only tensors without row conversion.
+`fetchColumns()` (no args) returns every compiled output and supports outputs
+with different shapes, unlike the row-oriented `fetch()`. Missing required feed
+columns are rejected before execution.
 
 A `ColumnPipeline` is mutable and not thread-safe. Create one pipeline per
 concurrent run; reusing one pipeline sequentially is fine, and the compiled
@@ -688,6 +719,44 @@ pipeline.run(FeedStream.of(features.amountFen(), rows),
 - `nodeCount()` is total registered nodes; `compiledNodeCount()` is the pruned
   execution graph size.
 
+### Tensor shapes
+
+`Tensor` is still backed by one flat primitive array, but now carries a
+`TensorShape` of rank 1–3:
+
+```java
+TensorShape shape = TensorShape.of(2, 3, 4); // [batch, candidate, feature]
+Tensor a = Tensor.fromDoubles(shape, 1, 2, 3, /* ... 24 values */);
+Tensor b = Tensor.fromDoubles(shape, 4, 5, 6, /* ... 24 values */);
+
+Tensor sum = Compute.add(a, b);   // same shape required
+Tensor product = Compute.mul(a, b);
+assert sum.shape().equals(shape);
+```
+
+Element-wise add/sub/mul/div, scalar ops, comparisons, unary kernels, casts and
+quantization preserve the shape. Shape mismatches fail fast, even when the
+flat element counts happen to match. `Tensor.zeros(shape, dtype)` creates a
+zero tensor without going through a business module.
+
+The op layer supports both declarative and typed zeros:
+
+```java
+OpTensor zeros = TensorOps.create(new OpSpec("zeros", List.of(), List.of("z"),
+        Map.of("dtype", "float64", "shape", "2,3")));
+zeros.compute(new OpContext(store));
+```
+
+Business modules can use `ZerosNode`:
+
+```java
+ColumnStream<Double> zeros =
+        node(new ZerosNode<>(FEATURES, TensorShape.of(rows, 3))).out();
+```
+
+`TensorOps` also accepts `const` with a `shape` attribute; a comma-separated
+constant keeps its historical element count when only `size` is supplied.
+
 ### Typed tensor operations
 
 The operation layer is separate from execution nodes:
@@ -715,11 +784,11 @@ runtime dtype promotion to choose the typed implementation (`AddTensor` →
 
 | Package | Responsibility |
 |---|---|
-| `io.lark.column` | `DType`, `Tensor`, `TensorTable`, `TensorStore`, `Cell`, `Row`, `FeedFetch`, `Simd` |
+| `io.lark.column` | `DType`, `Tensor`, `TensorShape`, `TensorTable`, `TensorStore`, `Cell`, `Row`, `FeedFetch`, `Simd` |
 | `io.lark.column.compute` | `Compute`, `VectorOps` |
-| `io.lark.column.op` | `OpTensor`, `OpContext`, `OpSpec`, `TensorOps`; typed ops: `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`, `LongMultiTensor`, … |
+| `io.lark.column.op` | `OpTensor`, `OpContext`, `OpSpec`, `TensorOps`, `ZerosTensor`; typed ops: `FloatAddTensor`, `FloatMultiTensor`, `DoubleAddTensor`, `IntAddTensor`, `LongMultiTensor`, … |
 | `io.lark.column.exec` | `ComputeNode`, `ComputeGraph`, `ExecutionContext` — hidden execution layer |
-| `io.lark.column.biz` | typed business API: `Column<T>` definitions, `ColumnStream<T>` handles, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `PipelineCompiler` / `PipelinePlan`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
+| `io.lark.column.biz` | typed business API: `Column<T>` definitions, `ColumnStream<T>` handles, `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode` / `ZerosNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `PipelineCompiler` / `PipelinePlan`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |
 | `io.lark.spring` (`:spring` module) | `EnableLaryColumns`, `ColumnComponentRegistrar`, `LaryColumnAutoConfiguration`, `ColumnPipelineFactory` — optional Spring Boot integration |
@@ -728,7 +797,7 @@ runtime dtype promotion to choose the typed implementation (`AddTensor` →
 
 Every behavior or API change must be committed together with:
 
-1. an updated `README.md` (feature, usage, limitations);
+1. updated `README.md` and `README.zh-CN.md` (feature, usage, limitations);
 2. an updated `.opencode/skills/java-port-sync/SKILL.md` (mapping, invariants,
    verification);
 3. tests and, when user-facing, an example.

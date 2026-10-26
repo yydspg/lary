@@ -16,7 +16,9 @@ import java.util.Objects;
  *
  * <p>Feed infers FLOAT64 when a column contains any double, otherwise INT64.
  * Missing cells are zero-filled. Fetch renders integer columns as int cells and
- * float / quantized columns as double cells.
+ * float / quantized columns as double cells. Row/cell fetch treats shaped
+ * tensors as flat element streams; use {@code ColumnPipeline.fetchTensor} for
+ * logical 2-D/3-D results.
  */
 public final class FeedFetch {
 
@@ -162,6 +164,17 @@ public final class FeedFetch {
         return fetchRows(table, table.names());
     }
 
+    /** Convert one tensor to an immutable cell list, treating storage as flat. */
+    public static List<Cell> cells(Tensor tensor) {
+        Tensor column = tensor.dtype() == DType.Q8_0
+                ? tensor.dequantize() : tensor;
+        Cell[] cells = new Cell[column.size()];
+        for (int i = 0; i < cells.length; i++) {
+            cells[i] = cellAt(column, i);
+        }
+        return List.of(cells);
+    }
+
     /** Convert selected table columns to named cell lists. */
     public static Map<String, List<Cell>> fetchColumns(TensorTable table,
                                                        List<String> names) {
@@ -179,11 +192,7 @@ public final class FeedFetch {
             if (column.dtype() == DType.Q8_0) {
                 column = column.dequantize();
             }
-            Cell[] cells = new Cell[rows];
-            for (int r = 0; r < rows; r++) {
-                cells[r] = cellAt(column, r);
-            }
-            result.put(name, List.of(cells));
+            result.put(name, cells(column));
         }
         return Collections.unmodifiableMap(result);
     }

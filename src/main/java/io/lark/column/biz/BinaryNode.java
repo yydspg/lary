@@ -34,6 +34,12 @@ public abstract class BinaryNode<A extends ColumnStream<?>,
         this.output = fetch(NodeSchemas.schemaOf(getClass()));
     }
 
+    /** No-arg wiring form with an explicit output definition. */
+    protected BinaryNode(Column<O> outputColumn) {
+        super();
+        this.output = fetch(outputColumn);
+    }
+
     /** Reads the subclass's public static {@code SCHEMA} property. */
     protected BinaryNode(A left, B right) {
         super(left, right);

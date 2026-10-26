@@ -5,6 +5,7 @@ package io.lark.column.compute;
 
 import io.lark.column.DType;
 import io.lark.column.Tensor;
+import io.lark.column.TensorShape;
 
 /**
  * Public compute-layer facade.
@@ -215,13 +216,14 @@ public final class Compute {
         if (mask.dtype() != DType.INT64) {
             throw new IllegalArgumentException("select: mask must be int64");
         }
-        if (mask.size() != a.size() || b.size() != a.size()) {
-            throw new IllegalArgumentException("select: length mismatch");
+        if (!mask.shape().equals(a.shape())
+                || !b.shape().equals(a.shape())) {
+            throw new IllegalArgumentException("select: shape mismatch");
         }
         DType out = promote(a.dtype(), b.dtype());
         Tensor left = a.dtype() == out ? a : a.castTo(out);
         Tensor right = b.dtype() == out ? b : b.castTo(out);
-        Tensor result = Tensor.zeros(a.size(), out);
+        Tensor result = Tensor.zeros(a.shape(), out);
         long[] m = mask.longData();
 
         switch (out) {
@@ -258,8 +260,8 @@ public final class Compute {
         if (mask.dtype() != DType.INT64) {
             throw new IllegalArgumentException("filter: mask must be int64");
         }
-        if (mask.size() != data.size()) {
-            throw new IllegalArgumentException("filter: mask length mismatch");
+        if (!mask.shape().equals(data.shape())) {
+            throw new IllegalArgumentException("filter: mask shape mismatch");
         }
         if (data.dtype() == DType.Q8_0) {
             throw new IllegalArgumentException("filter: cannot filter a quantized tensor");
@@ -318,8 +320,23 @@ public final class Compute {
         if (value.indexOf(',') < 0) {
             return Tensor.full(size, Double.parseDouble(value.trim()), dtype);
         }
+        // Historical behavior: a comma-separated constant determines its own
+        // length; the size hint only applies to a single scalar value.
+        return constant(value, dtype,
+                TensorShape.vector(value.split(",").length));
+    }
+
+    public static Tensor constant(String value, DType dtype, TensorShape shape) {
+        if (value.indexOf(',') < 0) {
+            return Tensor.full(shape, Double.parseDouble(value.trim()), dtype);
+        }
         String[] parts = value.split(",");
-        Tensor result = Tensor.zeros(parts.length, dtype);
+        Tensor result = Tensor.zeros(shape, dtype);
+        if (parts.length != shape.size()) {
+            throw new IllegalArgumentException(
+                    "const: expected " + shape.size() + " values for shape "
+                            + shape + ", got " + parts.length);
+        }
         switch (dtype) {
             case INT32 -> {
                 int[] data = result.intData();

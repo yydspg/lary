@@ -32,6 +32,12 @@ public abstract class UnaryNode<I extends ColumnStream<?>, O> extends ColumnNode
         this.output = fetch(NodeSchemas.schemaOf(getClass()));
     }
 
+    /** No-arg wiring form with an explicit output definition. */
+    protected UnaryNode(Column<O> outputColumn) {
+        super();
+        this.output = fetch(outputColumn);
+    }
+
     /** Reads the subclass's public static {@code SCHEMA} property. */
     protected UnaryNode(I input) {
         super(input);

@@ -5,10 +5,12 @@ package io.lark.column.op;
 
 import io.lark.column.DType;
 import io.lark.column.Tensor;
+import io.lark.column.TensorShape;
 import io.lark.column.TensorStore;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertInstanceOf;
@@ -105,6 +107,34 @@ class OpTensorTest {
         assertEquals(DType.FLOAT64, ctx.store().get("r").dtype());
         assertEquals(1.0, ctx.store().get("r").getDouble(0), 1e-9);
         assertEquals(0.5, ctx.store().get("r").getDouble(1), 1e-9);
+    }
+
+    @Test
+    void zerosTensorCreatesARequestedShape() {
+        TensorStore store = new TensorStore();
+        OpTensor zeros = TensorOps.create(new OpSpec("zeros", List.of(),
+                List.of("z"), Map.of("dtype", "float64", "shape", "2,3")));
+        zeros.compute(new OpContext(store));
+
+        Tensor value = store.get("z");
+        assertEquals(TensorShape.of(2, 3), value.shape());
+        assertEquals(6, value.size());
+        assertEquals(0.0, value.getDouble(5), 1e-9);
+    }
+
+    @Test
+    void constSupportsShapeAndLegacyCommaLists() {
+        TensorStore store = new TensorStore();
+        TensorOps.create(new OpSpec("const", List.of(), List.of("legacy"),
+                Map.of("value", "1,2,3"))).compute(new OpContext(store));
+        assertEquals(3, store.get("legacy").size());
+        assertEquals(3.0, store.get("legacy").getDouble(2), 1e-9);
+
+        TensorOps.create(new OpSpec("const", List.of(), List.of("shaped"),
+                Map.of("value", "1,2,3,4", "shape", "2x2")))
+                .compute(new OpContext(store));
+        assertEquals(TensorShape.of(2, 2), store.get("shaped").shape());
+        assertEquals(4.0, store.get("shaped").getDouble(3), 1e-9);
     }
 
     @Test

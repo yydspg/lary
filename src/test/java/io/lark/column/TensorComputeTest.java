@@ -74,6 +74,60 @@ class TensorComputeTest {
     }
 
     @Test
+    void shapedTensorsDriveArithmeticAndPreserveShape() {
+        TensorShape shape = TensorShape.of(2, 3);
+        Tensor a = Tensor.fromDoubles(shape, 1, 2, 3, 4, 5, 6);
+        Tensor b = Tensor.fromDoubles(shape, 10, 20, 30, 40, 50, 60);
+
+        Tensor sum = Compute.add(a, b);
+        Tensor product = Compute.mul(a, b);
+        Tensor sqrt = Compute.sqrt(a);
+        Tensor casted = Compute.cast(a, DType.FLOAT32);
+        Tensor mask = Compute.gtScalar(a, 3.0);
+
+        assertEquals(shape, a.shape());
+        assertEquals(shape, sum.shape());
+        assertEquals(shape, product.shape());
+        assertEquals(shape, sqrt.shape());
+        assertEquals(shape, casted.shape());
+        assertEquals(shape, mask.shape());
+        assertEquals(11.0, sum.getDouble(0), 1e-9);
+        assertEquals(360.0, product.getDouble(5), 1e-9);
+        assertEquals(1L, mask.getLong(3));
+        assertEquals(0L, mask.getLong(2));
+
+        Tensor cube = Tensor.fromLongs(TensorShape.of(2, 2, 2),
+                1, 2, 3, 4, 5, 6, 7, 8);
+        Tensor cubeSum = Compute.add(cube, cube);
+        assertEquals(TensorShape.of(2, 2, 2), cubeSum.shape());
+        assertEquals(16, cubeSum.getLong(7));
+
+        assertEquals(TensorShape.of(2, 3), TensorShape.parse("2x3"));
+        assertEquals(TensorShape.of(0, 3), TensorShape.of(0, 3));
+        assertThrows(IllegalArgumentException.class,
+                () -> TensorShape.of(1, 2, 3, 4));
+        assertThrows(IllegalArgumentException.class,
+                () -> Tensor.fromDoubles(shape, 1, 2, 3, 4, 5));
+        assertThrows(IllegalArgumentException.class,
+                () -> Compute.add(a, Tensor.fromDoubles(
+                        TensorShape.of(3, 2), 1, 2, 3, 4, 5, 6)));
+
+        Tensor zeros = Tensor.zeros(TensorShape.of(2, 3), DType.INT32);
+        assertEquals(TensorShape.of(2, 3), zeros.shape());
+        assertEquals(0, zeros.getInt(5));
+
+        Tensor quantized = a.quantizeQ8_0();
+        assertEquals(shape, quantized.shape());
+        assertEquals(shape, quantized.dequantize().shape());
+
+        TensorTable table = new TensorTable();
+        table.add("a", a);
+        assertEquals(shape, table.shape());
+        assertThrows(IllegalArgumentException.class, () -> table.add("b",
+                Tensor.fromDoubles(TensorShape.of(6), 1, 2, 3, 4, 5, 6)));
+    }
+
+    @Test
     void tensorStoreSupportsDifferentLengths() {
         TensorStore store = new TensorStore();
         store.set("x", Tensor.fromLongs(1, 2, 3));

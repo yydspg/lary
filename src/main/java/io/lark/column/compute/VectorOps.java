@@ -41,13 +41,14 @@ final class VectorOps {
     // ---- binary ---------------------------------------------------------
 
     static Tensor binary(Tensor a, Tensor b, DType outDtype, Binary op) {
-        if (a.size() != b.size()) {
+        if (!a.shape().equals(b.shape())) {
             throw new IllegalArgumentException(
-                    "binary op: length mismatch (" + a.size() + " vs " + b.size() + ")");
+                    "binary op: shape mismatch (" + a.shape() + " vs "
+                            + b.shape() + ")");
         }
         Tensor left = a.dtype() == outDtype ? a : a.castTo(outDtype);
         Tensor right = b.dtype() == outDtype ? b : b.castTo(outDtype);
-        Tensor result = Tensor.zeros(a.size(), outDtype);
+        Tensor result = Tensor.zeros(a.shape(), outDtype);
         switch (outDtype) {
             case INT32 -> binaryInt(left.intData(), right.intData(),
                     result.intData(), op);
@@ -65,7 +66,7 @@ final class VectorOps {
 
     static Tensor scalar(Tensor a, double value, DType outDtype, Binary op) {
         Tensor input = a.dtype() == outDtype ? a : a.castTo(outDtype);
-        Tensor result = Tensor.zeros(a.size(), outDtype);
+        Tensor result = Tensor.zeros(a.shape(), outDtype);
         switch (outDtype) {
             case INT32 -> scalarInt(input.intData(), (int) value, result.intData(), op);
             case INT64 -> scalarLong(input.longData(), (long) value, result.longData(), op);
@@ -82,14 +83,15 @@ final class VectorOps {
     // ---- comparisons ----------------------------------------------------
 
     static Tensor compare(Tensor a, Tensor b, Cmp cmp) {
-        if (a.size() != b.size()) {
+        if (!a.shape().equals(b.shape())) {
             throw new IllegalArgumentException(
-                    "compare: length mismatch (" + a.size() + " vs " + b.size() + ")");
+                    "compare: shape mismatch (" + a.shape() + " vs "
+                            + b.shape() + ")");
         }
         DType dtype = Compute.promote(a.dtype(), b.dtype());
         Tensor left = a.dtype() == dtype ? a : a.castTo(dtype);
         Tensor right = b.dtype() == dtype ? b : b.castTo(dtype);
-        Tensor result = Tensor.zeros(a.size(), DType.INT64);
+        Tensor result = Tensor.zeros(a.shape(), DType.INT64);
         long[] out = result.longData();
 
         switch (dtype) {
@@ -104,7 +106,7 @@ final class VectorOps {
     }
 
     static Tensor compareScalar(Tensor a, double value, Cmp cmp) {
-        Tensor result = Tensor.zeros(a.size(), DType.INT64);
+        Tensor result = Tensor.zeros(a.shape(), DType.INT64);
         long[] out = result.longData();
         switch (a.dtype()) {
             case INT32 -> compareIntScalar(a.intData(), (int) value, out, cmp);
@@ -121,7 +123,7 @@ final class VectorOps {
 
     static Tensor unary(Tensor a, Unary op) {
         DType dtype = a.dtype();
-        Tensor result = Tensor.zeros(a.size(), dtype);
+        Tensor result = Tensor.zeros(a.shape(), dtype);
         switch (dtype) {
             case INT32 -> unaryInt(a.intData(), result.intData(), op);
             case INT64 -> unaryLong(a.longData(), result.longData(), op);
@@ -136,7 +138,7 @@ final class VectorOps {
     /** sqrt always returns float64, like the C++ compute layer. */
     static Tensor sqrt(Tensor a) {
         Tensor input = a.dtype() == DType.FLOAT64 ? a : a.castTo(DType.FLOAT64);
-        Tensor result = Tensor.zeros(a.size(), DType.FLOAT64);
+        Tensor result = Tensor.zeros(a.shape(), DType.FLOAT64);
         double[] src = input.doubleData();
         double[] out = result.doubleData();
         var species = DoubleVector.SPECIES_PREFERRED;
@@ -154,7 +156,7 @@ final class VectorOps {
     /** exp/log keep the C++ execution-layer behavior: always float64. */
     static Tensor transcendental(Tensor a, boolean exp) {
         Tensor input = a.dtype() == DType.FLOAT64 ? a : a.castTo(DType.FLOAT64);
-        Tensor result = Tensor.zeros(a.size(), DType.FLOAT64);
+        Tensor result = Tensor.zeros(a.shape(), DType.FLOAT64);
         double[] src = input.doubleData();
         double[] out = result.doubleData();
         for (int i = 0; i < src.length; i++) {

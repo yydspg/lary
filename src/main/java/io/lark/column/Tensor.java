@@ -4,55 +4,74 @@
 package io.lark.column;
 
 import java.util.Arrays;
+import java.util.Objects;
 
 /**
- * 1-D numeric array — a pure data container.
+ * Numeric tensor backed by one flat primitive array.
  *
  * <p>Arithmetic lives in {@code io.lark.column.compute} and in the execution
- * layer. Storage is a primitive array matching {@link #dtype()}, so int/float
- * precision is preserved. Quantized tensors store {@link BlockQ8_0} blocks and
+ * layer. Storage is a primitive array matching {@link #dtype()}, while
+ * {@link #shape()} gives the row-major interpretation (up to three
+ * dimensions). Quantized tensors store {@link BlockQ8_0} blocks and
  * {@link #size()} reports the logical element count.
  */
 public final class Tensor {
 
     private final DType dtype;
     private final Object data;
+    private final TensorShape shape;
     private final int size;
 
     private Tensor(DType dtype, Object data, int size) {
-        this.dtype = dtype;
-        this.data = data;
-        this.size = size;
+        this(dtype, data, TensorShape.vector(size));
+    }
+
+    private Tensor(DType dtype, Object data, TensorShape shape) {
+        this.dtype = Objects.requireNonNull(dtype, "dtype");
+        this.data = Objects.requireNonNull(data, "data");
+        this.shape = Objects.requireNonNull(shape, "shape");
+        this.size = shape.size();
     }
 
     // ---- factories ------------------------------------------------------
 
     public static Tensor zeros(int size, DType dtype) {
-        if (size < 0) {
-            throw new IllegalArgumentException("negative tensor size");
-        }
+        return zeros(TensorShape.vector(size), dtype);
+    }
+
+    public static Tensor zeros(TensorShape shape, DType dtype) {
+        Objects.requireNonNull(shape, "shape");
+        int size = shape.size();
         return switch (dtype) {
-            case INT32 -> new Tensor(dtype, new int[size], size);
-            case INT64 -> new Tensor(dtype, new long[size], size);
-            case FLOAT32 -> new Tensor(dtype, new float[size], size);
-            case FLOAT64 -> new Tensor(dtype, new double[size], size);
+            case INT32 -> new Tensor(dtype, new int[size], shape);
+            case INT64 -> new Tensor(dtype, new long[size], shape);
+            case FLOAT32 -> new Tensor(dtype, new float[size], shape);
+            case FLOAT64 -> new Tensor(dtype, new double[size], shape);
             case Q8_0 -> {
                 int blocks = (size + BlockQ8_0.BLOCK_SIZE - 1) / BlockQ8_0.BLOCK_SIZE;
                 BlockQ8_0[] q = new BlockQ8_0[blocks];
                 for (int i = 0; i < blocks; i++) {
                     q[i] = new BlockQ8_0(0.0f);
                 }
-                yield new Tensor(dtype, q, size);
+                yield new Tensor(dtype, q, shape);
             }
         };
     }
 
     public static Tensor ones(int size, DType dtype) {
-        return full(size, 1.0, dtype);
+        return ones(TensorShape.vector(size), dtype);
+    }
+
+    public static Tensor ones(TensorShape shape, DType dtype) {
+        return full(shape, 1.0, dtype);
     }
 
     public static Tensor full(int size, double value, DType dtype) {
-        Tensor t = zeros(size, dtype);
+        return full(TensorShape.vector(size), value, dtype);
+    }
+
+    public static Tensor full(TensorShape shape, double value, DType dtype) {
+        Tensor t = zeros(shape, dtype);
         switch (dtype) {
             case INT32 -> Arrays.fill(t.intData(), (int) value);
             case INT64 -> Arrays.fill(t.longData(), (long) value);
@@ -67,8 +86,18 @@ public final class Tensor {
         return new Tensor(DType.INT32, values.clone(), values.length);
     }
 
+    public static Tensor fromInts(TensorShape shape, int... values) {
+        requireElementCount(shape, values.length);
+        return new Tensor(DType.INT32, values.clone(), shape);
+    }
+
     public static Tensor fromLongs(long... values) {
         return new Tensor(DType.INT64, values.clone(), values.length);
+    }
+
+    public static Tensor fromLongs(TensorShape shape, long... values) {
+        requireElementCount(shape, values.length);
+        return new Tensor(DType.INT64, values.clone(), shape);
     }
 
     /** Adopt an already-allocated buffer (feed/fetch conversion hot path). */
@@ -85,8 +114,27 @@ public final class Tensor {
         return new Tensor(DType.FLOAT32, values.clone(), values.length);
     }
 
+    public static Tensor fromFloats(TensorShape shape, float... values) {
+        requireElementCount(shape, values.length);
+        return new Tensor(DType.FLOAT32, values.clone(), shape);
+    }
+
     public static Tensor fromDoubles(double... values) {
         return new Tensor(DType.FLOAT64, values.clone(), values.length);
+    }
+
+    public static Tensor fromDoubles(TensorShape shape, double... values) {
+        requireElementCount(shape, values.length);
+        return new Tensor(DType.FLOAT64, values.clone(), shape);
+    }
+
+    private static void requireElementCount(TensorShape shape, int count) {
+        Objects.requireNonNull(shape, "shape");
+        if (shape.size() != count) {
+            throw new IllegalArgumentException(
+                    "Tensor shape " + shape + " needs " + shape.size()
+                            + " elements, got " + count);
+        }
     }
 
     // ---- metadata -------------------------------------------------------
@@ -97,6 +145,10 @@ public final class Tensor {
 
     public int size() {
         return size;
+    }
+
+    public TensorShape shape() {
+        return shape;
     }
 
     public boolean isEmpty() {
@@ -217,7 +269,7 @@ public final class Tensor {
             return quantizeQ8_0();
         }
 
-        Tensor result = zeros(size, target);
+        Tensor result = zeros(shape, target);
         switch (dtype) {
             case INT32 -> castFromInts(intData(), result);
             case INT64 -> castFromLongs(longData(), result);
@@ -349,14 +401,14 @@ public final class Tensor {
             }
         }
 
-        return new Tensor(DType.Q8_0, out, size);
+        return new Tensor(DType.Q8_0, out, shape);
     }
 
     public Tensor dequantize() {
         if (dtype != DType.Q8_0) {
             throw new IllegalStateException("dequantize: input must be a q8_0 tensor");
         }
-        Tensor result = zeros(size, DType.FLOAT64);
+        Tensor result = zeros(shape, DType.FLOAT64);
         double[] dst = result.doubleData();
         BlockQ8_0[] blocks = q8Blocks();
         for (int b = 0; b < blocks.length; b++) {
@@ -413,7 +465,7 @@ public final class Tensor {
                 yield dst;
             }
         };
-        return new Tensor(dtype, copy, size);
+        return new Tensor(dtype, copy, shape);
     }
 
     private void require(DType expected) {
@@ -432,6 +484,7 @@ public final class Tensor {
 
     @Override
     public String toString() {
-        return "Tensor{" + dtype + ", size=" + size + '}';
+        return "Tensor{" + dtype + ", shape=" + shape
+                + ", size=" + size + '}';
     }
 }

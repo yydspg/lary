@@ -17,6 +17,7 @@ import io.lark.metric.Monitor;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -355,10 +356,15 @@ public final class ColumnPipeline implements AutoCloseable {
         }
     }
 
+    /**
+     * Row-oriented fetch. Shaped tensors are flattened into rows; use
+     * {@link #fetchTensor} / {@link #fetchTensors} for logical shapes.
+     */
     public List<Row> fetch(FetchStream stream) {
         return fetch(stream.names());
     }
 
+    /** Row-oriented fetch; shaped tensors are flattened into rows. */
     public List<Row> fetch(List<String> names) {
         return FeedFetch.fetchRows(fetchTable(names), names);
     }
@@ -368,9 +374,14 @@ public final class ColumnPipeline implements AutoCloseable {
         return fetchColumns(stream.names());
     }
 
-    /** Fetch a column-oriented view keyed by column name. */
+    /** Fetch selected tensors as flat cell lists, one list per column. */
     public Map<String, List<Cell>> fetchColumns(List<String> names) {
-        return FeedFetch.fetchColumns(fetchTable(names), names);
+        Map<String, Tensor> tensors = fetchTensors(names);
+        Map<String, List<Cell>> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Tensor> entry : tensors.entrySet()) {
+            result.put(entry.getKey(), FeedFetch.cells(entry.getValue()));
+        }
+        return Collections.unmodifiableMap(result);
     }
 
     /** Fetch a column-oriented view keyed by column name. */
@@ -379,14 +390,55 @@ public final class ColumnPipeline implements AutoCloseable {
     }
 
     /**
-     * Fetch every compiled output as named cell lists. Unlike the row-oriented
-     * no-arg {@link #fetch()}, this permits outputs with different row counts.
+     * Fetch every compiled output as flat cell lists. Unlike the row-oriented
+     * no-arg {@link #fetch()}, this permits outputs with different shapes.
      */
     public Map<String, List<Cell>> fetchColumns() {
+        Map<String, List<Cell>> result = new LinkedHashMap<>();
+        for (Map.Entry<String, Tensor> entry : fetchTensors().entrySet()) {
+            result.put(entry.getKey(), FeedFetch.cells(entry.getValue()));
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    /** Fetch every compiled output as a typed tensor view. */
+    public Map<String, Tensor> fetchTensors() {
         if (plan == null) {
             throw new IllegalStateException("ColumnPipeline: compile first");
         }
-        return fetchColumns(plan.outputs());
+        return fetchTensors(plan.outputs());
+    }
+
+    /** Fetch selected tensors without converting them to rows. */
+    public Map<String, Tensor> fetchTensors(FetchStream stream) {
+        return fetchTensors(stream.names());
+    }
+
+    /** Fetch selected tensors without converting them to rows. */
+    public Map<String, Tensor> fetchTensors(List<String> names) {
+        PipelinePlan current = plan;
+        if (current == null) {
+            throw new IllegalStateException("ColumnPipeline: compile first");
+        }
+        if (!current.canFetch(names)) {
+            throw new IllegalArgumentException(
+                    "ColumnPipeline: cannot fetch " + names
+                            + "; compiled outputs=" + current.outputs());
+        }
+        int rows = names.isEmpty() ? 0
+                : ctx.store().get(names.get(0)).shape().dim(0);
+        Map<String, String> shape = Map.of(
+                "rows", Integer.toString(rows),
+                "columns", Integer.toString(names.size()));
+        ctx.beginPhase(ExecutionContext.RunPhase.FETCH);
+        emitStart("fetch.start", "fetch", shape);
+        Map<String, Tensor> result = new LinkedHashMap<>();
+        for (String name : names) {
+            result.put(name, ctx.store().get(name));
+        }
+        ctx.endPhase();
+        emitEnd("fetch.end", "fetch", ExecutionContext.RunPhase.FETCH, shape);
+        return Collections.unmodifiableMap(result);
     }
 
     private TensorTable fetchTable(List<String> names) {
@@ -443,7 +495,7 @@ public final class ColumnPipeline implements AutoCloseable {
      * read-only view; do not mutate it.
      */
     public Tensor fetchTensor(String name) {
-        return fetchTable(List.of(name)).get(name);
+        return fetchTensors(List.of(name)).get(name);
     }
 
     public double fetchScalar(String name) {

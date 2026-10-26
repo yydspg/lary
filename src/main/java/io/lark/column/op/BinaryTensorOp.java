@@ -46,10 +46,10 @@ public abstract class BinaryTensorOp extends OpTensor {
     public final void compute(OpContext ctx) {
         Tensor a = ctx.input(inputs()[0]);
         Tensor b = ctx.input(inputs()[1]);
-        if (a.size() != b.size()) {
+        if (!a.shape().equals(b.shape())) {
             throw new IllegalArgumentException(
-                    opType() + ": length mismatch (" + a.size()
-                            + " vs " + b.size() + ")");
+                    opType() + ": shape mismatch (" + a.shape()
+                            + " vs " + b.shape() + ")");
         }
         Tensor left = a.dtype() == dtype ? a : a.castTo(dtype);
         Tensor right = b.dtype() == dtype ? b : b.castTo(dtype);

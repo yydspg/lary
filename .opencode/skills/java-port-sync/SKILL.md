@@ -69,13 +69,14 @@ test. Tests are the behavioral contract.
 | C++ | Java |
 |---|---|
 | `column/include/column/types.h` | `src/main/java/io/lark/column/.../DType.java`, `BlockQ8_0.java` |
-| `column/include/column/tensor.h`, `src/tensor.cpp` | `Tensor.java` |
+| `column/include/column/tensor.h`, `src/tensor.cpp` | `Tensor.java`, `TensorShape.java` (flat storage + 1–3-D row-major shape) |
 | `tensor_table.h`, `tensor_store.h` | `TensorTable.java`, `TensorStore.java` |
 | `feed_fetch.h`, `src/feed_fetch.cpp` | `Cell.java`, `Row.java`, `FeedFetch.java` |
 | `column/include/column/compute/*`, `src/compute/*` | `compute/Compute.java`, `compute/VectorOps.java` |
 | `compute/simd.h` | `Simd.java` + `compute/VectorOps.java` (`jdk.incubator.vector`) |
 | `exec/tensor_op.h`, `exec/ops*.cpp` | `op/OpTensor.java`, `TensorOps.java`, `OpSpec.java`, `OpContext.java`, `FallibleOpTensor.java` |
-| Typed tensor ops (Java-first) | `op/FloatAddTensor.java`, `FloatMultiTensor.java`, `FloatSubTensor.java`, `DoubleAddTensor.java`, `IntAddTensor.java`, `LongMultiTensor.java`, … |
+| Typed tensor ops (Java-first) | `op/FloatAddTensor.java`, `FloatMultiTensor.java`, `FloatSubTensor.java`, `DoubleAddTensor.java`, `IntAddTensor.java`, `LongMultiTensor.java`, …; `op/ZerosTensor.java` |
+| Zero-tensor business node | `biz/ZerosNode.java` |
 | `exec/exec_node.h`, `exec_node.cpp` | `exec/ComputeNode.java` (hidden execution node) |
 | `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
 | Column ready-queue scheduler (Java-first) | `exec/ComputeGraph.java` dependency counters + `ComputeNode.dependencyView()`; fixed platform pool sized by `ColumnPipeline.computeWorkers`, optional virtual compute threads for blocking nodes |
@@ -96,6 +97,7 @@ test. Tests are the behavioral contract.
 | DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
 | Realistic multi-class demo | `examples/src/main/java/io/lark/examples/recsys/**` (`:examples:runRecsys`), split into `schema/`, `node/`, `module/`, `data/` |
 | Warmed-up benchmark | `examples/src/main/java/io/lark/examples/recsys/RecSysBenchmark.java` (`:examples:runRecsysBenchmark`), median/p95 after warm-up |
+| Tensor-aware search demo | `examples/src/main/java/io/lark/examples/search/**` (`:examples:runSearch`), modules `CtrModule`, `CvrModule`, `CtCvrModule`, `RebuySameLossModule`, `BuyAgainModule`, `CouponRoiModule`, `RetargetAdModule`, `GmvModule`, `DelayModule`; 2-D/3-D outputs |
 | Realistic demo test | `examples/src/test/java/io/lark/examples/recsys/RecSysMetricTest.java`, mock edge-case feed `MockMetrics.java` |
 | Spring demo / tests | `spring/src/test/java/io/lark/spring/example/SpringRecSysDemo.java` (`:spring:runSpringRecsys`), `LaryColumnAutoConfigurationTest.java`, `LaryColumnPropertyScanTest.java`, fixtures under `spring/src/test/java/io/lark/spring/fixture/` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
@@ -155,6 +157,11 @@ test. Tests are the behavioral contract.
 
 ### Column
 
+- `TensorShape` stores 1–3 row-major dimensions; storage remains one flat
+  primitive array. Element-wise binary ops require equal shapes (not merely
+  equal element counts), while scalar/unary/cast/quantize operations preserve
+  shape. `Tensor.zeros(TensorShape, dtype)` and `ZerosTensor` / `ZerosNode`
+  create zero tensors. `TensorOps` `const` and `zeros` accept a `shape` attr.
 - dtypes: INT32, INT64, FLOAT32, FLOAT64, Q8_0; binary promotion:
   int32+int64 → int64, mixed int/float → float (int64 → float64),
   float32+float64 → float64; division → float64.
@@ -295,6 +302,7 @@ test. Tests are the behavioral contract.
 JAVA_HOME=/path/to/jdk-25 ./gradlew clean test :examples:build :spring:build
 JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runSimple :examples:runOp
 JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRecsys
+JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runSearch
 JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRecsysBenchmark \
     -Plary.bench.rows=50000 -Plary.bench.iterations=10
 JAVA_HOME=/path/to/jdk-25 ./gradlew :spring:test :spring:runSpringRecsys
@@ -322,8 +330,11 @@ in `~/.gradle/gradle.properties`.
       boundaries, pipeline-plan reuse and module snapshots.
 - [ ] Blocking-column behavior is covered when the virtual-thread option
       changes; the benchmark still compiles and runs.
+- [ ] Tensor shape/arithmetic changes keep equal-shape binary semantics and
+      cover 1-D, 2-D and 3-D shapes; zero-tensor ops/nodes compile and run.
 - [ ] Repeated-run/timing changes are checked with
       `:examples:runRecsysBenchmark`, not a single `RunStats` sample.
+- [ ] Chinese docs (`README.zh-CN.md`) are updated for user-facing changes.
 - [ ] Column examples run with `--add-modules jdk.incubator.vector`.
 - [ ] `:examples` still compiles; realistic demo classes remain separated into
       schema/nodes/modules instead of one catch-all class.
