@@ -5,6 +5,7 @@ package io.lark.column.compute;
 
 import io.lark.column.DType;
 import io.lark.column.Tensor;
+import io.lark.column.TensorShape;
 
 import jdk.incubator.vector.DoubleVector;
 import jdk.incubator.vector.FloatVector;
@@ -19,7 +20,8 @@ import jdk.incubator.vector.VectorOperators;
  * <p>Element-wise arithmetic, scalar broadcasting, comparisons and reductions
  * operate on whole vectors ({@code *Vector.SPECIES_PREFERRED}) with a scalar
  * tail. Mixed dtypes are cast to the promoted output type before the kernel
- * runs.
+ * runs. Equal-shape operations use the SIMD path; tensor broadcasting uses
+ * right-aligned index mapping.
  */
 final class VectorOps {
 
@@ -41,25 +43,36 @@ final class VectorOps {
     // ---- binary ---------------------------------------------------------
 
     static Tensor binary(Tensor a, Tensor b, DType outDtype, Binary op) {
-        if (!a.shape().equals(b.shape())) {
-            throw new IllegalArgumentException(
-                    "binary op: shape mismatch (" + a.shape() + " vs "
-                            + b.shape() + ")");
-        }
+        TensorShape outShape = a.shape().broadcastWith(b.shape());
         Tensor left = a.dtype() == outDtype ? a : a.castTo(outDtype);
         Tensor right = b.dtype() == outDtype ? b : b.castTo(outDtype);
-        Tensor result = Tensor.zeros(a.shape(), outDtype);
-        switch (outDtype) {
-            case INT32 -> binaryInt(left.intData(), right.intData(),
-                    result.intData(), op);
-            case INT64 -> binaryLong(left.longData(), right.longData(),
-                    result.longData(), op);
-            case FLOAT32 -> binaryFloat(left.floatData(), right.floatData(),
-                    result.floatData(), op);
-            case FLOAT64 -> binaryDouble(left.doubleData(), right.doubleData(),
-                    result.doubleData(), op);
-            case Q8_0 -> throw new IllegalArgumentException(
-                    "elementwise ops do not support q8_0 directly");
+        Tensor result = Tensor.zeros(outShape, outDtype);
+        if (a.shape().equals(b.shape())) {
+            switch (outDtype) {
+                case INT32 -> binaryInt(left.intData(), right.intData(),
+                        result.intData(), op);
+                case INT64 -> binaryLong(left.longData(), right.longData(),
+                        result.longData(), op);
+                case FLOAT32 -> binaryFloat(left.floatData(), right.floatData(),
+                        result.floatData(), op);
+                case FLOAT64 -> binaryDouble(left.doubleData(), right.doubleData(),
+                        result.doubleData(), op);
+                case Q8_0 -> throw new IllegalArgumentException(
+                        "elementwise ops do not support q8_0 directly");
+            }
+        } else {
+            switch (outDtype) {
+                case INT32 -> binaryBroadcastInt(left.intData(), a.shape(),
+                        right.intData(), b.shape(), result.intData(), outShape, op);
+                case INT64 -> binaryBroadcastLong(left.longData(), a.shape(),
+                        right.longData(), b.shape(), result.longData(), outShape, op);
+                case FLOAT32 -> binaryBroadcastFloat(left.floatData(), a.shape(),
+                        right.floatData(), b.shape(), result.floatData(), outShape, op);
+                case FLOAT64 -> binaryBroadcastDouble(left.doubleData(), a.shape(),
+                        right.doubleData(), b.shape(), result.doubleData(), outShape, op);
+                case Q8_0 -> throw new IllegalArgumentException(
+                        "elementwise ops do not support q8_0 directly");
+            }
         }
         return result;
     }
@@ -83,24 +96,35 @@ final class VectorOps {
     // ---- comparisons ----------------------------------------------------
 
     static Tensor compare(Tensor a, Tensor b, Cmp cmp) {
-        if (!a.shape().equals(b.shape())) {
-            throw new IllegalArgumentException(
-                    "compare: shape mismatch (" + a.shape() + " vs "
-                            + b.shape() + ")");
-        }
+        TensorShape outShape = a.shape().broadcastWith(b.shape());
         DType dtype = Compute.promote(a.dtype(), b.dtype());
         Tensor left = a.dtype() == dtype ? a : a.castTo(dtype);
         Tensor right = b.dtype() == dtype ? b : b.castTo(dtype);
-        Tensor result = Tensor.zeros(a.shape(), DType.INT64);
+        Tensor result = Tensor.zeros(outShape, DType.INT64);
         long[] out = result.longData();
 
-        switch (dtype) {
-            case INT32 -> compareInt(left.intData(), right.intData(), out, cmp);
-            case INT64 -> compareLong(left.longData(), right.longData(), out, cmp);
-            case FLOAT32 -> compareFloat(left.floatData(), right.floatData(), out, cmp);
-            case FLOAT64 -> compareDouble(left.doubleData(), right.doubleData(), out, cmp);
-            case Q8_0 -> throw new IllegalArgumentException(
-                    "comparisons do not support q8_0 directly");
+        if (a.shape().equals(b.shape())) {
+            switch (dtype) {
+                case INT32 -> compareInt(left.intData(), right.intData(), out, cmp);
+                case INT64 -> compareLong(left.longData(), right.longData(), out, cmp);
+                case FLOAT32 -> compareFloat(left.floatData(), right.floatData(), out, cmp);
+                case FLOAT64 -> compareDouble(left.doubleData(), right.doubleData(), out, cmp);
+                case Q8_0 -> throw new IllegalArgumentException(
+                        "comparisons do not support q8_0 directly");
+            }
+        } else {
+            switch (dtype) {
+                case INT32 -> compareBroadcastInt(left.intData(), a.shape(),
+                        right.intData(), b.shape(), out, outShape, cmp);
+                case INT64 -> compareBroadcastLong(left.longData(), a.shape(),
+                        right.longData(), b.shape(), out, outShape, cmp);
+                case FLOAT32 -> compareBroadcastFloat(left.floatData(), a.shape(),
+                        right.floatData(), b.shape(), out, outShape, cmp);
+                case FLOAT64 -> compareBroadcastDouble(left.doubleData(), a.shape(),
+                        right.doubleData(), b.shape(), out, outShape, cmp);
+                case Q8_0 -> throw new IllegalArgumentException(
+                        "comparisons do not support q8_0 directly");
+            }
         }
         return result;
     }
@@ -218,6 +242,162 @@ final class VectorOps {
             sq += diff * diff;
         }
         return Math.sqrt(sq / n);
+    }
+
+    // ---- broadcast kernels ---------------------------------------------
+
+    private static void binaryBroadcastInt(int[] a, TensorShape aShape,
+                                           int[] b, TensorShape bShape,
+                                           int[] out, TensorShape outShape,
+                                           Binary op) {
+        for (int i = 0; i < out.length; i++) {
+            int ai = aShape.broadcastFlatIndex(i, outShape);
+            int bi = bShape.broadcastFlatIndex(i, outShape);
+            out[i] = switch (op) {
+                case ADD -> a[ai] + b[bi];
+                case SUB -> a[ai] - b[bi];
+                case MUL -> a[ai] * b[bi];
+                case DIV -> throw new IllegalArgumentException(
+                        "int division is promoted to float64");
+            };
+        }
+    }
+
+    private static void binaryBroadcastLong(long[] a, TensorShape aShape,
+                                            long[] b, TensorShape bShape,
+                                            long[] out, TensorShape outShape,
+                                            Binary op) {
+        for (int i = 0; i < out.length; i++) {
+            int ai = aShape.broadcastFlatIndex(i, outShape);
+            int bi = bShape.broadcastFlatIndex(i, outShape);
+            out[i] = switch (op) {
+                case ADD -> a[ai] + b[bi];
+                case SUB -> a[ai] - b[bi];
+                case MUL -> a[ai] * b[bi];
+                case DIV -> throw new IllegalArgumentException(
+                        "int division is promoted to float64");
+            };
+        }
+    }
+
+    private static void binaryBroadcastFloat(float[] a, TensorShape aShape,
+                                             float[] b, TensorShape bShape,
+                                             float[] out, TensorShape outShape,
+                                             Binary op) {
+        for (int i = 0; i < out.length; i++) {
+            int ai = aShape.broadcastFlatIndex(i, outShape);
+            int bi = bShape.broadcastFlatIndex(i, outShape);
+            out[i] = switch (op) {
+                case ADD -> a[ai] + b[bi];
+                case SUB -> a[ai] - b[bi];
+                case MUL -> a[ai] * b[bi];
+                case DIV -> a[ai] / b[bi];
+            };
+        }
+    }
+
+    private static void binaryBroadcastDouble(double[] a, TensorShape aShape,
+                                              double[] b, TensorShape bShape,
+                                              double[] out, TensorShape outShape,
+                                              Binary op) {
+        for (int i = 0; i < out.length; i++) {
+            int ai = aShape.broadcastFlatIndex(i, outShape);
+            int bi = bShape.broadcastFlatIndex(i, outShape);
+            out[i] = switch (op) {
+                case ADD -> a[ai] + b[bi];
+                case SUB -> a[ai] - b[bi];
+                case MUL -> a[ai] * b[bi];
+                case DIV -> a[ai] / b[bi];
+            };
+        }
+    }
+
+    private static void compareBroadcastInt(int[] a, TensorShape aShape,
+                                            int[] b, TensorShape bShape,
+                                            long[] out, TensorShape outShape,
+                                            Cmp cmp) {
+        for (int i = 0; i < out.length; i++) {
+            int ai = aShape.broadcastFlatIndex(i, outShape);
+            int bi = bShape.broadcastFlatIndex(i, outShape);
+            out[i] = compare(a[ai], b[bi], cmp) ? 1L : 0L;
+        }
+    }
+
+    private static void compareBroadcastLong(long[] a, TensorShape aShape,
+                                             long[] b, TensorShape bShape,
+                                             long[] out, TensorShape outShape,
+                                             Cmp cmp) {
+        for (int i = 0; i < out.length; i++) {
+            int ai = aShape.broadcastFlatIndex(i, outShape);
+            int bi = bShape.broadcastFlatIndex(i, outShape);
+            out[i] = compare(a[ai], b[bi], cmp) ? 1L : 0L;
+        }
+    }
+
+    private static void compareBroadcastFloat(float[] a, TensorShape aShape,
+                                              float[] b, TensorShape bShape,
+                                              long[] out, TensorShape outShape,
+                                              Cmp cmp) {
+        for (int i = 0; i < out.length; i++) {
+            int ai = aShape.broadcastFlatIndex(i, outShape);
+            int bi = bShape.broadcastFlatIndex(i, outShape);
+            out[i] = compare(a[ai], b[bi], cmp) ? 1L : 0L;
+        }
+    }
+
+    private static void compareBroadcastDouble(double[] a, TensorShape aShape,
+                                               double[] b, TensorShape bShape,
+                                               long[] out, TensorShape outShape,
+                                               Cmp cmp) {
+        for (int i = 0; i < out.length; i++) {
+            int ai = aShape.broadcastFlatIndex(i, outShape);
+            int bi = bShape.broadcastFlatIndex(i, outShape);
+            out[i] = compare(a[ai], b[bi], cmp) ? 1L : 0L;
+        }
+    }
+
+    private static boolean compare(int a, int b, Cmp cmp) {
+        return switch (cmp) {
+            case GT -> a > b;
+            case GE -> a >= b;
+            case LT -> a < b;
+            case LE -> a <= b;
+            case EQ -> a == b;
+            case NEQ -> a != b;
+        };
+    }
+
+    private static boolean compare(long a, long b, Cmp cmp) {
+        return switch (cmp) {
+            case GT -> a > b;
+            case GE -> a >= b;
+            case LT -> a < b;
+            case LE -> a <= b;
+            case EQ -> a == b;
+            case NEQ -> a != b;
+        };
+    }
+
+    private static boolean compare(float a, float b, Cmp cmp) {
+        return switch (cmp) {
+            case GT -> a > b;
+            case GE -> a >= b;
+            case LT -> a < b;
+            case LE -> a <= b;
+            case EQ -> a == b;
+            case NEQ -> a != b;
+        };
+    }
+
+    private static boolean compare(double a, double b, Cmp cmp) {
+        return switch (cmp) {
+            case GT -> a > b;
+            case GE -> a >= b;
+            case LT -> a < b;
+            case LE -> a <= b;
+            case EQ -> a == b;
+            case NEQ -> a != b;
+        };
     }
 
     // ---- int32 kernels --------------------------------------------------

@@ -46,8 +46,10 @@ Tensor product = Compute.mul(a, b);
 assert sum.shape().equals(shape);
 ```
 
-- 二元 add/sub/mul/div 要求形状完全一致；形状不一致会立即报错。
-- 标量运算、比较、一元运算、cast、quantize/dequantize 会保留输入形状。
+- 二元 add/sub/mul/div 和比较支持右对齐的 NumPy 风格广播，例如
+  `[2,3] + [3]`、`[2,3] + [2,1]`。
+- add/mul 满足交换律；sub/div 保持操作数顺序。无法广播的维度会立即报错。
+- 标量运算、一元运算、cast、quantize/dequantize 会保留输入形状。
 - `Tensor.zeros(shape, dtype)` 创建任意 1–3 维置零张量。
 - `fetchTensor(...)` 直接返回列式 `Tensor`，不经过行/单元格转换。
 

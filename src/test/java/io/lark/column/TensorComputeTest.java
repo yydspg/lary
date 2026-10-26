@@ -128,6 +128,45 @@ class TensorComputeTest {
     }
 
     @Test
+    void broadcastAddAndMulAreCommutative() {
+        TensorShape matrixShape = TensorShape.of(2, 3);
+        Tensor matrix = Tensor.fromDoubles(matrixShape, 1, 2, 3, 4, 5, 6);
+        Tensor row = Tensor.fromDoubles(TensorShape.of(3), 10, 20, 30);
+        Tensor column = Tensor.fromDoubles(TensorShape.of(2, 1), 100, 200);
+        Tensor scalar = Tensor.fromDoubles(TensorShape.of(1), 5);
+
+        assertCommutative(Compute.add(matrix, row), Compute.add(row, matrix),
+                matrixShape, new double[]{11, 22, 33, 14, 25, 36});
+        assertCommutative(Compute.mul(matrix, row), Compute.mul(row, matrix),
+                matrixShape, new double[]{10, 40, 90, 40, 100, 180});
+        assertCommutative(Compute.add(matrix, column),
+                Compute.add(column, matrix), matrixShape,
+                new double[]{101, 102, 103, 204, 205, 206});
+        assertCommutative(Compute.add(matrix, scalar),
+                Compute.add(scalar, matrix), matrixShape,
+                new double[]{6, 7, 8, 9, 10, 11});
+
+        Tensor sum = Compute.add(matrix, row);
+        Tensor reversed = Compute.add(row, matrix);
+        Tensor eq1 = Compute.eq(matrix, sum);
+        Tensor eq2 = Compute.eq(sum, matrix);
+        for (int i = 0; i < sum.size(); i++) {
+            assertEquals(eq1.getLong(i), eq2.getLong(i));
+        }
+    }
+
+    private static void assertCommutative(Tensor first, Tensor second,
+                                          TensorShape shape,
+                                          double[] expected) {
+        assertEquals(shape, first.shape());
+        assertEquals(shape, second.shape());
+        for (int i = 0; i < expected.length; i++) {
+            assertEquals(expected[i], first.getDouble(i), 1e-9);
+            assertEquals(expected[i], second.getDouble(i), 1e-9);
+        }
+    }
+
+    @Test
     void tensorStoreSupportsDifferentLengths() {
         TensorStore store = new TensorStore();
         store.set("x", Tensor.fromLongs(1, 2, 3));

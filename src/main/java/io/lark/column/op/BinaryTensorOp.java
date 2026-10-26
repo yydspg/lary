@@ -46,10 +46,10 @@ public abstract class BinaryTensorOp extends OpTensor {
     public final void compute(OpContext ctx) {
         Tensor a = ctx.input(inputs()[0]);
         Tensor b = ctx.input(inputs()[1]);
-        if (!a.shape().equals(b.shape())) {
+        if (!a.shape().isBroadcastCompatible(b.shape())) {
             throw new IllegalArgumentException(
-                    opType() + ": shape mismatch (" + a.shape()
-                            + " vs " + b.shape() + ")");
+                    opType() + ": shapes are not broadcast-compatible ("
+                            + a.shape() + " vs " + b.shape() + ")");
         }
         Tensor left = a.dtype() == dtype ? a : a.castTo(dtype);
         Tensor right = b.dtype() == dtype ? b : b.castTo(dtype);

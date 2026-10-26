@@ -158,10 +158,11 @@ test. Tests are the behavioral contract.
 ### Column
 
 - `TensorShape` stores 1–3 row-major dimensions; storage remains one flat
-  primitive array. Element-wise binary ops require equal shapes (not merely
-  equal element counts), while scalar/unary/cast/quantize operations preserve
-  shape. `Tensor.zeros(TensorShape, dtype)` and `ZerosTensor` / `ZerosNode`
-  create zero tensors. `TensorOps` `const` and `zeros` accept a `shape` attr.
+  primitive array. Element-wise binary ops use right-aligned NumPy-style
+  broadcasting; add/mul are commutative in operand order, sub/div keep order.
+  Scalar/unary/cast/quantize operations preserve shape. `Tensor.zeros(TensorShape,
+  dtype)` and `ZerosTensor` / `ZerosNode` create zero tensors. `TensorOps`
+  `const` and `zeros` accept a `shape` attr.
 - dtypes: INT32, INT64, FLOAT32, FLOAT64, Q8_0; binary promotion:
   int32+int64 → int64, mixed int/float → float (int64 → float64),
   float32+float64 → float64; division → float64.
@@ -330,8 +331,8 @@ in `~/.gradle/gradle.properties`.
       boundaries, pipeline-plan reuse and module snapshots.
 - [ ] Blocking-column behavior is covered when the virtual-thread option
       changes; the benchmark still compiles and runs.
-- [ ] Tensor shape/arithmetic changes keep equal-shape binary semantics and
-      cover 1-D, 2-D and 3-D shapes; zero-tensor ops/nodes compile and run.
+- [ ] Tensor shape/arithmetic changes cover broadcasting, commutativity of
+      add/mul, 1-D/2-D/3-D shapes and zero-tensor ops/nodes.
 - [ ] Repeated-run/timing changes are checked with
       `:examples:runRecsysBenchmark`, not a single `RunStats` sample.
 - [ ] Chinese docs (`README.zh-CN.md`) are updated for user-facing changes.

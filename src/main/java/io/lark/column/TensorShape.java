@@ -11,8 +11,8 @@ import java.util.Objects;
  *
  * <p>The storage is still one flat primitive array; the shape describes how
  * those elements are interpreted, e.g. {@code [batch, candidate, feature]}.
- * Element-wise arithmetic requires equal shapes, while scalar operations keep
- * the input shape.
+ * Element-wise binary arithmetic uses right-aligned NumPy-style broadcasting
+ * (up to three dimensions), while scalar operations keep the input shape.
  */
 public final class TensorShape {
 
@@ -104,6 +104,75 @@ public final class TensorShape {
 
     public boolean isVector() {
         return dimensions.length == 1;
+    }
+
+    /**
+     * Right-aligned NumPy-style broadcast of two shapes, e.g.
+     * {@code [2,3]} with {@code [3]} -> {@code [2,3]}.
+     */
+    public TensorShape broadcastWith(TensorShape other) {
+        Objects.requireNonNull(other, "other");
+        int rank = Math.max(rank(), other.rank());
+        int[] result = new int[rank];
+        for (int i = 0; i < rank; i++) {
+            int left = dimFromEnd(i);
+            int right = other.dimFromEnd(i);
+            int dimension;
+            if (left == right) {
+                dimension = left;
+            } else if (left == 1) {
+                dimension = right;
+            } else if (right == 1) {
+                dimension = left;
+            } else {
+                throw new IllegalArgumentException(
+                        "Tensor shapes are not broadcast-compatible: "
+                                + this + " vs " + other);
+            }
+            result[rank - 1 - i] = dimension;
+        }
+        return of(result);
+    }
+
+    public boolean isBroadcastCompatible(TensorShape other) {
+        try {
+            broadcastWith(other);
+            return true;
+        } catch (IllegalArgumentException ignored) {
+            return false;
+        }
+    }
+
+    /**
+     * Map a flat index in {@code output} back to a flat index in this shape
+     * using right-aligned broadcasting. This shape must be broadcastable to
+     * {@code output}.
+     */
+    public int broadcastFlatIndex(int outputFlatIndex, TensorShape output) {
+        Objects.requireNonNull(output, "output");
+        int rankDelta = output.rank() - rank();
+        if (rankDelta < 0) {
+            throw new IllegalArgumentException(
+                    "Cannot broadcast shape " + this + " to " + output);
+        }
+        int index = 0;
+        for (int axis = 0; axis < output.rank(); axis++) {
+            int coordinate = (outputFlatIndex / output.stride(axis))
+                    % output.dim(axis);
+            int inputAxis = axis - rankDelta;
+            if (inputAxis >= 0) {
+                int dimension = dim(inputAxis);
+                if (dimension != 1) {
+                    index += coordinate * stride(inputAxis);
+                }
+            }
+        }
+        return index;
+    }
+
+    private int dimFromEnd(int offset) {
+        int axis = rank() - 1 - offset;
+        return axis < 0 ? 1 : dim(axis);
     }
 
     /** Row-major stride of one axis. */

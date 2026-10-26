@@ -138,10 +138,10 @@ class OpTensorTest {
     }
 
     @Test
-    void lengthMismatchFailsFast() {
+    void shapeMismatchFailsFast() {
         OpContext ctx = context(
-                Tensor.fromFloats(1.0f, 2.0f),
-                Tensor.fromFloats(1.0f));
+                Tensor.fromFloats(1.0f, 2.0f, 3.0f),
+                Tensor.fromFloats(1.0f, 2.0f));
         assertTrue(throwsIllegalArgument(
                 () -> new FloatAddTensor(List.of("a", "b"), List.of("r")).compute(ctx)));
     }

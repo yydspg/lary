@@ -729,15 +729,23 @@ TensorShape shape = TensorShape.of(2, 3, 4); // [batch, candidate, feature]
 Tensor a = Tensor.fromDoubles(shape, 1, 2, 3, /* ... 24 values */);
 Tensor b = Tensor.fromDoubles(shape, 4, 5, 6, /* ... 24 values */);
 
-Tensor sum = Compute.add(a, b);   // same shape required
+Tensor sum = Compute.add(a, b);
 Tensor product = Compute.mul(a, b);
 assert sum.shape().equals(shape);
+
+// Right-aligned broadcasting, e.g. [2,3] + [3] or [2,3] + [2,1].
+Tensor matrix = Tensor.fromDoubles(TensorShape.of(2, 3), 1, 2, 3, 4, 5, 6);
+Tensor row = Tensor.fromDoubles(TensorShape.of(3), 10, 20, 30);
+Tensor broadcast = Compute.add(matrix, row);
+assert broadcast.shape().equals(TensorShape.of(2, 3));
 ```
 
-Element-wise add/sub/mul/div, scalar ops, comparisons, unary kernels, casts and
-quantization preserve the shape. Shape mismatches fail fast, even when the
-flat element counts happen to match. `Tensor.zeros(shape, dtype)` creates a
-zero tensor without going through a business module.
+Element-wise binary add/sub/mul/div and comparisons use right-aligned NumPy-style
+broadcasting; add/mul are commutative in operand order, while sub/div keep
+operand order. Scalar ops, unary kernels, casts and quantization preserve the
+input shape. Incompatible dimensions fail fast, even when flat element counts
+happen to match. `Tensor.zeros(shape, dtype)` creates a zero tensor without
+going through a business module.
 
 The op layer supports both declarative and typed zeros:
 
