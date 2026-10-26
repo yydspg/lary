@@ -4,6 +4,7 @@
 package io.lark.column;
 
 import io.lark.column.data.*;
+import io.lark.column.tensor.*;
 import io.lark.column.compute.Simd;
 
 import io.lark.column.backend.Backend;
@@ -15,9 +16,6 @@ import io.lark.column.op.OpContext;
 import io.lark.column.op.OpSpec;
 import io.lark.column.op.OpTensor;
 import io.lark.column.op.TensorOps;
-import io.lark.column.kernel.KernelContext;
-import io.lark.column.kernel.TensorKernel;
-import io.lark.column.kernel.TensorKernels;
 import io.lark.column.monitor.ColumnStatsCollector;
 import org.junit.jupiter.api.Test;
 

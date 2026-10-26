@@ -3,9 +3,9 @@
 
 package io.lark.column.op;
 
-import io.lark.column.data.DType;
-import io.lark.column.data.Tensor;
-import io.lark.column.data.TensorShape;
+import io.lark.column.tensor.DType;
+import io.lark.column.tensor.Tensor;
+import io.lark.column.tensor.TensorShape;
 
 import java.util.List;
 import java.util.Objects;

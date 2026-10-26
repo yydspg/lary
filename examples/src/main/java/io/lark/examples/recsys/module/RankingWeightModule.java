@@ -13,9 +13,15 @@ import io.lark.examples.recsys.schema.RecSysMetrics;
 @ColumnComponent
 public final class RankingWeightModule extends ColumnModule {
 
-    private final RankingWeightNode weight;
+    private final FunnelMetricModule funnel;
+    private RankingWeightNode weight;
 
     public RankingWeightModule(FunnelMetricModule funnel) {
+        this.funnel = funnel;
+    }
+
+    @Override
+    protected void define() {
         weight = node(new RankingWeightNode(
                 funnel.published(RecSysMetrics.CTR),
                 funnel.published(RecSysMetrics.CVR),
@@ -23,7 +29,7 @@ public final class RankingWeightModule extends ColumnModule {
                 funnel.published(RecSysMetrics.COUPON_ROI),
                 funnel.published(RecSysMetrics.BUYAGAIN_COST)));
         dependsOn(FunnelMetricModule.class);
-        fetch(weight.out());
+        output(weight.out());
     }
 
     public ColumnStream<Double> weight() {

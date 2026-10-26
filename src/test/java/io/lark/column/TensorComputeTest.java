@@ -4,6 +4,7 @@
 package io.lark.column;
 
 import io.lark.column.data.*;
+import io.lark.column.tensor.*;
 import io.lark.column.compute.Simd;
 
 import io.lark.column.compute.Compute;

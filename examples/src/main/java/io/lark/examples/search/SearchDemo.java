@@ -4,7 +4,7 @@
 package io.lark.examples.search;
 
 import io.lark.column.data.Row;
-import io.lark.column.data.Tensor;
+import io.lark.column.tensor.Tensor;
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.FetchStream;
 import io.lark.examples.search.data.SearchFeed;

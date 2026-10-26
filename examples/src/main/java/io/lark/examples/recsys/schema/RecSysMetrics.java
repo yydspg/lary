@@ -3,7 +3,7 @@
 
 package io.lark.examples.recsys.schema;
 
-import io.lark.column.data.DType;
+import io.lark.column.tensor.DType;
 import io.lark.column.biz.Column;
 
 /**

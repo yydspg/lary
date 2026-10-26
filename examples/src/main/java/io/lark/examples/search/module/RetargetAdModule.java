@@ -5,23 +5,25 @@ package io.lark.examples.search.module;
 
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnStream;
-import io.lark.examples.search.node.RetargetAdNode;
+import io.lark.examples.search.node.SearchOps;
 import io.lark.examples.search.schema.SearchMetrics;
 
 /** Retargeting metrics, represented as a 2-D tensor per row set. */
 public final class RetargetAdModule extends ColumnModule {
 
-    private final RetargetAdNode retarget = node(new RetargetAdNode(
-            feed(SearchMetrics.RETARGET_CLICKS),
-            feed(SearchMetrics.CLICKS),
-            feed(SearchMetrics.RETARGET_COST_FEN),
-            feed(SearchMetrics.GMV_FEN)));
+    private ColumnStream<Double> retarget;
 
-    public RetargetAdModule() {
-        output(retarget.out());
+    @Override
+    protected void define() {
+        retarget = node(SearchOps.retargetAd(),
+                feed(SearchMetrics.RETARGET_CLICKS),
+                feed(SearchMetrics.CLICKS),
+                feed(SearchMetrics.RETARGET_COST_FEN),
+                feed(SearchMetrics.GMV_FEN));
+        output(retarget);
     }
 
     public ColumnStream<Double> retargetAd() {
-        return retarget.out();
+        return retarget;
     }
 }

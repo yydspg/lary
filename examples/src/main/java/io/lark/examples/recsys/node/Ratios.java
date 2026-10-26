@@ -3,8 +3,8 @@
 
 package io.lark.examples.recsys.node;
 
-import io.lark.column.data.DType;
-import io.lark.column.data.Tensor;
+import io.lark.column.tensor.DType;
+import io.lark.column.tensor.Tensor;
 import io.lark.column.compute.Compute;
 
 /** Division with a defined result for zero denominators. */

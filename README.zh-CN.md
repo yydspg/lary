@@ -94,6 +94,24 @@ ColumnStream<Double> zeros =
         node(new ZerosNode<>(FEATURES, TensorShape.of(rows, 3))).out();
 ```
 
+## 业务节点定义
+
+业务侧通过 `ColumnOps` 定义节点，不接触 `Tensor`、shape 或 kernel：
+
+```java
+private final ColumnStream<Double> ctr =
+        node(ColumnOps.ratio(SearchMetrics.CTR), clicks, impressions);
+private final ColumnStream<Double> cvr =
+        node(ColumnOps.ratio(SearchMetrics.CVR), orders, clicks);
+private final ColumnStream<Double> ctcvr =
+        node(ColumnOps.mul(SearchMetrics.CTCVR), ctr, cvr);
+```
+
+- 每个 node 只绑定一个 `ColumnOp`。
+- node 输入可以是 module feed，也可以是其他 node 的 `ColumnStream` 输出。
+- `feed(...)` / `output(...)` 属于 module，描述整个模块的输入输出边界。
+- 复杂自定义公式可以通过扩展 `ColumnOp` 实现，`OpNode`/`TensorKernel` 是框架内部细节。
+
 ## 搜索系统示例
 
 `SearchDemo` 模拟一个搜索/重定向系统，主要模块如下：
@@ -138,6 +156,8 @@ try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
 }
 ```
 
+- 一个 Module 可以通过 `dependsOn(A.class, B.class, ...)` 依赖多个 Module；
+  Module 依赖图必须是有向无环图，出现环会在 `compile()` 时报错。
 - 每个并发运行使用独立 `ColumnPipeline`；pipeline 本身不是线程安全的。
 - 已有列式数据时使用 `feedTensors(Map<String, Tensor>)`，避免 cell 转置。
 - 大结果或张量结果优先使用 `fetchTensor` / `fetchTensors`。
@@ -154,9 +174,9 @@ lary/
 │  ├─ metric/      Event / Monitor
 │  ├─ dag/         DAG / Op 调度
 │  └─ column/
-│     ├─ data/      Tensor / TensorShape / store / row-cell
+│     ├─ tensor/    Tensor / TensorShape / store / FeedFetch / TensorKernel / TensorKernels
+│     ├─ data/      Cell / Row
 │     ├─ compute/   Compute / VectorOps / Simd
-│     ├─ kernel/    TensorKernel / KernelContext / TensorKernels
 │     ├─ op/        OpSpec + 兼容 OpTensor/TensorOps
 │     ├─ exec/      ComputeNode / ComputeGraph
 │     ├─ biz/       ColumnNode / Module / Pipeline

@@ -3,12 +3,12 @@
 
 package io.lark.column.exec;
 
-import io.lark.column.data.Tensor;
-import io.lark.column.data.TensorStore;
-import io.lark.column.kernel.FallibleTensorKernel;
-import io.lark.column.kernel.KernelContext;
-import io.lark.column.kernel.TensorKernel;
-import io.lark.column.kernel.TensorKernels;
+import io.lark.column.tensor.Tensor;
+import io.lark.column.tensor.TensorStore;
+import io.lark.column.tensor.FallibleTensorKernel;
+import io.lark.column.tensor.KernelContext;
+import io.lark.column.tensor.TensorKernel;
+import io.lark.column.tensor.TensorKernels;
 import io.lark.column.op.OpSpec;
 import io.lark.column.op.OpTensor;
 

@@ -10,16 +10,30 @@ import io.lark.examples.search.schema.SearchMetrics;
 /** Declares all external search input handles used to build a feed stream. */
 public final class SearchInputModule extends ColumnModule {
 
-    private final ColumnStream<Long> impressions = feed(SearchMetrics.IMPRESSIONS);
-    private final ColumnStream<Long> clicks = feed(SearchMetrics.CLICKS);
-    private final ColumnStream<Long> orders = feed(SearchMetrics.ORDERS);
-    private final ColumnStream<Long> gmvFen = feed(SearchMetrics.GMV_FEN);
-    private final ColumnStream<Long> couponCostFen = feed(SearchMetrics.COUPON_COST_FEN);
-    private final ColumnStream<Long> buyAgainOrders = feed(SearchMetrics.BUY_AGAIN_ORDERS);
-    private final ColumnStream<Long> delayedOrders = feed(SearchMetrics.DELAYED_ORDERS);
-    private final ColumnStream<Long> delayedGmvFen = feed(SearchMetrics.DELAYED_GMV_FEN);
-    private final ColumnStream<Long> retargetClicks = feed(SearchMetrics.RETARGET_CLICKS);
-    private final ColumnStream<Long> retargetCostFen = feed(SearchMetrics.RETARGET_COST_FEN);
+    private ColumnStream<Long> impressions;
+    private ColumnStream<Long> clicks;
+    private ColumnStream<Long> orders;
+    private ColumnStream<Long> gmvFen;
+    private ColumnStream<Long> couponCostFen;
+    private ColumnStream<Long> buyAgainOrders;
+    private ColumnStream<Long> delayedOrders;
+    private ColumnStream<Long> delayedGmvFen;
+    private ColumnStream<Long> retargetClicks;
+    private ColumnStream<Long> retargetCostFen;
+
+    @Override
+    protected void define() {
+        impressions = feed(SearchMetrics.IMPRESSIONS);
+        clicks = feed(SearchMetrics.CLICKS);
+        orders = feed(SearchMetrics.ORDERS);
+        gmvFen = feed(SearchMetrics.GMV_FEN);
+        couponCostFen = feed(SearchMetrics.COUPON_COST_FEN);
+        buyAgainOrders = feed(SearchMetrics.BUY_AGAIN_ORDERS);
+        delayedOrders = feed(SearchMetrics.DELAYED_ORDERS);
+        delayedGmvFen = feed(SearchMetrics.DELAYED_GMV_FEN);
+        retargetClicks = feed(SearchMetrics.RETARGET_CLICKS);
+        retargetCostFen = feed(SearchMetrics.RETARGET_COST_FEN);
+    }
 
     public ColumnStream<Long> impressions() {
         return impressions;

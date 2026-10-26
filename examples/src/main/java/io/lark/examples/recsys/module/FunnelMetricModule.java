@@ -18,28 +18,36 @@ import io.lark.examples.recsys.schema.RecSysMetrics;
 @ColumnComponent
 public final class FunnelMetricModule extends ColumnModule {
 
-    private final ColumnStream<Long> impressions =
-            feed(RecSysMetrics.IMPRESSIONS);
-    private final ColumnStream<Long> clicks = feed(RecSysMetrics.CLICKS);
-    private final ColumnStream<Long> orders = feed(RecSysMetrics.ORDERS);
-    private final ColumnStream<Long> gmvFen = feed(RecSysMetrics.GMV_FEN);
-    private final ColumnStream<Long> couponCostFen =
-            feed(RecSysMetrics.COUPON_COST_FEN);
-    private final ColumnStream<Long> buyAgainOrders =
-            feed(RecSysMetrics.BUY_AGAIN_ORDERS);
+    private ColumnStream<Long> impressions;
+    private ColumnStream<Long> clicks;
+    private ColumnStream<Long> orders;
+    private ColumnStream<Long> gmvFen;
+    private ColumnStream<Long> couponCostFen;
+    private ColumnStream<Long> buyAgainOrders;
+    private CtrNode ctr;
+    private CvrNode cvr;
+    private GmvNode gmv;
+    private CouponCostNode couponCost;
+    private BuyAgainCostNode buyAgainCost;
+    private CouponRoiNode couponRoi;
 
-    private final CtrNode ctr = node(new CtrNode(), clicks, impressions);
-    private final CvrNode cvr = node(new CvrNode(), orders, clicks);
-    private final GmvNode gmv = node(new GmvNode(), gmvFen);
-    private final CouponCostNode couponCost =
-            node(new CouponCostNode(), couponCostFen);
-    private final BuyAgainCostNode buyAgainCost =
-            node(new BuyAgainCostNode(), couponCost.out(), buyAgainOrders);
-    private final CouponRoiNode couponRoi =
-            node(new CouponRoiNode(), gmv.out(), couponCost.out());
+    @Override
+    protected void define() {
+        impressions = feed(RecSysMetrics.IMPRESSIONS);
+        clicks = feed(RecSysMetrics.CLICKS);
+        orders = feed(RecSysMetrics.ORDERS);
+        gmvFen = feed(RecSysMetrics.GMV_FEN);
+        couponCostFen = feed(RecSysMetrics.COUPON_COST_FEN);
+        buyAgainOrders = feed(RecSysMetrics.BUY_AGAIN_ORDERS);
 
-    public FunnelMetricModule() {
-        fetch(impressions, clicks, orders, ctr.out(), cvr.out(), gmv.out(),
+        ctr = node(new CtrNode(), clicks, impressions);
+        cvr = node(new CvrNode(), orders, clicks);
+        gmv = node(new GmvNode(), gmvFen);
+        couponCost = node(new CouponCostNode(), couponCostFen);
+        buyAgainCost = node(new BuyAgainCostNode(), couponCost.out(), buyAgainOrders);
+        couponRoi = node(new CouponRoiNode(), gmv.out(), couponCost.out());
+        output(impressions, clicks, orders, buyAgainOrders,
+                couponCost.out(), ctr.out(), cvr.out(), gmv.out(),
                 buyAgainCost.out(), couponRoi.out());
     }
 

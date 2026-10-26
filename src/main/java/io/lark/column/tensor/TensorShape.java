@@ -1,7 +1,7 @@
 // Copyright (c) 2024 LARK Contributors
 // SPDX-License-Identifier: MIT
 
-package io.lark.column.data;
+package io.lark.column.tensor;
 
 import java.util.Arrays;
 import java.util.Objects;

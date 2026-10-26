@@ -11,12 +11,16 @@ import io.lark.column.biz.ColumnStream;
 @ColumnComponent
 public final class NumberModule extends ColumnModule {
 
-    private final ColumnStream<Long> left = feed(NumberMetrics.LEFT);
-    private final ColumnStream<Long> right = feed(NumberMetrics.RIGHT);
-    private final SumNode sum = node(new SumNode(), left, right);
+    private ColumnStream<Long> left;
+    private ColumnStream<Long> right;
+    private SumNode sum;
 
-    public NumberModule() {
-        fetch(left, right, sum.out());
+    @Override
+    protected void define() {
+        left = feed(NumberMetrics.LEFT);
+        right = feed(NumberMetrics.RIGHT);
+        sum = node(new SumNode(), left, right);
+        output(left, right, sum.out());
     }
 
     public ColumnStream<Long> left() {

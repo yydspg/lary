@@ -11,7 +11,7 @@ import java.util.Objects;
  *
  * <p>New code separates graph construction from execution:
  * {@link OpSpec} describes the graph op and
- * {@link io.lark.column.kernel.TensorKernel} contains computation logic.
+ * {@link io.lark.column.tensor.TensorKernel} contains computation logic.
  * {@code ComputeNode} binds the two. This class is retained so existing
  * {@code FloatAddTensor}/{@code TensorOps} code keeps compiling; it still
  * combines metadata and a legacy {@code compute} method.

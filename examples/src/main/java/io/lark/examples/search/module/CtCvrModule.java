@@ -5,23 +5,31 @@ package io.lark.examples.search.module;
 
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnStream;
-import io.lark.examples.search.node.MulNode;
+import io.lark.examples.search.node.SearchOps;
 import io.lark.examples.search.schema.SearchMetrics;
 
-/** Click-through conversion rate, wired from the CTR and CVR modules. */
+/** Click-through conversion rate: {@code ctcvrNode = ctrNode * cvrNode}. */
 public final class CtCvrModule extends ColumnModule {
 
-    private final MulNode ctcvr;
+    private final CtrModule ctr;
+    private final CvrModule cvr;
+    private ColumnStream<Double> ctcvr;
 
     public CtCvrModule(CtrModule ctr, CvrModule cvr) {
-        ColumnStream<Double> ctrOut = ctr.published(SearchMetrics.CTR);
-        ColumnStream<Double> cvrOut = cvr.published(SearchMetrics.CVR);
-        ctcvr = node(new MulNode(SearchMetrics.CTCVR), ctrOut, cvrOut);
+        this.ctr = ctr;
+        this.cvr = cvr;
+    }
+
+    @Override
+    protected void define() {
+        ctcvr = node(SearchOps.mul(SearchMetrics.CTCVR),
+                ctr.published(SearchMetrics.CTR),
+                cvr.published(SearchMetrics.CVR));
         dependsOn(CtrModule.class, CvrModule.class);
-        output(ctcvr.out());
+        output(ctcvr);
     }
 
     public ColumnStream<Double> ctcvr() {
-        return ctcvr.out();
+        return ctcvr;
     }
 }

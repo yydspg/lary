@@ -3,9 +3,9 @@
 
 package io.lark.column.op;
 
-import io.lark.column.data.DType;
-import io.lark.column.data.Tensor;
-import io.lark.column.data.TensorShape;
+import io.lark.column.tensor.DType;
+import io.lark.column.tensor.Tensor;
+import io.lark.column.tensor.TensorShape;
 import io.lark.column.compute.Compute;
 
 import java.util.List;
@@ -13,7 +13,7 @@ import java.util.List;
 /**
  * Legacy tensor-operation factory.
  *
- * <p>Use {@link io.lark.column.kernel.TensorKernels#create(OpSpec)} for the
+ * <p>Use {@link io.lark.column.tensor.TensorKernels#create(OpSpec)} for the
  * separated graph-op/kernel path. This factory is kept for source compatibility.
  */
 public final class TensorOps {

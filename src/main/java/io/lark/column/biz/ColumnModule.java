@@ -18,11 +18,16 @@ import java.util.Objects;
  *
  * <pre>{@code
  * final class FunnelMetricModule extends ColumnModule {
- *     final ColumnStream<Long> impressions = feed(Metrics.IMPRESSIONS);
- *     final ColumnStream<Long> clicks = feed(Metrics.CLICKS);
- *     final CtrNode ctr = node(new CtrNode(clicks, impressions));
- *     { fetch(ctr.out()); }
- * }
+ *     private ColumnStream<Long> impressions;
+ *     private ColumnStream<Long> clicks;
+ *     private ColumnStream<Double> ctr;
+ *
+ *     @Override protected void define() {
+ *         impressions = feed(Metrics.IMPRESSIONS);
+ *         clicks = feed(Metrics.CLICKS);
+ *         ctr = node(ColumnOps.ratio(Metrics.CTR), clicks, impressions);
+ *         output(ctr);
+ *     }
  * }</pre>
  *
  * <p>Nodes, inputs, outputs and dependencies are exposed as array snapshots;
@@ -79,6 +84,15 @@ public abstract class ColumnModule {
         return input(column);
     }
 
+    /**
+     * Define a node from a business-level computation op and typed inputs.
+     * Inputs may be module feeds or other node output streams.
+     */
+    protected final <O> ColumnStream<O> node(ColumnOp<O> op,
+                                             ColumnStream<?>... inputs) {
+        return add(new OpNode<>(op, inputs)).out();
+    }
+
     /** Register a business node inside this module. */
     protected final <T extends ColumnNode> T add(T node) {
         nodeBuilder.add(Objects.requireNonNull(node, "node"));
@@ -129,9 +143,15 @@ public abstract class ColumnModule {
         dependencies = null;
     }
 
-    /** Optional imperative definition hook. */
-    protected void define() {
-    }
+    /**
+     * Define this module's node subgraph and feed/fetch streams.
+     *
+     * <p>Called once before compilation. A module creates nodes, wires them
+     * from module feeds or other node outputs, and declares its own outputs:
+     * this is the module's subgraph; the framework collects module subgraphs
+     * into the full execution graph.
+     */
+    protected abstract void define();
 
     /**
      * Look up one of this module's published fetch outputs by schema definition.

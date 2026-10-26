@@ -1,10 +1,8 @@
 // Copyright (c) 2024 LARK Contributors
 // SPDX-License-Identifier: MIT
 
-package io.lark.column.kernel;
+package io.lark.column.tensor;
 
-import io.lark.column.data.Tensor;
-import io.lark.column.data.TensorStore;
 
 import java.util.Objects;
 import java.util.function.Consumer;

@@ -1,11 +1,8 @@
 // Copyright (c) 2024 LARK Contributors
 // SPDX-License-Identifier: MIT
 
-package io.lark.column.kernel;
+package io.lark.column.tensor;
 
-import io.lark.column.data.DType;
-import io.lark.column.data.Tensor;
-import io.lark.column.data.TensorShape;
 import io.lark.column.compute.Compute;
 import io.lark.column.op.OpSpec;
 

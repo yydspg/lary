@@ -68,13 +68,13 @@ test. Tests are the behavioral contract.
 
 | C++ | Java |
 |---|---|
-| `column/include/column/types.h` | `data/DType.java`, `data/BlockQ8_0.java` |
-| `column/include/column/tensor.h`, `src/tensor.cpp` | `data/Tensor.java`, `data/TensorShape.java` (flat storage + 1–3-D row-major shape) |
-| `tensor_table.h`, `tensor_store.h` | `data/TensorTable.java`, `data/TensorStore.java` |
-| `feed_fetch.h`, `src/feed_fetch.cpp` | `data/Cell.java`, `data/Row.java`, `data/FeedFetch.java` |
+| `column/include/column/types.h` | `tensor/DType.java`, `tensor/BlockQ8_0.java` |
+| `column/include/column/tensor.h`, `src/tensor.cpp` | `tensor/Tensor.java`, `tensor/TensorShape.java` (flat storage + 1–3-D row-major shape) |
+| `tensor_table.h`, `tensor_store.h` | `tensor/TensorTable.java`, `tensor/TensorStore.java` |
+| `feed_fetch.h`, `src/feed_fetch.cpp` | `tensor/FeedFetch.java`, `data/Cell.java`, `data/Row.java` |
 | `column/include/column/compute/*`, `src/compute/*` | `compute/Compute.java`, `compute/VectorOps.java` |
 | `compute/simd.h` | `compute/Simd.java` + `compute/VectorOps.java` (`jdk.incubator.vector`) |
-| `exec/tensor_op.h`, `exec/ops*.cpp` | graph: `op/OpSpec.java`; execution kernels: `kernel/TensorKernel.java`, `kernel/KernelContext.java`, `kernel/TensorKernels.java`; compatibility: `op/OpTensor.java`, `TensorOps.java`, `OpContext.java`, `FallibleOpTensor.java` |
+| `exec/tensor_op.h`, `exec/ops*.cpp` | graph: `op/OpSpec.java`; execution kernels: `tensor/TensorKernel.java`, `tensor/KernelContext.java`, `tensor/TensorKernels.java`; compatibility: `op/OpTensor.java`, `TensorOps.java`, `OpContext.java`, `FallibleOpTensor.java` |
 | Typed tensor ops (Java-first) | `op/FloatAddTensor.java`, `FloatMultiTensor.java`, `FloatSubTensor.java`, `DoubleAddTensor.java`, `IntAddTensor.java`, `LongMultiTensor.java`, …; `op/ZerosTensor.java` |
 | Zero-tensor business node | `biz/ZerosNode.java` |
 | `exec/exec_node.h`, `exec_node.cpp` | `exec/ComputeNode.java` (binds `OpSpec` + `TensorKernel`) |
@@ -105,11 +105,13 @@ test. Tests are the behavioral contract.
 ## Workflow
 
 1. Read the matching C++ header/source and test before editing Java.
-2. Update layers in dependency order: data (`Tensor`/store) → compute →
-   `kernel` → `op` (graph) → `exec` → `biz` → examples/docs.
-3. Keep the business API free of `io.lark.column.exec`, `io.lark.column.kernel`
-   and `io.lark.column.op` imports; `BusinessNodeKernel` is the only bridge into
-   the kernel layer.
+2. Update layers in dependency order: `data` (Cell/Row) → `tensor`
+   (Tensor/store/kernels) → `compute` → `op` (graph) → `exec` → `biz` →
+   examples/docs.
+3. Keep the business compute API free of `io.lark.column.exec` and
+   `io.lark.column.op` graph-internals imports; `BusinessNodeKernel` is the only
+   bridge from business nodes into tensor kernels. Business code may use
+   `io.lark.column.tensor` data types and `ColumnStream`/`ColumnContext`.
 4. Add or update a test for every behavior change, plus a runnable example for
    user-facing API changes.
 5. Update `README.md` and this file in the same commit.
@@ -217,8 +219,9 @@ test. Tests are the behavioral contract.
   node-name based. Node `feeds()`/`fetches()` are arrays.
 - `ColumnModule` groups nodes and exposes `inputs()`, `outputs()`, `nodes()`,
   `dependencies()` as arrays. Module inputs use `feed(Column<T>)` (alias
-  `input`). Modules depend on modules with `dependsOn(OtherModule.class)`;
-  module cycles are rejected.
+  `input`). A module may depend on multiple modules with
+  `dependsOn(FirstModule.class, SecondModule.class, ...)`; the dependency graph
+  must be a DAG and cycles are rejected during compile.
 - `FeedStream` / `FetchStream` are the row-in / row-out boundaries and carry
   `ColumnStream<?>[]`. Missing required feed columns are rejected before
   compute. Use `compile(FetchStream)` / `fetchScalar(ColumnStream<?>)` to keep
@@ -274,7 +277,7 @@ test. Tests are the behavioral contract.
 - `ColumnPipeline.nodeCount()` is registered nodes; `compiledNodeCount()` is
   the pruned execution graph size.
 - Graph construction uses `op.OpSpec` (type, input names, output names,
-  attrs). Execution uses `kernel.TensorKernel` via `KernelContext` (resolved
+  attrs). Execution uses `tensor.TensorKernel` via `KernelContext` (resolved
   inputs + output sink); kernels contain computation logic only. `exec.ComputeNode`
   binds `OpSpec` + `TensorKernel` and handles scheduling/status/fallback.
   Support two- and three-input kernels (`mul_add`/`fma` included) without

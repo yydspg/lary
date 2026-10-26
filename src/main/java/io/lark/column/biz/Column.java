@@ -3,7 +3,7 @@
 
 package io.lark.column.biz;
 
-import io.lark.column.data.DType;
+import io.lark.column.tensor.DType;
 
 import java.util.Objects;
 

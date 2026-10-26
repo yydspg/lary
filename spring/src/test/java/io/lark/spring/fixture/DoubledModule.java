@@ -11,12 +11,18 @@ import io.lark.column.biz.ColumnStream;
 @ColumnComponent
 public final class DoubledModule extends ColumnModule {
 
-    private final DoubleNode doubled;
+    private final NumberModule numbers;
+    private DoubleNode doubled;
 
     public DoubledModule(NumberModule numbers) {
-        doubled = node(new DoubleNode(), numbers.sum());
+        this.numbers = numbers;
+    }
+
+    @Override
+    protected void define() {
+        doubled = node(new DoubleNode(), numbers.published(NumberMetrics.SUM));
         dependsOn(NumberModule.class);
-        fetch(doubled.out());
+        output(doubled.out());
     }
 
     public ColumnStream<Long> doubled() {

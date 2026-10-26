@@ -9,24 +9,38 @@ import io.lark.column.biz.ColumnStream;
 import io.lark.examples.recsys.node.FunnelSummaryNode;
 import io.lark.examples.recsys.node.PortfolioSummaryNode;
 import io.lark.examples.recsys.node.RankingSummaryNode;
+import io.lark.examples.recsys.schema.RecSysMetrics;
 
 /** Portfolio-level summary over the per-row metrics. */
 @ColumnComponent
 public final class PerformanceSummaryModule extends ColumnModule {
 
-    private final FunnelSummaryNode funnel;
-    private final PortfolioSummaryNode portfolio;
-    private final RankingSummaryNode ranking;
+    private final FunnelMetricModule metrics;
+    private final RankingWeightModule rankingModule;
+    private FunnelSummaryNode funnel;
+    private PortfolioSummaryNode portfolio;
+    private RankingSummaryNode ranking;
 
     public PerformanceSummaryModule(FunnelMetricModule metrics,
-                                    RankingWeightModule weight) {
+                                    RankingWeightModule ranking) {
+        this.metrics = metrics;
+        this.rankingModule = ranking;
+    }
+
+    @Override
+    protected void define() {
         funnel = node(new FunnelSummaryNode(
-                metrics.impressions(), metrics.clicks(), metrics.orders()));
+                metrics.published(RecSysMetrics.IMPRESSIONS),
+                metrics.published(RecSysMetrics.CLICKS),
+                metrics.published(RecSysMetrics.ORDERS)));
         portfolio = node(new PortfolioSummaryNode(
-                metrics.gmv(), metrics.couponCost(), metrics.buyAgainOrders()));
-        ranking = node(new RankingSummaryNode(), weight.weight());
+                metrics.published(RecSysMetrics.GMV),
+                metrics.published(RecSysMetrics.COUPON_COST),
+                metrics.published(RecSysMetrics.BUY_AGAIN_ORDERS)));
+        ranking = node(new RankingSummaryNode(),
+                rankingModule.published(RecSysMetrics.WEIGHT));
         dependsOn(FunnelMetricModule.class, RankingWeightModule.class);
-        fetch(funnel.overallCtr(), funnel.overallCvr(),
+        output(funnel.overallCtr(), funnel.overallCvr(),
                 portfolio.totalGmv(), portfolio.totalCouponCost(),
                 portfolio.overallRoi(), portfolio.overallBuyAgainCost(),
                 ranking.out());

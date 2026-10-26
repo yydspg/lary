@@ -4,11 +4,11 @@
 package io.lark.column.biz;
 
 import io.lark.column.data.Cell;
-import io.lark.column.data.DType;
+import io.lark.column.tensor.DType;
 import io.lark.column.data.Row;
-import io.lark.column.data.Tensor;
-import io.lark.column.data.TensorShape;
-import io.lark.column.data.TensorStore;
+import io.lark.column.tensor.Tensor;
+import io.lark.column.tensor.TensorShape;
+import io.lark.column.tensor.TensorStore;
 import io.lark.column.compute.Compute;
 import org.junit.jupiter.api.Test;
 
@@ -62,6 +62,11 @@ class ModulePipelineTest {
             this.delta = delta;
         }
 
+        PlusNode(Column<O> output, double delta) {
+            super(output);
+            this.delta = delta;
+        }
+
         @Override
         protected Tensor compute(ColumnContext ctx, Tensor input) {
             return Compute.addScalar(input, delta);
@@ -73,6 +78,10 @@ class ModulePipelineTest {
 
         ConsumerNode(ColumnStream<Long> feed, Column<O> output) {
             super(feed, output);
+        }
+
+        ConsumerNode(Column<O> output) {
+            super(output);
         }
 
         @Override
@@ -114,30 +123,35 @@ class ModulePipelineTest {
     // ---- modules ---------------------------------------------------------
 
     static final class FeatureModule extends ColumnModule {
-        final ColumnStream<Long> metricValue = input(METRIC_VALUE);
-        final PlusNode<Long> source =
-                add(new PlusNode<>(metricValue, SOURCE, 1.0));
-        final ConsumerNode<Long> consumer =
-                add(new ConsumerNode<>(source.out(), RESULT));
-        final FailingNode failing = add(new FailingNode());
-        final ConsumerNode<Long> recovered =
-                add(new ConsumerNode<>(failing.out(), RECOVERED_PLUS_ONE));
+        ColumnStream<Long> metricValue;
+        PlusNode<Long> source;
+        ConsumerNode<Long> consumer;
+        FailingNode failing;
+        ConsumerNode<Long> recovered;
 
-        {
+        @Override
+        protected void define() {
+            metricValue = input(METRIC_VALUE);
+            source = node(new PlusNode<>(SOURCE, 1.0), metricValue);
+            consumer = node(new ConsumerNode<>(RESULT), source.out());
+            failing = node(new FailingNode());
+            recovered = node(new ConsumerNode<>(RECOVERED_PLUS_ONE), failing.out());
             output(source.out(), consumer.out(), failing.out(), recovered.out());
         }
     }
 
     static final class PruneModule extends ColumnModule {
-        final ColumnStream<Long> metricValue = input(METRIC_VALUE);
-        final PlusNode<Long> used =
-                add(new PlusNode<>(metricValue, USED, 1.0));
-        final PlusNode<Long> unused =
-                add(new PlusNode<>(used.out(), UNUSED, 100.0));
-        final ConsumerNode<Long> result =
-                add(new ConsumerNode<>(used.out(), RESULT));
+        ColumnStream<Long> metricValue;
+        PlusNode<Long> used;
+        PlusNode<Long> unused;
+        ConsumerNode<Long> result;
 
-        {
+        @Override
+        protected void define() {
+            metricValue = input(METRIC_VALUE);
+            used = node(new PlusNode<>(USED, 1.0), metricValue);
+            unused = node(new PlusNode<>(UNUSED, 100.0), used.out());
+            result = node(new ConsumerNode<>(RESULT), used.out());
             output(used.out(), unused.out(), result.out());
         }
     }
@@ -187,6 +201,7 @@ class ModulePipelineTest {
     @Test
     void moduleArraysAreSnapshotsAndMapsAreCached() {
         ComponentModule component = new ComponentModule();
+        component.initialize();
         ColumnNode[] nodes = component.nodes();
         nodes[0] = null;
 
@@ -303,14 +318,73 @@ class ModulePipelineTest {
     }
 
     static final class CycleA extends ColumnModule {
-        {
+        @Override
+        protected void define() {
             dependsOn(CycleB.class);
         }
     }
 
     static final class CycleB extends ColumnModule {
-        {
+        @Override
+        protected void define() {
             dependsOn(CycleA.class);
+        }
+    }
+
+    @Test
+    void moduleCanDependOnMultipleModulesButNotCycles() {
+        MultiA a = new MultiA();
+        MultiB b = new MultiB();
+        MultiJoin join = new MultiJoin();
+        try (ColumnPipeline pipeline = new ColumnPipeline()) {
+            pipeline.addAll(a, b, join).compile();
+            assertEquals(2, join.dependencies().length);
+        }
+
+        try (ColumnPipeline pipeline = new ColumnPipeline()) {
+            pipeline.addAll(new ThreeCycleA(), new ThreeCycleB(),
+                    new ThreeCycleC());
+            assertThrows(IllegalStateException.class, pipeline::compile);
+        }
+    }
+
+    static final class MultiA extends ColumnModule {
+        @Override
+        protected void define() {
+        }
+    }
+
+    static final class MultiB extends ColumnModule {
+        @Override
+        protected void define() {
+        }
+    }
+
+    static final class MultiJoin extends ColumnModule {
+        @Override
+        protected void define() {
+            dependsOn(MultiA.class, MultiB.class);
+        }
+    }
+
+    static final class ThreeCycleA extends ColumnModule {
+        @Override
+        protected void define() {
+            dependsOn(ThreeCycleB.class);
+        }
+    }
+
+    static final class ThreeCycleB extends ColumnModule {
+        @Override
+        protected void define() {
+            dependsOn(ThreeCycleC.class);
+        }
+    }
+
+    static final class ThreeCycleC extends ColumnModule {
+        @Override
+        protected void define() {
+            dependsOn(ThreeCycleA.class);
         }
     }
 
@@ -333,6 +407,7 @@ class ModulePipelineTest {
     @Test
     void moduleMapsAndPublishedOutputsStayTyped() {
         ComponentModule component = new ComponentModule();
+        component.initialize();
 
         assertEquals(component.metricValue,
                 component.feedMap().get(METRIC_VALUE.name()));
@@ -423,12 +498,15 @@ class ModulePipelineTest {
 
     @ColumnComponent
     public static final class ComponentModule extends ColumnModule {
-        final ColumnStream<Long> metricValue = input(METRIC_VALUE);
-        final PlusNode<Long> source =
-                add(new PlusNode<>(metricValue, SOURCE, 1.0));
-        final TimesTenNode li = node(new TimesTenNode(), source.out());
+        ColumnStream<Long> metricValue;
+        PlusNode<Long> source;
+        TimesTenNode li;
 
-        {
+        @Override
+        protected void define() {
+            metricValue = input(METRIC_VALUE);
+            source = node(new PlusNode<>(SOURCE, 1.0), metricValue);
+            li = node(new TimesTenNode(), source.out());
             output(li.out());
         }
 
@@ -440,7 +518,7 @@ class ModulePipelineTest {
     @Test
     void modulesCanDependOnOtherModulesAndStreams() {
         ProducerModule producer = new ProducerModule();
-        ConsumerModule consumer = new ConsumerModule(producer.out());
+        ConsumerModule consumer = new ConsumerModule(producer);
 
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
             pipeline.add(producer).add(consumer);
@@ -455,24 +533,33 @@ class ModulePipelineTest {
     }
 
     static final class ProducerModule extends ColumnModule {
-        final ColumnStream<Long> metricValue = input(METRIC_VALUE);
-        final PlusNode<Long> node =
-                add(new PlusNode<>(metricValue, PRODUCER_OUT, 1.0));
+        ColumnStream<Long> metricValue;
+        PlusNode<Long> produced;
 
-        {
-            output(node.out());
+        @Override
+        protected void define() {
+            metricValue = input(METRIC_VALUE);
+            produced = node(new PlusNode<>(PRODUCER_OUT, 1.0), metricValue);
+            output(produced.out());
         }
 
         ColumnStream<Long> out() {
-            return node.out();
+            return produced.out();
         }
     }
 
     static final class ConsumerModule extends ColumnModule {
-        final ConsumerNode<Long> node;
+        private final ProducerModule producer;
+        ConsumerNode<Long> node;
 
-        ConsumerModule(ColumnStream<Long> feed) {
-            this.node = add(new ConsumerNode<>(feed, CONSUMER_OUT));
+        ConsumerModule(ProducerModule producer) {
+            this.producer = producer;
+        }
+
+        @Override
+        protected void define() {
+            node = node(new ConsumerNode<>(CONSUMER_OUT),
+                    producer.published(PRODUCER_OUT));
             dependsOn(ProducerModule.class);
             output(node.out());
         }
@@ -483,10 +570,11 @@ class ModulePipelineTest {
     }
 
     static final class ZeroModule extends ColumnModule {
-        final ZerosNode<Double> zeros =
-                node(new ZerosNode<>(ZEROS, TensorShape.of(2, 3)));
+        ZerosNode<Double> zeros;
 
-        {
+        @Override
+        protected void define() {
+            zeros = node(new ZerosNode<>(ZEROS, TensorShape.of(2, 3)));
             output(zeros.out());
         }
     }

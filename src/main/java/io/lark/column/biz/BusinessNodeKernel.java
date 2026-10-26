@@ -3,9 +3,9 @@
 
 package io.lark.column.biz;
 
-import io.lark.column.kernel.FallibleTensorKernel;
-import io.lark.column.kernel.KernelContext;
-import io.lark.column.kernel.TensorKernel;
+import io.lark.column.tensor.FallibleTensorKernel;
+import io.lark.column.tensor.KernelContext;
+import io.lark.column.tensor.TensorKernel;
 
 import java.util.Objects;
 

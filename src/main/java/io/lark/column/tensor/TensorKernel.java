@@ -1,7 +1,7 @@
 // Copyright (c) 2024 LARK Contributors
 // SPDX-License-Identifier: MIT
 
-package io.lark.column.kernel;
+package io.lark.column.tensor;
 
 /**
  * Actual tensor execution operator.

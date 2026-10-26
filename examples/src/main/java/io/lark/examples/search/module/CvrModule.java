@@ -5,22 +5,25 @@ package io.lark.examples.search.module;
 
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnStream;
-import io.lark.examples.search.node.RatioNode;
+import io.lark.examples.search.node.SearchOps;
 import io.lark.examples.search.schema.SearchMetrics;
 
 /** Conversion rate. */
 public final class CvrModule extends ColumnModule {
 
-    private final ColumnStream<Long> clicks = feed(SearchMetrics.CLICKS);
-    private final ColumnStream<Long> orders = feed(SearchMetrics.ORDERS);
-    private final RatioNode cvr = node(new RatioNode(SearchMetrics.CVR),
-            orders, clicks);
+    private ColumnStream<Long> clicks;
+    private ColumnStream<Long> orders;
+    private ColumnStream<Double> cvr;
 
-    public CvrModule() {
-        output(cvr.out());
+    @Override
+    protected void define() {
+        clicks = feed(SearchMetrics.CLICKS);
+        orders = feed(SearchMetrics.ORDERS);
+        cvr = node(SearchOps.ratio(SearchMetrics.CVR), orders, clicks);
+        output(cvr);
     }
 
     public ColumnStream<Double> cvr() {
-        return cvr.out();
+        return cvr;
     }
 }

@@ -3,9 +3,9 @@
 
 package io.lark.column.compute;
 
-import io.lark.column.data.DType;
-import io.lark.column.data.Tensor;
-import io.lark.column.data.TensorShape;
+import io.lark.column.tensor.DType;
+import io.lark.column.tensor.Tensor;
+import io.lark.column.tensor.TensorShape;
 
 /**
  * Public compute-layer facade.

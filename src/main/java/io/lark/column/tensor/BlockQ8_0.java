@@ -1,7 +1,7 @@
 // Copyright (c) 2024 LARK Contributors
 // SPDX-License-Identifier: MIT
 
-package io.lark.column.data;
+package io.lark.column.tensor;
 
 /**
  * ggml-style Q8_0 block: 32 int8 values plus one float scale.

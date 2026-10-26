@@ -3,9 +3,9 @@
 
 package io.lark.column.exec;
 
-import io.lark.column.data.TensorStore;
-import io.lark.column.kernel.TensorKernel;
-import io.lark.column.kernel.TensorKernels;
+import io.lark.column.tensor.TensorStore;
+import io.lark.column.tensor.TensorKernel;
+import io.lark.column.tensor.TensorKernels;
 import io.lark.column.op.OpSpec;
 import io.lark.column.op.OpTensor;
 import io.lark.metric.Event;

@@ -5,22 +5,28 @@ package io.lark.examples.search.module;
 
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnStream;
-import io.lark.examples.search.node.OneMinusNode;
+import io.lark.examples.search.node.SearchOps;
 import io.lark.examples.search.schema.SearchMetrics;
 
 /** Same-item rebuy loss: {@code 1 - buyagain}. */
 public final class RebuySameLossModule extends ColumnModule {
 
-    private final OneMinusNode loss;
+    private final BuyAgainModule buyAgain;
+    private ColumnStream<Double> loss;
 
     public RebuySameLossModule(BuyAgainModule buyAgain) {
-        loss = node(new OneMinusNode(SearchMetrics.REBUY_SAME_LOSS),
+        this.buyAgain = buyAgain;
+    }
+
+    @Override
+    protected void define() {
+        loss = node(SearchOps.oneMinus(SearchMetrics.REBUY_SAME_LOSS),
                 buyAgain.published(SearchMetrics.BUYAGAIN));
         dependsOn(BuyAgainModule.class);
-        output(loss.out());
+        output(loss);
     }
 
     public ColumnStream<Double> rebuySameLoss() {
-        return loss.out();
+        return loss;
     }
 }

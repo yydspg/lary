@@ -3,8 +3,8 @@
 
 package io.lark.column.backend;
 
-import io.lark.column.data.DType;
-import io.lark.column.kernel.TensorKernel;
+import io.lark.column.tensor.DType;
+import io.lark.column.tensor.TensorKernel;
 import io.lark.column.op.OpContext;
 import io.lark.column.op.OpSpec;
 import io.lark.column.op.OpTensor;

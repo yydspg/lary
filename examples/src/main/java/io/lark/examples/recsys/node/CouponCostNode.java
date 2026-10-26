@@ -3,7 +3,7 @@
 
 package io.lark.examples.recsys.node;
 
-import io.lark.column.data.Tensor;
+import io.lark.column.tensor.Tensor;
 import io.lark.column.biz.ColumnContext;
 import io.lark.column.biz.ColumnStream;
 import io.lark.column.biz.NodeSchema;
