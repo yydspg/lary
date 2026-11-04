@@ -193,6 +193,27 @@ class SequentialRankerTest {
     }
 
     @Test
+    void sortsIndexesWithoutReorderingTheInputList() {
+        List<Item> items = new ArrayList<>(List.of(
+                new Item("A", "c1", 5.0, 100),
+                new Item("B", "c1", 9.0, 100),
+                new Item("C", "c2", 7.0, 100)));
+        List<Item> snapshot = List.copyOf(items);
+
+        SequentialRanker<Item, Request> ranker =
+                SequentialRanker.<Item, Request>builder(2)
+                        .scorer((context, admitted) -> admitted.stream()
+                                .mapToDouble(Item::base).toArray())
+                        .build();
+        List<RankedSlot<Item>> selected = ranker.rank(items,
+                new Request(100));
+
+        assertEquals(snapshot, items);
+        assertEquals(List.of(1, 2),
+                selected.stream().map(RankedSlot::index).toList());
+    }
+
+    @Test
     void scorerMustReturnOneScorePerAdmittedCandidate() {
         SequentialRanker<Item, Request> ranker =
                 SequentialRanker.<Item, Request>builder(2)

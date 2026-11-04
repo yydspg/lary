@@ -25,8 +25,9 @@ import java.util.Objects;
  * </ol>
  *
  * <p>Equal scores keep the original list order, so a pre-ordered input list is
- * a deterministic tie-breaker. The engine has no dependency on the column
- * engine; the scorer is the only bridge to it.
+ * a deterministic tie-breaker. The input list is never reordered: the engine
+ * keeps an int[] index array and radix-sorts only that array. The engine has
+ * no dependency on the column engine; the scorer is the only bridge to it.
  */
 public final class SequentialRanker<T, C> {
 
@@ -65,6 +66,8 @@ public final class SequentialRanker<T, C> {
         boolean[] selectedFlags = new boolean[count];
         List<RankedSlot<T>> selected = new ArrayList<>(Math.min(slots, count));
         int[] admittedIndices = new int[count];
+        double[] scoreByIndex = new double[count];
+        RadixSorter.IndexSorter sorter = new RadixSorter.IndexSorter(count);
         int limit = Math.min(slots, count);
 
         List<SlotAdmission<T, C>> sessions = new ArrayList<>(admissions.size());
@@ -134,26 +137,23 @@ public final class SequentialRanker<T, C> {
                                 + " admitted candidate(s) at slot " + slot);
             }
 
-            // Drop non-finite scores, then radix-sort the rest by descending
-            // score. Equal scores stay in original candidate order.
-            double[] validScores = new double[scores.length];
-            int[] validIndices = new int[scores.length];
+            // Drop non-finite scores and compact the index array, then
+            // radix-sort the indexes only. Candidate objects never move.
             int valid = 0;
             for (int i = 0; i < scores.length; i++) {
                 if (Double.isFinite(scores[i])) {
-                    validScores[valid] = scores[i];
-                    validIndices[valid] = admittedIndices[i];
-                    valid++;
+                    int index = admittedIndices[i];
+                    scoreByIndex[index] = scores[i];
+                    admittedIndices[valid++] = index;
                 }
             }
             if (valid == 0) {
                 break;
             }
 
-            int[] order = RadixSorter.orderDescending(validScores, valid);
-            int bestPosition = order[0];
-            int bestIndex = validIndices[bestPosition];
-            double bestScore = validScores[bestPosition];
+            sorter.sortDescending(scoreByIndex, admittedIndices, valid);
+            int bestIndex = admittedIndices[0];
+            double bestScore = scoreByIndex[bestIndex];
 
             selectedFlags[bestIndex] = true;
             RankedSlot<T> filled = new RankedSlot<>(slot, bestIndex,
