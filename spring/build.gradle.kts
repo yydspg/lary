@@ -47,14 +47,6 @@ tasks.withType<Test>().configureEach {
     }
 }
 
-tasks.register<JavaExec>("runSpringRecsys") {
-    group = "application"
-    description = "Run the recsys demo as a Spring Boot application."
-    classpath = sourceSets["test"].runtimeClasspath
-    mainClass.set("io.lark.spring.example.SpringRecSysDemo")
-    jvmArgs("--add-modules", "jdk.incubator.vector")
-}
-
 tasks.register<JavaExec>("runSpringSearch") {
     group = "application"
     description = "Run the search ranking demo as a Spring Boot application."
