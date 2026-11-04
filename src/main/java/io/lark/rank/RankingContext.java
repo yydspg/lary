@@ -70,6 +70,22 @@ public final class RankingContext<T, C> {
         return selected.get(filledSlot);
     }
 
+    public int[] selectedIndexes() {
+        int[] indexes = new int[selected.size()];
+        for (int i = 0; i < indexes.length; i++) {
+            indexes[i] = selected.get(i).index();
+        }
+        return indexes;
+    }
+
+    public List<T> selectedItems() {
+        List<T> items = new java.util.ArrayList<>(selected.size());
+        for (RankedSlot<T> filled : selected) {
+            items.add(filled.item());
+        }
+        return java.util.List.copyOf(items);
+    }
+
     public boolean isSelected(int candidateIndex) {
         return selectedFlags[candidateIndex];
     }

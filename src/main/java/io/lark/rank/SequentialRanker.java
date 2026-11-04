@@ -3,8 +3,10 @@
 
 package io.lark.rank;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -15,13 +17,12 @@ import java.util.Objects;
  *
  * <ol>
  *   <li>applies every registered {@link SlotAdmission};</li>
- *   <li>asks {@link SlotScorer} to recompute scores for the admitted
- *       candidates; the scorer can execute a column subgraph or any other
- *       computation;</li>
+ *   <li>asks the scorer to recompute scores for the admitted candidates; the
+ *       scorer can execute a column subgraph or any other computation;</li>
  *   <li>sorts the new scores with stable radix sort and fills the next slot
  *       with the best candidate;</li>
- *   <li>repeats until the requested length is reached or no candidate is
- *       admissible.</li>
+ *   <li>repeats until the requested length is reached, no candidate is
+ *       admissible, or the latency budget is exhausted.</li>
  * </ol>
  *
  * <p>Equal scores keep the original list order, so a pre-ordered input list is
@@ -29,17 +30,23 @@ import java.util.Objects;
  * keeps an int[] index array and radix-sorts only that array. The engine has
  * no dependency on the column engine; the scorer is the only bridge to it.
  */
-public final class SequentialRanker<T, C> {
+public final class SequentialRanker<T, C> implements Ranker<T, C> {
 
     private final int slots;
     private final List<SlotAdmission<T, C>> admissions;
     private final SlotScorer<T, C> scorer;
+    private final IndexedSlotScorer<T, C> indexedScorer;
+    private final long maxNanos;
 
     private SequentialRanker(int slots, List<SlotAdmission<T, C>> admissions,
-                             SlotScorer<T, C> scorer) {
+                             SlotScorer<T, C> scorer,
+                             IndexedSlotScorer<T, C> indexedScorer,
+                             long maxNanos) {
         this.slots = slots;
         this.admissions = List.copyOf(admissions);
         this.scorer = scorer;
+        this.indexedScorer = indexedScorer;
+        this.maxNanos = maxNanos;
     }
 
     public static <T, C> Builder<T, C> builder(int slots) {
@@ -50,17 +57,24 @@ public final class SequentialRanker<T, C> {
         return rank(candidates, null);
     }
 
+    public List<RankedSlot<T>> rank(List<T> candidates, C businessContext) {
+        return rankWithStats(candidates, businessContext).slots();
+    }
+
     /**
-     * Fill up to {@link #slots()} slots from {@code candidates}.
+     * Fill up to {@link #slots()} slots and return execution counters too.
      *
      * @param candidates input list; its order is the deterministic tie-breaker
      * @param businessContext caller context passed to admission/scorer
      */
-    public List<RankedSlot<T>> rank(List<T> candidates, C businessContext) {
+    public RankingResult<T> rankWithStats(List<T> candidates,
+                                          C businessContext) {
         List<T> source = List.copyOf(Objects.requireNonNull(candidates, "candidates"));
         int count = source.size();
+        long started = System.nanoTime();
         if (count == 0 || slots == 0) {
-            return List.of();
+            return new RankingResult<>(List.of(), stats(count, 0, 0, 0, 0,
+                    System.nanoTime() - started, false));
         }
 
         boolean[] selectedFlags = new boolean[count];
@@ -100,40 +114,58 @@ public final class SequentialRanker<T, C> {
             }
         }
 
+        int admittedTotal = 0;
+        int scoreCalls = 0;
+        int sortCalls = 0;
+        boolean timedOut = false;
+
         for (int slot = 0; slot < limit; slot++) {
+            if (timedOut(started)) {
+                timedOut = true;
+                break;
+            }
             RankingContext<T, C> context = new RankingContext<>(
                     slot, slots, source, List.copyOf(selected), selectedFlags,
                     businessContext);
 
-            List<T> admitted = new ArrayList<>(count);
+            int admittedCount = 0;
+            List<T> admitted = indexedScorer == null
+                    ? new ArrayList<>(count) : null;
             for (int index = 0; index < count; index++) {
                 if (selectedFlags[index]) {
                     continue;
                 }
                 T candidate = source.get(index);
                 if (admitAll(sessions, context, candidate, slot)) {
-                    admittedIndices[admitted.size()] = index;
-                    admitted.add(candidate);
+                    admittedIndices[admittedCount++] = index;
+                    if (admitted != null) {
+                        admitted.add(candidate);
+                    }
                 }
             }
-            if (admitted.isEmpty()) {
+            if (admittedCount == 0) {
                 break;
             }
+            admittedTotal += admittedCount;
 
             double[] scores;
             try {
-                scores = scorer.score(context, List.copyOf(admitted));
+                scoreCalls++;
+                scores = indexedScorer != null
+                        ? indexedScorer.score(context, admittedIndices,
+                        admittedCount)
+                        : scorer.score(context, Collections.unmodifiableList(admitted));
             } catch (RankingException failure) {
                 throw failure;
             } catch (RuntimeException failure) {
                 throw new RankingException(
                         "scorer failed at slot " + slot, failure);
             }
-            if (scores == null || scores.length != admitted.size()) {
+            if (scores == null || scores.length != admittedCount) {
                 throw new RankingException(
                         "scorer returned "
                                 + (scores == null ? "null" : scores.length)
-                                + " score(s) for " + admitted.size()
+                                + " score(s) for " + admittedCount
                                 + " admitted candidate(s) at slot " + slot);
             }
 
@@ -152,6 +184,7 @@ public final class SequentialRanker<T, C> {
             }
 
             sorter.sortDescending(scoreByIndex, admittedIndices, valid);
+            sortCalls++;
             int bestIndex = admittedIndices[0];
             double bestScore = scoreByIndex[bestIndex];
 
@@ -175,7 +208,21 @@ public final class SequentialRanker<T, C> {
                 }
             }
         }
-        return List.copyOf(selected);
+        return new RankingResult<>(List.copyOf(selected),
+                stats(count, selected.size(), admittedTotal, scoreCalls,
+                        sortCalls, System.nanoTime() - started, timedOut));
+    }
+
+    private RankingStats stats(int candidates, int filled, int admittedTotal,
+                               int scoreCalls, int sortCalls, long elapsedNanos,
+                               boolean timedOut) {
+        return new RankingStats(candidates, slots, filled, admittedTotal,
+                scoreCalls, sortCalls, elapsedNanos, timedOut, "greedy");
+    }
+
+    private boolean timedOut(long started) {
+        return maxNanos != Long.MAX_VALUE
+                && System.nanoTime() - started >= maxNanos;
     }
 
     private boolean admitAll(List<SlotAdmission<T, C>> sessions,
@@ -207,6 +254,8 @@ public final class SequentialRanker<T, C> {
         private final int slots;
         private final List<SlotAdmission<T, C>> admissions = new ArrayList<>();
         private SlotScorer<T, C> scorer;
+        private IndexedSlotScorer<T, C> indexedScorer;
+        private long maxNanos = Long.MAX_VALUE;
 
         private Builder(int slots) {
             if (slots <= 0) {
@@ -245,6 +294,17 @@ public final class SequentialRanker<T, C> {
         /** Recompute scores for the admitted candidates of each slot. */
         public Builder<T, C> scorer(SlotScorer<T, C> scorer) {
             this.scorer = Objects.requireNonNull(scorer, "scorer");
+            this.indexedScorer = null;
+            return this;
+        }
+
+        /**
+         * Index-based scorer: avoids the intermediate candidate list and is
+         * the preferred form for columnar subgraphs.
+         */
+        public Builder<T, C> scorer(IndexedSlotScorer<T, C> scorer) {
+            this.indexedScorer = Objects.requireNonNull(scorer, "scorer");
+            this.scorer = null;
             return this;
         }
 
@@ -253,14 +313,27 @@ public final class SequentialRanker<T, C> {
             Objects.requireNonNull(policy, "policy");
             admissions.add(policy);
             scorer = policy;
+            indexedScorer = null;
+            return this;
+        }
+
+        /** Stop filling slots when the wall-clock budget is exhausted. */
+        public Builder<T, C> maxDuration(Duration budget) {
+            Objects.requireNonNull(budget, "budget");
+            if (budget.isNegative() || budget.isZero()) {
+                throw new IllegalArgumentException(
+                        "budget must be positive");
+            }
+            this.maxNanos = budget.toNanos();
             return this;
         }
 
         public SequentialRanker<T, C> build() {
-            if (scorer == null) {
+            if (scorer == null && indexedScorer == null) {
                 throw new IllegalStateException("scorer is required");
             }
-            return new SequentialRanker<>(slots, admissions, scorer);
+            return new SequentialRanker<>(slots, admissions, scorer,
+                    indexedScorer, maxNanos);
         }
     }
 }

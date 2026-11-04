@@ -48,6 +48,7 @@ public interface SlotAdmission<T, C> {
 
     /** All rules must admit (short-circuits on the first rejection). */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     static <T, C> SlotAdmission<T, C> all(SlotAdmission<T, C>... rules) {
         Objects.requireNonNull(rules, "rules");
         for (SlotAdmission<T, C> rule : rules) {
@@ -58,6 +59,7 @@ public interface SlotAdmission<T, C> {
 
     /** Any rule may admit (short-circuits on the first acceptance). */
     @SafeVarargs
+    @SuppressWarnings("varargs")
     static <T, C> SlotAdmission<T, C> any(SlotAdmission<T, C>... rules) {
         Objects.requireNonNull(rules, "rules");
         if (rules.length == 0) {
@@ -79,6 +81,7 @@ final class AllAdmission<T, C> implements SlotAdmission<T, C> {
     private final SlotAdmission<T, C>[] rules;
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     AllAdmission(SlotAdmission<T, C>... rules) {
         this.rules = rules.clone();
     }
@@ -95,7 +98,7 @@ final class AllAdmission<T, C> implements SlotAdmission<T, C> {
 
     @Override
     public SlotAdmission<T, C> newSession() {
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         SlotAdmission<T, C>[] sessions = new SlotAdmission[rules.length];
         for (int i = 0; i < rules.length; i++) {
             sessions[i] = rules[i].newSession();
@@ -123,6 +126,7 @@ final class AnyAdmission<T, C> implements SlotAdmission<T, C> {
     private final SlotAdmission<T, C>[] rules;
 
     @SafeVarargs
+    @SuppressWarnings("varargs")
     AnyAdmission(SlotAdmission<T, C>... rules) {
         this.rules = rules.clone();
     }
@@ -139,7 +143,7 @@ final class AnyAdmission<T, C> implements SlotAdmission<T, C> {
 
     @Override
     public SlotAdmission<T, C> newSession() {
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         SlotAdmission<T, C>[] sessions = new SlotAdmission[rules.length];
         for (int i = 0; i < rules.length; i++) {
             sessions[i] = rules[i].newSession();

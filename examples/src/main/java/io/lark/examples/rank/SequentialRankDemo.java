@@ -11,7 +11,9 @@ import io.lark.column.biz.F;
 import io.lark.column.biz.FeedMapping;
 import io.lark.column.tensor.DType;
 import io.lark.column.tensor.Tensor;
+import io.lark.rank.BeamSearchRanker;
 import io.lark.rank.RankedSlot;
+import io.lark.rank.RankingResult;
 import io.lark.rank.RankingContext;
 import io.lark.rank.SlotAdmission;
 import io.lark.rank.SequentialRanker;
@@ -78,24 +80,51 @@ public final class SequentialRankDemo {
                         .admission((ctx, scored) ->
                                 scored.goods().price()
                                         <= ctx.businessContext().budget())
-                        // Re-run a small score subgraph for the admitted items.
-                        .scorer((ctx, admitted) -> scoreModule.updatedScores(
-                                scoreRows(ctx, admitted)))
+                        // Re-run a small score subgraph for the admitted indexes.
+                        .scorer((ctx, indices, count) -> scoreModule.updatedScores(
+                                scoreRows(ctx, indices, count)))
+                        .maxDuration(java.time.Duration.ofMillis(200))
                         .build();
 
-        List<RankedSlot<ScoredGoods>> sequence =
-                ranker.rank(ordered, rankContext);
+        RankingResult<ScoredGoods> result =
+                ranker.rankWithStats(ordered, rankContext);
 
-        Print.section("selected sequence");
-        Print.selected(sequence);
-        Print.constraints(sequence);
+        Print.section("greedy sequence");
+        Print.selected(result.slots());
+        Print.constraints(result.slots());
+        Print.stats(result);
+
+        BeamSearchRanker<ScoredGoods, RankContext> beam =
+                BeamSearchRanker.<ScoredGoods, RankContext>builder(SLOTS, 8)
+                        .admission((ctx, scored) ->
+                                ctx.slot() >= 3 || !scored.goods().adult())
+                        .admission(new SlidingCategoryLimiter(3, 1))
+                        .admission((ctx, scored) ->
+                                ctx.selectedCount(other -> other.goods().brand()
+                                        .equals(scored.goods().brand())) < 4)
+                        .admission((ctx, scored) ->
+                                scored.goods().price()
+                                        <= ctx.businessContext().budget())
+                        .scorer((ctx, indices, count) -> scoreModule.updatedScores(
+                                scoreRows(ctx, indices, count)))
+                        .maxDuration(java.time.Duration.ofMillis(200))
+                        .build();
+
+        RankingResult<ScoredGoods> beamResult =
+                beam.rankWithStats(ordered, rankContext);
+
+        Print.section("beam search sequence (width=8)");
+        Print.selected(beamResult.slots());
+        Print.constraints(beamResult.slots());
+        Print.stats(beamResult);
     }
 
     private static List<ScoreRow> scoreRows(
             RankingContext<ScoredGoods, RankContext> ctx,
-            List<ScoredGoods> admitted) {
-        List<ScoreRow> rows = new ArrayList<>(admitted.size());
-        for (ScoredGoods scored : admitted) {
+            int[] indices, int count) {
+        List<ScoreRow> rows = new ArrayList<>(count);
+        for (int i = 0; i < count; i++) {
+            ScoredGoods scored = ctx.candidate(indices[i]);
             GoodsDO goods = scored.goods();
             int sameCategory = ctx.selectedCount(other ->
                     other.goods().category().equals(goods.category()));
@@ -229,6 +258,7 @@ public final class SequentialRankDemo {
         ColumnStream<Double> updatedScore;
 
         private FeedMapping<ScoreRow> mapping;
+        private ColumnPipeline pipeline;
 
         @Override
         protected void build() {
@@ -276,19 +306,18 @@ public final class SequentialRankDemo {
         }
 
         private double[] scores(List<ScoreRow> rows, boolean updated) {
-            try (ColumnPipeline pipeline = new ColumnPipeline(1)) {
-                pipeline.add(this)
-                        .buildGraph()
-                        .feed(mapping.map(rows))
-                        .compute();
-                Tensor tensor = pipeline.fetchTensor(
-                        updated ? updatedScore : baseScore);
-                double[] values = new double[tensor.size()];
-                for (int i = 0; i < values.length; i++) {
-                    values[i] = tensor.getDouble(i);
-                }
-                return values;
+            if (pipeline == null) {
+                pipeline = new ColumnPipeline(1);
+                pipeline.add(this);
             }
+            pipeline.execute(mapping.map(rows));
+            Tensor tensor = pipeline.fetchTensor(
+                    updated ? updatedScore : baseScore);
+            double[] values = new double[tensor.size()];
+            for (int i = 0; i < values.length; i++) {
+                values[i] = tensor.getDouble(i);
+            }
+            return values;
         }
     }
 
@@ -338,6 +367,18 @@ public final class SequentialRankDemo {
             }
             System.out.printf("%nchecks: adult-first3=%s, max-brand=%d, slots=%d%n",
                     adultRule, maxBrand, sequence.size());
+        }
+
+        static void stats(RankingResult<ScoredGoods> result) {
+            System.out.printf("rank stats: candidates=%d, admitted=%d, "
+                            + "score-calls=%d, sorts=%d, elapsed=%.3fms, "
+                            + "timedOut=%s%n",
+                    result.stats().candidates(),
+                    result.stats().admittedTotal(),
+                    result.stats().scoreCalls(),
+                    result.stats().sortCalls(),
+                    result.stats().elapsedNanos() / 1_000_000.0,
+                    result.stats().timedOut());
         }
     }
 }

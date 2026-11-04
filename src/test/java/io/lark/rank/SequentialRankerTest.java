@@ -5,8 +5,10 @@ package io.lark.rank;
 
 import org.junit.jupiter.api.Test;
 
+import java.time.Duration;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Deque;
 import java.util.List;
 
@@ -214,6 +216,80 @@ class SequentialRankerTest {
     }
 
     @Test
+    void indexedScorerReceivesCandidateIndexesWithoutAList() {
+        List<Item> items = List.of(
+                new Item("A", "c1", 10.0, 100),
+                new Item("B", "c1", 9.0, 100),
+                new Item("C", "c2", 8.0, 100));
+        List<int[]> seen = new ArrayList<>();
+
+        SequentialRanker<Item, Request> ranker =
+                SequentialRanker.<Item, Request>builder(2)
+                        .scorer((context, indices, count) -> {
+                            seen.add(Arrays.copyOf(indices, count));
+                            double[] scores = new double[count];
+                            for (int i = 0; i < count; i++) {
+                                scores[i] = items.get(indices[i]).base();
+                            }
+                            return scores;
+                        })
+                        .build();
+
+        List<RankedSlot<Item>> selected = ranker.rank(items,
+                new Request(100));
+
+        assertEquals(List.of("A", "B"), selected.stream()
+                .map(slot -> slot.item().id()).toList());
+        assertEquals(List.of(0, 1, 2), toList(seen.get(0)));
+        assertEquals(List.of(1, 2), toList(seen.get(1)));
+    }
+
+    @Test
+    void statsReportWorkAndDeadlineStopsEarly() throws Exception {
+        List<Item> items = List.of(
+                new Item("A", "c1", 10.0, 100),
+                new Item("B", "c1", 9.0, 100),
+                new Item("C", "c2", 8.0, 100));
+
+        SequentialRanker<Item, Request> ranker =
+                SequentialRanker.<Item, Request>builder(2)
+                        .scorer((context, admitted) -> admitted.stream()
+                                .mapToDouble(Item::base).toArray())
+                        .build();
+        RankingResult<Item> result = ranker.rankWithStats(items,
+                new Request(100));
+
+        assertEquals(2, result.slots().size());
+        assertEquals(3, result.stats().candidates());
+        assertEquals(2, result.stats().slotsRequested());
+        assertEquals(2, result.stats().slotsFilled());
+        assertEquals(5, result.stats().admittedTotal());
+        assertEquals(2, result.stats().scoreCalls());
+        assertEquals(2, result.stats().sortCalls());
+        assertTrue(result.stats().elapsedNanos() > 0);
+        assertTrue(!result.stats().timedOut());
+
+        SequentialRanker<Item, Request> slow =
+                SequentialRanker.<Item, Request>builder(5)
+                        .scorer((context, admitted) -> {
+                            try {
+                                Thread.sleep(2);
+                            } catch (InterruptedException e) {
+                                Thread.currentThread().interrupt();
+                            }
+                            return admitted.stream()
+                                    .mapToDouble(Item::base).toArray();
+                        })
+                        .maxDuration(Duration.ofMillis(1))
+                        .build();
+        RankingResult<Item> timed = slow.rankWithStats(items,
+                new Request(100));
+
+        assertEquals(1, timed.slots().size());
+        assertTrue(timed.stats().timedOut());
+    }
+
+    @Test
     void scorerMustReturnOneScorePerAdmittedCandidate() {
         SequentialRanker<Item, Request> ranker =
                 SequentialRanker.<Item, Request>builder(2)
@@ -283,6 +359,14 @@ class SequentialRankerTest {
                                RankedSlot<Item> slot) {
             selected++;
         }
+    }
+
+    private static List<Integer> toList(int[] values) {
+        List<Integer> result = new ArrayList<>(values.length);
+        for (int value : values) {
+            result.add(value);
+        }
+        return result;
     }
 
     private record Item(String id, String category, double base, int price) {
