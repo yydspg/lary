@@ -9,9 +9,10 @@ import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnOperator;
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.ColumnStream;
-import io.lark.column.biz.FetchStream;
 import io.lark.column.biz.F;
+import io.lark.column.biz.FeedMapping;
 import io.lark.column.biz.FeedStream;
+import io.lark.column.biz.FetchStream;
 import io.lark.column.biz.NumExpr;
 import io.lark.column.biz.op.MulAddOp;
 import io.lark.column.biz.op.MulOp;
@@ -124,6 +125,7 @@ public final class SearchModule extends ColumnModule {
 
     private final int topK;
     private final int workers;
+    private FeedMapping<SearchDemo.SearchRow> goodsFeed;
 
     public SearchModule() {
         this(30, 4);
@@ -159,6 +161,23 @@ public final class SearchModule extends ColumnModule {
         retargetCostFen = feed(RETARGET_COST_FEN);
         perturbation = feed(PERTURBATION);
         originalScore = feed(ORIGINAL_SCORE);
+
+        goodsFeed = FeedMapping.<SearchDemo.SearchRow>builder()
+                .column(pvId, SearchDemo.SearchRow::pvId)
+                .column(goodsId, row -> row.goods().goodsId())
+                .column(impressions, row -> row.goods().impressions())
+                .column(clicks, row -> row.goods().clicks())
+                .column(orders, row -> row.goods().orders())
+                .column(gmvFen, row -> row.goods().gmvFen())
+                .column(couponCostFen, row -> row.goods().couponCostFen())
+                .column(buyAgainOrders, row -> row.goods().buyAgainOrders())
+                .column(delayedOrders, row -> row.goods().delayedOrders())
+                .column(delayedGmvFen, row -> row.goods().delayedGmvFen())
+                .column(retargetClicks, row -> row.goods().retargetClicks())
+                .column(retargetCostFen, row -> row.goods().retargetCostFen())
+                .column(perturbation, row -> row.goods().perturbation())
+                .column(originalScore, row -> row.goods().originalScore())
+                .build();
 
         ctr = node(CTR, RatioOp.class, clicks, impressions);
         cvr = node(CVR, RatioOp.class, orders, clicks);
@@ -250,15 +269,8 @@ public final class SearchModule extends ColumnModule {
         return feedStream(SearchDemo.rows(request));
     }
 
-    public FeedStream feedStream(List<Row> rows) {
-        return FeedStream.of(feedStreams(), rows);
-    }
-
-    ColumnStream<?>[] feedStreams() {
-        return new ColumnStream<?>[]{
-                pvId, goodsId, impressions, clicks, orders, gmvFen,
-                couponCostFen, buyAgainOrders, delayedOrders, delayedGmvFen,
-                retargetClicks, retargetCostFen, perturbation, originalScore};
+    public FeedStream feedStream(List<SearchDemo.SearchRow> rows) {
+        return goodsFeed.map(rows);
     }
 
     // ---- domain operators ----------------------------------------------

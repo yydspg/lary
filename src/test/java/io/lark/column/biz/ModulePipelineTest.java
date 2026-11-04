@@ -62,6 +62,10 @@ class ModulePipelineTest {
             new Column<>("operator_scaled", DType.FLOAT64);
     static final Column<Double> OPERATOR_WEIGHTED =
             new Column<>("operator_weighted", DType.FLOAT64);
+    static final Column<Long> TRADE_PRICE =
+            new Column<>("trade_price", DType.INT64);
+    static final Column<Double> TRADE_RATE =
+            new Column<>("trade_rate", DType.FLOAT64);
 
     // ---- nodes -----------------------------------------------------------
 
@@ -685,6 +689,47 @@ class ModulePipelineTest {
         @Override
         protected void buildGraph() {
             node(OPERATOR_SUM, AddOp.class, feed(OPERATOR_LEFT));
+        }
+    }
+
+    static final class TradeModule extends ColumnModule {
+        ColumnStream<Long> price;
+        ColumnStream<Double> rate;
+
+        @Override
+        protected void buildGraph() {
+            price = feed(TRADE_PRICE);
+            rate = feed(TRADE_RATE);
+            output(price, rate);
+        }
+    }
+
+    record Trade(long price, double rate) {
+    }
+
+    @Test
+    void feedMappingMapsBusinessObjectsToColumns() {
+        TradeModule module = new TradeModule();
+        module.initialize();
+        FeedMapping<Trade> mapping = FeedMapping.<Trade>builder()
+                .column(module.price, Trade::price)
+                .column(module.rate, Trade::rate)
+                .build();
+
+        try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
+            pipeline.add(module)
+                    .compile()
+                    .feed(mapping.map(List.of(
+                            new Trade(10, 0.5),
+                            new Trade(20, 1.5))))
+                    .compute();
+
+            assertEquals(List.of(10L, 20L),
+                    pipeline.fetch(FetchStream.of(module.price)).stream()
+                            .map(row -> row.get(0).asLong()).toList());
+            assertEquals(List.of(0.5, 1.5),
+                    pipeline.fetch(FetchStream.of(module.rate)).stream()
+                            .map(row -> row.get(0).asDouble()).toList());
         }
     }
 

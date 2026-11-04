@@ -4,6 +4,7 @@
 package io.lark.examples.search;
 
 import io.lark.column.biz.ColumnPipeline;
+import io.lark.column.biz.FeedStream;
 import io.lark.column.biz.FetchStream;
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Row;
@@ -11,7 +12,6 @@ import io.lark.column.tensor.Tensor;
 import io.lark.column.tensor.TensorShape;
 import org.junit.jupiter.api.Test;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 
@@ -77,15 +77,13 @@ class SearchDemoTest {
         SearchDemo.SearchRequest firstRequest = SearchDemo.simulate(first, 1_000);
         SearchDemo.SearchRequest secondRequest = SearchDemo.simulate(second, 1_000);
 
-        List<Row> feedRows = new ArrayList<>();
-        feedRows.addAll(SearchDemo.rows(firstRequest));
-        feedRows.addAll(SearchDemo.rows(secondRequest));
-
         SearchModule module = new SearchModule(30, 4);
         try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
             pipeline.add(module)
                     .compile()
-                    .feed(module.feedStream(feedRows))
+                    .feed(FeedStream.concat(
+                            module.feedStream(firstRequest),
+                            module.feedStream(secondRequest)))
                     .compute();
 
             List<Row> ranked = pipeline.fetch(FetchStream.of(

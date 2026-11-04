@@ -4,8 +4,6 @@
 package io.lark.examples.search;
 
 import io.lark.column.context.ExperimentContext;
-import io.lark.column.data.Cell;
-import io.lark.column.data.Row;
 import io.lark.column.tensor.Tensor;
 
 import java.util.ArrayList;
@@ -99,6 +97,19 @@ public final class SearchDemo {
     public record SearchRequest(SearchContext context, GoodsList goods) {
     }
 
+    /** One goods row plus the request/PV it belongs to. */
+    public record SearchRow(long pvId, GoodsDO goods) {
+    }
+
+    /** Bind a request's goods list to its PV id. */
+    public static List<SearchRow> rows(SearchRequest request) {
+        List<SearchRow> rows = new ArrayList<>(request.goods().size());
+        for (GoodsDO goods : request.goods().goods()) {
+            rows.add(new SearchRow(request.context().pvId(), goods));
+        }
+        return rows;
+    }
+
     // ---- deterministic sample data --------------------------------------
 
     public static SearchContext sampleContext() {
@@ -168,30 +179,6 @@ public final class SearchDemo {
                     originalScore));
         }
         return new SearchRequest(context, new GoodsList(goods));
-    }
-
-    /** Feed rows in the order declared by {@link SearchModule}. */
-    public static List<Row> rows(SearchRequest request) {
-        SearchContext context = request.context();
-        List<Row> rows = new ArrayList<>(request.goods().size());
-        for (GoodsDO goods : request.goods().goods()) {
-            rows.add(Row.of(
-                    Cell.of(context.pvId()),
-                    Cell.of(goods.goodsId()),
-                    Cell.of(goods.impressions()),
-                    Cell.of(goods.clicks()),
-                    Cell.of(goods.orders()),
-                    Cell.of(goods.gmvFen()),
-                    Cell.of(goods.couponCostFen()),
-                    Cell.of(goods.buyAgainOrders()),
-                    Cell.of(goods.delayedOrders()),
-                    Cell.of(goods.delayedGmvFen()),
-                    Cell.of(goods.retargetClicks()),
-                    Cell.of(goods.retargetCostFen()),
-                    Cell.of(goods.perturbation()),
-                    Cell.of(goods.originalScore())));
-        }
-        return rows;
     }
 
     // ---- output ---------------------------------------------------------

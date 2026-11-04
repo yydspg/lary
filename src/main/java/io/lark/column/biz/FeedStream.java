@@ -5,6 +5,7 @@ package io.lark.column.biz;
 
 import io.lark.column.data.Row;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -22,6 +23,26 @@ public record FeedStream(ColumnStream<?>[] streams, List<Row> rows) {
     }
 
     public static FeedStream of(ColumnStream<?>[] streams, List<Row> rows) {
+        return new FeedStream(streams, rows);
+    }
+
+    /** Concatenate feeds that share the same stream handles. */
+    public static FeedStream concat(FeedStream... feeds) {
+        Objects.requireNonNull(feeds, "feeds");
+        if (feeds.length == 0) {
+            return new FeedStream(new ColumnStream<?>[0], List.of());
+        }
+        ColumnStream<?>[] streams = feeds[0].streams;
+        List<String> names = feeds[0].names();
+        List<Row> rows = new ArrayList<>();
+        for (FeedStream feed : feeds) {
+            if (!names.equals(feed.names())) {
+                throw new IllegalArgumentException(
+                        "FeedStream.concat: column mismatch " + names
+                                + " vs " + feed.names());
+            }
+            rows.addAll(feed.rows);
+        }
         return new FeedStream(streams, rows);
     }
 
