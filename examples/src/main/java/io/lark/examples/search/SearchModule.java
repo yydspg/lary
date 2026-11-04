@@ -9,7 +9,6 @@ import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.ColumnStream;
 import io.lark.column.biz.F;
 import io.lark.column.biz.FeedStream;
-import io.lark.column.biz.FetchStream;
 import io.lark.column.biz.NumExpr;
 import io.lark.column.biz.op.MulAddOp;
 import io.lark.column.biz.op.MulOp;
@@ -35,36 +34,6 @@ import static io.lark.examples.search.SearchSchema.*;
  */
 @ColumnComponent
 public final class SearchModule extends ColumnModule<SearchDemo.SearchRow> {
-
-    // ---- streams --------------------------------------------------------
-
-    public ColumnStream<Long> pvId;
-    public ColumnStream<Long> goodsId;
-    public ColumnStream<Long> impressions;
-    public ColumnStream<Long> clicks;
-    public ColumnStream<Long> orders;
-    public ColumnStream<Long> gmvFen;
-    public ColumnStream<Long> couponCostFen;
-    public ColumnStream<Long> buyAgainOrders;
-    public ColumnStream<Long> delayedOrders;
-    public ColumnStream<Long> delayedGmvFen;
-    public ColumnStream<Long> retargetClicks;
-    public ColumnStream<Long> retargetCostFen;
-    public ColumnStream<Double> perturbation;
-    public ColumnStream<Double> originalScore;
-
-    public ColumnStream<Double> ctr;
-    public ColumnStream<Double> cvr;
-    public ColumnStream<Double> ctcvr;
-    public ColumnStream<Double> gmv;
-    public ColumnStream<Double> buyAgain;
-    public ColumnStream<Double> rebuyLoss;
-    public ColumnStream<Double> couponRoi;
-    public ColumnStream<Double> retargetAd;
-    public ColumnStream<Double> delay;
-    public ColumnStream<Double> rankingScore;
-    public ColumnStream<Double> adjustedScore;
-    public ColumnStream<Long> selected;
 
     private final int topK;
     private final int workers;
@@ -99,86 +68,104 @@ public final class SearchModule extends ColumnModule<SearchDemo.SearchRow> {
 
     @Override
     protected void buildFeeds(ColumnGraphContext context) {
-        pvId = feed(PV_ID.longColumn(), SearchDemo.SearchRow::pvId);
-        goodsId = feed(GOODS_ID.longColumn(), row -> row.goods().goodsId());
-        impressions = feed(IMPRESSIONS.longColumn(), row -> row.goods().impressions());
-        clicks = feed(CLICKS.longColumn(), row -> row.goods().clicks());
-        orders = feed(ORDERS.longColumn(), row -> row.goods().orders());
-        gmvFen = feed(GMV_FEN.longColumn(), row -> row.goods().gmvFen());
-        couponCostFen = feed(COUPON_COST_FEN.longColumn(),
+        feed(PV_ID.longColumn(), SearchDemo.SearchRow::pvId);
+        feed(GOODS_ID.longColumn(), row -> row.goods().goodsId());
+        feed(IMPRESSIONS.longColumn(), row -> row.goods().impressions());
+        feed(CLICKS.longColumn(), row -> row.goods().clicks());
+        feed(ORDERS.longColumn(), row -> row.goods().orders());
+        feed(GMV_FEN.longColumn(), row -> row.goods().gmvFen());
+        feed(COUPON_COST_FEN.longColumn(),
                 row -> row.goods().couponCostFen());
-        buyAgainOrders = feed(BUY_AGAIN_ORDERS.longColumn(),
+        feed(BUY_AGAIN_ORDERS.longColumn(),
                 row -> row.goods().buyAgainOrders());
-        delayedOrders = feed(DELAYED_ORDERS.longColumn(),
+        feed(DELAYED_ORDERS.longColumn(),
                 row -> row.goods().delayedOrders());
-        delayedGmvFen = feed(DELAYED_GMV_FEN.longColumn(),
+        feed(DELAYED_GMV_FEN.longColumn(),
                 row -> row.goods().delayedGmvFen());
-        retargetClicks = feed(RETARGET_CLICKS.longColumn(),
+        feed(RETARGET_CLICKS.longColumn(),
                 row -> row.goods().retargetClicks());
-        retargetCostFen = feed(RETARGET_COST_FEN.longColumn(),
+        feed(RETARGET_COST_FEN.longColumn(),
                 row -> row.goods().retargetCostFen());
-        perturbation = feed(PERTURBATION.doubleColumn(), row -> row.goods().perturbation());
-        originalScore = feed(ORIGINAL_SCORE.doubleColumn(),
+        feed(PERTURBATION.doubleColumn(), row -> row.goods().perturbation());
+        feed(ORIGINAL_SCORE.doubleColumn(),
                 row -> row.goods().originalScore());
     }
 
     @Override
     protected void buildNodes(ColumnGraphContext context) {
-        ctr = node(CTR.doubleColumn(), RatioOp.class, clicks, impressions);
-        cvr = node(CVR.doubleColumn(), RatioOp.class, orders, clicks);
-        ctcvr = node(CTCVR.doubleColumn(), MulOp.class, ctr, cvr);
-        gmv = node(GMV.doubleColumn(), new ScaleOp(100.0), gmvFen);
-        buyAgain = node(BUYAGAIN.doubleColumn(), RatioOp.class, buyAgainOrders, orders);
-        rebuyLoss = node(REBUY_SAME_LOSS.doubleColumn(), OneMinusOp.class, buyAgain);
-        ColumnStream<Double> couponCost = node(new ScaleOp(100.0),
-                couponCostFen);
-        couponRoi = node(COUPON_ROI.doubleColumn(), RatioOp.class, gmv, couponCost);
+        var pvId = required(PV_ID.longColumn());
+        var impressions = required(IMPRESSIONS.longColumn());
+        var clicks = required(CLICKS.longColumn());
+        var orders = required(ORDERS.longColumn());
+        var gmvFen = required(GMV_FEN.longColumn());
+        var couponCostFen = required(COUPON_COST_FEN.longColumn());
+        var buyAgainOrders = required(BUY_AGAIN_ORDERS.longColumn());
+        var delayedOrders = required(DELAYED_ORDERS.longColumn());
+        var delayedGmvFen = required(DELAYED_GMV_FEN.longColumn());
+        var retargetClicks = required(RETARGET_CLICKS.longColumn());
+        var retargetCostFen = required(RETARGET_COST_FEN.longColumn());
+        var perturbation = required(PERTURBATION.doubleColumn());
+        var originalScore = required(ORIGINAL_SCORE.doubleColumn());
+
+        var ctr = node(CTR.doubleColumn(), RatioOp.class, clicks, impressions);
+        var cvr = node(CVR.doubleColumn(), RatioOp.class, orders, clicks);
+        node(CTCVR.doubleColumn(), MulOp.class, ctr, cvr);
+        var gmv = node(GMV.doubleColumn(), new ScaleOp(100.0), gmvFen);
+        var buyAgain = node(BUYAGAIN.doubleColumn(),
+                RatioOp.class, buyAgainOrders, orders);
+        var rebuyLoss = node(REBUY_SAME_LOSS.doubleColumn(),
+                OneMinusOp.class, buyAgain);
+        var couponCost = node(new ScaleOp(100.0), couponCostFen);
+        var couponRoi = node(COUPON_ROI.doubleColumn(),
+                RatioOp.class, gmv, couponCost);
 
         // Shaped tensors are still pure operator wiring: ratio/one-minus
         // columns first, then one framework StackOp per output.
-        ColumnStream<Double> clickShare = node(
-                RatioOp.class, retargetClicks, clicks);
+        var clickShare = node(RatioOp.class, retargetClicks, clicks);
         var costShare = node(RatioOp.class, retargetCostFen, gmvFen);
-        ColumnStream<Double> roi = node(
-                RatioOp.class, gmvFen, retargetCostFen);
-        ColumnStream<Double> scaledRoi = node(
+        var roi = node(RatioOp.class, gmvFen, retargetCostFen);
+        var scaledRoi = node(
                 new ExperimentScaleOp("rerank.roi_w", 1.0), roi);
-        roi = node(new VariantSwitchOp("roi_weight", "on"),
-                roi, scaledRoi);
-        retargetAd = node(RETARGET_AD.doubleColumn(), new StackOp(3),
+        roi = node(new VariantSwitchOp("roi_weight", "on"), roi, scaledRoi);
+        node(RETARGET_AD.doubleColumn(), new StackOp(3),
                 clickShare, costShare, roi);
 
-        ColumnStream<Double> orderDelay = node(
-                RatioOp.class, delayedOrders, orders);
-        ColumnStream<Double> gmvDelay = node(
-                RatioOp.class, delayedGmvFen, gmvFen);
-        ColumnStream<Double> orderOnTime = node(
-                OneMinusOp.class, orderDelay);
-        ColumnStream<Double> gmvOnTime = node(
-                OneMinusOp.class, gmvDelay);
-        delay = node(DELAY.doubleColumn(), new StackOp(2, 2),
+        var orderDelay = node(RatioOp.class, delayedOrders, orders);
+        var gmvDelay = node(RatioOp.class, delayedGmvFen, gmvFen);
+        var orderOnTime = node(OneMinusOp.class, orderDelay);
+        var gmvOnTime = node(OneMinusOp.class, gmvDelay);
+        node(DELAY.doubleColumn(), new StackOp(2, 2),
                 orderOnTime, orderDelay, gmvOnTime, gmvDelay);
 
-        rankingScore = formula(RANKING_SCORE.doubleColumn(), rankingFormula());
-        ColumnStream<Double> weightedScore = node(
+        var rankingScore = formula(RANKING_SCORE.doubleColumn(),
+                rankingFormula(ctr, cvr, gmv, couponRoi, rebuyLoss));
+        var weightedScore = node(
                 new ExperimentScaleOp("rerank.exp_w", 1.0), rankingScore);
-        adjustedScore = node(ADJUSTED_SCORE.doubleColumn(), MulAddOp.class,
-                weightedScore, perturbation, originalScore);
+        var adjustedScore = node(ADJUSTED_SCORE.doubleColumn(),
+                MulAddOp.class, weightedScore, perturbation, originalScore);
         SearchGraphConfig config = context.get(SearchGraphConfig.class);
         int effectiveTopK = (int) context.experiment().param("rerank.top_k",
                 config == null ? topK : config.topK());
-        selected = node(SELECTED.longColumn(), new TopKOp(effectiveTopK),
+        node(SELECTED.longColumn(), new TopKOp(effectiveTopK),
                 adjustedScore, pvId);
     }
 
     @Override
     protected void buildFetches(ColumnGraphContext context) {
-        output(pvId, goodsId, ctr, cvr, ctcvr, gmv, buyAgain, rebuyLoss,
-                couponRoi, retargetAd, delay, rankingScore, adjustedScore,
-                selected);
+        fetch(PV_ID.longColumn(), GOODS_ID.longColumn(),
+                CTR.doubleColumn(), CVR.doubleColumn(), CTCVR.doubleColumn(),
+                GMV.doubleColumn(), BUYAGAIN.doubleColumn(),
+                REBUY_SAME_LOSS.doubleColumn(), COUPON_ROI.doubleColumn(),
+                RETARGET_AD.doubleColumn(), DELAY.doubleColumn(),
+                RANKING_SCORE.doubleColumn(), ADJUSTED_SCORE.doubleColumn(),
+                SELECTED.longColumn());
     }
 
-    private NumExpr rankingFormula() {
+    private NumExpr rankingFormula(ColumnStream<Double> ctr,
+                                   ColumnStream<Double> cvr,
+                                   ColumnStream<Double> gmv,
+                                   ColumnStream<Double> couponRoi,
+                                   ColumnStream<Double> rebuyLoss) {
         NumExpr control = F.sum(
                 F.weighted(F.col(ctr), "rerank.ctr_w", 100.0),
                 F.weighted(F.col(cvr), "rerank.cvr_w", 50.0),
@@ -217,8 +204,9 @@ public final class SearchModule extends ColumnModule<SearchDemo.SearchRow> {
                 .setRunContext(ColumnRunContext.of(request.context()))
                 .execute(feedStream(request));
 
-        List<Row> rows = pipeline.fetch(FetchStream.of(
-                goodsId, adjustedScore, selected));
+        List<Row> rows = pipeline.fetch(List.of(
+                GOODS_ID.columnName(), ADJUSTED_SCORE.columnName(),
+                SELECTED.columnName()));
         List<SearchResult.RankedGoods> ranked = rows.stream()
                 .filter(row -> row.get(2).asLong() == 1L)
                 .map(row -> new SearchResult.RankedGoods(
@@ -236,8 +224,8 @@ public final class SearchModule extends ColumnModule<SearchDemo.SearchRow> {
 
         return new SearchResult(request.context(), request.goods().size(),
                 withRanks,
-                pipeline.fetchTensor(retargetAd),
-                pipeline.fetchTensor(delay),
+                pipeline.fetchTensor(RETARGET_AD.columnName()),
+                pipeline.fetchTensor(DELAY.columnName()),
                 pipeline.stats());
     }
 

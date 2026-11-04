@@ -45,6 +45,11 @@ public final class StackOp implements ColumnOperator {
     }
 
     @Override
+    public String operatorKey() {
+        return "stack:" + java.util.Arrays.toString(featureShape);
+    }
+
+    @Override
     public int arity() {
         return inputs;
     }

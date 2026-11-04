@@ -41,6 +41,8 @@ public final class ComputeNode {
     private final TensorKernel kernel;
     private final List<ComputeNode> dependencies = new ArrayList<>();
     private final AtomicReference<Status> status = new AtomicReference<>(Status.PENDING);
+    private long globalIndex;
+    private int graphIndex = -1;
     private volatile long elapsedNanos;
     private volatile Throwable error;
 
@@ -58,6 +60,24 @@ public final class ComputeNode {
     @Deprecated
     public ComputeNode(String id, String module, OpTensor op) {
         this(id, module, TensorKernels.spec(op), TensorKernels.legacy(op));
+    }
+
+    /** Framework-wide node index (business uses the column name instead). */
+    public long globalIndex() {
+        return globalIndex;
+    }
+
+    void setGlobalIndex(long globalIndex) {
+        this.globalIndex = globalIndex;
+    }
+
+    /** Position inside one compiled graph, used by the ready queue. */
+    public int graphIndex() {
+        return graphIndex;
+    }
+
+    void setGraphIndex(int graphIndex) {
+        this.graphIndex = graphIndex;
     }
 
     public String id() {

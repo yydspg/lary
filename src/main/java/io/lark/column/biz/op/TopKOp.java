@@ -31,8 +31,9 @@ public final class TopKOp implements ColumnOperator {
         this.k = k;
     }
 
-    public int k() {
-        return k;
+    @Override
+    public String operatorKey() {
+        return "topk:" + k;
     }
 
     @Override

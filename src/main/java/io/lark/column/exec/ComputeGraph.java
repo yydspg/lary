@@ -23,7 +23,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
@@ -54,20 +53,33 @@ import java.util.concurrent.atomic.AtomicLong;
  */
 public final class ComputeGraph {
 
+    private static final AtomicLong NEXT_INDEX = new AtomicLong();
     private final List<ComputeNode> nodes = new ArrayList<>();
     private final Map<String, ComputeNode> byId = new LinkedHashMap<>();
+    private final Map<Long, ComputeNode> byIndex = new LinkedHashMap<>();
     private List<ComputeNode> topo = List.of();
     private boolean finalized;
 
     public ComputeNode addNode(String id, String module, OpSpec op,
+                               TensorKernel kernel) {
+        return addNode(NEXT_INDEX.incrementAndGet(), id, module, op, kernel);
+    }
+
+    public ComputeNode addNode(long index, String id, String module, OpSpec op,
                                TensorKernel kernel) {
         Objects.requireNonNull(id, "id");
         if (byId.containsKey(id)) {
             throw new ColumnDefinitionException(
                     "ComputeGraph: duplicate node id '" + id + "'");
         }
+        if (byIndex.containsKey(index)) {
+            throw new ColumnDefinitionException(
+                    "ComputeGraph: duplicate node index " + index);
+        }
         ComputeNode node = new ComputeNode(id, module, op, kernel);
+        node.setGlobalIndex(index);
         byId.put(id, node);
+        byIndex.put(index, node);
         nodes.add(node);
         finalized = false;
         return node;
@@ -104,6 +116,7 @@ public final class ComputeGraph {
             node.replaceDependency(placeholder, real);
         }
         byId.remove(placeholderId);
+        byIndex.remove(placeholder.globalIndex());
         nodes.remove(placeholder);
         finalized = false;
     }
@@ -157,6 +170,9 @@ public final class ComputeGraph {
 
     /** Topologically sort and detect cycles (Kahn's algorithm). */
     public void finalizeGraph() {
+        for (int i = 0; i < nodes.size(); i++) {
+            nodes.get(i).setGraphIndex(i);
+        }
         Map<ComputeNode, Integer> inDegree = new IdentityHashMap<>();
         Map<ComputeNode, List<ComputeNode>> outgoing = new IdentityHashMap<>();
 
@@ -334,9 +350,10 @@ public final class ComputeGraph {
             node.setStatus(ComputeNode.Status.FAILED);
             node.setError(unwrap(fatal));
         } finally {
-            if (state.markCompleted(node)) {
+            int completedIndex = node.graphIndex();
+            if (state.markCompleted(completedIndex)) {
                 state.completeOne();
-                state.releaseDependents(node);
+                state.releaseDependents(completedIndex);
             }
             state.pump(pool);
         }
@@ -441,16 +458,13 @@ public final class ComputeGraph {
     private static final class RunState {
         private final ExecutionContext ctx;
         private final ComputeNode[] nodes;
-        private final IdentityHashMap<ComputeNode, Integer> index =
-                new IdentityHashMap<>();
         private final AtomicIntegerArray pending;
         private final int[][] dependentIndices;
-        private final ConcurrentLinkedQueue<ComputeNode> ready =
+        private final ConcurrentLinkedQueue<Integer> ready =
                 new ConcurrentLinkedQueue<>();
         private final AtomicBoolean pumping = new AtomicBoolean(false);
         private final AtomicBoolean aborted = new AtomicBoolean(false);
-        private final Set<ComputeNode> completed =
-                ConcurrentHashMap.newKeySet();
+        private final AtomicIntegerArray completed;
         private final AtomicInteger remaining;
         private final CountDownLatch done = new CountDownLatch(1);
         private final Map<String, ModuleAcc> modules = new ConcurrentHashMap<>();
@@ -464,10 +478,10 @@ public final class ComputeGraph {
             this.pending = new AtomicIntegerArray(count);
             this.remaining = new AtomicInteger(count);
 
+            this.completed = new AtomicIntegerArray(count);
             for (int i = 0; i < count; i++) {
-                ComputeNode node = nodes[i];
-                index.put(node, i);
-                pending.set(i, node.dependencyView().size());
+                nodes[i].setGraphIndex(i);
+                pending.set(i, nodes[i].dependencyView().size());
             }
 
             int[] outDegree = new int[count];
@@ -490,14 +504,14 @@ public final class ComputeGraph {
 
             for (int i = 0; i < count; i++) {
                 if (pending.get(i) == 0) {
-                    ready.add(nodes[i]);
+                    ready.add(i);
                 }
             }
         }
 
         private int indexOf(ComputeNode node) {
-            Integer value = index.get(node);
-            if (value == null) {
+            int value = node.graphIndex();
+            if (value < 0 || value >= nodes.length) {
                 throw new ColumnDefinitionException(
                         "ComputeGraph: dependency outside this graph: " + node.id());
             }
@@ -514,8 +528,8 @@ public final class ComputeGraph {
             }
             try {
                 while (!aborted.get()) {
-                    ComputeNode node = ready.poll();
-                    if (node == null) {
+                    Integer index = ready.poll();
+                    if (index == null) {
                         pumping.set(false);
                         // Close the enqueue-during-drain race: a producer that
                         // observed pumping == true will not pump again.
@@ -525,6 +539,7 @@ public final class ComputeGraph {
                         }
                         continue;
                     }
+                    ComputeNode node = nodes[index];
                     try {
                         pool.execute(() -> runNode(node, pool, ctx, this));
                     } catch (RejectedExecutionException rejected) {
@@ -543,24 +558,24 @@ public final class ComputeGraph {
         private void failRemaining(Throwable fatal) {
             aborted.set(true);
             ready.clear();
-            for (ComputeNode node : nodes) {
-                if (!markCompleted(node)) {
+            for (int i = 0; i < nodes.length; i++) {
+                if (!markCompleted(i)) {
                     continue;
                 }
-                node.setStatus(ComputeNode.Status.FAILED);
-                node.setError(unwrap(fatal));
+                nodes[i].setStatus(ComputeNode.Status.FAILED);
+                nodes[i].setError(unwrap(fatal));
                 completeOne();
             }
         }
 
-        private boolean markCompleted(ComputeNode node) {
-            return completed.add(node);
+        private boolean markCompleted(int index) {
+            return completed.compareAndSet(index, 0, 1);
         }
 
-        private void releaseDependents(ComputeNode node) {
-            for (int dependentIndex : dependentIndices[indexOf(node)]) {
+        private void releaseDependents(int index) {
+            for (int dependentIndex : dependentIndices[index]) {
                 if (pending.decrementAndGet(dependentIndex) == 0) {
-                    ready.add(nodes[dependentIndex]);
+                    ready.add(dependentIndex);
                 }
             }
         }

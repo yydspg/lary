@@ -159,7 +159,7 @@ final class PipelineCompiler {
         ComputeGraph graph = new ComputeGraph();
         for (ColumnNode node : kept) {
             ColumnModule module = nodeModules.get(node);
-            graph.addNode(node.id(), module.id(),
+            graph.addNode(node.index(), node.id(), module.id(),
                     new OpSpec("business", names(node.feedView()),
                             names(node.fetchView()), Map.of()),
                     new BusinessNodeKernel(node));

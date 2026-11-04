@@ -33,6 +33,11 @@ public final class ExperimentScaleOp implements ColumnOperator {
     }
 
     @Override
+    public String operatorKey() {
+        return "exp_scale:" + key + ":" + fallback;
+    }
+
+    @Override
     public int arity() {
         return 1;
     }

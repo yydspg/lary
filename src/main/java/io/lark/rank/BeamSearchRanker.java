@@ -275,14 +275,6 @@ public final class BeamSearchRanker<T, C> implements Ranker<T, C> {
                 && System.nanoTime() - started >= maxNanos;
     }
 
-    public int slots() {
-        return slots;
-    }
-
-    public int width() {
-        return width;
-    }
-
     private record BeamState<T>(List<RankedSlot<T>> selected,
                                 boolean[] selectedFlags,
                                 double objective) {

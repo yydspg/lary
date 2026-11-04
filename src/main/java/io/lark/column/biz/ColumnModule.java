@@ -76,6 +76,7 @@ public abstract class ColumnModule<F> {
     private volatile Map<String, ColumnStream<?>> feedMap;
     private volatile Map<String, ColumnStream<?>> fetchMap;
     private FeedMapping<Object> moduleFeedMapping;
+    private ColumnNodeRegistry nodeRegistry = new ColumnNodeRegistry();
 
     /**
      * Declare a typed external feed input. The column definition carries the
@@ -163,15 +164,6 @@ public abstract class ColumnModule<F> {
     }
 
     /**
-     * Define a node from a business-level computation op and typed inputs.
-     * Inputs may be module feeds or other node output streams.
-     */
-    protected final <O> ColumnStream<O> node(ColumnOp<O> op,
-                                             ColumnStream<?>... inputs) {
-        return add(new OpNode<>(op, inputs)).out();
-    }
-
-    /**
      * Define a node from a declarative operator class:
      *
      * <pre>{@code
@@ -210,7 +202,13 @@ public abstract class ColumnModule<F> {
                             + " requires " + expected + " input(s), got "
                             + inputs.length);
         }
-        return add(new OpNode<>(output, operator, inputs)).out();
+        ColumnStream<?> existing = nodeRegistry.output(output.name());
+        if (existing != null) {
+            return cast(existing, output);
+        }
+        ColumnStream<O> stream = add(new OpNode<>(output, operator, inputs)).out();
+        nodeRegistry.registerOutput(stream);
+        return stream;
     }
 
     /**
@@ -251,7 +249,18 @@ public abstract class ColumnModule<F> {
     protected final <O> ColumnStream<O> node(DType dtype,
                                              ColumnOperator operator,
                                              ColumnStream<?>... inputs) {
-        return node(ColumnModule.<O>anonymous(dtype), operator, inputs);
+        ColumnNodeRegistry.NodeKey key = ColumnNodeRegistry.key(
+                operator.operatorKey(), dtype, inputs);
+        ColumnStream<?> existing = nodeRegistry.definition(key);
+        if (existing != null) {
+            @SuppressWarnings("unchecked")
+            ColumnStream<O> shared = (ColumnStream<O>) existing;
+            return shared;
+        }
+        Column<O> output = anonymous(dtype);
+        ColumnStream<O> stream = node(output, operator, inputs);
+        nodeRegistry.registerDefinition(key, stream);
+        return stream;
     }
 
     /**
@@ -261,7 +270,13 @@ public abstract class ColumnModule<F> {
      */
     protected final <O> ColumnStream<O> formula(Column<O> output,
                                                 Expr<O> expression) {
-        return add(new FormulaNode<>(output, expression)).out();
+        ColumnStream<?> existing = nodeRegistry.output(output.name());
+        if (existing != null) {
+            return cast(existing, output);
+        }
+        ColumnStream<O> stream = add(new FormulaNode<>(output, expression)).out();
+        nodeRegistry.registerOutput(stream);
+        return stream;
     }
 
     /** Anonymous formula node; dtype comes from the expression. */
@@ -278,6 +293,9 @@ public abstract class ColumnModule<F> {
     /** Register a business node inside this module. */
     protected final <T extends ColumnNode> T add(T node) {
         nodeBuilder.add(Objects.requireNonNull(node, "node"));
+        for (ColumnStream<?> fetch : node.fetchView()) {
+            nodeRegistry.registerOutput(fetch);
+        }
         nodes = null;
         return node;
     }
@@ -383,6 +401,64 @@ public abstract class ColumnModule<F> {
      * this remains so existing modules keep working.
      */
     protected void define() {
+    }
+
+    /**
+     * Resolve a required feed or shared node by its column definition.
+     */
+    @SuppressWarnings("unchecked")
+    protected final <T> ColumnStream<T> required(Column<T> column) {
+        Objects.requireNonNull(column, "column");
+        ColumnStream<?> input = inputByName.get(column.name());
+        if (input != null) {
+            return cast(input, column);
+        }
+        ColumnStream<?> shared = nodeRegistry.output(column.name());
+        if (shared != null) {
+            return cast(shared, column);
+        }
+        throw new ColumnDefinitionException(
+                "ColumnModule " + getClass().getName()
+                        + ": required node '" + column.name()
+                        + "' has not been defined; add the producer module"
+                        + " first or declare dependsOn(...)");
+    }
+
+    /**
+     * Fetch a shared node output by schema definition. The node may have been
+     * created by this module or by another module in the same pipeline.
+     */
+    public final <T> ColumnStream<T> shared(Column<T> column) {
+        initialize();
+        ColumnStream<?> stream = nodeRegistry.output(
+                Objects.requireNonNull(column, "column").name());
+        if (stream == null) {
+            throw new ColumnDefinitionException(
+                    "ColumnModule " + getClass().getName()
+                            + ": shared node '" + column.name()
+                            + "' is not registered");
+        }
+        return cast(stream, column);
+    }
+
+    /** Declare fetch outputs by required node definitions. */
+    protected final void fetch(Column<?>... columns) {
+        ColumnStream<?>[] streams = new ColumnStream<?>[columns.length];
+        for (int i = 0; i < columns.length; i++) {
+            streams[i] = required(columns[i]);
+        }
+        output(streams);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <T> ColumnStream<T> cast(ColumnStream<?> stream,
+                                            Column<T> column) {
+        if (!stream.definition().equals(column)) {
+            throw new ColumnDefinitionException(
+                    "ColumnModule: shared column '" + column.name()
+                            + "' has a different definition");
+        }
+        return (ColumnStream<T>) stream;
     }
 
     /**
@@ -502,8 +578,12 @@ public abstract class ColumnModule<F> {
         graphContext = context;
     }
 
-    final ColumnGraphContext graphContext() {
-        return graphContext;
+    final void setNodeRegistry(ColumnNodeRegistry registry) {
+        Objects.requireNonNull(registry, "registry");
+        if (nodeRegistry != registry) {
+            registry.adopt(nodeRegistry);
+            nodeRegistry = registry;
+        }
     }
 
     private static ColumnOperator instantiate(

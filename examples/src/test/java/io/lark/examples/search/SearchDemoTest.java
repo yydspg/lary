@@ -5,7 +5,6 @@ package io.lark.examples.search;
 
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.FeedStream;
-import io.lark.column.biz.FetchStream;
 import io.lark.column.context.ColumnGraphContext;
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Row;
@@ -37,10 +36,14 @@ class SearchDemoTest {
                     .feed(module.feedStream(SearchDemo.sampleRequest()))
                     .compute();
 
-            List<Row> rows = pipeline.fetch(FetchStream.of(
-                    module.ctr, module.cvr, module.ctcvr,
-                    module.buyAgain, module.rebuyLoss,
-                    module.couponRoi, module.gmv));
+            List<Row> rows = pipeline.fetch(List.of(
+                    SearchSchema.CTR.columnName(),
+                    SearchSchema.CVR.columnName(),
+                    SearchSchema.CTCVR.columnName(),
+                    SearchSchema.BUYAGAIN.columnName(),
+                    SearchSchema.REBUY_SAME_LOSS.columnName(),
+                    SearchSchema.COUPON_ROI.columnName(),
+                    SearchSchema.GMV.columnName()));
 
             assertEquals(5, rows.size());
             assertEquals(0.05, rows.get(0).get(0).asDouble(), 1e-9);
@@ -52,14 +55,16 @@ class SearchDemoTest {
             assertEquals(500.0, rows.get(0).get(6).asDouble(), 1e-9);
             assertEquals(0.0, rows.get(2).get(5).asDouble(), 1e-9);
 
-            Tensor retarget = pipeline.fetchTensor(module.retargetAd);
+            Tensor retarget = pipeline.fetchTensor(
+                    SearchSchema.RETARGET_AD.columnName());
             assertEquals(TensorShape.of(5, 3), retarget.shape());
             assertEquals(0.40, retarget.getDouble(0), 1e-9);
             assertEquals(0.004, retarget.getDouble(1), 1e-9);
             assertEquals(250.0, retarget.getDouble(2), 1e-9);
             assertEquals(0.0, retarget.getDouble(2 * 3 + 2), 1e-9);
 
-            Tensor delay = pipeline.fetchTensor(module.delay);
+            Tensor delay = pipeline.fetchTensor(
+                    SearchSchema.DELAY.columnName());
             assertEquals(TensorShape.of(5, 2, 2), delay.shape());
             assertEquals(0.80, delay.getDouble(0), 1e-9);
             assertEquals(0.20, delay.getDouble(1), 1e-9);
@@ -87,9 +92,11 @@ class SearchDemoTest {
                             module.feedStream(secondRequest)))
                     .compute();
 
-            List<Row> ranked = pipeline.fetch(FetchStream.of(
-                    module.pvId, module.goodsId,
-                    module.adjustedScore, module.selected));
+            List<Row> ranked = pipeline.fetch(List.of(
+                    SearchSchema.PV_ID.columnName(),
+                    SearchSchema.GOODS_ID.columnName(),
+                    SearchSchema.ADJUSTED_SCORE.columnName(),
+                    SearchSchema.SELECTED.columnName()));
 
             assertEquals(2_000, ranked.size());
             assertEquals(60, ranked.stream()
@@ -142,12 +149,12 @@ class SearchDemoTest {
                     .compile()
                     .feed(module.feedStream(SearchDemo.sampleRequest()))
                     .compute();
-            double controlScore =
-                    pipeline.fetchTensor(module.rankingScore).getDouble(0);
+            double controlScore = pipeline.fetchTensor(
+                    SearchSchema.RANKING_SCORE.columnName()).getDouble(0);
 
             pipeline.setExperiment(boost).compute();
-            double boostScore =
-                    pipeline.fetchTensor(module.rankingScore).getDouble(0);
+            double boostScore = pipeline.fetchTensor(
+                    SearchSchema.RANKING_SCORE.columnName()).getDouble(0);
 
             // Row 0 has GMV 500 and coupon ROI > 0, so coupon_boost adds
             // exactly 500 * 0.02.

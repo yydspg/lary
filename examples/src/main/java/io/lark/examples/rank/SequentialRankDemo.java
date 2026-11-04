@@ -6,9 +6,8 @@ package io.lark.examples.rank;
 import io.lark.column.biz.Column;
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnPipeline;
-import io.lark.column.biz.ColumnStream;
+import io.lark.column.context.ColumnGraphContext;
 import io.lark.column.biz.F;
-import io.lark.column.biz.FeedMapping;
 import io.lark.column.tensor.DType;
 import io.lark.column.tensor.Tensor;
 import io.lark.rank.BeamSearchRanker;
@@ -228,7 +227,7 @@ public final class SequentialRankDemo {
     }
 
     /** Small column subgraph executed for the whole list and for each slot. */
-    static final class ScoreModule extends ColumnModule<Object> {
+    static final class ScoreModule extends ColumnModule<ScoreRow> {
 
         static final Column<Double> CTR = new Column<>("ctr", DType.FLOAT64);
         static final Column<Double> CVR = new Column<>("cvr", DType.FLOAT64);
@@ -246,55 +245,47 @@ public final class SequentialRankDemo {
         static final Column<Double> UPDATED_SCORE =
                 new Column<>("updated_score", DType.FLOAT64);
 
-        ColumnStream<Double> ctr;
-        ColumnStream<Double> cvr;
-        ColumnStream<Double> gmv;
-        ColumnStream<Double> quality;
-        ColumnStream<Double> price;
-        ColumnStream<Double> base;
-        ColumnStream<Double> categoryPenalty;
-        ColumnStream<Double> brandPenalty;
-        ColumnStream<Double> baseScore;
-        ColumnStream<Double> updatedScore;
-
-        private FeedMapping<ScoreRow> mapping;
         private ColumnPipeline pipeline;
 
         @Override
-        protected void build() {
-            ctr = feed(CTR);
-            cvr = feed(CVR);
-            gmv = feed(GMV);
-            quality = feed(QUALITY);
-            price = feed(PRICE);
-            base = feed(BASE);
-            categoryPenalty = feed(CATEGORY_PENALTY);
-            brandPenalty = feed(BRAND_PENALTY);
+        protected void buildFeeds(ColumnGraphContext context) {
+            feed(CTR, ScoreRow::ctr);
+            feed(CVR, ScoreRow::cvr);
+            feed(GMV, ScoreRow::gmv);
+            feed(QUALITY, ScoreRow::quality);
+            feed(PRICE, ScoreRow::price);
+            feed(BASE, ScoreRow::base);
+            feed(CATEGORY_PENALTY, ScoreRow::categoryPenalty);
+            feed(BRAND_PENALTY, ScoreRow::brandPenalty);
+        }
 
-            mapping = FeedMapping.<ScoreRow>builder()
-                    .column(ctr, ScoreRow::ctr)
-                    .column(cvr, ScoreRow::cvr)
-                    .column(gmv, ScoreRow::gmv)
-                    .column(quality, ScoreRow::quality)
-                    .column(price, ScoreRow::price)
-                    .column(base, ScoreRow::base)
-                    .column(categoryPenalty, ScoreRow::categoryPenalty)
-                    .column(brandPenalty, ScoreRow::brandPenalty)
-                    .build();
+        @Override
+        protected void buildNodes(ColumnGraphContext context) {
+            var ctr = required(CTR);
+            var cvr = required(CVR);
+            var gmv = required(GMV);
+            var quality = required(QUALITY);
+            var price = required(PRICE);
+            var base = required(BASE);
+            var categoryPenalty = required(CATEGORY_PENALTY);
+            var brandPenalty = required(BRAND_PENALTY);
 
-            baseScore = formula(BASE_SCORE, F.sum(
+            formula(BASE_SCORE, F.sum(
                     F.weighted(F.col(ctr), "rank.ctr_w", 100.0),
                     F.weighted(F.col(cvr), "rank.cvr_w", 50.0),
                     F.weighted(F.col(gmv), "rank.gmv_w", 0.01),
                     F.weighted(F.col(quality), "rank.quality_w", 2.0),
                     F.neg(F.weighted(F.col(price), "rank.price_w", 0.001))));
 
-            updatedScore = formula(UPDATED_SCORE, F.sum(
+            formula(UPDATED_SCORE, F.sum(
                     F.col(base),
                     F.neg(F.col(categoryPenalty)),
                     F.neg(F.col(brandPenalty))));
+        }
 
-            output(baseScore, updatedScore);
+        @Override
+        protected void buildFetches(ColumnGraphContext context) {
+            fetch(BASE_SCORE, UPDATED_SCORE);
         }
 
         double[] baseScores(List<ScoreRow> rows) {
@@ -310,9 +301,9 @@ public final class SequentialRankDemo {
                 pipeline = new ColumnPipeline(1);
                 pipeline.add(this);
             }
-            pipeline.execute(mapping.map(rows));
-            Tensor tensor = pipeline.fetchTensor(
-                    updated ? updatedScore : baseScore);
+            pipeline.execute(feedStream(rows));
+            Tensor tensor = pipeline.fetchTensor(updated
+                    ? UPDATED_SCORE.name() : BASE_SCORE.name());
             double[] values = new double[tensor.size()];
             for (int i = 0; i < values.length; i++) {
                 values[i] = tensor.getDouble(i);

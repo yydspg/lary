@@ -17,6 +17,11 @@ public final class MulScalarOp implements ColumnOperator {
     }
 
     @Override
+    public String operatorKey() {
+        return "mul_scalar:" + factor;
+    }
+
+    @Override
     public int arity() {
         return 1;
     }

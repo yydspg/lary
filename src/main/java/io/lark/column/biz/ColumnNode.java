@@ -35,6 +35,7 @@ import java.util.Objects;
 public abstract class ColumnNode {
 
     private final String id = NodeIds.next(getClass());
+    private final long index = NodeIds.nextIndex();
     private ColumnStream<?>[] feeds;
     private final List<ColumnStream<?>> fetchBuilder = new ArrayList<>();
     private ColumnStream<?>[] fetches;
@@ -62,6 +63,11 @@ public abstract class ColumnNode {
 
     public final String id() {
         return id;
+    }
+
+    /** Framework node index used by the execution layer. */
+    public final long index() {
+        return index;
     }
 
     /** Fixed input streams, in constructor order. Prefer typed fields. */

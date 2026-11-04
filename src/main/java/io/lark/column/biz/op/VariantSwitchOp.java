@@ -31,6 +31,11 @@ public final class VariantSwitchOp implements ColumnOperator {
     }
 
     @Override
+    public String operatorKey() {
+        return "variant:" + layer + ":" + variant;
+    }
+
+    @Override
     public int arity() {
         return 2;
     }

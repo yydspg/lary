@@ -22,6 +22,11 @@ public record ScaleOp(double divisor) implements ColumnOperator {
     }
 
     @Override
+    public String operatorKey() {
+        return "scale:" + divisor;
+    }
+
+    @Override
     public int arity() {
         return 1;
     }

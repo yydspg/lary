@@ -13,24 +13,10 @@ import java.util.Objects;
 import java.util.function.Function;
 
 /**
- * Reusable mapping from business objects to typed feed columns.
- *
- * <p>Business code defines the mapping once, next to the graph:
- *
- * <pre>{@code
- * FeedMapping<Goods> goodsFeed = FeedMapping.<Goods>builder()
- *         .column(PRICE, Goods::price)
- *         .column(COUPON_AMOUNT, Goods::couponAmount)
- *         .build();
- *
- * pipeline.feed(goodsFeed.map(goodsList));
- * }</pre>
- *
- * <p>Each column binds one {@link ColumnStream} to one getter. The getter
- * result is converted with the stream's declared dtype; {@code null} becomes a
- * nil cell. Mapping is read-only and reusable across requests.
+ * Internal mapping from business objects to feed columns. Business code
+ * declares the same mapping with {@code feed(Column, getter)} on a module.
  */
-public final class FeedMapping<T> {
+final class FeedMapping<T> {
 
     private final ColumnStream<?>[] streams;
     private final List<Function<? super T, ?>> getters;
@@ -41,10 +27,6 @@ public final class FeedMapping<T> {
         this.getters = List.copyOf(getters);
     }
 
-    public static <T> Builder<T> builder() {
-        return new Builder<>();
-    }
-
     /** Internal factory used when a module declares feeds with getters. */
     static FeedMapping<Object> of(List<ColumnStream<?>> streams,
                                   List<Function<Object, ?>> getters) {
@@ -53,7 +35,7 @@ public final class FeedMapping<T> {
     }
 
     /** Map a business list to a feed stream in declaration order. */
-    public FeedStream map(List<? extends T> rows) {
+    FeedStream map(List<? extends T> rows) {
         Objects.requireNonNull(rows, "rows");
         List<Row> mapped = new ArrayList<>(rows.size());
         for (T value : rows) {
@@ -64,36 +46,6 @@ public final class FeedMapping<T> {
             mapped.add(Row.of(cells));
         }
         return new FeedStream(streams, mapped);
-    }
-
-    public List<String> names() {
-        return java.util.Arrays.stream(streams)
-                .map(ColumnStream::name).toList();
-    }
-
-    public static final class Builder<T> {
-
-        private final List<ColumnStream<?>> streams = new ArrayList<>();
-        private final List<Function<? super T, ?>> getters = new ArrayList<>();
-
-        private Builder() {
-        }
-
-        public <V> Builder<T> column(ColumnStream<V> stream,
-                                     Function<? super T, ? extends V> getter) {
-            streams.add(Objects.requireNonNull(stream, "stream"));
-            getters.add(Objects.requireNonNull(getter, "getter"));
-            return this;
-        }
-
-        public FeedMapping<T> build() {
-            if (streams.isEmpty()) {
-                throw new ColumnFeedException(
-                        "FeedMapping.builder(): declare at least one column");
-            }
-            return new FeedMapping<>(
-                    streams.toArray(ColumnStream<?>[]::new), getters);
-        }
     }
 
     private static Cell cell(ColumnStream<?> stream, Object value) {

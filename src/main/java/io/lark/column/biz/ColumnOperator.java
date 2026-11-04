@@ -52,4 +52,13 @@ public interface ColumnOperator {
         return getClass().getSimpleName().isEmpty()
                 ? getClass().getName() : getClass().getSimpleName();
     }
+
+    /**
+     * Stable identity used to share anonymous nodes across modules. Stateless
+     * operators can keep the default class name; parameterized operators must
+     * include their parameters.
+     */
+    default String operatorKey() {
+        return getClass().getName();
+    }
 }

@@ -304,10 +304,6 @@ public final class BacktrackingRanker<T, C> implements Ranker<T, C> {
                                   double objective) {
     }
 
-    public int slots() {
-        return slots;
-    }
-
     public static final class Builder<T, C> {
 
         private final int slots;

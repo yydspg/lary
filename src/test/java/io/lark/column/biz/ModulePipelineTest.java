@@ -14,6 +14,7 @@ import io.lark.column.biz.op.MulOp;
 import io.lark.column.biz.op.ParamOp;
 import io.lark.column.biz.op.VariantSwitchOp;
 import io.lark.column.biz.op.ScaleOp;
+import io.lark.column.context.ColumnGraphContext;
 import io.lark.column.context.ColumnRunContext;
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Cell;
@@ -82,6 +83,10 @@ class ModulePipelineTest {
             new Column<>("anon_low", DType.FLOAT64);
     static final Column<Double> ANON_HIGH =
             new Column<>("anon_high", DType.FLOAT64);
+    static final Column<Double> SHARED_RESULT =
+            new Column<>("shared_result", DType.FLOAT64);
+    static final Column<Double> CONSUMER_RESULT =
+            new Column<>("consumer_result", DType.FLOAT64);
 
     // ---- nodes -----------------------------------------------------------
 
@@ -708,15 +713,16 @@ class ModulePipelineTest {
         }
     }
 
-    static final class TradeModule extends ColumnModule<Object> {
-        ColumnStream<Long> price;
-        ColumnStream<Double> rate;
+    static final class TradeModule extends ColumnModule<Trade> {
+        @Override
+        protected void buildFeeds(ColumnGraphContext context) {
+            feed(TRADE_PRICE, Trade::price);
+            feed(TRADE_RATE, Trade::rate);
+        }
 
         @Override
-        protected void build() {
-            price = feed(TRADE_PRICE);
-            rate = feed(TRADE_RATE);
-            output(price, rate);
+        protected void buildFetches(ColumnGraphContext context) {
+            fetch(TRADE_PRICE, TRADE_RATE);
         }
     }
 
@@ -726,25 +732,19 @@ class ModulePipelineTest {
     @Test
     void feedMappingMapsBusinessObjectsToColumns() {
         TradeModule module = new TradeModule();
-        module.initialize();
-        FeedMapping<Trade> mapping = FeedMapping.<Trade>builder()
-                .column(module.price, Trade::price)
-                .column(module.rate, Trade::rate)
-                .build();
-
         try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
             pipeline.add(module)
                     .compile()
-                    .feed(mapping.map(List.of(
+                    .feed(module.feedStream(List.of(
                             new Trade(10, 0.5),
                             new Trade(20, 1.5))))
                     .compute();
 
             assertEquals(List.of(10L, 20L),
-                    pipeline.fetch(FetchStream.of(module.price)).stream()
+                    pipeline.fetch(List.of(TRADE_PRICE.name())).stream()
                             .map(row -> row.get(0).asLong()).toList());
             assertEquals(List.of(0.5, 1.5),
-                    pipeline.fetch(FetchStream.of(module.rate)).stream()
+                    pipeline.fetch(List.of(TRADE_RATE.name())).stream()
                             .map(row -> row.get(0).asDouble()).toList());
         }
     }
@@ -817,6 +817,64 @@ class ModulePipelineTest {
                     doubles(pipeline.fetchTensor(module.scaled)));
             assertEquals(List.of(10.0, 20.0),
                     doubles(pipeline.fetchTensor(module.switched)));
+        }
+    }
+
+    static final class SharedProducerModule extends ColumnModule<Object> {
+        @Override
+        protected void buildFeeds(ColumnGraphContext context) {
+            feed(METRIC_VALUE);
+        }
+
+        @Override
+        protected void buildNodes(ColumnGraphContext context) {
+            node(SHARED_RESULT, new MulScalarOp(10.0),
+                    required(METRIC_VALUE));
+        }
+
+        @Override
+        protected void buildFetches(ColumnGraphContext context) {
+            fetch(SHARED_RESULT);
+        }
+    }
+
+    static final class SharedConsumerModule extends ColumnModule<Object> {
+        SharedConsumerModule() {
+            dependsOn(SharedProducerModule.class);
+        }
+
+        @Override
+        protected void buildFeeds(ColumnGraphContext context) {
+            feed(METRIC_VALUE);
+        }
+
+        @Override
+        protected void buildNodes(ColumnGraphContext context) {
+            node(CONSUMER_RESULT, AddOp.class,
+                    required(METRIC_VALUE), required(SHARED_RESULT));
+        }
+
+        @Override
+        protected void buildFetches(ColumnGraphContext context) {
+            fetch(CONSUMER_RESULT);
+        }
+    }
+
+    @Test
+    void sharedNodesResolveAcrossModulesInDependencyOrder() {
+        SharedConsumerModule consumer = new SharedConsumerModule();
+        SharedProducerModule producer = new SharedProducerModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
+            // Consumer is intentionally listed first; dependsOn orders producer.
+            pipeline.addAll(consumer, producer)
+                    .compile()
+                    .feed(Map.of(METRIC_VALUE.name(),
+                            List.of(Cell.of(1), Cell.of(2))))
+                    .compute();
+
+            assertEquals(List.of(11.0, 22.0),
+                    doubles(pipeline.fetchTensor(
+                            CONSUMER_RESULT.name())));
         }
     }
 

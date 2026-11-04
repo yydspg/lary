@@ -54,6 +54,7 @@ public final class ColumnPipeline implements AutoCloseable {
             new LinkedHashMap<>();
     private final ColumnStatsCollector stats = new ColumnStatsCollector();
     private final ExecutionContext ctx = new ExecutionContext();
+    private final ColumnNodeRegistry nodeRegistry = new ColumnNodeRegistry();
 
     private Monitor userMonitor;
     private CompositeMonitor chaining;
@@ -81,6 +82,7 @@ public final class ColumnPipeline implements AutoCloseable {
 
     public ColumnPipeline add(ColumnModule module) {
         Objects.requireNonNull(module, "module");
+        module.setNodeRegistry(nodeRegistry);
         module.setGraphContext(graphContext);
         module.initialize();
         if (modulesByType.putIfAbsent(module.getClass(), module) != null) {
@@ -93,28 +95,73 @@ public final class ColumnPipeline implements AutoCloseable {
         return this;
     }
 
-    /** Add several modules in order. */
+    /** Add several modules in dependency order. */
     public ColumnPipeline addAll(ColumnModule... modules) {
         Objects.requireNonNull(modules, "modules");
-        for (ColumnModule module : modules) {
+        return addAll(List.of(modules));
+    }
+
+    /** Add a collection of modules in dependency order. */
+    public ColumnPipeline addAll(Collection<? extends ColumnModule> modules) {
+        Objects.requireNonNull(modules, "modules");
+        List<ColumnModule> ordered = dependencyOrder(modules);
+        for (ColumnModule module : ordered) {
+            module.setNodeRegistry(nodeRegistry);
             module.setGraphContext(graphContext);
         }
-        for (ColumnModule module : modules) {
+        for (ColumnModule module : ordered) {
             add(module);
         }
         return this;
     }
 
-    /** Add a collection of modules in iteration order. */
-    public ColumnPipeline addAll(Collection<? extends ColumnModule> modules) {
-        Objects.requireNonNull(modules, "modules");
-        for (ColumnModule module : modules) {
-            module.setGraphContext(graphContext);
+    /**
+     * Order modules so explicit {@code dependsOn} producers build first. A
+     * missing dependency or a cycle falls back to insertion order and is
+     * reported by {@link PipelineCompiler}.
+     */
+    private static List<ColumnModule> dependencyOrder(
+            Collection<? extends ColumnModule> modules) {
+        List<ColumnModule> input = List.copyOf(modules);
+        Map<Class<?>, ColumnModule> byType = new LinkedHashMap<>();
+        for (ColumnModule module : input) {
+            if (byType.putIfAbsent(module.getClass(), module) != null) {
+                return input;
+            }
         }
-        for (ColumnModule module : modules) {
-            add(module);
+        Map<Class<?>, Integer> inDegree = new LinkedHashMap<>();
+        Map<Class<?>, List<Class<?>>> outgoing = new LinkedHashMap<>();
+        for (ColumnModule module : input) {
+            inDegree.put(module.getClass(), 0);
         }
-        return this;
+        for (ColumnModule module : input) {
+            for (Class<?> dependency : module.dependencyView()) {
+                if (!byType.containsKey(dependency)) {
+                    return input;
+                }
+                outgoing.computeIfAbsent(dependency, key -> new ArrayList<>())
+                        .add(module.getClass());
+                inDegree.merge(module.getClass(), 1, Integer::sum);
+            }
+        }
+        java.util.ArrayDeque<Class<?>> ready = new java.util.ArrayDeque<>();
+        for (Map.Entry<Class<?>, Integer> entry : inDegree.entrySet()) {
+            if (entry.getValue() == 0) {
+                ready.add(entry.getKey());
+            }
+        }
+        List<ColumnModule> ordered = new ArrayList<>(input.size());
+        while (!ready.isEmpty()) {
+            Class<?> type = ready.poll();
+            ordered.add(byType.get(type));
+            for (Class<?> next : outgoing.getOrDefault(type, List.of())) {
+                int degree = inDegree.merge(next, -1, Integer::sum);
+                if (degree == 0) {
+                    ready.add(next);
+                }
+            }
+        }
+        return ordered.size() == input.size() ? ordered : input;
     }
 
     /**
@@ -258,6 +305,7 @@ public final class ColumnPipeline implements AutoCloseable {
         if (plan != null && Objects.equals(planRequestedOutputs, requested)) {
             return this;
         }
+        nodeRegistry.validateAcyclic();
         plan = PipelineCompiler.compile(modules, requested);
         planRequestedOutputs = requested;
         return this;

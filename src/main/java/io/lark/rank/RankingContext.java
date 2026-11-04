@@ -45,14 +45,6 @@ public final class RankingContext<T, C> {
         return slots;
     }
 
-    public int candidateCount() {
-        return candidates.size();
-    }
-
-    public List<T> candidates() {
-        return candidates;
-    }
-
     public T candidate(int index) {
         return candidates.get(index);
     }
@@ -62,50 +54,9 @@ public final class RankingContext<T, C> {
         return selected;
     }
 
-    public int selectedCount() {
-        return selected.size();
-    }
-
-    public RankedSlot<T> selectedAt(int filledSlot) {
-        return selected.get(filledSlot);
-    }
-
-    public int[] selectedIndexes() {
-        int[] indexes = new int[selected.size()];
-        for (int i = 0; i < indexes.length; i++) {
-            indexes[i] = selected.get(i).index();
-        }
-        return indexes;
-    }
-
-    public List<T> selectedItems() {
-        List<T> items = new java.util.ArrayList<>(selected.size());
-        for (RankedSlot<T> filled : selected) {
-            items.add(filled.item());
-        }
-        return java.util.List.copyOf(items);
-    }
-
-    public boolean isSelected(int candidateIndex) {
-        return selectedFlags[candidateIndex];
-    }
-
-    public int remainingCount() {
-        return candidates.size() - selected.size();
-    }
-
     /** Business/request context supplied to {@link SequentialRanker#rank}. */
     public C businessContext() {
         return businessContext;
-    }
-
-    public <R> R requireBusinessContext(Class<R> type) {
-        Objects.requireNonNull(type, "type");
-        if (!type.isInstance(businessContext)) {
-            throw new RankingException(
-                    "business context is not " + type.getName());
-        }
-        return type.cast(businessContext);
     }
 
     /**

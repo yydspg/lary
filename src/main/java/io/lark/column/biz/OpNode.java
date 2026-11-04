@@ -11,27 +11,16 @@ import io.lark.column.tensor.TensorKernel;
 
 
 /**
- * Internal node bound to exactly one business {@link ColumnOp}.
+ * Internal node bound to one declarative operator.
  *
  * <p>Modules define nodes through
- * {@link ColumnModule#node(ColumnOp, ColumnStream...)} and see only typed
- * streams:
- *
- * <pre>{@code
- * ColumnStream<Double> ctcvr = node(ColumnOps.mul(CTCVR), ctr, cvr);
- * }</pre>
- *
- * <p>The node itself contains no formula: it resolves its bound input tensors,
- * invokes the op kernel, and writes the single output.
+ * {@link ColumnModule#node(Column, ColumnOperator, ColumnStream...)} and see
+ * only typed streams. The node resolves its bound input tensors, invokes the
+ * operator kernel, and writes the single output.
  */
 final class OpNode<O> extends ModuleNode<O> {
 
     private final TensorKernel kernel;
-
-    OpNode(ColumnOp<O> op, ColumnStream<?>... inputs) {
-        super(op.output(), inputs);
-        this.kernel = op.kernel();
-    }
 
     OpNode(Column<O> output, ColumnOperator operator,
            ColumnStream<?>... inputs) {

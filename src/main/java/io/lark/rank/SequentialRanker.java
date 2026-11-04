@@ -245,10 +245,6 @@ public final class SequentialRanker<T, C> implements Ranker<T, C> {
         return true;
     }
 
-    public int slots() {
-        return slots;
-    }
-
     public static final class Builder<T, C> {
 
         private final int slots;

@@ -34,6 +34,11 @@ public final class ParamOp implements ColumnOperator {
     }
 
     @Override
+    public String operatorKey() {
+        return "param:" + key + ":" + fallback;
+    }
+
+    @Override
     public int arity() {
         return 0;
     }

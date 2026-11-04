@@ -56,16 +56,8 @@ public enum SearchSchema {
         this.column = new Column<>(name, dtype);
     }
 
-    public Column<?> column() {
-        return column;
-    }
-
     public String columnName() {
         return column.name();
-    }
-
-    public DType dtype() {
-        return column.dtype();
     }
 
     @SuppressWarnings("unchecked")

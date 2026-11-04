@@ -24,4 +24,8 @@ final class NodeIds {
     static String next(String prefix) {
         return prefix + "#" + SEQUENCE.incrementAndGet();
     }
+
+    static long nextIndex() {
+        return SEQUENCE.incrementAndGet();
+    }
 }
