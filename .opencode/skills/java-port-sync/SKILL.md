@@ -46,7 +46,7 @@ test. Tests are the behavioral contract.
 |---|---|
 | `dag/include/dag/node.h`, `src/node.cpp` | `src/main/java/io/lark/dag/.../Node.java`, `NodeStatus.java` |
 | `dag/include/dag/graph.h`, `graph_builder.h` | `Graph.java`, `GraphBuilder.java`, `NodeDef.java` |
-| DAG ready-queue scheduler (Java-first) | `Executor.java` dependency counters + `Graph.nodeArray()`; adjacency is precomputed as integer indices |
+| DAG ready-queue scheduler (Java-first) | `Executor.java` dependency counters + `GraphPlan.java` (cached indegrees, reverse adjacency, roots); ready queue stores node references |
 | `dag/include/dag/node_registry.h` | `NodeRegistry.java` |
 | `dag/include/dag/executor.h`, `src/executor.cpp` | `Executor.java` |
 | `dag/include/dag/stats.h` | `StatsCollector.java`, `ExecutionStats.java`, `NodeRunStats.java` |
@@ -55,7 +55,7 @@ test. Tests are the behavioral contract.
 | `dag/include/dag/op.h` | `Op.java`, `OpAspect.java`, `OpStatus.java` |
 | `dag/include/dag/op_graph.h` | `OpGraph.java` |
 | `dag/include/dag/op_executor.h` | `OpExecutor.java` |
-| DAG op ready-queue scheduler (Java-first) | `OpExecutor.java` dependency counters + per-op timeout scheduler; op bodies run on the dag pool, not a driver thread |
+| DAG op ready-queue scheduler (Java-first) | `OpExecutor.java` dependency counters + `OpGraph.Plan` (cached indegrees/adjacency/roots and aspect array) + per-op timeout scheduler; op bodies run on the dag pool, not a driver thread |
 | `dag/include/dag/op_registry.h` | `OpRegistry.java` |
 | `dag/include/dag/op_graph_builder.h`, `src/op_graph_builder.cpp` | `OpGraphBuilder.java`, `OpDef.java`, `DslParser.java` |
 | Timeout / cancellation (Java-first) | `TimeoutPolicy.java`, `TimeoutAction.java`, `TimeoutTracker.java`, `DagTimeoutException.java`, `GraphAbortedException.java` |
@@ -79,10 +79,10 @@ test. Tests are the behavioral contract.
 | Zero-tensor business node | `biz/ZerosNode.java` |
 | `exec/exec_node.h`, `exec_node.cpp` | `exec/ComputeNode.java` (binds `OpSpec` + `TensorKernel`) |
 | `exec/compute_graph.h`, `compute_graph.cpp` | `exec/ComputeGraph.java` |
-| Column ready-queue scheduler (Java-first) | `exec/ComputeGraph.java` dependency counters + `ComputeNode.dependencyView()`; fixed platform pool sized by `ColumnPipeline.computeWorkers`, optional virtual compute threads for blocking nodes |
+| Column ready-queue scheduler (Java-first) | `exec/ComputeGraph.java` `Plan` (cached indegrees, reverse adjacency, roots, output names, module indexes) + dependency counters; fixed platform pool sized by `ColumnPipeline.computeWorkers`, optional virtual compute threads for blocking nodes |
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
-| Business Node / Module / Stream (Java-first) | `biz/ModuleNode.java` (typed single output), `biz/ColumnNode.java` (legacy multi-output), `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `PipelineCompiler.java`, `PipelinePlan.java`, `BusinessNodeKernel.java` |
-| Typed column schema (Java-first) | `biz/Column.java` (`Column<T>` value definitions), `biz/ColumnStream.java` (graph handles); schema constants e.g. `RecSysMetrics.COUPON_ROI` |
+| Business Node / Module / Stream (Java-first) | `biz/ModuleNode.java` (typed single output), `biz/ColumnNode.java` (legacy multi-output), `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `PipelineCompiler.java`, `PipelinePlan.java`, `BusinessNodeKernel.java`; declarative `OpNode` binds its `OperatorKernel` directly in the compiler |
+| Typed column schema (Java-first) | `biz/Column.java` (`Column<T>` value definitions), `biz/ColumnStream.java` (graph handles); schema constants e.g. `SearchSchema.COUPON_ROI` |
 | Typed node bases (Java-first) | `biz/NodeSchema.java`, `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`, `FormulaNode.java`; new single-output nodes extend `ModuleNode<O>` |
 | Formula DSL / experiment control (Java-first) | `biz/Expr.java`, `NumExpr.java`, `BoolExpr.java`, `F.java`, `FormulaNode.java`, `FormulaConfig.java` (map/JSON/YAML-friendly external tree), `ExperimentPipelines.java` (graph-topology variant routing); `context/ExperimentContext.java`; pipeline/context plumbing |
 | Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream<?>[]`) |
@@ -97,12 +97,14 @@ test. Tests are the behavioral contract.
 | Formula / experiment coverage | `FormulaTest.java`; search demo experiment variant test in `SearchDemoTest.java` |
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java` |
 | DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
-| Realistic multi-class demo | `examples/src/main/java/io/lark/examples/recsys/**` (`:examples:runRecsys`), split into `schema/`, `node/`, `module/`, `data/` |
-| Warmed-up benchmark | `examples/src/main/java/io/lark/examples/recsys/RecSysBenchmark.java` (`:examples:runRecsysBenchmark`), median/p95 after warm-up |
-| Tensor-aware search demo | `examples/src/main/java/io/lark/examples/search/**` (`:examples:runSearch`), `SearchContext`/`GoodsList`/`GoodsDO` request rows, `SearchRankingService`/`SearchResult`/`RankedGoods` typed facade, `@ColumnComponent` modules `SearchInputModule`, `CtrModule`, `CvrModule`, `CtCvrModule`, `RebuySameLossModule`, `BuyAgainModule`, `CouponRoiModule`, `RetargetAdModule`, `GmvModule`, `DelayModule`, `RankingScoreModule`, `AdjustedScoreModule`, `TopKModule`; 2-D/3-D outputs and PV-grouped top-k |
-| Realistic demo test | `examples/src/test/java/io/lark/examples/recsys/RecSysMetricTest.java`, mock edge-case feed `MockMetrics.java` |
-| Search ranking demo test | `examples/src/test/java/io/lark/examples/search/SearchDemoTest.java`, hand-authored metrics, two simulated PVs with 1,000 goods each, and typed `SearchResult` |
-| Spring demo / tests | `spring/src/test/java/io/lark/spring/example/SpringRecSysDemo.java` (`:spring:runSpringRecsys`), `spring/src/test/java/io/lark/spring/searchdemo/SpringSearchDemo.java` (`:spring:runSpringSearch`), `spring/src/test/java/io/lark/spring/searchtest/SpringSearchDemoTest.java`, `LaryColumnAutoConfigurationTest.java`, `LaryColumnPropertyScanTest.java`, fixtures under `spring/src/test/java/io/lark/spring/fixture/` |
+| Ranking framework (Java-first) | `rank/SequentialRanker.java` (greedy), `rank/BeamSearchRanker.java`, `rank/BacktrackingRanker.java`, `rank/RadixSorter.java`, `rank/RankingContext.java`, `rank/SlotAdmission.java`, `rank/IndexedSlotScorer.java`; tests `SequentialRankerTest.java`, `BeamSearchRankerTest.java` |
+| Rank demo | `examples/src/main/java/io/lark/examples/rank/SequentialRankDemo.java` (`:examples:runRank`) |
+| Tensor-aware search demo | `examples/src/main/java/io/lark/examples/search/**` (`:examples:runSearch`), `SearchDemo` request/rows, `SearchSchema` enum, one `@ColumnComponent` `SearchModule` with feeds/operators/formula/PV `TopKOp`, typed `SearchResult.RankedGoods`; 2-D/3-D outputs |
+| End-to-end demo | `examples/src/main/java/io/lark/examples/demo/FullRankingDemo.java` (`:examples:runFullDemo`): Node DAG request loading, column metrics + PV top-k, greedy and beam ranking over the selected goods |
+| Warmed-up benchmark | `examples/src/main/java/io/lark/examples/demo/FullRankingBenchmark.java` (`:examples:runFullBenchmark`), median/p95 for DAG, column, ranking and total after warm-up |
+| Search demo test | `examples/src/test/java/io/lark/examples/search/SearchDemoTest.java`, hand-authored metrics, two simulated PVs with 1,000 goods each, and typed `SearchResult` |
+| Full demo test | `examples/src/test/java/io/lark/examples/demo/FullRankingDemoTest.java`, end-to-end DAG + column + ranking assertions |
+| Spring demo / tests | `spring/src/test/java/io/lark/spring/searchdemo/SpringSearchDemo.java` (`:spring:runSpringSearch`), `spring/src/test/java/io/lark/spring/searchtest/SpringSearchDemoTest.java`, `LaryColumnAutoConfigurationTest.java`, `LaryColumnPropertyScanTest.java`, fixtures under `spring/src/test/java/io/lark/spring/fixture/` |
 | `metric/include/metric/metric.h` | `src/main/java/io/lark/metric/.../Event.java`, `Monitor.java`, built-ins |
 
 ## Workflow
@@ -136,7 +138,13 @@ test. Tests are the behavioral contract.
 - The Node executor uses a dependency-counter ready queue. It starts only nodes
   whose dependencies are complete; there is no dependency-waiting virtual
   thread per node. Running node bodies use virtual threads, and graph
-  completion is a countdown over all nodes.
+  completion is a countdown over all nodes. `GraphPlan` caches indegrees,
+  reverse adjacency and root indexes at graph construction; per-run state
+  allocates only the mutable counters and ready queue. The ready queue stores
+  node references, not boxed indexes.
+- `Executor` and `OpExecutor` wrap each body in a `FutureTask` whose `done()`
+  claims the terminal state. `done()` runs for success, failure and
+  cancellation-before-start, so timeout/abort cannot strand a submitted node.
 - Disabled nodes are skipped and release their dependents; abort skips pending
   nodes and cancels running bodies, so the run still drains.
 - Independent nodes may run concurrently; dependency order and data flow are
@@ -150,8 +158,10 @@ test. Tests are the behavioral contract.
 - `OpExecutor` uses the same dependency-counter ready queue: an op is submitted
   only after its dependencies complete, its body runs directly on the dag pool,
   and completion releases dependents. No driver virtual thread is parked per
-  op. A single daemon timer thread schedules op deadlines and dispatches the
-  timeout handler; `execute` joins `executeAsync`.
+  op. `OpGraph.compile()` caches a `Plan` (topological op array, indegrees,
+  reverse adjacency, roots) and the aspect array, so repeated runs do not
+  rebuild them. A single daemon timer thread schedules op deadlines and
+  dispatches the timeout handler; `execute` joins `executeAsync`.
 - Blocking `Node.run` / `Op.execute` bodies run on virtual threads; do not
   reintroduce callback-style APIs.
 - Op aspects may skip an op without failing the graph; async execution still
@@ -193,7 +203,18 @@ test. Tests are the behavioral contract.
   `lary.column.virtual-threads: true`): the ready queue is unchanged, but the
   pool becomes virtual-thread-per-task and `computeWorkers` stays a monitoring
   hint. A rejected submit drains serially instead of deadlocking; sequential
-  `execute` stays on the calling thread.
+  `execute` stays on the calling thread. `finalizeGraph()` caches a `Plan` with
+  insertion-order node indexes, reverse adjacency, roots, output names and
+  module indexes; repeated runs reuse it and reserve outputs with one
+  `store.ensureNames(plan.outputs())` call.
+- Declarative `OpNode`s bind their `OperatorKernel` directly in
+  `PipelineCompiler`; custom/formula nodes use `BusinessNodeKernel`. Keep this
+  split so the hot operator path does not allocate a business `ColumnContext`
+  and a second `KernelContext` per node.
+- Rank demos and performance-sensitive scorers use `IndexedSlotScorer`: the
+  ranker passes an `int[]` of admitted candidate indexes and never allocates an
+  intermediate candidate list per slot. `RadixSorter` sorts only indexes and
+  keeps candidate order stable for equal scores.
 - Business API: typed `ColumnStream<T>` handles + `ModuleNode<O>` / `ColumnNode` /
   `ColumnContext` / `ColumnModule` / `ColumnPipeline`. Node ids are generated;
   there is no `name()`/`inputs()`/`outputs()` override.
@@ -249,32 +270,36 @@ test. Tests are the behavioral contract.
   concurrent run.
 - `ColumnModule` returns array snapshots from public `nodes()`, `inputs()`,
   `outputs()` and `dependencies()`; internal compiler/scheduler code uses
-  package-private views. `define()` is idempotent/synchronized and retryable
+  package-private views. `initialize()`/`build()` are idempotent and retryable
   after failure; `feedMap()`/`fetchMap()` cache immutable name views.
+  `FeedMapping` precomputes per-column getter/dtype arrays for
+  `feedTensorMap(rows)`.
 - Typed dispatcher ops (`AddTensor`, `SubTensor`, `MultiTensor`, `DivTensor`)
   cache their typed delegates instead of allocating one per `compute`.
-- The realistic demo targets search/recommendation metrics: CTR =
-  clicks/impressions, CVR = orders/clicks, GMV = gmv_fen/100,
-  buyagain_cost = coupon_cost/buy_again_orders, coupon_roi = gmv/coupon_cost,
-  weight = 100*ctr + 50*cvr + 0.01*gmv + 0.5*coupon_roi - 0.5*buyagain_cost.
-  Ratios are zero when the denominator is zero. Rows contain metric
-  aggregates, not user/item ids; ids are lookup keys, not columnar inputs.
-  Feed samples live in `MetricsRepository`/`MetricsFeed.sample`; tests add
-  edge-case mock rows via `MockMetrics`.
+- The search demo targets: CTR = clicks/impressions, CVR = orders/clicks,
+  GMV = gmv_fen/100, buyagain = buy_again_orders/orders,
+  rebuy_same_loss = 1 - buyagain, couponroi = gmv/coupon_cost. Ratios are zero
+  when the denominator is zero. Rows are goods-level aggregates; ids are
+  lookup keys, not columnar inputs.
 - The tensor-aware search demo models a request as `SearchContext` +
-  `GoodsList`/`GoodsDO`, feeds the rows, computes CTR/CVR/GMV/coupon/rebuy
-  metrics, then scores and selects the top-k goods per `PV_ID`. Selection uses
-  `ColumnOps.topK`, which groups scores by the PV column and emits a stable
-  INT64 flag per row; the selected columns are fetched back into `Row`s.
-  `SearchDemoTest` covers one hand-authored request and two simulated PVs with
-  1,000 goods each.
-- Search modules are `@ColumnComponent`s. In Spring, `@EnableLaryColumns` plus
-  `ColumnPipelineFactory` discover/inject every module; `SearchRankingOptions`
-  and `SearchRankingService` are the only `@Bean`s needed for the demo.
-  `SearchRankingService` creates a fresh pipeline per request and maps fetched
-  rows to typed `RankedGoods`; business code must not use positional
-  `Row.get(n)` or manual module lists when the Spring integration is available.
-- Complex scoring uses typed formula trees, not long `ColumnOps` chains:
+  `GoodsList`/`GoodsDO`, feeds the rows through `SearchModule`, computes the
+  metric columns, applies the experiment formula, and selects the top-k goods
+  per `PV_ID`. Selection uses `TopKOp`, which groups scores by the PV column and
+  emits a stable INT64 flag per row; selected columns are fetched back into
+  `Row`s. `SearchDemoTest` covers one hand-authored request and two simulated
+  PVs with 1,000 goods each.
+- `SearchModule` is a single `@ColumnComponent`. In Spring,
+  `@EnableLaryColumns` plus `ColumnPipelineFactory` discover it and create a
+  fresh pipeline per request; the demo calls `module.search(pipeline, request)`
+  and maps fetched rows to typed `SearchResult.RankedGoods`. Business code must
+  not use positional `Row.get(n)` or manual module lists when the Spring
+  integration is available.
+- The complete demo (`FullRankingDemo`) runs a `Node` DAG request loader, the
+  column graph with PV top-k, then greedy `SequentialRanker` and
+  `BeamSearchRanker` over the selected candidates. `FullRankingDemoTest` checks
+  the end-to-end path; `FullRankingBenchmark` reports warmed-up DAG/column/
+  ranking/total median and p95.
+- Complex scoring uses typed formula trees, not long operator chains:
   `ModuleNode<O>` + `FormulaNode`; `F` composes columns, experiment parameters
   (`F.param`), variants (`F.variant`), row gates (`F.when`), multi-branch
   (`F.caseWhen`) and whole-formula variants (`F.chooseVariant`). Formula inputs
@@ -336,20 +361,19 @@ test. Tests are the behavioral contract.
   the configured compute pool (fixed platform by default, virtual on request);
   `ComputeGraph.execute` is sequential, `executeAsync` is the ready-queue path.
   `RunStats` covers one run, so use the warmed-up
-  `:examples:runRecsysBenchmark` (median/p95) for throughput comparisons rather
-  than a single small demo run.
+  `:examples:runFullBenchmark` (median/p95 for DAG, column, ranking and total)
+  for throughput comparisons rather than a single small demo run.
 
 ## Verification
 
 ```sh
 JAVA_HOME=/path/to/jdk-25 ./gradlew clean test :examples:build :spring:build
 JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runSimple :examples:runOp
-JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRecsys
-JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runSearch
-JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runRecsysBenchmark \
-    -Plary.bench.rows=50000 -Plary.bench.iterations=10
-JAVA_HOME=/path/to/jdk-25 ./gradlew :spring:test :spring:runSpringRecsys
-JAVA_HOME=/path/to/jdk-25 ./gradlew :spring:runSpringSearch
+JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runSearch :examples:runRank
+JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runFullDemo
+JAVA_HOME=/path/to/jdk-25 ./gradlew :examples:runFullBenchmark \
+    -Plary.full.candidates=2000 -Plary.full.iterations=20
+JAVA_HOME=/path/to/jdk-25 ./gradlew :spring:test :spring:runSpringSearch
 ```
 
 Use JDK 25. If Gradle cannot find it, set `org.gradle.java.installations.paths`
@@ -382,13 +406,18 @@ in `~/.gradle/gradle.properties`.
 - [ ] Formula/experiment changes cover `ModuleNode<O>`, `FormulaNode`, `F`
       conditions/variants/parameters, and document the row-level formula limits.
 - [ ] Repeated-run/timing changes are checked with
-      `:examples:runRecsysBenchmark`, not a single `RunStats` sample.
+      `:examples:runFullBenchmark`, not a single `RunStats` sample.
+- [ ] Scheduler changes keep cached plans valid across repeated runs and still
+      complete nodes/ops exactly once under timeout/abort (including
+      cancellation before the body starts).
+- [ ] Ranking changes cover `SequentialRanker`, `BeamSearchRanker`,
+      `IndexedSlotScorer`, stable tie-breaking and admission lifecycles.
 - [ ] Spring search demo/test proves `@ColumnComponent` discovery and the
-      typed `SearchRankingService` facade; application code has no manual
-      module list.
+      `SearchModule.search(pipeline, request)` path; application code has no
+      manual module list.
 - [ ] Chinese docs (`README.zh-CN.md`) are updated for user-facing changes.
 - [ ] Column examples run with `--add-modules jdk.incubator.vector`.
-- [ ] `:examples` still compiles; realistic demo classes remain separated into
-      schema/nodes/modules instead of one catch-all class.
+- [ ] `:examples` still compiles; the full demo
+      (`FullRankingDemo`/`FullRankingBenchmark`) runs and is covered by a test.
 - [ ] Docs/mapping updated if API or module layout changed.
 - [ ] No C++ edits unless explicitly requested.

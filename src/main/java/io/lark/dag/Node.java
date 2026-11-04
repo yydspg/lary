@@ -35,6 +35,7 @@ public class Node {
     private volatile long elapsedNanos;
     private volatile long startedAtNanos;
     private volatile Throwable error;
+    private int graphIndex = -1;
 
     // ---- business extension points ---------------------------------------
 
@@ -116,6 +117,14 @@ public class Node {
     }
 
     // ---- framework internals (called by Graph / Executor) ----------------
+
+    int graphIndex() {
+        return graphIndex;
+    }
+
+    void setGraphIndex(int graphIndex) {
+        this.graphIndex = graphIndex;
+    }
 
     final void setIdentity(String id, String type) {
         this.id = Objects.requireNonNull(id, "id");

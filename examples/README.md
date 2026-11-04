@@ -2,37 +2,55 @@
 
 This Gradle module depends on the root `lary` library and contains runnable
 examples. It is intentionally separate from the library build and has no Spring
-dependency. The optional `:spring` module runs the same recsys graph through
-Spring Boot (`./gradlew :spring:runSpringRecsys`).
+dependency. The optional `:spring` module runs the same search graph through
+Spring Boot (`./gradlew :spring:runSpringSearch`).
 
 ```sh
 ./gradlew :examples:test
-./gradlew :examples:runSimple
-./gradlew :examples:runOp
-./gradlew :examples:runRecsys
+./gradlew :examples:runSimple          # Node-layer DAG
+./gradlew :examples:runOp              # Op + Aspect DAG
+./gradlew :examples:runSearch          # row feed -> PV top-k search graph
+./gradlew :examples:runRank            # greedy / beam slot ranking
+./gradlew :examples:runFullDemo        # DAG + column + ranking end to end
+./gradlew :examples:runFullBenchmark   # warmed-up throughput for the full demo
 ```
 
-## Realistic project layout
-
-`io.lark.examples.recsys` is structured as a small production-shaped Java
-project for search / recommendation metrics:
+## Demo layout
 
 ```text
-recsys/
-├─ RecSysDemo.java            composition + main
-├─ MetricResultPrinter.java   presentation
-├─ schema/                    Column<T> definitions (one file)
-├─ node/                      one business node per file
-├─ module/                    one module per file
-└─ data/                      item-level metric repository
+io.lark.examples/
+├─ SimplePipeline.java        DAG Node tour
+├─ OpPipeline.java            DAG Op / Aspect tour
+├─ rank/                      sequential, beam and backtracking rankers
+├─ search/                    typed search schema, module and result facade
+│  ├─ SearchDemo.java         request model, deterministic rows and CLI
+│  ├─ SearchSchema.java       Column<T> definitions
+│  ├─ SearchModule.java       feeds, operators, formula, PV top-k
+│  └─ SearchResult.java       typed result records
+└─ demo/
+   ├─ FullRankingDemo.java    complete request -> metrics -> top-k -> slate
+   └─ FullRankingBenchmark.java
 ```
 
-The graph computes CTR, CVR, GMV, buy-again cost, coupon ROI and a ranking
-weight, then aggregates the portfolio. There are no user/item id columns: ids
-are lookup keys, not inputs to columnar metric computation.
+`SearchModule` declares all feeds with `feed(Column<T>, getter)`, so
+`feedTensorMap(rows)` builds primitive tensors without `Cell`/`Row` objects.
+`SearchDemoTest` covers the hand-authored request, experiment variants and two
+simulated PVs with 1,000 goods each.
 
-`MetricsRepository` contains six sample feed rows and `MetricsFeed.sample(...)`
-wraps them with the module's typed columns. `RecSysMetricTest` uses a separate
-`MockMetrics` fixture for all-zero and zero-denominator cases.
+`FullRankingDemo` is the complete demo:
 
-`SimplePipeline` and `OpPipeline` are compact tours of the DAG layers.
+1. a `Node` DAG loads the request and ranking config in parallel and validates
+   the request;
+2. the column graph computes CTR/CVR/GMV/coupon/retarget/delay metrics, applies
+   the experiment-aware formula and selects top-k per PV;
+3. greedy and beam-search rankers fill the final slate with category, brand and
+   budget admissions.
+
+The benchmark reports median/p95 for the DAG, column, ranking and total stages
+after unmeasured warm-up iterations:
+
+```sh
+./gradlew :examples:runFullBenchmark
+./gradlew :examples:runFullBenchmark \
+    -Plary.full.candidates=2000 -Plary.full.warmup=20 -Plary.full.iterations=50
+```

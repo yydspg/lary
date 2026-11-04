@@ -159,10 +159,16 @@ final class PipelineCompiler {
         ComputeGraph graph = new ComputeGraph();
         for (ColumnNode node : kept) {
             ColumnModule module = nodeModules.get(node);
+            // Declarative operator nodes bind their tensor kernel directly;
+            // custom/formula nodes keep the business adapter. This removes two
+            // per-node context allocations from the common column path.
+            var kernel = node instanceof OpNode<?> opNode
+                    ? opNode.executionKernel()
+                    : new BusinessNodeKernel(node);
             graph.addNode(node.index(), node.id(), module.id(),
                     new OpSpec("business", names(node.feedView()),
                             names(node.fetchView()), Map.of()),
-                    new BusinessNodeKernel(node));
+                    kernel);
         }
         for (ColumnNode node : kept) {
             for (ColumnNode dependency : deps.get(node)) {

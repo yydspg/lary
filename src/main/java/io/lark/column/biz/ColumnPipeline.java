@@ -470,10 +470,16 @@ public final class ColumnPipeline implements AutoCloseable {
         if (current == null) {
             return;
         }
-        List<String> missing = current.requiredFeedColumns().stream()
-                .filter(column -> !table.has(column))
-                .toList();
-        if (!missing.isEmpty()) {
+        List<String> missing = null;
+        for (String column : current.requiredFeedColumnOrder()) {
+            if (!table.has(column)) {
+                if (missing == null) {
+                    missing = new ArrayList<>(4);
+                }
+                missing.add(column);
+            }
+        }
+        if (missing != null) {
             throw new ColumnFeedException(
                     "ColumnPipeline: missing feed column(s) " + missing
                             + "; required=" + current.requiredFeedColumns());

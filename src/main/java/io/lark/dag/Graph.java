@@ -19,11 +19,18 @@ public final class Graph {
     private final List<Node> nodes;
     private final Node[] nodeArray;
     private final Map<String, Node> byId;
+    private final GraphPlan plan;
 
     Graph(List<Node> nodes, Map<String, Node> byId) {
         this.nodes = List.copyOf(nodes);
         this.nodeArray = this.nodes.toArray(Node[]::new);
         this.byId = Map.copyOf(byId);
+        this.plan = new GraphPlan(this.nodes);
+    }
+
+    /** Precomputed dependency counters and reverse adjacency. */
+    GraphPlan plan() {
+        return plan;
     }
 
     public List<Node> nodes() {

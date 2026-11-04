@@ -28,6 +28,16 @@ final class OpNode<O> extends ModuleNode<O> {
         this.kernel = new OperatorKernel(output.dtype(), operator);
     }
 
+    /**
+     * Execution-layer kernel for this operator node. The compiler binds the
+     * kernel directly to the {@code ComputeNode}, avoiding the extra
+     * {@link ColumnContext} and {@link KernelContext} round-trip on the hot
+     * path.
+     */
+    TensorKernel executionKernel() {
+        return kernel;
+    }
+
     @Override
     public void compute(ColumnContext ctx) {
         ColumnStream<?>[] feeds = feedView();

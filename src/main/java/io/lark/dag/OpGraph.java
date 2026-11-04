@@ -26,6 +26,8 @@ public final class OpGraph {
     private final List<OpAspect> aspects = new ArrayList<>();
 
     private List<Op> topologicalOrder = List.of();
+    private Plan plan;
+    private OpAspect[] aspectArray;
     private boolean compiled;
 
     /** Add an op under its {@link Op#name()}. */
@@ -46,6 +48,7 @@ public final class OpGraph {
         }
         insertionOrder.add(op);
         compiled = false;
+        plan = null;
         return this;
     }
 
@@ -53,6 +56,7 @@ public final class OpGraph {
     public OpGraph addAspect(OpAspect aspect) {
         if (aspect != null) {
             aspects.add(aspect);
+            aspectArray = null;
         }
         return this;
     }
@@ -71,6 +75,7 @@ public final class OpGraph {
         }
         dependencies.computeIfAbsent(depnd, key -> new ArrayList<>()).add(dep);
         compiled = false;
+        plan = null;
         return this;
     }
 
@@ -121,8 +126,108 @@ public final class OpGraph {
         }
 
         topologicalOrder = List.copyOf(order);
+        plan = new Plan(topologicalOrder, dependencies);
         compiled = true;
         return topologicalOrder;
+    }
+
+    /** Precomputed scheduler metadata for the current compilation. */
+    Plan schedulerPlan() {
+        compile();
+        return plan;
+    }
+
+    /** Framework-internal aspect array; callers must not modify it. */
+    OpAspect[] aspectArray() {
+        OpAspect[] cached = aspectArray;
+        if (cached == null) {
+            cached = aspects.toArray(OpAspect[]::new);
+            aspectArray = cached;
+        }
+        return cached;
+    }
+
+    /**
+     * Immutable dependency counters and reverse adjacency for one topological
+     * order. Shared by every run of the same compiled graph.
+     */
+    static final class Plan {
+
+        private final Op[] ops;
+        private final int[] initialPending;
+        private final int[][] dependentIndices;
+        private final int[] roots;
+
+        private Plan(List<Op> order, Map<Op, List<Op>> dependencies) {
+            int count = order.size();
+            this.ops = order.toArray(Op[]::new);
+            this.initialPending = new int[count];
+            this.dependentIndices = new int[count][];
+
+            for (int i = 0; i < count; i++) {
+                ops[i].setGraphIndex(i);
+                initialPending[i] = dependencies.getOrDefault(
+                        ops[i], List.of()).size();
+            }
+
+            int[] outDegree = new int[count];
+            for (int i = 0; i < count; i++) {
+                for (Op dependency : dependencies.getOrDefault(
+                        ops[i], List.of())) {
+                    outDegree[indexOf(dependency)]++;
+                }
+            }
+            for (int i = 0; i < count; i++) {
+                dependentIndices[i] = new int[outDegree[i]];
+            }
+            int[] cursor = new int[count];
+            for (int i = 0; i < count; i++) {
+                for (Op dependency : dependencies.getOrDefault(
+                        ops[i], List.of())) {
+                    int dependencyIndex = indexOf(dependency);
+                    dependentIndices[dependencyIndex][cursor[dependencyIndex]++] = i;
+                }
+            }
+
+            int rootCount = 0;
+            for (int i = 0; i < count; i++) {
+                if (initialPending[i] == 0) {
+                    rootCount++;
+                }
+            }
+            this.roots = new int[rootCount];
+            int root = 0;
+            for (int i = 0; i < count; i++) {
+                if (initialPending[i] == 0) {
+                    roots[root++] = i;
+                }
+            }
+        }
+
+        private int indexOf(Op op) {
+            int value = op.graphIndex();
+            if (value < 0 || value >= ops.length) {
+                throw new IllegalStateException(
+                        "OpGraph: dependency outside this graph: " + op.name());
+            }
+            return value;
+        }
+
+        Op[] ops() {
+            return ops;
+        }
+
+        int[] initialPending() {
+            return initialPending.clone();
+        }
+
+        int[][] dependentIndices() {
+            return dependentIndices;
+        }
+
+        int[] roots() {
+            return roots;
+        }
     }
 
     /** Ops in topological order after {@link #compile()}, else insertion order. */

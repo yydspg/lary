@@ -15,6 +15,16 @@ import java.time.Duration;
  */
 public abstract class Op {
 
+    private int graphIndex = -1;
+
+    int graphIndex() {
+        return graphIndex;
+    }
+
+    void setGraphIndex(int graphIndex) {
+        this.graphIndex = graphIndex;
+    }
+
     /** Stable business name, e.g. {@code "fetch_user"}. */
     public abstract String name();
 

@@ -23,8 +23,8 @@ Every behavior or API change must update, in the same commit:
   Spring Boot integration module under `spring/src/main/java/io/lark/spring/...`.
 - Keep the root library and `:examples` self-contained: JDK 25 + JUnit 5. Only
   `:spring` may depend on Spring. Run examples with
-  `./gradlew :examples:runRecsys` (or the other `:examples:` tasks); run the
-  Spring demo with `./gradlew :spring:runSpringRecsys`.
+  `./gradlew :examples:runFullDemo` (or the other `:examples:` tasks); run the
+  Spring demo with `./gradlew :spring:runSpringSearch`.
 - Column compute uses `jdk.incubator.vector`; keep the
   `--add-modules jdk.incubator.vector` flags in all three `build.gradle.kts`
   files.

@@ -15,15 +15,15 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Set;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
@@ -123,17 +123,17 @@ public final class OpExecutor implements AutoCloseable {
             throw new IllegalStateException("OpExecutor is closed");
         }
 
-        List<Op> order = graph.compile();
+        OpGraph.Plan plan = graph.schedulerPlan();
         statuses.clear();
         lastRunAborted = false;
         lastAbortReason = "";
 
-        if (order.isEmpty()) {
+        if (plan.ops().length == 0) {
             return CompletableFuture.completedFuture(null);
         }
 
         TimeoutPolicy policy = timeoutPolicy;
-        RunState state = new RunState(this, graph, order, data, policy);
+        RunState state = new RunState(this, graph, plan, data, policy);
         state.runStartNanos = System.nanoTime();
         Thread watchdog = startGraphWatchdog(state, policy);
 
@@ -202,14 +202,15 @@ public final class OpExecutor implements AutoCloseable {
         setStatus(op, OpStatus.RUNNING);
         emit("op.start", op.name(), true, 0, state.startedAt(op), Map.of());
 
+        OpAspect[] aspects = state.graph.aspectArray();
         try {
-            for (OpAspect aspect : state.graph.aspects()) {
+            for (OpAspect aspect : aspects) {
                 if (aspect.shouldSkip(op, data)) {
                     finishSkipped(op, state, "aspect");
                     return;
                 }
             }
-            for (OpAspect aspect : state.graph.aspects()) {
+            for (OpAspect aspect : aspects) {
                 aspect.onBefore(op, data);
             }
         } catch (Throwable error) {
@@ -230,37 +231,56 @@ public final class OpExecutor implements AutoCloseable {
         }
 
         long start = System.nanoTime();
-        CompletableFuture<Void> body;
+        OpTask body = new OpTask(op, state, start);
         try {
-            body = CompletableFuture.runAsync(() -> op.execute(data), pool);
+            pool.execute(body);
         } catch (Throwable fatal) {
             finishStartFailure(op, state, fatal, start);
             return;
         }
         state.registerRunning(op, body);
 
-        ScheduledFuture<?> timer = null;
         if (!effective.isZero()) {
             try {
-                timer = timeoutScheduler.schedule(
+                ScheduledFuture<?> timer = timeoutScheduler.schedule(
                         () -> Thread.ofVirtual()
                                 .name("lark-op-timeout-" + op.name())
                                 .start(() -> handleTimeoutSignal(op, state, key,
-                                        start, effective, body)),
+                                        start, effective)),
                         effective.toNanos(), TimeUnit.NANOSECONDS);
+                state.registerTimer(op, timer);
             } catch (Throwable fatal) {
                 body.cancel(true);
-                state.unregisterRunning(op);
                 finishStartFailure(op, state, fatal, start);
                 return;
             }
         }
-        final ScheduledFuture<?> timeoutTask = timer;
+    }
 
-        body.whenComplete((ignored, error) -> {
-            if (timeoutTask != null) {
-                timeoutTask.cancel(false);
-            }
+    /**
+     * One op body. {@link FutureTask#done()} covers success, failure and
+     * cancellation-before-start, so a timeout or abort always releases the
+     * graph exactly once.
+     */
+    private final class OpTask extends FutureTask<Void> {
+
+        private final Op op;
+        private final RunState state;
+        private final long start;
+
+        private OpTask(Op op, RunState state, long start) {
+            super(() -> {
+                op.execute(state.data);
+                return null;
+            });
+            this.op = op;
+            this.state = state;
+            this.start = start;
+        }
+
+        @Override
+        protected void done() {
+            state.cancelTimer(op);
             state.unregisterRunning(op);
             if (!state.markCompleted(op)) {
                 return;
@@ -269,24 +289,34 @@ public final class OpExecutor implements AutoCloseable {
                 finishAbortedClaimed(op, state, start);
                 return;
             }
+            Throwable error = null;
             try {
-                handleCompletion(state.graph, op, data, state, error,
+                get();
+            } catch (CancellationException cancelled) {
+                error = cancelled;
+            } catch (ExecutionException failed) {
+                error = failed.getCause();
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                error = interrupted;
+            }
+            try {
+                handleCompletion(state.graph, op, state.data, state, error,
                         Math.max(0, System.nanoTime() - start));
             } finally {
                 finishClaimed(op, state);
             }
-        });
+        }
     }
 
     private void handleTimeoutSignal(Op op, RunState state, String key,
-                                     long start, Duration timeout,
-                                     CompletableFuture<Void> body) {
+                                     long start, Duration timeout) {
         if (!state.markCompleted(op)) {
             return;
         }
-        state.unregisterRunning(op);
+        state.cancelTimer(op);
         if (state.policy().interruptOnTimeout()) {
-            body.cancel(true);
+            state.cancelRunning(op);
         }
 
         long elapsed = Math.max(0, System.nanoTime() - start);
@@ -459,7 +489,7 @@ public final class OpExecutor implements AutoCloseable {
     private void notifyAfter(OpGraph graph, Op op, IContext data,
                              OpStatus outcome) {
         try {
-            for (OpAspect aspect : graph.aspects()) {
+            for (OpAspect aspect : graph.aspectArray()) {
                 aspect.onAfter(op, data, outcome);
             }
         } catch (Throwable ignored) {
@@ -646,65 +676,45 @@ public final class OpExecutor implements AutoCloseable {
         private final IContext data;
         private final TimeoutPolicy policy;
         private final Op[] ops;
-        private final IdentityHashMap<Op, Integer> index = new IdentityHashMap<>();
         private final AtomicIntegerArray pending;
         private final int[][] dependentIndices;
         private final ConcurrentLinkedQueue<Op> ready =
                 new ConcurrentLinkedQueue<>();
         private final AtomicBoolean pumping = new AtomicBoolean();
-        private final Set<Op> completed = ConcurrentHashMap.newKeySet();
+        private final AtomicIntegerArray completed;
         private final AtomicInteger remaining;
         private final CompletableFuture<Void> allDone = new CompletableFuture<>();
         private final AtomicBoolean aborted = new AtomicBoolean();
-        private final Map<Op, Future<?>> running = new IdentityHashMap<>();
-        private final Map<Op, Long> startedAt = new IdentityHashMap<>();
+        private final Future<?>[] running;
+        private final ScheduledFuture<?>[] timers;
+        private final long[] startedAt;
         private volatile String abortReason = "";
         private long runStartNanos;
 
-        private RunState(OpExecutor owner, OpGraph graph, List<Op> order,
+        private RunState(OpExecutor owner, OpGraph graph, OpGraph.Plan plan,
                          IContext data, TimeoutPolicy policy) {
             this.owner = owner;
             this.graph = graph;
             this.data = data;
             this.policy = policy;
-            this.ops = order.toArray(Op[]::new);
+            this.ops = plan.ops();
             int count = ops.length;
-            this.pending = new AtomicIntegerArray(count);
+            this.pending = new AtomicIntegerArray(plan.initialPending());
             this.remaining = new AtomicInteger(count);
+            this.completed = new AtomicIntegerArray(count);
+            this.running = new Future<?>[count];
+            this.timers = new ScheduledFuture<?>[count];
+            this.startedAt = new long[count];
+            this.dependentIndices = plan.dependentIndices();
 
-            for (int i = 0; i < count; i++) {
-                index.put(ops[i], i);
-                pending.set(i, graph.depsOf(ops[i]).size());
-            }
-
-            int[] outDegree = new int[count];
-            for (int i = 0; i < count; i++) {
-                for (Op dependency : graph.depsOf(ops[i])) {
-                    outDegree[indexOf(dependency)]++;
-                }
-            }
-            this.dependentIndices = new int[count][];
-            for (int i = 0; i < count; i++) {
-                dependentIndices[i] = new int[outDegree[i]];
-            }
-            int[] cursor = new int[count];
-            for (int i = 0; i < count; i++) {
-                for (Op dependency : graph.depsOf(ops[i])) {
-                    int dependencyIndex = indexOf(dependency);
-                    dependentIndices[dependencyIndex][cursor[dependencyIndex]++] = i;
-                }
-            }
-
-            for (int i = 0; i < count; i++) {
-                if (pending.get(i) == 0) {
-                    ready.add(ops[i]);
-                }
+            for (int root : plan.roots()) {
+                ready.add(ops[root]);
             }
         }
 
         private int indexOf(Op op) {
-            Integer value = index.get(op);
-            if (value == null) {
+            int value = op.graphIndex();
+            if (value < 0 || value >= ops.length) {
                 throw new IllegalStateException(
                         "OpExecutor: dependency outside this graph: " + op.name());
             }
@@ -724,19 +734,15 @@ public final class OpExecutor implements AutoCloseable {
         }
 
         private void markStarted(Op op, long offsetNanos) {
-            synchronized (startedAt) {
-                startedAt.put(op, Math.max(0, offsetNanos));
-            }
+            startedAt[op.graphIndex()] = Math.max(0, offsetNanos);
         }
 
         private long startedAt(Op op) {
-            synchronized (startedAt) {
-                return startedAt.getOrDefault(op, 0L);
-            }
+            return startedAt[op.graphIndex()];
         }
 
         private boolean markCompleted(Op op) {
-            return completed.add(op);
+            return completed.compareAndSet(op.graphIndex(), 0, 1);
         }
 
         private void releaseDependents(Op op) {
@@ -748,8 +754,12 @@ public final class OpExecutor implements AutoCloseable {
         }
 
         private void registerRunning(Op op, Future<?> future) {
+            int index = op.graphIndex();
             synchronized (running) {
-                running.put(op, future);
+                if (completed.get(index) == 1) {
+                    return;
+                }
+                running[index] = future;
                 if (aborted.get()) {
                     future.cancel(true);
                 }
@@ -758,7 +768,39 @@ public final class OpExecutor implements AutoCloseable {
 
         private void unregisterRunning(Op op) {
             synchronized (running) {
-                running.remove(op);
+                running[op.graphIndex()] = null;
+            }
+        }
+
+        private void cancelRunning(Op op) {
+            Future<?> future;
+            synchronized (running) {
+                future = running[op.graphIndex()];
+            }
+            if (future != null) {
+                future.cancel(true);
+            }
+        }
+
+        private void registerTimer(Op op, ScheduledFuture<?> timer) {
+            int index = op.graphIndex();
+            synchronized (timers) {
+                if (completed.get(index) == 1) {
+                    timer.cancel(false);
+                    return;
+                }
+                timers[index] = timer;
+            }
+        }
+
+        private void cancelTimer(Op op) {
+            int index = op.graphIndex();
+            synchronized (timers) {
+                ScheduledFuture<?> timer = timers[index];
+                if (timer != null) {
+                    timers[index] = null;
+                    timer.cancel(false);
+                }
             }
         }
 
@@ -767,9 +809,13 @@ public final class OpExecutor implements AutoCloseable {
                 return;
             }
             abortReason = reason;
-            List<Future<?>> futures;
+            List<Future<?>> futures = new ArrayList<>();
             synchronized (running) {
-                futures = new ArrayList<>(running.values());
+                for (Future<?> future : running) {
+                    if (future != null) {
+                        futures.add(future);
+                    }
+                }
             }
             for (Future<?> future : futures) {
                 future.cancel(true);

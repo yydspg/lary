@@ -10,22 +10,20 @@ import io.lark.metric.NullMonitor;
 import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.concurrent.FutureTask;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ThreadFactory;
@@ -280,36 +278,59 @@ public final class Executor implements AutoCloseable {
             return;
         }
 
-        CompletableFuture<Void> body;
+        NodeTask body = new NodeTask(node, state, start);
         try {
-            body = CompletableFuture.runAsync(() -> node.run(ctx), nodeBodyPool);
+            nodeBodyPool.execute(body);
         } catch (Throwable fatal) {
             finishFailure(node, state, fatal, start);
             return;
         }
         state.registerRunning(node, body);
 
-        ScheduledFuture<?> timer = null;
         if (!effective.isZero()) {
             try {
-                timer = timeoutScheduler.schedule(
+                ScheduledFuture<?> timer = timeoutScheduler.schedule(
                         () -> Thread.ofVirtual()
                                 .name("lark-node-timeout-" + node.id())
-                                .start(() -> handleTimeoutSignal(node, state, key,
-                                        start, effective, body)),
+                                .start(() -> handleTimeoutSignal(node, state,
+                                        key, start, effective)),
                         effective.toNanos(), TimeUnit.NANOSECONDS);
+                state.registerTimer(node, timer);
             } catch (Throwable fatal) {
                 body.cancel(true);
                 finishFailure(node, state, fatal, start);
                 return;
             }
         }
-        final ScheduledFuture<?> timeoutTask = timer;
+    }
 
-        body.whenComplete((ignored, error) -> {
-            if (timeoutTask != null) {
-                timeoutTask.cancel(false);
-            }
+    /**
+     * One node body submitted to the node pool.
+     *
+     * <p>{@link FutureTask#done()} runs for normal completion, failure and
+     * cancellation — including a cancellation that wins before the body
+     * starts. That guarantees every submitted node claims its terminal state
+     * exactly once, so an abort or timeout can never strand the graph.
+     */
+    private final class NodeTask extends FutureTask<Void> {
+
+        private final Node node;
+        private final RunState state;
+        private final long start;
+
+        private NodeTask(Node node, RunState state, long start) {
+            super(() -> {
+                node.run(state.ctx);
+                return null;
+            });
+            this.node = node;
+            this.state = state;
+            this.start = start;
+        }
+
+        @Override
+        protected void done() {
+            state.cancelTimer(node);
             state.unregisterRunning(node);
             if (!state.markCompleted(node)) {
                 return;
@@ -318,8 +339,19 @@ public final class Executor implements AutoCloseable {
                 finishAbortedClaimed(node, state, start);
                 return;
             }
+            Throwable error = null;
+            try {
+                get();
+            } catch (CancellationException cancelled) {
+                error = cancelled;
+            } catch (ExecutionException failed) {
+                error = failed.getCause();
+            } catch (InterruptedException interrupted) {
+                Thread.currentThread().interrupt();
+                error = interrupted;
+            }
             completeBody(node, state, error, start);
-        });
+        }
     }
 
     private void completeBody(Node node, RunState state, Throwable error,
@@ -352,14 +384,13 @@ public final class Executor implements AutoCloseable {
     }
 
     private void handleTimeoutSignal(Node node, RunState state, String key,
-                                     long start, Duration timeout,
-                                     CompletableFuture<Void> body) {
+                                     long start, Duration timeout) {
         if (!state.markCompleted(node)) {
             return;
         }
-        state.unregisterRunning(node);
+        state.cancelTimer(node);
         if (state.policy.interruptOnTimeout()) {
-            body.cancel(true);
+            state.cancelRunning(node);
         }
 
         long elapsed = Math.max(0, System.nanoTime() - start);
@@ -634,21 +665,21 @@ public final class Executor implements AutoCloseable {
         private final Executor owner;
         private final IContext ctx;
         private final TimeoutPolicy policy;
-        private final Set<String> disabled;
+        private final boolean[] disabled;
 
+        private final GraphPlan plan;
         private final Node[] nodes;
-        private final IdentityHashMap<Node, Integer> index =
-                new IdentityHashMap<>();
         private final AtomicIntegerArray pending;
         private final int[][] dependentIndices;
         private final ConcurrentLinkedQueue<Node> ready =
                 new ConcurrentLinkedQueue<>();
         private final AtomicBoolean pumping = new AtomicBoolean(false);
-        private final Set<Node> completed = ConcurrentHashMap.newKeySet();
+        private final AtomicIntegerArray completed;
 
         private final AtomicInteger remaining;
         private final CountDownLatch done = new CountDownLatch(1);
-        private final Map<Node, Future<?>> running = new HashMap<>();
+        private final Future<?>[] running;
+        private final ScheduledFuture<?>[] timers;
         private final AtomicBoolean aborted = new AtomicBoolean(false);
         private volatile String abortReason = "";
         private long runStartNanos;
@@ -658,46 +689,31 @@ public final class Executor implements AutoCloseable {
             this.owner = owner;
             this.ctx = ctx;
             this.policy = policy;
-            this.disabled = disabledIds == null
-                    ? Set.of() : Set.copyOf(disabledIds);
-            this.nodes = graph.nodeArray();
+            this.plan = graph.plan();
+            this.nodes = plan.nodes();
             int count = nodes.length;
             this.remaining = new AtomicInteger(count);
-            this.pending = new AtomicIntegerArray(count);
+            this.pending = new AtomicIntegerArray(plan.initialPending());
+            this.completed = new AtomicIntegerArray(count);
+            this.running = new Future<?>[count];
+            this.timers = new ScheduledFuture<?>[count];
+            this.dependentIndices = plan.dependentIndices();
+            this.disabled = new boolean[count];
 
-            for (int i = 0; i < count; i++) {
-                index.put(nodes[i], i);
-                pending.set(i, nodes[i].dependencyArray().length);
-            }
-
-            int[] outDegree = new int[count];
-            for (int i = 0; i < count; i++) {
-                for (Node dependency : nodes[i].dependencyArray()) {
-                    outDegree[indexOf(dependency)]++;
-                }
-            }
-            this.dependentIndices = new int[count][];
-            for (int i = 0; i < count; i++) {
-                dependentIndices[i] = new int[outDegree[i]];
-            }
-            int[] cursor = new int[count];
-            for (int i = 0; i < count; i++) {
-                for (Node dependency : nodes[i].dependencyArray()) {
-                    int dependencyIndex = indexOf(dependency);
-                    dependentIndices[dependencyIndex][cursor[dependencyIndex]++] = i;
+            if (disabledIds != null) {
+                for (String id : disabledIds) {
+                    graph.find(id).ifPresent(node -> disabled[node.graphIndex()] = true);
                 }
             }
 
-            for (int i = 0; i < count; i++) {
-                if (pending.get(i) == 0) {
-                    ready.add(nodes[i]);
-                }
+            for (int root : plan.roots()) {
+                ready.add(nodes[root]);
             }
         }
 
         private int indexOf(Node node) {
-            Integer value = index.get(node);
-            if (value == null) {
+            int value = node.graphIndex();
+            if (value < 0 || value >= nodes.length) {
                 throw new IllegalStateException(
                         "Executor: dependency outside this graph: " + node.id());
             }
@@ -713,11 +729,11 @@ public final class Executor implements AutoCloseable {
         }
 
         private boolean disabled(Node node) {
-            return disabled.contains(node.id());
+            return disabled[node.graphIndex()];
         }
 
         private boolean markCompleted(Node node) {
-            return completed.add(node);
+            return completed.compareAndSet(node.graphIndex(), 0, 1);
         }
 
         private void releaseDependents(Node node) {
@@ -729,8 +745,12 @@ public final class Executor implements AutoCloseable {
         }
 
         private void registerRunning(Node node, Future<?> future) {
+            int index = node.graphIndex();
             synchronized (running) {
-                running.put(node, future);
+                if (completed.get(index) == 1) {
+                    return;
+                }
+                running[index] = future;
                 if (aborted.get()) {
                     future.cancel(true);
                 }
@@ -739,7 +759,39 @@ public final class Executor implements AutoCloseable {
 
         private void unregisterRunning(Node node) {
             synchronized (running) {
-                running.remove(node);
+                running[node.graphIndex()] = null;
+            }
+        }
+
+        private void cancelRunning(Node node) {
+            Future<?> future;
+            synchronized (running) {
+                future = running[node.graphIndex()];
+            }
+            if (future != null) {
+                future.cancel(true);
+            }
+        }
+
+        private void registerTimer(Node node, ScheduledFuture<?> timer) {
+            int index = node.graphIndex();
+            synchronized (timers) {
+                if (completed.get(index) == 1) {
+                    timer.cancel(false);
+                    return;
+                }
+                timers[index] = timer;
+            }
+        }
+
+        private void cancelTimer(Node node) {
+            int index = node.graphIndex();
+            synchronized (timers) {
+                ScheduledFuture<?> timer = timers[index];
+                if (timer != null) {
+                    timers[index] = null;
+                    timer.cancel(false);
+                }
             }
         }
 
@@ -748,9 +800,13 @@ public final class Executor implements AutoCloseable {
                 return;
             }
             abortReason = reason;
-            List<Future<?>> futures;
+            List<Future<?>> futures = new ArrayList<>();
             synchronized (running) {
-                futures = new ArrayList<>(running.values());
+                for (Future<?> future : running) {
+                    if (future != null) {
+                        futures.add(future);
+                    }
+                }
             }
             for (Future<?> future : futures) {
                 future.cancel(true);

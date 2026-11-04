@@ -33,6 +33,7 @@ lary/
 ├─ src/main/java/io/lark/
 │  ├─ metric/      Event / Monitor abstraction
 │  ├─ dag/         DAG framework (Node + Op layers)
+│  ├─ rank/        greedy / beam / backtracking slate ranking
 │  └─ column/
 │     ├─ tensor/    Tensor / TensorShape / store / FeedFetch / TensorKernel / TensorKernels
 │     ├─ data/      Cell / Row
@@ -45,23 +46,22 @@ lary/
 ├─ src/test/java/io/lark/
 │  ├─ metric/
 │  ├─ dag/
+│  ├─ rank/
 │  └─ column/
 ├─ examples/                     # separate Gradle application module
 │  ├─ build.gradle.kts
 │  └─ src/main/java/io/lark/examples/
 │     ├─ SimplePipeline.java     # DAG Node tour
 │     ├─ OpPipeline.java         # Op / Aspect tour
-│     ├─ search/                 # search ranking project
-│     │  ├─ SearchDemo.java
-│     │  ├─ schema/ node/ module/ data/  # rows, modules, PV top-k
-│     └─ recsys/                 # search / recommendation metrics project
-│        ├─ RecSysDemo.java      # single-run demo
-│        ├─ RecSysBenchmark.java # warmed-up steady-state benchmark
-│        ├─ MetricResultPrinter.java
-│        ├─ schema/              # Column<T> definitions (one file)
-│        ├─ node/                # one file per business node
-│        ├─ module/              # one file per module
-│        └─ data/                # item-level metric repository
+│     ├─ rank/                   # greedy / beam / backtracking demo
+│     ├─ search/                 # typed search schema + module + demo
+│     │  ├─ SearchDemo.java      # request model, rows and CLI
+│     │  ├─ SearchSchema.java    # Column<T> definitions
+│     │  ├─ SearchModule.java    # feeds, operators, formula, PV top-k
+│     │  └─ SearchResult.java    # typed result records
+│     └─ demo/                   # complete end-to-end demo + benchmark
+│        ├─ FullRankingDemo.java
+│        └─ FullRankingBenchmark.java
 └─ spring/                       # optional Spring Boot integration
    ├─ build.gradle.kts
    └─ src/main/java/io/lark/spring/
@@ -107,12 +107,12 @@ org.gradle.java.installations.paths=/path/to/jdk-25
 ./gradlew clean test :examples:build
 ./gradlew build :examples:build :spring:build
 
-./gradlew :examples:runRecsys    # search/recommendation metric project
-./gradlew :examples:runRecsysBenchmark # warmed-up steady-state benchmark
-./gradlew :examples:runSearch    # row feed -> PV top-k ranking demo
+./gradlew :examples:runSearch    # row feed -> PV top-k search graph
+./gradlew :examples:runRank      # greedy / beam slot ranking
+./gradlew :examples:runFullDemo  # DAG + column + ranking end to end
+./gradlew :examples:runFullBenchmark # warmed-up throughput for the full demo
 ./gradlew :examples:runSimple    # DAG Node layer
 ./gradlew :examples:runOp        # DAG Op + Aspect layer
-./gradlew :spring:runSpringRecsys # recsys demo through Spring Boot
 ./gradlew :spring:runSpringSearch # auto-discovered search graph through Spring Boot
 ```
 
@@ -123,154 +123,90 @@ also cover wide/deep ready-queue scheduling and array/varargs node definitions;
 `ModulePipelineTest` covers fluent/columnar boundaries, plan reuse after a
 failed recompile, module snapshots, and retryable module definitions;
 `ExecutionGraphTest` covers the separated `OpSpec` + `TensorKernel` path and
-the compatibility `OpTensor` path. The `:examples` module has
-`RecSysMetricTest` and `SearchDemoTest` for the metric and row-fed
-search/top-k graphs; `:spring` has Spring context tests for scanning,
+the compatibility `OpTensor` path. `SequentialRankerTest` and
+`BeamSearchRankerTest` cover admission lifecycles, indexed scoring and stable
+sorting. The `:examples` module has `SearchDemoTest` and
+`FullRankingDemoTest` for the row-fed search/top-k graph and the complete
+DAG + column + ranking path; `:spring` has Spring context tests for scanning,
 constructor injection and the prototype pipeline.
 
-## Search / recommendation metrics demo
+## End-to-end ranking demo
 
 ```sh
-./gradlew :examples:runRecsys
+./gradlew :examples:runFullDemo
 ```
 
-`RecSysDemo` is the realistic column-engine sample. It is deliberately split
-into independent classes under `io.lark.examples.recsys`, not nested in one
-demo class:
+`FullRankingDemo` is the complete demo. It runs one request through all three
+layers and prints every stage's statistics and output:
 
-```text
-recsys/
-├─ RecSysDemo.java            # composition + main
-├─ MetricResultPrinter.java   # presentation
-├─ schema/                    # Column<T> definitions (one file)
-├─ node/                      # one class per business node
-├─ module/                    # one class per module
-└─ data/                      # item-level metric repository
-```
-
-The graph computes search/ranking business metrics:
-
-1. **FunnelMetricModule** — raw aggregates → `ctr`, `cvr`, `gmv`,
-   `coupon_cost`, `buyagain_cost`, `coupon_roi`.
-2. **RankingWeightModule** — combines the metrics into `weight`:
-   ```text
-   weight = 100*ctr + 50*cvr + 0.01*gmv + 0.5*coupon_roi
-            - 0.5*buyagain_cost
-   ```
-3. **PerformanceSummaryModule** — aggregates `overall_ctr`, `overall_cvr`,
-   `total_gmv`, `total_coupon_cost`, `overall_roi`, `overall_buyagain_cost`
-   and `average_weight`.
-
-Metric definitions:
-
-| Metric | Formula |
-|---|---|
-| `ctr` | `clicks / impressions` |
-| `cvr` | `orders / clicks` |
-| `gmv` | `gmv_fen / 100` |
-| `buyagain_cost` | `coupon_cost / buy_again_orders` |
-| `coupon_roi` | `gmv / coupon_cost` |
-| `weight` | `100*ctr + 50*cvr + 0.01*gmv + 0.5*coupon_roi - 0.5*buyagain_cost` |
-
-All ratios return `0` when the denominator is zero.
-
-There are **no user/item id columns**: the rows are already item-level
-aggregates; ids are lookup keys, not inputs to columnar metric computation.
-
-Sample feed rows (`MetricsRepository`):
-
-| impressions | clicks | orders | gmv_fen | coupon_cost_fen | buy_again_orders |
-|---:|---:|---:|---:|---:|---:|
-| 1000 | 50 | 5 | 50000 | 1000 | 1 |
-| 2000 | 100 | 20 | 300000 | 5000 | 4 |
-| 500 | 10 | 1 | 8000 | 200 | 0 |
-| 1500 | 120 | 30 | 600000 | 8000 | 10 |
-| 800 | 40 | 8 | 120000 | 2000 | 2 |
-| 1200 | 90 | 18 | 250000 | 3000 | 6 |
-
-`MetricsFeed.sample(metrics)` builds the typed feed from those rows.
-`RecSysMetricTest` additionally uses a small `MockMetrics` fixture with
-all-zero rows and zero coupon cost / zero repeat orders to exercise the
-zero-denominator paths.
-
-Composition and typed wiring:
+1. **DAG (`Node`)** — `load_request` and `load_config` run concurrently, then
+   `validate` depends on both and publishes a typed `Prepared` value. The run
+   reports per-node timing through `StatsCollector`.
+2. **Column (`ColumnModule`)** — `SearchModule` feeds raw request rows, computes
+   CTR/CVR/GMV/coupon/retarget/delay columns, applies the experiment-aware
+   `F` formula, applies `score * perturbation + originalScore`, and selects the
+   top-k goods per `pv_id` with `TopKOp`.
+3. **Ranking (`rank`)** — greedy `SequentialRanker` and
+   `BeamSearchRanker` fill the final slate from the column-selected candidates
+   with category gap, brand quota and budget admissions. Both use
+   `IndexedSlotScorer`, so candidate objects never move and no intermediate
+   candidate list is allocated per slot.
 
 ```java
-FunnelMetricModule metrics = new FunnelMetricModule();
-RankingWeightModule ranking = new RankingWeightModule(metrics);
-PerformanceSummaryModule summary =
-        new PerformanceSummaryModule(metrics, ranking);
+FullRankingDemo.Result result = FullRankingDemo.run(300);
 
-try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
-    pipeline.addAll(metrics, ranking, summary)
-            .compile()
-            .feed(MetricsFeed.sample(metrics))
-            .compute();
+result.prepared().dagStats();       // Node-stage timing + statuses
+result.column().selectedCount();    // PV top-k selection size
+result.column().candidates();       // selected goods, sorted by base score
+result.greedy();                    // RankingResult<ScoredGoods>
+result.beam();                      // RankingResult<ScoredGoods>
+```
 
-    List<Row> rows = pipeline.fetch(FetchStream.of(
-            metrics.impressions(), metrics.clicks(), metrics.ctr(),
-            metrics.cvr(), metrics.gmv(), metrics.buyAgainCost(),
-            metrics.couponRoi(), ranking.weight()));
-    System.out.println(pipeline.fetchScalar(summary.overallRoi()));
+The search graph itself is a normal typed module:
+
+```java
+SearchModule module = new SearchModule(topK, workers);
+
+try (ColumnPipeline pipeline = new ColumnPipeline(workers)) {
+    pipeline.add(module)
+            .setExperiment(request.context().experiment())
+            .executeTensors(module.feedTensorMap(SearchDemo.rows(request)),
+                    FetchStream.of(
+                            module.shared(SearchSchema.ADJUSTED_SCORE.doubleColumn()),
+                            module.shared(SearchSchema.SELECTED.longColumn())),
+                    ColumnRunContext.of(request.context()));
+
+    Tensor adjusted = pipeline.fetchTensor(
+            SearchSchema.ADJUSTED_SCORE.columnName());
+    Tensor selected = pipeline.fetchTensor(
+            SearchSchema.SELECTED.columnName());
 }
 ```
 
-Business modules define computation nodes without touching tensors:
-
-```java
-private final ColumnStream<Double> ctr =
-        node(ColumnOps.ratio(RecSysMetrics.CTR), clicks, impressions);
-private final ColumnStream<Double> ctcvr =
-        node(ColumnOps.mul(RecSysMetrics.CTCVR), ctr, cvr);
-```
-
-Each node binds exactly one `ColumnOp`; inputs are module feeds or other node
-outputs. Feed and fetch streams belong to the module. Advanced custom nodes can
-still extend `ColumnNode`/`UnaryNode`/`BinaryNode`, but normal business code
-uses `ColumnOps` and typed streams.
-
-Sample output:
-
-```text
-=== search / recommendation metrics ===
-impressions    clicks      ctr      cvr          gmv  buyagain_cost coupon_roi     weight
-1000               50   0.0500   0.1000       500.00        10.0000    50.0000    35.0000
-2000              100   0.0500   0.2000      3000.00        12.5000    60.0000    68.7500
-500                10   0.0200   0.1000        80.00         0.0000    40.0000    27.8000
-1500              120   0.0800   0.2500      6000.00         8.0000    75.0000   114.0000
-800                40   0.0500   0.2000      1200.00        10.0000    60.0000    52.0000
-1200               90   0.0750   0.2000      2500.00         5.0000    83.3333    81.6667
-overall_ctr            = 0.058571
-overall_cvr            = 0.200000
-total_gmv              = 13280.00
-total_coupon_cost      = 192.00
-overall_roi            = 69.1667
-overall_buyagain_cost  = 8.3478
-average_weight         = 63.2028
-```
-
-The run also emits per-module timing and CPU-pressure statistics through the
-same monitoring layer as the DAG examples.
+A typical run prints the DAG waterfall, column phase timings and CPU pressure,
+then the greedy and beam slates with their final scores and deltas. The default
+run uses 300 candidates and a top-30 slate.
 
 ### Steady-state benchmark
 
-The demo's `RunStats` covers one six-row run, so it is useful for attribution
-but includes JIT and class-loading cost. For throughput, use the warmed-up
-benchmark:
+A single `RunStats` sample includes JIT compilation, class loading and module
+construction. For throughput, use the warmed-up benchmark:
 
 ```sh
-./gradlew :examples:runRecsysBenchmark
-./gradlew :examples:runRecsysBenchmark \
-    -Plary.bench.rows=200000 -Plary.bench.warmup=20 -Plary.bench.iterations=50 \
-    -Plary.bench.workers=4
+./gradlew :examples:runFullBenchmark
+./gradlew :examples:runFullBenchmark \
+    -Plary.full.candidates=2000 -Plary.full.warmup=20 -Plary.full.iterations=50
 ```
 
-`RecSysBenchmark` repeats the sample rows, runs unmeasured warm-up iterations,
-then reports median and p95 timings for feed, compute, fetch and the whole
-run. Defaults are 100,000 rows, 10 warm-up iterations, 30 measured iterations
-and 4 compute workers. The benchmark still uses a synthetic dataset; compare
-configurations on the same machine and JDK rather than treating the absolute
-numbers as a hardware-independent baseline.
+`FullRankingBenchmark` discards warm-up iterations, then reports median, p95,
+min and max for the total request, the DAG stage, the column stage and both
+rankers. It creates a fresh `ColumnPipeline` and `SearchModule` per request, so
+the numbers include graph build/compile cost. Defaults are 1,000 candidates,
+8 warm-up iterations and 20 measured iterations. Compare configurations on the
+same machine and JDK rather than treating absolute numbers as a hardware
+baseline.
+
+See `examples/README.md` for the full demo layout.
 
 ## Tensor-aware search / retargeting demo
 
@@ -280,73 +216,71 @@ numbers as a hardware-independent baseline.
 
 `SearchDemo` models a search request end to end:
 
-1. `SearchContext` carries `pvId`, `userId`, `query` and `topK`.
-2. `SearchRepository` simulates a `GoodsList` of 1,000 `GoodsDO` rows with
-   impressions, clicks, orders, GMV, coupon cost, retargeting counters and
-   delay counters. `GoodsDO` also exposes row-level `ctr()`, `cvr()`, `gmv()`
-   and `couponCost()` helpers; the graph recomputes metrics from the raw feed.
-3. `SearchFeed` flattens the context and goods rows into typed feed streams.
-4. The module graph computes metrics, composes a ranking score, applies
-   `score * perturbation + originalScore`, and selects the top 30 goods for
-   each `pv_id`.
-5. The selected columns are fetched back as rows, then mapped to typed
-   `RankedGoods` items inside `SearchRankingService`.
-
-Business code does not need to assemble modules or read positional `Row`
-cells:
+1. `SearchContext` carries `pvId`, `userId`, `query`, `topK` and an
+   `ExperimentContext`.
+2. `SearchDemo.simulate(context, 1_000)` generates a `GoodsList` of `GoodsDO`
+   rows with impressions, clicks, orders, GMV, coupon cost, retargeting
+   counters and delay counters. `GoodsDO` also exposes row-level `ctr()`,
+   `cvr()`, `gmv()` and `couponCost()` helpers; the graph recomputes metrics
+   from raw feed columns.
+3. `SearchDemo.rows(request)` flattens each goods row into a typed
+   `SearchRow(pvId, goods)`; `SearchModule` maps them to primitive tensors with
+   `feed(Column<T>, getter)`.
+4. The graph computes metrics, composes the experiment-aware ranking score,
+   applies `score * perturbation + originalScore`, and selects the top 30 goods
+   for each `pv_id`.
+5. The selected columns are fetched back as rows and mapped to typed
+   `SearchResult.RankedGoods` items.
 
 ```java
-SearchContext context = SearchRepository.sampleContext();
-SearchRequest request = SearchRepository.simulate(context, 1_000);
+SearchDemo.SearchContext context = SearchDemo.sampleContext();
+SearchDemo.SearchRequest request = SearchDemo.simulate(context, 1_000);
 
-SearchRankingService service = SearchRankingService.create(context.topK(), 4);
-SearchResult result = service.search(request);
-
-for (RankedGoods goods : result.ranked()) {
+SearchResult result = new SearchModule(context.topK(), 4).search(request);
+for (SearchResult.RankedGoods goods : result.ranked()) {
     System.out.printf("%d. goods=%d score=%.4f%n",
             goods.rank(), goods.goodsId(), goods.adjustedScore());
 }
 ```
 
-With Spring, the same graph is discovered automatically. Search modules are
-`@ColumnComponent`s, so `@EnableLaryColumns` and `ColumnPipelineFactory`
-collect and inject them; application code does not list modules. Only runtime
-data and configuration remain explicit:
+`SearchModule` is a single `@ColumnComponent` module that declares every feed,
+node, formula and output. With Spring, `@EnableLaryColumns` discovers it and
+`ColumnPipelineFactory` supplies a fresh mutable pipeline per request; the
+application does not hand-assemble module lists:
 
 ```java
-@SpringBootApplication
-@EnableLaryColumns(basePackages = "io.lark.examples.search.module")
+@SpringBootApplication(proxyBeanMethods = false)
+@EnableLaryColumns(basePackages = "io.lark.examples.search")
 class App {
-    @Bean SearchRankingOptions options() { return new SearchRankingOptions(30); }
-    // Spring injects SearchInputModule, AdjustedScoreModule, TopKModule, ...
 }
 ```
 
-`SearchRankingService` is a normal bean; its pipeline supplier is
-`ColumnPipelineFactory::create`, so each request gets a fresh mutable pipeline.
-The Spring demo runs with `./gradlew :spring:runSpringSearch`.
+The Spring demo obtains the module and factory and calls
+`module.search(pipeline, request)`; it runs with
+`./gradlew :spring:runSpringSearch`.
 
-| Module | Output | Shape |
+The graph outputs are ordinary typed columns:
+
+| Output | Formula | Shape |
 |---|---|---|
-| `SearchInputModule` | feed handles for `pv_id`, `goods_id`, raw counters, perturbation and original score; ids are published for result fetch | 1-D feeds |
-| `CtrModule` | `ctr = clicks / impressions` | 1-D |
-| `CvrModule` | `cvr = orders / clicks` | 1-D |
-| `CtCvrModule` | `ctcvr = ctr * cvr` | 1-D |
-| `RebuySameLossModule` | `rebuy_same_loss = 1 - buyagain` | 1-D |
-| `BuyAgainModule` (buyagain) | `buyagain = buy_again_orders / orders` | 1-D |
-| `CouponRoiModule` | `couponroi = gmv / coupon_cost` | 1-D |
-| `RetargetAdModule` | click share, cost share, ROI per row | 2-D `[rows, 3]` |
-| `GmvModule` | `gmv = gmv_fen / 100` | 1-D |
-| `DelayModule` | order/GMV on-time and delayed shares | 3-D `[rows, 2, 2]` |
-| `RankingScoreModule` | `100*ctr + 50*cvr + 0.01*gmv + 0.5*couponroi - 0.5*rebuy_same_loss` | 1-D |
-| `AdjustedScoreModule` | `ranking_score * perturbation + original_score` | 1-D |
-| `TopKModule` | top-`k` selection flag per `pv_id` | 1-D INT64 |
+| `ctr` | `clicks / impressions` | 1-D |
+| `cvr` | `orders / clicks` | 1-D |
+| `ctcvr` | `ctr * cvr` | 1-D |
+| `gmv` | `gmv_fen / 100` | 1-D |
+| `buyagain` | `buy_again_orders / orders` | 1-D |
+| `rebuy_same_loss` | `1 - buyagain` | 1-D |
+| `couponroi` | `gmv / coupon_cost` | 1-D |
+| `retargetAd` | click share, cost share and ROI per row | 2-D `[rows, 3]` |
+| `delay` | order/GMV on-time and delayed shares | 3-D `[rows, 2, 2]` |
+| `ranking_score` | `100*ctr + 50*cvr + 0.01*gmv + 0.5*couponroi - 0.5*rebuy_same_loss` | 1-D |
+| `adjusted_score` | `ranking_score * perturbation + original_score` | 1-D |
+| `selected` | top-`k` flag per `pv_id` | 1-D INT64 |
 
-PV-level integration is a regular framework node: `ColumnOps.topK` receives
-the score column and the `pv_id` group column, then emits an INT64 selection
-flag per row. The demo runs one PV with 1,000 candidates; the test feeds two
-PVs with 1,000 goods each and verifies 30 selected rows per PV. Ties are
-broken by original row order, so repeated runs are deterministic.
+PV-level integration is a regular business node: `TopKOp` receives the score
+column and the `pv_id` group column, then emits an INT64 selection flag per
+row. The demo runs one PV with 1,000 candidates; `SearchDemoTest` feeds two PVs
+with 1,000 goods each and verifies 30 selected rows per PV. Ties are broken by
+original row order, so repeated runs are deterministic.
 
 The demo prints the selected top-30 goods with their adjusted scores, then
 fetches the retargeting and delay tensors with `fetchTensor(...)` so their
@@ -371,7 +305,7 @@ NumExpr couponBoost = F.when(
         F.weighted(F.col(gmv), "rerank.coupon_boost_w", 0.02),
         F.val(0.0));
 
-score = formula(SearchMetrics.RANKING_SCORE,
+score = formula(SearchSchema.RANKING_SCORE.doubleColumn(),
         F.chooseVariant("rerank",
                 Map.of("control", control,
                         "coupon_boost", control.add(couponBoost)),
@@ -388,9 +322,9 @@ compute primitives; branches do not rebuild the graph.
 
 For configuration-driven formulas, `FormulaConfig.of(map)` accepts a
 JSON/YAML-friendly tree and compiles it against typed column handles. The
-search demo keeps the formula in `SearchFormulaConfig` rather than hard-coding
-it in the module; applications can deserialize the same shape with Jackson,
-SnakeYAML or their own configuration loader:
+demo keeps the formula in `SearchModule.rankingFormula(...)`; applications that
+need external configuration can deserialize the same tree with Jackson,
+SnakeYAML or their own loader and compile it at startup:
 
 ```java
 FormulaConfig config = FormulaConfig.of(Map.of(
@@ -437,8 +371,10 @@ a definition needs an explicit id. `Node.compute` / `Node.run` are blocking.
 The executor uses a **dependency-counter ready queue**: nodes are started only
 after their dependencies complete, and only running node bodies get virtual
 threads. This avoids one parked dependency-waiting thread per node while keeping
-independent nodes concurrent. `Schedule.run(ctx, PoolKind.COMPUTE, work)` is
-the pool-hop equivalent of the C++ `co_await Schedule(...)`.
+independent nodes concurrent. The graph's indegrees, reverse adjacency and root
+set are compiled once into a `GraphPlan`; each run allocates only the mutable
+counters. `Schedule.run(ctx, PoolKind.COMPUTE, work)` is the pool-hop
+equivalent of the C++ `co_await Schedule(...)`.
 
 `StatsCollector` records per-node (and per-op) status/timing without
 serializing completion on a stats lock. `ExecutionStats.summary()` now includes
@@ -497,18 +433,28 @@ fetch streams.
 ### Define the schema once
 
 No empty class per column. Declare immutable `Column<T>` definitions in one
-schema file:
+schema file (the example uses an enum with typed accessors):
 
 ```java
-public final class RecSysMetrics {
-    public static final Column<Long> IMPRESSIONS =
-            new Column<>("impressions", DType.INT64);
-    public static final Column<Long> CLICKS =
-            new Column<>("clicks", DType.INT64);
-    public static final Column<Double> CTR =
-            new Column<>("ctr", DType.FLOAT64);
-    public static final Column<Double> BUYAGAIN_COST =
-            new Column<>("buyagain_cost", DType.FLOAT64);
+public enum SearchSchema {
+    IMPRESSIONS("impressions", DType.INT64),
+    CLICKS("clicks", DType.INT64),
+    CTR("ctr", DType.FLOAT64),
+    CTCVR("ctcvr", DType.FLOAT64);
+
+    private final Column<?> column;
+
+    SearchSchema(String name, DType dtype) {
+        this.column = new Column<>(name, dtype);
+    }
+
+    public Column<Long> longColumn() {
+        return (Column<Long>) column;      // dtype-checked in the real demo
+    }
+
+    public Column<Double> doubleColumn() {
+        return (Column<Double>) column;
+    }
 }
 ```
 
@@ -517,8 +463,8 @@ a `ColumnStream<T>` handle from it when a module declares an input or a node
 declares an output:
 
 ```java
-ColumnStream<Long> impressions = input(RecSysMetrics.IMPRESSIONS);
-ColumnStream<Double> ctr = fetch(RecSysMetrics.CTR);
+ColumnStream<Long> impressions = feed(SearchSchema.IMPRESSIONS.longColumn());
+ColumnStream<Double> ctr = required(SearchSchema.CTR.doubleColumn());
 ```
 
 `ColumnContext` validates the tensor dtype on read/write, and typed feed
@@ -526,59 +472,72 @@ columns are coerced to their declared dtype. This is intentionally preferred
 over one empty subclass per metric: the schema stays in one place while the
 generic type still prevents mixing long and double columns.
 
-An enum can also be used as a schema factory if a project prefers that style;
-the important part is that `Column<T>` definitions are values, while nodes own
-the computation.
-
 ### Nodes define the business logic
 
-The preferred business API is `ColumnOps` + `ColumnStream`:
+The preferred business API is a declarative `ColumnOperator` class or instance
+plus typed `ColumnStream` handles:
 
 ```java
-private final ColumnStream<Double> ctr =
-        node(ColumnOps.ratio(RecSysMetrics.CTR), clicks, impressions);
-private final ColumnStream<Double> cvr =
-        node(ColumnOps.ratio(RecSysMetrics.CVR), orders, clicks);
-private final ColumnStream<Double> ctcvr =
-        node(ColumnOps.mul(RecSysMetrics.CTCVR), ctr, cvr);
+var ctr = node(SearchSchema.CTR.doubleColumn(), RatioOp.class, clicks,
+        impressions);
+var cvr = node(SearchSchema.CVR.doubleColumn(), RatioOp.class, orders,
+        clicks);
+var ctcvr = node(SearchSchema.CTCVR.doubleColumn(), MulOp.class, ctr, cvr);
 ```
 
 `ctcvr` is a node output wired from two other node outputs. Each node binds one
-op; the module owns the graph structure and its feed/fetch streams. No
+operator; the module owns the graph structure and its feed/fetch streams. No
 `Tensor`, tensor shape or kernel type appears in normal module code. Built-ins
-include `add`, `sub`, `mul`, `ratio`, `mulAdd`, `oneMinus`, `scale` and
-`topK`; `topK` groups by a PV/group column and emits INT64 selection flags.
+include `AddOp`, `SubOp`, `MulOp`, `DivOp`, `RatioOp`, `MulAddOp`,
+`OneMinusOp`, `ScaleOp`, `ExperimentScaleOp`, `VariantSwitchOp`, `ParamOp`,
+`StackOp` and `TopKOp`; `TopKOp` groups by a PV/group column and emits INT64
+selection flags.
 
-For custom formulas or aggregations, `ColumnOps` can be extended with a
-domain-specific `ColumnOp`; `OpNode` and `TensorKernel` remain internal
-framework details. The older `UnaryNode`/`BinaryNode`/custom `ColumnNode`
-extension API is still supported for advanced nodes.
+For custom formulas or aggregations, implement `ColumnOperator`; `OpNode` and
+`TensorKernel` remain internal framework details. The `UnaryNode` /
+`BinaryNode` / custom `ColumnNode` extension API is still supported for
+advanced nodes, and `ModuleNode<O>` is the typed single-output base.
 
 ### Modules compose typed columns
 
-```java
-public final class FunnelMetricModule extends ColumnModule {
-    private final ColumnStream<Long> impressions =
-            feed(RecSysMetrics.IMPRESSIONS);
-    private final ColumnStream<Long> clicks =
-            feed(RecSysMetrics.CLICKS);
-    private final CtrNode ctr = node(new CtrNode(clicks, impressions));
+A module implements the three ordered build phases and keeps typed fields:
 
-    public FunnelMetricModule() {
-        fetch(ctr.out());
+```java
+@ColumnComponent
+public final class CtrModule extends ColumnModule<SearchRow> {
+    private ColumnStream<Long> impressions;
+    private ColumnStream<Long> clicks;
+    private ColumnStream<Double> ctr;
+
+    @Override
+    protected void buildFeeds(ColumnGraphContext context) {
+        impressions = feed(SearchSchema.IMPRESSIONS.longColumn(),
+                row -> row.goods().impressions());
+        clicks = feed(SearchSchema.CLICKS.longColumn(),
+                row -> row.goods().clicks());
     }
 
-    public ColumnStream<Long> impressions() { return impressions; }
-    public ColumnStream<Long> clicks() { return clicks; }
+    @Override
+    protected void buildNodes(ColumnGraphContext context) {
+        ctr = node(SearchSchema.CTR.doubleColumn(), RatioOp.class,
+                clicks, impressions);
+    }
+
+    @Override
+    protected void buildFetches(ColumnGraphContext context) {
+        fetch(ctr);
+    }
+
     public ColumnStream<Double> ctr() {
-        return published(RecSysMetrics.CTR);
+        return published(SearchSchema.CTR.doubleColumn());
     }
 }
 ```
 
 `feed` / `node` / `fetch` are the declarative forms of `input` / `add` /
-`output`; the older names remain as aliases. Nodes are still independent
-classes and the module only composes them.
+`output`; the older names remain as aliases. `feed(Column, getter)` also
+declares the primitive row mapping, so `feedTensorMap(rows)` builds tensors
+without `Cell`/`Row` objects.
 
 - `published(Column<T>)` exposes one fetch output by schema definition, so a
   consumer module gets a typed `ColumnStream<T>` without casts or strings.
@@ -586,30 +545,40 @@ classes and the module only composes them.
   boundary adapters and inspection. Business compute should keep using typed
   fields; the maps do not remove dtype checks by themselves.
 - Node ids are generated by the framework.
-- Dependencies are **class/stream references** (`new CtrNode(clicks, impressions)`),
+- Dependencies are **stream references** (`node(..., clicks, impressions)`),
   never node names.
 - Modules may depend on multiple modules with
   `dependsOn(FirstModule.class, SecondModule.class, ...)`; the module graph is a
   DAG and cycles are rejected.
-- `ColumnNode` / `ModuleNode` `feeds()` / `fetches()` and module `nodes()`, `inputs()`,
-  `outputs()`, `dependencies()` return snapshots; their arity is fixed after
-  construction. Internal scheduler/compiler paths use package-private views.
+- `ColumnNode` / `ModuleNode` `feeds()` / `fetches()` and module `nodes()`,
+  `inputs()`, `outputs()`, `dependencies()` return snapshots; their arity is
+  fixed after construction. Internal scheduler/compiler paths use
+  package-private views.
 - Rows contain metric data, not user/item ids. Ids are lookup keys; column
   computation operates on measurable business columns.
 
-Module-to-module wiring stays typed:
+Module-to-module wiring stays typed. `required(Column<T>)` resolves a shared
+node output produced by an earlier module:
 
 ```java
-public final class RankingWeightModule extends ColumnModule {
-    public RankingWeightModule(FunnelMetricModule funnel) {
-        RankingWeightNode weight = node(new RankingWeightNode(
-                funnel.published(RecSysMetrics.CTR),
-                funnel.published(RecSysMetrics.CVR),
-                funnel.published(RecSysMetrics.GMV),
-                funnel.published(RecSysMetrics.COUPON_ROI),
-                funnel.published(RecSysMetrics.BUYAGAIN_COST)));
-        dependsOn(FunnelMetricModule.class);
-        fetch(weight.out());
+@ColumnComponent
+public final class ScaledCtrModule extends ColumnModule<SearchRow> {
+    @Override
+    protected void build() {
+        dependsOn(CtrModule.class);
+        super.build();
+    }
+
+    @Override
+    protected void buildNodes(ColumnGraphContext context) {
+        var ctr = required(SearchSchema.CTR.doubleColumn());
+        node(SearchSchema.RANKING_SCORE.doubleColumn(),
+                new ScaleOp(100.0), ctr);
+    }
+
+    @Override
+    protected void buildFetches(ColumnGraphContext context) {
+        fetch(SearchSchema.RANKING_SCORE.doubleColumn());
     }
 }
 ```
@@ -667,6 +636,26 @@ Compilation is separated into `PipelineCompiler` and an immutable
 requested outputs again reuses it. The ready-queue schedulers precompute integer
 dependent indices, avoiding identity-map lookups on every completed edge.
 
+All three schedulers now cache their structural plan:
+
+- `Graph` builds a `GraphPlan` once (indegrees, reverse adjacency and roots);
+  every `Executor.execute` copies only the primitive counters.
+- `OpGraph.compile()` builds a reusable `Plan` for `OpExecutor`, and aspects are
+  exposed as a cached array instead of a defensive `List.copyOf` per op.
+- `ComputeGraph.finalizeGraph()` builds a `Plan` with insertion-order indexes,
+  reverse adjacency, roots, output names and module indexes. Repeated runs skip
+  all identity maps and per-module `ConcurrentHashMap` lookups.
+- The ready queues store node references directly, so node indexes are not
+  boxed on enqueue/dequeue.
+- `Executor` and `OpExecutor` submit a `FutureTask` wrapper whose `done()`
+  covers success, failure and cancellation-before-start. Timeout/abort paths
+  therefore complete exactly once without a per-node `CompletableFuture`
+  chain.
+- Declarative `OpNode`s bind their `TensorKernel` directly in
+  `PipelineCompiler`; only custom/formula nodes pay for the business
+  `ColumnContext` adapter. This removes two context allocations per operator
+  node and one array round-trip per run.
+
 If a column node performs blocking I/O, enable virtual compute threads with
 `pipeline.setVirtualComputeThreads(true)` (Spring:
 `lary.column.virtual-threads: true`). The ready queue is unchanged, but
@@ -700,8 +689,11 @@ copying defaults:
   tensor.
 
 Module definitions are initialized idempotently: reentrant and failed
-`define()` calls cannot leave a module half-initialized, and `feedMap()` /
-`fetchMap()` cache immutable name views after initialization.
+`build()` calls cannot leave a module half-initialized, and `feedMap()` /
+`fetchMap()` cache immutable name views after initialization. Feed tensor
+conversion precomputes the per-column getter/dtype arrays once per module and
+iterates the row list directly, avoiding list indexing and repeated dtype
+checks in the inner loop.
 
 Node monitoring events carry a `module` attribute, so `RunStats` attributes
 ops to the owning module even though node ids are generated. Integer
@@ -713,9 +705,10 @@ not serialize the scheduler on a stats lock.
 
 A single `RunStats` run measures one feed/compute/fetch cycle, including JIT
 and class-loading effects on short nodes. Use warm-up iterations and multiple
-samples for throughput decisions; `:examples:runRecsysBenchmark` does this with
-median and p95 reporting. Sub-millisecond per-op timings remain sensitive to
-JIT compilation, CPU frequency and monitoring overhead.
+samples for throughput decisions; `:examples:runFullBenchmark` does this with
+median and p95 reporting across the DAG, column and ranking stages.
+Sub-millisecond per-op timings remain sensitive to JIT compilation, CPU
+frequency and monitoring overhead.
 
 ### Classpath discovery without Spring
 
@@ -724,10 +717,10 @@ directories and jars and needs no Spring dependency:
 
 ```java
 @ColumnComponent
-public final class RecSysModule extends ColumnModule { ... }
+public final class SearchModule extends ColumnModule { ... }
 
 pipeline.scan("com.example.features");
-RecSysModule recsys = pipeline.module(RecSysModule.class);
+SearchModule search = pipeline.module(SearchModule.class);
 ```
 
 This scanner requires a no-argument constructor. It is not the Spring
@@ -793,14 +786,13 @@ lary:
 Run the Spring demos:
 
 ```sh
-./gradlew :spring:runSpringRecsys
 ./gradlew :spring:runSpringSearch
 ```
 
-They live under `spring/src/test/java/io/lark/spring/` and use the same schema,
-nodes and modules as the `:examples` demos. The search demo has no manual module
-list: component scanning supplies every `ColumnModule` bean and
-`SearchRankingService` wraps the per-request pipeline.
+It lives under `spring/src/test/java/io/lark/spring/` and uses the same
+`SearchModule` as the `:examples` demo. The demo has no manual module list:
+component scanning supplies the `ColumnModule` bean and the application calls
+`module.search(pipeline, request)` with a factory-created per-request pipeline.
 
 
 ### Graph pruning and cycle detection
@@ -929,8 +921,9 @@ TensorKernel kernel = TensorKernels.create(spec);
 graph.addNode("sum", "module", spec, kernel);
 ```
 
-Business modules compile to an `OpSpec("business", ...)` plus
-`BusinessNodeKernel`; the rest of the pipeline never sees business-node
+Business modules compile to an `OpSpec("business", ...)` plus either the
+declarative `OperatorKernel` (for `OpNode`) or `BusinessNodeKernel` (for
+custom/formula nodes); the rest of the pipeline never sees business-node
 internals. `OpTensor` / `TensorOps` are kept for source compatibility and are
 marked legacy in the source documentation.
 
@@ -946,7 +939,7 @@ marked legacy in the source documentation.
 | `io.lark.column.compute` | `Compute`, `VectorOps`, `Simd` |
 | `io.lark.column.op` | `OpSpec` graph descriptor; legacy `OpTensor`, `OpContext`, `TensorOps`, `ZerosTensor` and typed compatibility ops (`FloatAddTensor`, …) |
 | `io.lark.column.exec` | `ComputeNode` (binds `OpSpec` + `TensorKernel`), `ComputeGraph`, `ExecutionContext` — scheduling layer |
-| `io.lark.column.biz` | typed business API: `Column<T>`, `ColumnStream<T>`, `ColumnOp` / `ColumnOps` (one-op nodes), `ModuleNode<O>` / `FormulaNode` / `F` / `FormulaConfig` (typed formulas, external config and experiments), `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode` / `ZerosNode` (advanced), `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `PipelineCompiler` / `PipelinePlan`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
+| `io.lark.column.biz` | typed business API: `Column<T>`, `ColumnStream<T>`, `ColumnOperator` + declarative operators (`biz/op/*`), `ModuleNode<O>` / `FormulaNode` / `F` / `FormulaConfig` (typed formulas, external config and experiments), `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode` / `ZerosNode` (advanced), `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `PipelineCompiler` / `PipelinePlan`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
 | `io.lark.column.context` | `ExperimentContext` (per-run variants and parameters) |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |

@@ -24,7 +24,6 @@ import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.CompletionException;
-import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutionException;
@@ -58,6 +57,7 @@ public final class ComputeGraph {
     private final Map<String, ComputeNode> byId = new LinkedHashMap<>();
     private final Map<Long, ComputeNode> byIndex = new LinkedHashMap<>();
     private List<ComputeNode> topo = List.of();
+    private Plan plan;
     private boolean finalized;
 
     public ComputeNode addNode(String id, String module, OpSpec op,
@@ -82,6 +82,7 @@ public final class ComputeGraph {
         byIndex.put(index, node);
         nodes.add(node);
         finalized = false;
+        plan = null;
         return node;
     }
 
@@ -119,6 +120,7 @@ public final class ComputeGraph {
         byIndex.remove(placeholder.globalIndex());
         nodes.remove(placeholder);
         finalized = false;
+        plan = null;
     }
 
     public boolean hasPlaceholders() {
@@ -166,6 +168,7 @@ public final class ComputeGraph {
             node.addDependency(dependency);
         }
         finalized = false;
+        plan = null;
     }
 
     /** Topologically sort and detect cycles (Kahn's algorithm). */
@@ -210,35 +213,35 @@ public final class ComputeGraph {
         }
 
         topo = List.copyOf(order);
+        plan = new Plan(nodes, topo);
         finalized = true;
+    }
+
+    /** Precomputed scheduler metadata for the finalized graph. */
+    private Plan schedulerPlan() {
+        if (!finalized) {
+            finalizeGraph();
+        }
+        return plan;
     }
 
     /** Sequential execution in topological order on the calling thread. */
     public void execute(ExecutionContext ctx) {
         Objects.requireNonNull(ctx, "ctx");
-        if (!finalized) {
-            finalizeGraph();
-        }
+        Plan plan = schedulerPlan();
         resetRunState();
         if (nodes.isEmpty()) {
             return;
         }
-        reserveOutputs(ctx.store());
+        reserveOutputs(ctx.store(), plan);
 
-        RunState state = new RunState(nodes, ctx);
+        RunState state = new RunState(plan, ctx);
         state.execStartNanos = System.nanoTime();
 
-        for (ComputeNode node : topo) {
+        for (ComputeNode node : plan.topo()) {
             long start = System.nanoTime();
             emitNode(ctx, "node.start", node, 0, true);
-            ModuleAcc acc = state.module(node.module());
-            synchronized (acc) {
-                acc.count++;
-                if (!acc.started) {
-                    acc.started = true;
-                    acc.startNanos = start;
-                }
-            }
+            state.startModule(node, start);
 
             Throwable error = null;
             try {
@@ -250,9 +253,7 @@ public final class ComputeGraph {
             long elapsed = System.nanoTime() - start;
             node.setElapsedNanos(elapsed);
             state.busyNanos.addAndGet(elapsed);
-            synchronized (acc) {
-                acc.endNanos = Math.max(acc.endNanos, start + elapsed);
-            }
+            state.endModule(node, start, elapsed);
             boolean recovered = error != null
                     && invokeFallback(node, ctx, error);
             emitNode(ctx, error == null ? "node.end"
@@ -288,17 +289,15 @@ public final class ComputeGraph {
                              int workersHint) {
         Objects.requireNonNull(pool, "pool");
         Objects.requireNonNull(ctx, "ctx");
-        if (!finalized) {
-            finalizeGraph();
-        }
+        Plan plan = schedulerPlan();
         resetRunState();
         if (nodes.isEmpty()) {
             return;
         }
-        reserveOutputs(ctx.store());
+        reserveOutputs(ctx.store(), plan);
 
         int workers = Math.max(1, workersHint);
-        RunState state = new RunState(nodes, ctx);
+        RunState state = new RunState(plan, ctx);
         state.execStartNanos = System.nanoTime();
 
         state.start(pool);
@@ -313,14 +312,7 @@ public final class ComputeGraph {
         long start = System.nanoTime();
         try {
             emitNode(ctx, "node.start", node, 0, true);
-            ModuleAcc acc = state.module(node.module());
-            synchronized (acc) {
-                acc.count++;
-                if (!acc.started) {
-                    acc.started = true;
-                    acc.startNanos = start;
-                }
-            }
+            state.startModule(node, start);
 
             Throwable error = null;
             try {
@@ -332,9 +324,7 @@ public final class ComputeGraph {
             long elapsed = System.nanoTime() - start;
             node.setElapsedNanos(elapsed);
             state.busyNanos.addAndGet(elapsed);
-            synchronized (acc) {
-                acc.endNanos = Math.max(acc.endNanos, start + elapsed);
-            }
+            state.endModule(node, start, elapsed);
             boolean recovered = error != null
                     && invokeFallback(node, ctx, error);
             emitNode(ctx, error == null ? "node.end"
@@ -365,10 +355,8 @@ public final class ComputeGraph {
         }
     }
 
-    private void reserveOutputs(TensorStore store) {
-        for (ComputeNode node : nodes) {
-            store.ensureNames(node.opSpec().outputs());
-        }
+    private void reserveOutputs(TensorStore store, Plan plan) {
+        store.ensureNames(plan.outputs());
     }
 
     private static int workers(ExecutorService pool) {
@@ -402,11 +390,12 @@ public final class ComputeGraph {
         }
         Monitor monitor = ctx.monitor();
         try {
-            for (Map.Entry<String, ModuleAcc> entry : state.modules.entrySet()) {
-                ModuleAcc acc = entry.getValue();
+            String[] moduleNames = state.plan.moduleNames;
+            for (int i = 0; i < moduleNames.length; i++) {
+                ModuleAcc acc = state.modules[i];
                 synchronized (acc) {
                     long duration = acc.started ? Math.max(0, acc.endNanos - acc.startNanos) : 0;
-                    monitor.emit(new Event("column", "module.end", entry.getKey())
+                    monitor.emit(new Event("column", "module.end", moduleNames[i])
                             .durationNanos(duration)
                             .attr("node_count", Integer.toString(acc.count)));
                 }
@@ -455,58 +444,92 @@ public final class ComputeGraph {
         private boolean started;
     }
 
-    private static final class RunState {
-        private final ExecutionContext ctx;
+    /**
+     * Immutable scheduler metadata built once when the graph is finalized.
+     * Every run copies only the primitive dependency counters, not the
+     * adjacency maps or reverse-edge arrays.
+     */
+    private static final class Plan {
+
         private final ComputeNode[] nodes;
-        private final AtomicIntegerArray pending;
+        private final ComputeNode[] topo;
+        private final int[] initialPending;
         private final int[][] dependentIndices;
-        private final ConcurrentLinkedQueue<Integer> ready =
-                new ConcurrentLinkedQueue<>();
-        private final AtomicBoolean pumping = new AtomicBoolean(false);
-        private final AtomicBoolean aborted = new AtomicBoolean(false);
-        private final AtomicIntegerArray completed;
-        private final AtomicInteger remaining;
-        private final CountDownLatch done = new CountDownLatch(1);
-        private final Map<String, ModuleAcc> modules = new ConcurrentHashMap<>();
-        private final AtomicLong busyNanos = new AtomicLong();
-        private long execStartNanos;
+        private final int[] roots;
+        private final String[] outputs;
+        private final String[] moduleNames;
+        private final int[] nodeModule;
 
-        private RunState(List<ComputeNode> graphNodes, ExecutionContext ctx) {
-            this.ctx = ctx;
-            int count = graphNodes.size();
-            this.nodes = graphNodes.toArray(ComputeNode[]::new);
-            this.pending = new AtomicIntegerArray(count);
-            this.remaining = new AtomicInteger(count);
+        private Plan(List<ComputeNode> nodes, List<ComputeNode> topo) {
+            int count = nodes.size();
+            this.nodes = nodes.toArray(ComputeNode[]::new);
+            this.topo = topo.toArray(ComputeNode[]::new);
+            this.initialPending = new int[count];
+            this.dependentIndices = new int[count][];
 
-            this.completed = new AtomicIntegerArray(count);
+            Map<String, Integer> moduleIndex = new LinkedHashMap<>();
+            this.moduleNames = new String[moduleCount(nodes, moduleIndex)];
+            this.nodeModule = new int[count];
             for (int i = 0; i < count; i++) {
-                nodes[i].setGraphIndex(i);
-                pending.set(i, nodes[i].dependencyView().size());
+                this.nodes[i].setGraphIndex(i);
+                this.initialPending[i] = this.nodes[i].dependencyView().size();
+                this.nodeModule[i] = moduleIndex.get(this.nodes[i].module());
             }
 
             int[] outDegree = new int[count];
             for (int i = 0; i < count; i++) {
-                for (ComputeNode dependency : nodes[i].dependencyView()) {
+                for (ComputeNode dependency : this.nodes[i].dependencyView()) {
                     outDegree[indexOf(dependency)]++;
                 }
             }
-            this.dependentIndices = new int[count][];
             for (int i = 0; i < count; i++) {
                 dependentIndices[i] = new int[outDegree[i]];
             }
             int[] cursor = new int[count];
             for (int i = 0; i < count; i++) {
-                for (ComputeNode dependency : nodes[i].dependencyView()) {
+                for (ComputeNode dependency : this.nodes[i].dependencyView()) {
                     int dependencyIndex = indexOf(dependency);
                     dependentIndices[dependencyIndex][cursor[dependencyIndex]++] = i;
                 }
             }
 
+            int rootCount = 0;
             for (int i = 0; i < count; i++) {
-                if (pending.get(i) == 0) {
-                    ready.add(i);
+                if (initialPending[i] == 0) {
+                    rootCount++;
                 }
             }
+            this.roots = new int[rootCount];
+            int root = 0;
+            for (int i = 0; i < count; i++) {
+                if (initialPending[i] == 0) {
+                    roots[root++] = i;
+                }
+            }
+
+            int outputCount = 0;
+            for (ComputeNode node : this.nodes) {
+                outputCount += node.opSpec().outputs().size();
+            }
+            this.outputs = new String[outputCount];
+            int output = 0;
+            for (ComputeNode node : this.nodes) {
+                for (String name : node.opSpec().outputs()) {
+                    outputs[output++] = name;
+                }
+            }
+            for (Map.Entry<String, Integer> entry : moduleIndex.entrySet()) {
+                moduleNames[entry.getValue()] = entry.getKey();
+            }
+        }
+
+        private static int moduleCount(List<ComputeNode> nodes,
+                                       Map<String, Integer> moduleIndex) {
+            for (ComputeNode node : nodes) {
+                moduleIndex.computeIfAbsent(node.module(),
+                        key -> moduleIndex.size());
+            }
+            return moduleIndex.size();
         }
 
         private int indexOf(ComputeNode node) {
@@ -516,6 +539,67 @@ public final class ComputeGraph {
                         "ComputeGraph: dependency outside this graph: " + node.id());
             }
             return value;
+        }
+
+        ComputeNode[] nodes() {
+            return nodes;
+        }
+
+        ComputeNode[] topo() {
+            return topo;
+        }
+
+        int[] initialPending() {
+            return initialPending.clone();
+        }
+
+        int[][] dependentIndices() {
+            return dependentIndices;
+        }
+
+        int[] roots() {
+            return roots;
+        }
+
+        String[] outputs() {
+            return outputs;
+        }
+    }
+
+    private static final class RunState {
+        private final ExecutionContext ctx;
+        private final Plan plan;
+        private final ComputeNode[] nodes;
+        private final AtomicIntegerArray pending;
+        private final int[][] dependentIndices;
+        private final ConcurrentLinkedQueue<ComputeNode> ready =
+                new ConcurrentLinkedQueue<>();
+        private final AtomicBoolean pumping = new AtomicBoolean(false);
+        private final AtomicBoolean aborted = new AtomicBoolean(false);
+        private final AtomicIntegerArray completed;
+        private final AtomicInteger remaining;
+        private final CountDownLatch done = new CountDownLatch(1);
+        private final ModuleAcc[] modules;
+        private final AtomicLong busyNanos = new AtomicLong();
+        private long execStartNanos;
+
+        private RunState(Plan plan, ExecutionContext ctx) {
+            this.ctx = ctx;
+            this.plan = plan;
+            this.nodes = plan.nodes();
+            int count = nodes.length;
+            this.pending = new AtomicIntegerArray(plan.initialPending());
+            this.remaining = new AtomicInteger(count);
+            this.completed = new AtomicIntegerArray(count);
+            this.dependentIndices = plan.dependentIndices();
+            this.modules = new ModuleAcc[plan.moduleNames.length];
+            for (int i = 0; i < modules.length; i++) {
+                modules[i] = new ModuleAcc();
+            }
+
+            for (int root : plan.roots()) {
+                ready.add(nodes[root]);
+            }
         }
 
         private void start(ExecutorService pool) {
@@ -528,8 +612,8 @@ public final class ComputeGraph {
             }
             try {
                 while (!aborted.get()) {
-                    Integer index = ready.poll();
-                    if (index == null) {
+                    ComputeNode node = ready.poll();
+                    if (node == null) {
                         pumping.set(false);
                         // Close the enqueue-during-drain race: a producer that
                         // observed pumping == true will not pump again.
@@ -539,7 +623,6 @@ public final class ComputeGraph {
                         }
                         continue;
                     }
-                    ComputeNode node = nodes[index];
                     try {
                         pool.execute(() -> runNode(node, pool, ctx, this));
                     } catch (RejectedExecutionException rejected) {
@@ -575,13 +658,31 @@ public final class ComputeGraph {
         private void releaseDependents(int index) {
             for (int dependentIndex : dependentIndices[index]) {
                 if (pending.decrementAndGet(dependentIndex) == 0) {
-                    ready.add(dependentIndex);
+                    ready.add(nodes[dependentIndex]);
                 }
             }
         }
 
-        private ModuleAcc module(String name) {
-            return modules.computeIfAbsent(name, key -> new ModuleAcc());
+        private ModuleAcc module(ComputeNode node) {
+            return modules[plan.nodeModule[node.graphIndex()]];
+        }
+
+        private void startModule(ComputeNode node, long startNanos) {
+            ModuleAcc acc = module(node);
+            synchronized (acc) {
+                acc.count++;
+                if (!acc.started) {
+                    acc.started = true;
+                    acc.startNanos = startNanos;
+                }
+            }
+        }
+
+        private void endModule(ComputeNode node, long startNanos, long elapsed) {
+            ModuleAcc acc = module(node);
+            synchronized (acc) {
+                acc.endNanos = Math.max(acc.endNanos, startNanos + elapsed);
+            }
         }
 
         private void completeOne() {

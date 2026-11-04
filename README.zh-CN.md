@@ -2,8 +2,9 @@
 
 [English README](README.md)
 
-`lary` 是一个独立的 Java 25 实现，包含 DAG 框架和列式计算引擎。核心库不依赖
-Spring；`:examples` 是示例工程；`:spring` 是可选的 Spring Boot 集成模块。
+`lary` 是一个独立的 Java 25 实现，包含 DAG 框架、列式计算引擎和排序框架。
+核心库不依赖 Spring；`:examples` 是示例工程；`:spring` 是可选的 Spring Boot
+集成模块。
 
 ## 主要能力
 
@@ -11,10 +12,11 @@ Spring；`:examples` 是示例工程；`:spring` 是可选的 Spring Boot 集成
   注册表、KV 与箭头 DSL、统计、超时、fallback 和连续超时隔离。
 - **列式计算**：`Column<T>` schema、`ColumnStream<T>`、`ModuleNode<O>` /
   `ColumnModule`、`ColumnPipeline`。
+- **排序**：`SequentialRanker`（贪心）、`BeamSearchRanker`（束搜索）和
+  `BacktrackingRanker`，支持准入规则、索引评分和稳定基数排序。
 - **分层执行**：`OpSpec`（图描述）→ `ComputeNode`（调度/绑定）→
   `TensorKernel`（纯执行算子）→ `Tensor`（数据）。
-- **张量**：底层仍是一维原始数组，通过 `TensorShape` 描述 1–3 维形状，例如
-  `[batch, candidate, feature]`。
+- **张量**：底层仍是一维原始数组，通过 `TensorShape` 描述 1–3 维形状。
 - **SIMD**：算术、标量广播、比较、归约和一元运算使用
   `jdk.incubator.vector`。
 - **可观测性**：`RunStats` / `StatsCollector` 记录阶段、形状、节点数、执行模式、
@@ -25,16 +27,57 @@ Spring；`:examples` 是示例工程；`:spring` 是可选的 Spring Boot 集成
 ```sh
 ./gradlew clean test :examples:build :spring:build
 
-./gradlew :examples:runSearch          # 行数据输入 -> PV top-k 搜索示例
-./gradlew :examples:runRecsys          # 搜索推荐指标示例
-./gradlew :examples:runRecsysBenchmark # warm-up 后的稳定基准
 ./gradlew :examples:runSimple          # DAG Node 示例
 ./gradlew :examples:runOp              # DAG Op + Aspect 示例
-./gradlew :spring:runSpringRecsys      # Spring Boot 版本
+./gradlew :examples:runSearch          # 行数据输入 -> PV top-k 搜索图
+./gradlew :examples:runRank            # 贪心 / 束搜索排序
+./gradlew :examples:runFullDemo        # DAG + 列式计算 + 排序完整链路
+./gradlew :examples:runFullBenchmark   # warm-up 后的稳定基准
 ./gradlew :spring:runSpringSearch      # Spring 自动发现搜索图版本
 ```
 
 需要 JDK 25。列式计算和测试使用 `jdk.incubator.vector`，构建脚本已经配置。
+
+## 完整 demo：DAG → 列式计算 → 排序
+
+`FullRankingDemo` 演示一次完整请求：
+
+1. **DAG**：`load_request` 与 `load_config` 并行执行，`validate` 依赖两者，
+   产出类型化的 `Prepared`。`StatsCollector` 记录每个节点的耗时和状态。
+2. **列式计算**：`SearchModule` 从原始行计算 CTR/CVR/GMV/优惠券/重定向/延迟
+   指标，执行实验感知公式和 `score * perturbation + originalScore`，最后用
+   `TopKOp` 按 `pv_id` 选出 top-k。
+3. **排序**：`SequentialRanker` 和 `BeamSearchRanker` 在选中的候选上填充最终
+   slate，应用品类间隔、品牌配额和预算准入规则。两者都使用
+   `IndexedSlotScorer`，候选对象不移动，每个 slot 不分配中间候选列表。
+
+```java
+FullRankingDemo.Result result = FullRankingDemo.run(300);
+
+result.prepared().dagStats();    // DAG 阶段耗时与状态
+result.column().selectedCount(); // PV top-k 选中的数量
+result.column().candidates();    // 按基础分排序的选中商品
+result.greedy();                 // RankingResult<ScoredGoods>
+result.beam();                   // RankingResult<ScoredGoods>
+```
+
+运行 `./gradlew :examples:runFullDemo` 会打印 DAG 瀑布图、列式计算阶段耗时和
+CPU 压力，以及贪心/束搜索的最终 slate。默认 300 个候选、top-30。
+
+### 稳定基准
+
+单次 `RunStats` 包含 JIT、类加载和构图开销，不适合直接做吞吐结论。使用：
+
+```sh
+./gradlew :examples:runFullBenchmark
+./gradlew :examples:runFullBenchmark \
+    -Plary.full.candidates=2000 -Plary.full.warmup=20 -Plary.full.iterations=50
+```
+
+`FullRankingBenchmark` 先丢弃 warm-up，再输出总请求、DAG、列式计算和两个排序器
+的中位数、p95、最小值和最大值。每次请求都会新建 `ColumnPipeline` 和
+`SearchModule`，因此包含构图/编译成本。默认 1,000 个候选、8 次 warm-up、
+20 次采样。
 
 ## 张量形状
 
@@ -75,113 +118,85 @@ Tensor                                      数据容器（扁平数组 + shape�
 
 新的内部执行路径使用 `OpSpec` + `TensorKernel`。`TensorKernel` 只接收
 `KernelContext` 中已解析的输入并输出张量，不接触节点 id、依赖边或输入输出名。
-二元和三元算子共享广播规则；`mul_add` 就是常见的
-`score * perturbation + originalScore`。`OpTensor` / `TensorOps` 作为兼容
-API 保留。
+`OpTensor` / `TensorOps` 作为兼容 API 保留。
 
-Op 层支持声明式零张量：
-
-```java
-OpTensor zeros = TensorOps.create(new OpSpec(
-        "zeros", List.of(), List.of("z"),
-        Map.of("dtype", "float64", "shape", "2,3")));
-zeros.compute(new OpContext(store));
-```
-
-业务层可以使用 `ZerosNode`：
-
-```java
-ColumnStream<Double> zeros =
-        node(new ZerosNode<>(FEATURES, TensorShape.of(rows, 3))).out();
-```
+声明式 `OpNode` 在 `PipelineCompiler` 中直接绑定 `TensorKernel`，避免业务
+`ColumnContext` 和额外 `KernelContext` 的中转；只有自定义节点和公式节点走
+`BusinessNodeKernel`。
 
 ## 业务节点定义
 
-业务侧通过 `ColumnOps` 定义节点，不接触 `Tensor`、shape 或 kernel：
+业务侧通过声明式算子类和类型化 `ColumnStream` 定义节点：
 
 ```java
-private final ColumnStream<Double> ctr =
-        node(ColumnOps.ratio(SearchMetrics.CTR), clicks, impressions);
-private final ColumnStream<Double> cvr =
-        node(ColumnOps.ratio(SearchMetrics.CVR), orders, clicks);
-private final ColumnStream<Double> ctcvr =
-        node(ColumnOps.mul(SearchMetrics.CTCVR), ctr, cvr);
+var ctr = node(SearchSchema.CTR.doubleColumn(), RatioOp.class, clicks,
+        impressions);
+var cvr = node(SearchSchema.CVR.doubleColumn(), RatioOp.class, orders,
+        clicks);
+var ctcvr = node(SearchSchema.CTCVR.doubleColumn(), MulOp.class, ctr, cvr);
 ```
 
-- 每个 node 只绑定一个 `ColumnOp`。
-- node 输入可以是 module feed，也可以是其他 node 的 `ColumnStream` 输出。
-- `feed(...)` / `output(...)` 属于 module，描述整个模块的输入输出边界。
-- 内置算子包括 `add`、`sub`、`mul`、`ratio`、`mulAdd`、`oneMinus`、
-  `scale`、`topK`；`topK` 按 PV/分组列选取并输出 INT64 标记。
-- 复杂自定义公式可以通过扩展 `ColumnOp` 实现，`OpNode`/`TensorKernel` 是框架内部细节。
+- 每个 node 只绑定一个 `ColumnOperator`。
+- 输入可以是 module feed，也可以是其他 node 的 `ColumnStream` 输出。
+- 内置算子包括 `AddOp`、`SubOp`、`MulOp`、`DivOp`、`RatioOp`、`MulAddOp`、
+  `OneMinusOp`、`ScaleOp`、`ExperimentScaleOp`、`VariantSwitchOp`、
+  `ParamOp`、`StackOp`、`TopKOp`；`TopKOp` 按 PV/分组列输出 INT64 标记。
+- 复杂业务可以扩展 `ColumnOperator` 或 `ModuleNode<O>`；`OpNode` /
+  `TensorKernel` 是框架内部细节。
 
-## 搜索系统示例
+## 搜索示例
 
 `SearchDemo` 模拟一次完整搜索请求：
 
-1. `SearchContext` 保存 `pvId`、`userId`、`query` 和 `topK`。
-2. `SearchRepository` 生成一个包含 1,000 个 `GoodsDO` 的 `GoodsList`，
-   每行带曝光、点击、订单、GMV、优惠券成本、重定向和延迟计数；`GoodsDO`
-   还提供 `ctr()`、`cvr()`、`gmv()`、`couponCost()` 行级访问方法。
-3. `SearchFeed` 把 context 和 goods 行展开为带类型的输入流并喂给计算图。
-4. 模块图计算指标、生成排序分、执行
-   `score * perturbation + originalScore`，最后按 `pv_id` 选出 top 30。
-5. 选中的 `goods_id`、调整后分数和选择标记先取回为行数据，再由
-   `SearchRankingService` 映射成类型化的 `RankedGoods`。
-
-业务代码不需要自己组装 module，也不需要读 `Row.get(2)` 这种位置化字段：
+1. `SearchContext` 保存 `pvId`、`userId`、`query`、`topK` 和
+   `ExperimentContext`。
+2. `SearchDemo.simulate(context, 1_000)` 生成 1,000 个 `GoodsDO`，每行带曝光、
+   点击、订单、GMV、优惠券成本、重定向和延迟计数。
+3. `SearchDemo.rows(request)` 把每行转成 `SearchRow(pvId, goods)`；
+   `SearchModule` 用 `feed(Column<T>, getter)` 直接构建原始张量。
+4. 模块图计算指标、实验感知排序分、`score * perturbation + originalScore`，
+   并按 `pv_id` 选出 top 30。
+5. 选中列回取为行，再映射为类型化 `SearchResult.RankedGoods`。
 
 ```java
-SearchContext context = SearchRepository.sampleContext();
-SearchRequest request = SearchRepository.simulate(context, 1_000);
+SearchDemo.SearchContext context = SearchDemo.sampleContext();
+SearchDemo.SearchRequest request = SearchDemo.simulate(context, 1_000);
 
-SearchRankingService service = SearchRankingService.create(context.topK(), 4);
-SearchResult result = service.search(request);
-
-for (RankedGoods goods : result.ranked()) {
+SearchResult result = new SearchModule(context.topK(), 4).search(request);
+for (SearchResult.RankedGoods goods : result.ranked()) {
     System.out.printf("%d. goods=%d score=%.4f%n",
             goods.rank(), goods.goodsId(), goods.adjustedScore());
 }
 ```
 
-使用 Spring 时，模块构造可以完全交给容器。搜索模块都标了
-`@ColumnComponent`，`@EnableLaryColumns` 会扫描并注册，`ColumnPipelineFactory`
-会自动收集所有 module 并注入构造函数依赖，业务代码不需要手写 module 列表。
-仍然显式保留的只有运行时数据和配置：
+`SearchModule` 是 `@ColumnComponent`。Spring 场景下 `@EnableLaryColumns` 会
+发现模块，`ColumnPipelineFactory` 为每次请求创建新的可变 pipeline：
 
 ```java
-@SpringBootApplication
-@EnableLaryColumns(basePackages = "io.lark.examples.search.module")
+@SpringBootApplication(proxyBeanMethods = false)
+@EnableLaryColumns(basePackages = "io.lark.examples.search")
 class App {
-    @Bean SearchRankingOptions options() { return new SearchRankingOptions(30); }
-    // SearchInputModule、AdjustedScoreModule、TopKModule 等由 Spring 注入
 }
 ```
 
-`SearchRankingService` 本身也是普通 Spring Bean，pipeline 通过
-`ColumnPipelineFactory::create` 按请求创建，避免共享可变 pipeline。运行：
-`./gradlew :spring:runSpringSearch`。
+运行：`./gradlew :spring:runSpringSearch`。
 
-| 模块 | 计算 | 输出形状 |
+主要输出列：
+
+| 输出 | 计算 | 形状 |
 |---|---|---|
-| `SearchInputModule` | `pv_id`、`goods_id`、原始计数、perturbation、original_score 输入流；id 同时发布供结果回取 | 1 维输入流 |
-| `CtrModule` | `clicks / impressions` | 1 维 |
-| `CvrModule` | `orders / clicks` | 1 维 |
-| `CtCvrModule` | `ctr * cvr` | 1 维 |
-| `RebuySameLossModule` | `1 - buyagain` | 1 维 |
-| `BuyAgainModule`（buyagain） | `buy_again_orders / orders` | 1 维 |
-| `CouponRoiModule` | `gmv / coupon_cost` | 1 维 |
-| `RetargetAdModule` | 点击占比、成本占比、ROI | 2 维 `[rows, 3]` |
-| `GmvModule` | `gmv_fen / 100` | 1 维 |
-| `DelayModule` | 订单/GMV 准时与延迟占比 | 3 维 `[rows, 2, 2]` |
-| `RankingScoreModule` | `100*ctr + 50*cvr + 0.01*gmv + 0.5*couponroi - 0.5*rebuy_same_loss` | 1 维 |
-| `AdjustedScoreModule` | `ranking_score * perturbation + original_score` | 1 维 |
-| `TopKModule` | 按 `pv_id` 分组的 top-k 选择标记 | 1 维 INT64 |
-
-PV 级别整合也是一个普通框架节点：`ColumnOps.topK` 接收分数列和 `pv_id`
-分组列，输出每行的 INT64 选择标记。示例运行单个 PV、1,000 个候选商品；测试
-会喂入两个 PV、每个 1,000 个商品，并校验每个 PV 恰好选中 30 行。分数相同
-时按原始行序稳定排序，因此重复运行结果一致。
+| `ctr` | `clicks / impressions` | 1 维 |
+| `cvr` | `orders / clicks` | 1 维 |
+| `ctcvr` | `ctr * cvr` | 1 维 |
+| `gmv` | `gmv_fen / 100` | 1 维 |
+| `buyagain` | `buy_again_orders / orders` | 1 维 |
+| `rebuy_same_loss` | `1 - buyagain` | 1 维 |
+| `couponroi` | `gmv / coupon_cost` | 1 维 |
+| `retargetAd` | 点击占比、成本占比、ROI | 2 维 `[rows, 3]` |
+| `delay` | 订单/GMV 准时与延迟占比 | 3 维 `[rows, 2, 2]` |
+| `ranking_score` | 加权公式 | 1 维 |
+| `adjusted_score` | `ranking_score * perturbation + original_score` | 1 维 |
+| `selected` | 按 `pv_id` 分组的 top-k 标记 | 1 维 INT64 |
 
 ### 复杂公式与实验编排
 
@@ -201,79 +216,48 @@ NumExpr couponBoost = F.when(
         F.weighted(F.col(gmv), "rerank.coupon_boost_w", 0.02),
         F.val(0.0));
 
-score = formula(SearchMetrics.RANKING_SCORE,
+score = formula(SearchSchema.RANKING_SCORE.doubleColumn(),
         F.chooseVariant("rerank",
                 Map.of("control", control,
                         "coupon_boost", control.add(couponBoost)),
                 control));
 ```
 
-每个请求通过 `ExperimentContext` 携带实验层和参数（demo 放在
-`SearchContext` 中），`ColumnPipeline.setExperiment(...)` 将其传给所有公式
-节点。`F.param(...)` 控制系数，`F.variant(...)` 控制实验层，`F.when(...)`
-控制行级条件，`F.caseWhen(...)` 支持多分支，`F.chooseVariant(...)` 选择整段
-公式。`NumExpr` / `BoolExpr` 是类型化表达式，使用列式算子和广播计算，
-分支切换不需要重新构图。
+每个请求通过 `ExperimentContext` 携带实验层和参数，
+`ColumnPipeline.setExperiment(...)` 将其传给所有公式节点。`F.param(...)`
+控制系数，`F.variant(...)` 控制实验层，`F.when(...)` 控制行级条件，
+`F.caseWhen(...)` 支持多分支，`F.chooseVariant(...)` 选择整段公式。分支切换
+不需要重新构图。
 
 需要配置化时使用 `FormulaConfig.of(map)`；它接受 JSON/YAML 友好的树结构，
-再绑定到类型化列。搜索 demo 的公式放在 `SearchFormulaConfig` 中，应用可以
-用 Jackson、SnakeYAML 或自己的配置加载器反序列化同样的结构：
+再绑定到类型化列。应用可以用 Jackson、SnakeYAML 或自己的配置加载器反序列化
+同样的结构。
 
-```java
-FormulaConfig config = FormulaConfig.of(Map.of(
-        "op", "sum",
-        "terms", List.of(
-                Map.of("op", "weighted", "column", "ctr",
-                        "key", "rerank.ctr_w", "default", 100.0),
-                Map.of("op", "weighted", "column", "cvr",
-                        "key", "rerank.cvr_w", "default", 50.0))));
+边界：这一层解决行级打分/资格公式；PV 聚合、模型推理和跨行窗口仍然应使用
+自定义 `ModuleNode`。如果实验需要完全不同的图拓扑，用 `ExperimentPipelines`
+为每个变体注册 pipeline supplier，再按请求路由到对应的新 pipeline。
 
-NumExpr score = config.compileNum(Map.of("ctr", ctr, "cvr", cvr));
-```
+## 性能设计
 
-边界也要说清楚：这一层解决行级打分/资格公式；PV 聚合、模型推理和跨行窗口
-仍然应使用自定义 `ModuleNode`。如果实验需要完全不同的图拓扑，用
-`ExperimentPipelines` 为每个变体注册一个 pipeline supplier，再按请求路由到
-对应的新 pipeline。`ColumnNode` 保留给旧的多输出节点，新业务单输出节点应
-继承 `ModuleNode<O>`。
+三个调度器都缓存结构计划，只在图结构变化时重建：
 
-运行：
+- `Graph` 在构图时生成 `GraphPlan`（入度、反向邻接、根节点），每次
+  `Executor.execute` 只复制原始计数器数组。
+- `OpGraph.compile()` 生成可复用的 `Plan`；Aspect 以缓存数组暴露，避免每个 op
+  做一次 `List.copyOf`。
+- `ComputeGraph.finalizeGraph()` 生成 `Plan`（插入序索引、反向邻接、根节点、
+  输出名和模块索引），重复执行不再创建 identity map，也不在热路径用
+  `ConcurrentHashMap` 查模块。
+- ready queue 直接存节点引用，避免 index 装箱。
+- `Executor` / `OpExecutor` 使用 `FutureTask.done()` 统一处理成功、失败和
+  “启动前被取消”，超时/中止不会漏完成，也不再有每节点 `CompletableFuture`
+  链。
+- `ColumnPipeline` 的声明式 `OpNode` 直接绑定 kernel；`FeedMapping` 预计算
+  getter/dtype 数组并直接遍历行列表。
 
-```sh
-./gradlew :examples:runSearch
-```
-
-示例会输出：
-
-- 按调整后分数排序的 top 30 商品及其 `goods_id`；
-- `retargetAd` 的 `1000x3` 张量形状及前几行指标；
-- `delay` 的 `1000x2x2` 张量形状及前几行订单/GMV 的准时/延迟占比；
-- `RunStats` 阶段耗时、节点数、成功/失败状态和 CPU 压力。
-
-## 业务 API 使用建议
-
-```java
-try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
-    pipeline.addAll(modules)
-            .compile()
-            .feed(feed)
-            .compute();
-
-    List<Row> rows = pipeline.fetch(FetchStream.of(ctr, cvr, gmv));
-    Tensor retarget = pipeline.fetchTensor(retargetAd);
-    Map<String, List<Cell>> allColumns = pipeline.fetchColumns();
-}
-```
-
-- 一个 Module 可以通过 `dependsOn(A.class, B.class, ...)` 依赖多个 Module；
-  Module 依赖图必须是有向无环图，出现环会在 `compile()` 时报错。
-- 每个并发运行使用独立 `ColumnPipeline`；pipeline 本身不是线程安全的。
-- 已有列式数据时使用 `feedTensors(Map<String, Tensor>)`，避免 cell 转置。
-- 大结果或张量结果优先使用 `fetchTensor` / `fetchTensors`。
-- 性能对比使用 `:examples:runRecsysBenchmark`，不要用单次小样本 `RunStats`
-  直接判断吞吐。
-- 阻塞型列节点可设置 `setVirtualComputeThreads(true)`，或提高
-  `compute-workers`。
+阻塞型列节点可设置 `setVirtualComputeThreads(true)`（Spring：
+`lary.column.virtual-threads: true`）；否则使用按 `compute-workers` 固定大小
+的平台线程池。每个并发运行使用独立 `ColumnPipeline`。
 
 ## 目录
 
@@ -282,19 +266,21 @@ lary/
 ├─ src/main/java/io/lark/
 │  ├─ metric/      Event / Monitor
 │  ├─ dag/         DAG / Op 调度
+│  ├─ rank/        贪心 / 束搜索 / 回溯排序
 │  └─ column/
 │     ├─ tensor/    Tensor / TensorShape / store / FeedFetch / TensorKernel / TensorKernels
 │     ├─ data/      Cell / Row
 │     ├─ compute/   Compute / VectorOps / Simd
 │     ├─ op/        OpSpec + 兼容 OpTensor/TensorOps
 │     ├─ exec/      ComputeNode / ComputeGraph
-│     ├─ biz/       ModuleNode / Formula / Module / Pipeline
+│     ├─ biz/       ModuleNode / Formula / Module / Pipeline / Operators
 │     └─ monitor/   RunStats / ColumnStatsCollector
 ├─ examples/
 │  └─ src/main/java/io/lark/examples/
-│     ├─ search/   搜索排序示例（行数据输入 -> PV top-k）
-│     └─ recsys/   搜索推荐指标示例
-└─ spring/         可选 Spring Boot 集成
+│     ├─ search/    类型化搜索 schema、模块和结果
+│     ├─ rank/      排序示例
+│     └─ demo/      完整链路 demo + 基准
+└─ spring/          可选 Spring Boot 集成
 ```
 
 ## 维护约定

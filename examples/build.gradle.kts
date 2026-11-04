@@ -115,3 +115,21 @@ tasks.register<JavaExec>("runRank") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("io.lark.examples.rank.SequentialRankDemo")
 }
+
+tasks.register<JavaExec>("runFullDemo") {
+    group = "application"
+    description = "Run the end-to-end DAG + column + ranking demo."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("io.lark.examples.demo.FullRankingDemo")
+}
+
+tasks.register<JavaExec>("runFullBenchmark") {
+    group = "application"
+    description = "Warmed-up benchmark for the end-to-end demo."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("io.lark.examples.demo.FullRankingBenchmark")
+    listOf("lary.full.candidates", "lary.full.warmup", "lary.full.iterations")
+            .forEach { key ->
+                (project.findProperty(key) as String?)?.let { systemProperty(key, it) }
+            }
+}

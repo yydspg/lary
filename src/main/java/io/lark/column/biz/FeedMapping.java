@@ -28,11 +28,19 @@ final class FeedMapping<T> {
 
     private final ColumnStream<?>[] streams;
     private final List<Value<? super T>> getters;
+    private final Value<? super T>[] getterArray;
+    private final boolean[] floating;
 
+    @SuppressWarnings("unchecked")
     private FeedMapping(ColumnStream<?>[] streams,
                         List<Value<? super T>> getters) {
         this.streams = streams;
         this.getters = List.copyOf(getters);
+        this.getterArray = this.getters.toArray(new Value[0]);
+        this.floating = new boolean[streams.length];
+        for (int i = 0; i < streams.length; i++) {
+            floating[i] = streams[i].dtype().isFloat();
+        }
     }
 
     /** Internal factory used when a module declares feeds with getters. */
@@ -49,8 +57,8 @@ final class FeedMapping<T> {
         for (T value : rows) {
             Cell[] cells = new Cell[streams.length];
             for (int i = 0; i < cells.length; i++) {
-                Value<? super T> getter = getters.get(i);
-                cells[i] = streams[i].dtype().isFloat()
+                Value<? super T> getter = getterArray[i];
+                cells[i] = floating[i]
                         ? Cell.of(getter.doubleValue(value))
                         : Cell.of(getter.longValue(value));
             }
@@ -63,20 +71,22 @@ final class FeedMapping<T> {
     Map<String, Tensor> tensors(List<? extends T> rows) {
         Objects.requireNonNull(rows, "rows");
         int count = rows.size();
-        Map<String, Tensor> result = new LinkedHashMap<>();
+        Map<String, Tensor> result = new LinkedHashMap<>(streams.length * 2);
         for (int column = 0; column < streams.length; column++) {
             ColumnStream<?> stream = streams[column];
-            Value<? super T> getter = getters.get(column);
-            if (stream.dtype().isFloat()) {
+            Value<? super T> getter = getterArray[column];
+            if (floating[column]) {
                 double[] values = new double[count];
-                for (int row = 0; row < count; row++) {
-                    values[row] = getter.doubleValue(rows.get(row));
+                int row = 0;
+                for (T value : rows) {
+                    values[row++] = getter.doubleValue(value);
                 }
                 result.put(stream.name(), Tensor.wrapDoubles(values));
             } else {
                 long[] values = new long[count];
-                for (int row = 0; row < count; row++) {
-                    values[row] = getter.longValue(rows.get(row));
+                int row = 0;
+                for (T value : rows) {
+                    values[row++] = getter.longValue(value);
                 }
                 result.put(stream.name(), Tensor.wrapLongs(values));
             }
