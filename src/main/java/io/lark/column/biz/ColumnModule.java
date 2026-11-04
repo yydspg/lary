@@ -4,6 +4,7 @@
 package io.lark.column.biz;
 
 import io.lark.column.ColumnDefinitionException;
+import io.lark.column.context.ColumnGraphContext;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -26,7 +27,7 @@ import java.util.Objects;
  *     private ColumnStream<Long> clicks;
  *     private ColumnStream<Double> ctr;
  *
- *     @Override protected void buildGraph() {
+ *     @Override protected void build() {
  *         impressions = feed(Metrics.IMPRESSIONS);
  *         clicks = feed(Metrics.CLICKS);
  *         ctr = node(Metrics.CTR, RatioOp.class, clicks, impressions);
@@ -34,7 +35,7 @@ import java.util.Objects;
  *     }
  * }</pre>
  *
- * <p>{@code buildGraph()} declares wiring only. The pipeline compiles the
+ * <p>{@code build()} declares wiring only. The pipeline compiles the
  * collected modules once, then handles feed, execution and fetch per run.
  *
  * <p>Nodes, inputs, outputs and dependencies are exposed as array snapshots;
@@ -59,6 +60,7 @@ public abstract class ColumnModule {
     private ColumnStream<?>[] outputs;
     private Class<? extends ColumnModule>[] dependencies;
     private InitState initState = InitState.NEW;
+    private ColumnGraphContext graphContext = ColumnGraphContext.empty();
     private volatile Map<String, ColumnStream<?>> feedMap;
     private volatile Map<String, ColumnStream<?>> fetchMap;
 
@@ -211,12 +213,30 @@ public abstract class ColumnModule {
      * graphs, prunes, executes and exposes the fetch streams; modules never
      * feed or execute themselves.
      */
-    protected void buildGraph() {
+    protected void build() {
         define();
     }
 
     /**
-     * Legacy graph-definition hook. New modules override {@link #buildGraph()};
+     * Build this module's graph with a framework/business context. Override
+     * this form when graph construction needs configuration:
+     *
+     * <pre>{@code
+     * @Override protected void build(ColumnGraphContext context) {
+     *     int k = (int) context.experiment().param("rerank.top_k", 30);
+     *     ...
+     * }
+     * }</pre>
+     *
+     * <p>Per-request values still use {@code ColumnRunContext}; this context is
+     * compile-time configuration only.
+     */
+    protected void build(ColumnGraphContext context) {
+        build();
+    }
+
+    /**
+     * Legacy graph-definition hook. New modules override {@link #build()};
      * this remains so existing modules keep working.
      */
     protected void define() {
@@ -295,7 +315,7 @@ public abstract class ColumnModule {
         int dependencyCount = dependencyBuilder.size();
         Map<String, ColumnStream<?>> inputsBefore = new LinkedHashMap<>(inputByName);
         try {
-            buildGraph();
+            build(graphContext);
             initState = InitState.READY;
         } catch (Throwable failure) {
             // A failed definition must not leave partial nodes/streams behind:
@@ -321,6 +341,21 @@ public abstract class ColumnModule {
         if (list.size() > size) {
             list.subList(size, list.size()).clear();
         }
+    }
+
+    final void setGraphContext(ColumnGraphContext context) {
+        Objects.requireNonNull(context, "context");
+        if (initState != InitState.NEW && graphContext != context) {
+            throw new ColumnDefinitionException(
+                    "ColumnModule " + getClass().getName()
+                            + " was already built with a different graph context;"
+                            + " create a new module instance");
+        }
+        graphContext = context;
+    }
+
+    final ColumnGraphContext graphContext() {
+        return graphContext;
     }
 
     private static ColumnOperator instantiate(

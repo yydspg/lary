@@ -20,6 +20,7 @@ import io.lark.column.biz.op.RatioOp;
 import io.lark.column.biz.op.ScaleOp;
 import io.lark.column.biz.op.StackOp;
 import io.lark.column.biz.op.TopKOp;
+import io.lark.column.context.ColumnGraphContext;
 import io.lark.column.context.ColumnRunContext;
 import io.lark.column.data.Row;
 import io.lark.column.tensor.DType;
@@ -136,6 +137,16 @@ public final class SearchModule extends ColumnModule {
     private final int workers;
     private FeedMapping<SearchDemo.SearchRow> goodsFeed;
 
+    /** Optional business graph config carried by {@link ColumnGraphContext}. */
+    public record SearchGraphConfig(int topK) {
+
+        public SearchGraphConfig {
+            if (topK <= 0) {
+                throw new IllegalArgumentException("topK must be positive");
+            }
+        }
+    }
+
     public SearchModule() {
         this(30, 4);
     }
@@ -155,7 +166,7 @@ public final class SearchModule extends ColumnModule {
     // ---- graph ----------------------------------------------------------
 
     @Override
-    protected void buildGraph() {
+    protected void build(ColumnGraphContext context) {
         pvId = feed(PV_ID);
         goodsId = feed(GOODS_ID);
         impressions = feed(IMPRESSIONS);
@@ -223,7 +234,11 @@ public final class SearchModule extends ColumnModule {
         rankingScore = formula(RANKING_SCORE, rankingFormula());
         adjustedScore = node(ADJUSTED_SCORE, MulAddOp.class,
                 rankingScore, perturbation, originalScore);
-        selected = node(SELECTED, new TopKOp(topK), adjustedScore, pvId);
+        SearchGraphConfig config = context.get(SearchGraphConfig.class);
+        int effectiveTopK = (int) context.experiment().param("rerank.top_k",
+                config == null ? topK : config.topK());
+        selected = node(SELECTED, new TopKOp(effectiveTopK),
+                adjustedScore, pvId);
 
         output(pvId, goodsId, ctr, cvr, ctcvr, gmv, buyAgain, rebuyLoss,
                 couponRoi, retargetAd, delay, rankingScore, adjustedScore,
@@ -252,8 +267,13 @@ public final class SearchModule extends ColumnModule {
     // ---- execution ------------------------------------------------------
 
     public SearchResult search(SearchDemo.SearchRequest request) {
+        return search(request, ColumnGraphContext.empty());
+    }
+
+    public SearchResult search(SearchDemo.SearchRequest request,
+                               ColumnGraphContext graphContext) {
         try (ColumnPipeline pipeline = new ColumnPipeline(workers)) {
-            pipeline.add(this);
+            pipeline.setGraphContext(graphContext).add(this);
             return search(pipeline, request);
         }
     }

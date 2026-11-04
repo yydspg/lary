@@ -5,6 +5,7 @@ package io.lark.spring;
 
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnPipeline;
+import io.lark.column.context.ColumnGraphContext;
 
 import java.util.List;
 import java.util.Objects;
@@ -45,10 +46,16 @@ public final class ColumnPipelineFactory {
 
     /** Create an uncompiled pipeline containing the Spring-managed modules. */
     public ColumnPipeline create() {
+        return create(ColumnGraphContext.empty());
+    }
+
+    /** Create a pipeline with a compile-time graph context. */
+    public ColumnPipeline create(ColumnGraphContext graphContext) {
         ColumnPipeline pipeline = computeWorkers > 0
                 ? new ColumnPipeline(computeWorkers)
                 : new ColumnPipeline();
         pipeline.setVirtualComputeThreads(virtualThreads);
+        pipeline.setGraphContext(Objects.requireNonNull(graphContext, "graphContext"));
         pipeline.addAll(modules);
         return pipeline;
     }
