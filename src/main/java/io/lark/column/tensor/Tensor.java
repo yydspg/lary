@@ -101,12 +101,12 @@ public final class Tensor {
     }
 
     /** Adopt an already-allocated buffer (feed/fetch conversion hot path). */
-    static Tensor wrapLongs(long[] values) {
+    public static Tensor wrapLongs(long[] values) {
         return new Tensor(DType.INT64, values, values.length);
     }
 
     /** Adopt an already-allocated buffer (feed/fetch conversion hot path). */
-    static Tensor wrapDoubles(double[] values) {
+    public static Tensor wrapDoubles(double[] values) {
         return new Tensor(DType.FLOAT64, values, values.length);
     }
 

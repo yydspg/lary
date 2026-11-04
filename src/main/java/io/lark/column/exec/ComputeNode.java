@@ -37,8 +37,12 @@ public final class ComputeNode {
 
     private final String id;
     private final String module;
+    private static final Tensor[] EMPTY_TENSORS = new Tensor[0];
+
     private final OpSpec op;
     private final TensorKernel kernel;
+    private final String[] inputNames;
+    private final String outputName;
     private final List<ComputeNode> dependencies = new ArrayList<>();
     private final AtomicReference<Status> status = new AtomicReference<>(Status.PENDING);
     private long globalIndex;
@@ -51,6 +55,8 @@ public final class ComputeNode {
         this.module = Objects.requireNonNull(module, "module");
         this.op = Objects.requireNonNull(op, "op");
         this.kernel = Objects.requireNonNull(kernel, "kernel");
+        this.inputNames = op.inputs().toArray(String[]::new);
+        this.outputName = op.outputs().isEmpty() ? null : op.outputs().get(0);
     }
 
     /**
@@ -180,7 +186,7 @@ public final class ComputeNode {
                      ColumnRunContext runContext) {
         if (kernel instanceof FallibleTensorKernel fallible) {
             return fallible.fallback(
-                    new KernelContext(store, new Tensor[0], null, experiment,
+                    new KernelContext(store, EMPTY_TENSORS, null, experiment,
                             runContext),
                     failure);
         }
@@ -190,13 +196,10 @@ public final class ComputeNode {
     private KernelContext context(TensorStore store,
                                   ExperimentContext experiment,
                                   ColumnRunContext runContext) {
-        Tensor[] inputs = new Tensor[op.inputs().size()];
-        for (int i = 0; i < inputs.length; i++) {
-            inputs[i] = store.get(op.inputs().get(i));
-        }
-        Consumer<Tensor> sink = op.outputs().isEmpty()
-                ? null : tensor -> store.set(op.outputs().get(0), tensor);
-        return new KernelContext(store, inputs, sink, experiment, runContext);
+        Consumer<Tensor> sink = outputName == null
+                ? null : tensor -> store.set(outputName, tensor);
+        return new KernelContext(store, inputNames, sink, experiment,
+                runContext);
     }
 
     void setStatus(Status newStatus) {

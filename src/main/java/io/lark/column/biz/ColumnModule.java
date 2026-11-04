@@ -6,6 +6,7 @@ package io.lark.column.biz;
 import io.lark.column.ColumnDefinitionException;
 import io.lark.column.context.ColumnGraphContext;
 import io.lark.column.tensor.DType;
+import io.lark.column.tensor.Tensor;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -15,7 +16,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.function.Function;
+import java.util.function.ToDoubleFunction;
+import java.util.function.ToLongFunction;
 
 /**
  * Business module: a group of nodes with typed external feed streams, fetch
@@ -62,8 +64,8 @@ public abstract class ColumnModule<F> {
     private final List<Class<? extends ColumnModule<?>>> dependencyBuilder =
             new ArrayList<>();
     private final Map<String, ColumnStream<?>> inputByName = new LinkedHashMap<>();
-    private final Map<ColumnStream<?>, Function<Object, ?>> feedMappingGetters =
-            new LinkedHashMap<>();
+    private final Map<ColumnStream<?>, FeedMapping.Value<Object>>
+            feedMappingGetters = new LinkedHashMap<>();
 
     private enum InitState { NEW, INITIALIZING, READY }
 
@@ -119,23 +121,62 @@ public abstract class ColumnModule<F> {
      * {@link #feedStream(List)} and the business never builds a separate
      * {@link FeedMapping}.
      */
+    /** Primitive long feed getter: no boxing per row. */
     @SuppressWarnings("unchecked")
-    protected final <V> ColumnStream<V> feed(
-            Column<V> column, Function<? super F, ? extends V> getter) {
+    protected final ColumnStream<Long> feed(
+            Column<Long> column, ToLongFunction<? super F> getter) {
         Objects.requireNonNull(column, "column");
         Objects.requireNonNull(getter, "getter");
-        ColumnStream<V> stream = feed(column);
-        feedMappingGetters.put(stream, value -> getter.apply((F) value));
+        ColumnStream<Long> stream = feed(column);
+        feedMappingGetters.put(stream, new FeedMapping.Value<Object>() {
+            @Override
+            public long longValue(Object row) {
+                return getter.applyAsLong((F) row);
+            }
+
+            @Override
+            public double doubleValue(Object row) {
+                return getter.applyAsLong((F) row);
+            }
+        });
         moduleFeedMapping = null;
         return stream;
     }
 
+    /** Primitive double feed getter: no boxing per row. */
+    @SuppressWarnings("unchecked")
+    protected final ColumnStream<Double> feed(
+            Column<Double> column, ToDoubleFunction<? super F> getter) {
+        Objects.requireNonNull(column, "column");
+        Objects.requireNonNull(getter, "getter");
+        ColumnStream<Double> stream = feed(column);
+        feedMappingGetters.put(stream, new FeedMapping.Value<Object>() {
+            @Override
+            public long longValue(Object row) {
+                return (long) getter.applyAsDouble((F) row);
+            }
+
+            @Override
+            public double doubleValue(Object row) {
+                return getter.applyAsDouble((F) row);
+            }
+        });
+        moduleFeedMapping = null;
+        return stream;
+    }
+
+
     /**
      * Map a business object list to this module's feed columns. All feeds must
-     * have been declared with {@link #feed(Column, Function)}.
+     * have been declared with {@code feed(Column, getter)}.
      */
     public final FeedStream feedStream(List<? extends F> rows) {
         return moduleFeedMapping().map(rows);
+    }
+
+    /** Columnar feed path: no Cell/Row objects and no row transpose. */
+    public final Map<String, Tensor> feedTensorMap(List<? extends F> rows) {
+        return moduleFeedMapping().tensors(rows);
     }
 
     private FeedMapping<Object> moduleFeedMapping() {
@@ -533,7 +574,7 @@ public abstract class ColumnModule<F> {
         int outputCount = outputBuilder.size();
         int dependencyCount = dependencyBuilder.size();
         Map<String, ColumnStream<?>> inputsBefore = new LinkedHashMap<>(inputByName);
-        Map<ColumnStream<?>, Function<Object, ?>> feedMappingBefore =
+        Map<ColumnStream<?>, FeedMapping.Value<Object>> feedMappingBefore =
                 new LinkedHashMap<>(feedMappingGetters);
         try {
             build(graphContext);

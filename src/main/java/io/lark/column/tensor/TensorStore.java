@@ -20,7 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class TensorStore {
 
-    private final Map<String, Tensor> tensors = new ConcurrentHashMap<>();
+    private final Map<String, Tensor> tensors = new ConcurrentHashMap<>(64);
     private final List<String> order = new ArrayList<>();
     private final Object orderLock = new Object();
 
@@ -51,6 +51,16 @@ public final class TensorStore {
     }
 
     public void ensureNames(String[] names) {
+        boolean allPresent = true;
+        for (String name : names) {
+            if (name != null && !name.isEmpty() && !tensors.containsKey(name)) {
+                allPresent = false;
+                break;
+            }
+        }
+        if (allPresent) {
+            return;
+        }
         synchronized (orderLock) {
             for (String name : names) {
                 if (name != null && !name.isEmpty() && !tensors.containsKey(name)) {

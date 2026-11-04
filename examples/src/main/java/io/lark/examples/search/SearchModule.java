@@ -9,6 +9,7 @@ import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.ColumnStream;
 import io.lark.column.biz.F;
 import io.lark.column.biz.FeedStream;
+import io.lark.column.biz.FetchStream;
 import io.lark.column.biz.NumExpr;
 import io.lark.column.biz.op.MulAddOp;
 import io.lark.column.biz.op.MulOp;
@@ -200,9 +201,16 @@ public final class SearchModule extends ColumnModule<SearchDemo.SearchRow> {
 
     public SearchResult search(ColumnPipeline pipeline,
                                SearchDemo.SearchRequest request) {
+        var required = FetchStream.of(
+                required(GOODS_ID.longColumn()),
+                required(ADJUSTED_SCORE.doubleColumn()),
+                required(SELECTED.longColumn()),
+                required(RETARGET_AD.doubleColumn()),
+                required(DELAY.doubleColumn()));
         pipeline.setExperiment(request.context().experiment())
-                .setRunContext(ColumnRunContext.of(request.context()))
-                .execute(feedStream(request));
+                .executeTensors(feedTensorMap(SearchDemo.rows(request)),
+                        required,
+                        ColumnRunContext.of(request.context()));
 
         List<Row> rows = pipeline.fetch(List.of(
                 GOODS_ID.columnName(), ADJUSTED_SCORE.columnName(),

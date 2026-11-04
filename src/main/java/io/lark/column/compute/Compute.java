@@ -78,6 +78,22 @@ public final class Compute {
      */
     public static Tensor mulAdd(Tensor score, Tensor perturbation,
                                 Tensor originalScore) {
+        DType ab = promote(score.dtype(), perturbation.dtype());
+        DType out = promote(ab, originalScore.dtype());
+        if (out == DType.FLOAT64
+                && score.shape().equals(perturbation.shape())
+                && score.shape().equals(originalScore.shape())) {
+            Tensor a = score.dtype() == DType.FLOAT64
+                    ? score : score.castTo(DType.FLOAT64);
+            Tensor b = perturbation.dtype() == DType.FLOAT64
+                    ? perturbation : perturbation.castTo(DType.FLOAT64);
+            Tensor c = originalScore.dtype() == DType.FLOAT64
+                    ? originalScore : originalScore.castTo(DType.FLOAT64);
+            Tensor result = Tensor.zeros(score.shape(), DType.FLOAT64);
+            VectorOps.mulAddDouble(a.doubleData(), b.doubleData(),
+                    c.doubleData(), result.doubleData());
+            return result;
+        }
         return add(mul(score, perturbation), originalScore);
     }
 

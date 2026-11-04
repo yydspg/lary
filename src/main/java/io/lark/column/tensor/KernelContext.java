@@ -20,6 +20,8 @@ public final class KernelContext {
 
     private final TensorStore store;
     private final Tensor[] inputs;
+    private final String[] inputNames;
+    private Tensor[] resolvedInputs;
     private final Consumer<Tensor> output;
     private final ExperimentContext experiment;
     private final ColumnRunContext runContext;
@@ -41,22 +43,58 @@ public final class KernelContext {
                          ColumnRunContext runContext) {
         this.store = Objects.requireNonNull(store, "store");
         this.inputs = inputs == null ? new Tensor[0] : inputs;
+        this.inputNames = null;
+        this.output = output;
+        this.experiment = Objects.requireNonNull(experiment, "experiment");
+        this.runContext = Objects.requireNonNull(runContext, "runContext");
+    }
+
+    /** Lazy-input form: names are resolved from the store on demand. */
+    public KernelContext(TensorStore store, String[] inputNames,
+                         Consumer<Tensor> output,
+                         ExperimentContext experiment,
+                         ColumnRunContext runContext) {
+        this.store = Objects.requireNonNull(store, "store");
+        this.inputs = null;
+        this.inputNames = Objects.requireNonNull(inputNames, "inputNames").clone();
         this.output = output;
         this.experiment = Objects.requireNonNull(experiment, "experiment");
         this.runContext = Objects.requireNonNull(runContext, "runContext");
     }
 
     public Tensor input(int index) {
-        if (index < 0 || index >= inputs.length) {
+        int count = inputCount();
+        if (index < 0 || index >= count) {
             throw new IndexOutOfBoundsException(
                     "Kernel input " + index + " out of range [0, "
-                            + inputs.length + ")");
+                            + count + ")");
         }
-        return inputs[index];
+        if (inputs != null) {
+            return inputs[index];
+        }
+        if (resolvedInputs != null) {
+            return resolvedInputs[index];
+        }
+        return store.get(inputNames[index]);
     }
 
     public int inputCount() {
-        return inputs.length;
+        return inputs != null ? inputs.length : inputNames.length;
+    }
+
+    /** Materialize all inputs once without copying for array-backed contexts. */
+    public Tensor[] inputArray() {
+        if (inputs != null) {
+            return inputs;
+        }
+        if (resolvedInputs == null) {
+            Tensor[] values = new Tensor[inputNames.length];
+            for (int i = 0; i < values.length; i++) {
+                values[i] = store.get(inputNames[i]);
+            }
+            resolvedInputs = values;
+        }
+        return resolvedInputs;
     }
 
     public void output(Tensor tensor) {

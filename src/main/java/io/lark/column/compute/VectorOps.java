@@ -46,6 +46,12 @@ final class VectorOps {
         TensorShape outShape = a.shape().broadcastWith(b.shape());
         Tensor left = a.dtype() == outDtype ? a : a.castTo(outDtype);
         Tensor right = b.dtype() == outDtype ? b : b.castTo(outDtype);
+        // Common case: right operand is a scalar column ([1]) and the output
+        // has the left operand's shape. Avoid per-element broadcast indexing.
+        if (b.shape().size() == 1 && a.shape().size() > 1
+                && outShape.equals(a.shape())) {
+            return scalar(left, right.getDouble(0), outDtype, op);
+        }
         Tensor result = Tensor.zeros(outShape, outDtype);
         if (a.shape().equals(b.shape())) {
             switch (outDtype) {
@@ -91,6 +97,21 @@ final class VectorOps {
                     "scalar ops do not support q8_0 directly");
         }
         return result;
+    }
+
+    static void mulAddDouble(double[] a, double[] b, double[] c, double[] out) {
+        var species = DoubleVector.SPECIES_PREFERRED;
+        int lanes = species.length();
+        int i = 0;
+        for (; i + lanes <= a.length; i += lanes) {
+            DoubleVector.fromArray(species, a, i)
+                    .mul(DoubleVector.fromArray(species, b, i))
+                    .add(DoubleVector.fromArray(species, c, i))
+                    .intoArray(out, i);
+        }
+        for (; i < a.length; i++) {
+            out[i] = a[i] * b[i] + c[i];
+        }
     }
 
     // ---- comparisons ----------------------------------------------------

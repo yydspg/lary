@@ -663,6 +663,26 @@ public final class ColumnPipeline implements AutoCloseable {
         return this;
     }
 
+    /** Columnar run path: compile, feed tensors and compute in one call. */
+    public ColumnPipeline executeTensors(Map<String, Tensor> columns) {
+        return executeTensors(columns, ColumnRunContext.empty());
+    }
+
+    public ColumnPipeline executeTensors(Map<String, Tensor> columns,
+                                         ColumnRunContext runContext) {
+        return executeTensors(columns, null, runContext);
+    }
+
+    public ColumnPipeline executeTensors(Map<String, Tensor> columns,
+                                         FetchStream requiredOutputs,
+                                         ColumnRunContext runContext) {
+        setRunContext(runContext);
+        compile(requiredOutputs);
+        feedTensors(columns);
+        compute();
+        return this;
+    }
+
     /** Compile/prune, feed and compute in one call. */
     public ColumnPipeline execute(FeedStream feedStream,
                                   FetchStream requiredOutputs) {

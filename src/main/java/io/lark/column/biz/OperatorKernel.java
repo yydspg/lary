@@ -29,10 +29,7 @@ final class OperatorKernel implements TensorKernel {
 
     @Override
     public void compute(KernelContext ctx) {
-        Tensor[] inputs = new Tensor[ctx.inputCount()];
-        for (int i = 0; i < inputs.length; i++) {
-            inputs[i] = ctx.input(i);
-        }
+        Tensor[] inputs = ctx.inputArray();
         Tensor result;
         try {
             result = operator.apply(

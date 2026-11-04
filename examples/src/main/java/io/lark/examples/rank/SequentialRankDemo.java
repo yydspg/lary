@@ -301,7 +301,7 @@ public final class SequentialRankDemo {
                 pipeline = new ColumnPipeline(1);
                 pipeline.add(this);
             }
-            pipeline.execute(feedStream(rows));
+            pipeline.executeTensors(feedTensorMap(rows));
             Tensor tensor = pipeline.fetchTensor(updated
                     ? UPDATED_SCORE.name() : BASE_SCORE.name());
             double[] values = new double[tensor.size()];
