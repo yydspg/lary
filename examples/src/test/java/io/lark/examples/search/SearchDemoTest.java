@@ -6,6 +6,7 @@ package io.lark.examples.search;
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.FeedStream;
 import io.lark.column.biz.FetchStream;
+import io.lark.column.context.ColumnGraphContext;
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Row;
 import io.lark.column.tensor.Tensor;
@@ -152,6 +153,20 @@ class SearchDemoTest {
             // exactly 500 * 0.02.
             assertEquals(controlScore + 10.0, boostScore, 1e-9);
         }
+    }
+
+    @Test
+    void graphContextCanCustomizeTheModuleBuild() {
+        SearchDemo.SearchRequest request =
+                SearchDemo.simulate(SearchDemo.sampleContext(), 100);
+        SearchModule module = new SearchModule(30, 4);
+        ColumnGraphContext graphContext = ColumnGraphContext.of(
+                ExperimentContext.empty(),
+                new SearchModule.SearchGraphConfig(5));
+
+        SearchResult result = module.search(request, graphContext);
+
+        assertEquals(5, result.ranked().size());
     }
 
     @Test

@@ -15,7 +15,7 @@ import java.util.Optional;
  * Typed business context for one pipeline run.
  *
  * <p>Graph topology is defined statically in
- * {@link io.lark.column.biz.ColumnModule#buildGraph()}. Request-scoped values
+ * {@link io.lark.column.biz.ColumnModule#build()}. Request-scoped values
  * that are not already columns (features, weights, configuration) travel here,
  * not through graph definitions:
  *

@@ -620,7 +620,7 @@ class ModulePipelineTest {
         ColumnStream<Double> scaled;
 
         @Override
-        protected void buildGraph() {
+        protected void build() {
             left = feed(OPERATOR_LEFT);
             right = feed(OPERATOR_RIGHT);
             sum = node(OPERATOR_SUM, AddOp.class, left, right);
@@ -658,7 +658,7 @@ class ModulePipelineTest {
         ColumnStream<Double> weighted;
 
         @Override
-        protected void buildGraph() {
+        protected void build() {
             left = feed(OPERATOR_LEFT);
             right = feed(OPERATOR_RIGHT);
             weighted = node(OPERATOR_WEIGHTED, new WeightedAddOp(),
@@ -683,7 +683,7 @@ class ModulePipelineTest {
 
     static final class MissingNoArgConstructorModule extends ColumnModule {
         @Override
-        protected void buildGraph() {
+        protected void build() {
             node(OPERATOR_SUM, ConfiguredOp.class,
                     feed(OPERATOR_LEFT), feed(OPERATOR_RIGHT));
         }
@@ -691,7 +691,7 @@ class ModulePipelineTest {
 
     static final class WrongArityModule extends ColumnModule {
         @Override
-        protected void buildGraph() {
+        protected void build() {
             node(OPERATOR_SUM, AddOp.class, feed(OPERATOR_LEFT));
         }
     }
@@ -701,7 +701,7 @@ class ModulePipelineTest {
         ColumnStream<Double> rate;
 
         @Override
-        protected void buildGraph() {
+        protected void build() {
             price = feed(TRADE_PRICE);
             rate = feed(TRADE_RATE);
             output(price, rate);

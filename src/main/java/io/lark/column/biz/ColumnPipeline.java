@@ -7,6 +7,7 @@ import io.lark.column.ColumnDefinitionException;
 import io.lark.column.ColumnExecutionException;
 import io.lark.column.ColumnFeedException;
 import io.lark.column.ColumnFetchException;
+import io.lark.column.context.ColumnGraphContext;
 import io.lark.column.context.ColumnRunContext;
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Cell;
@@ -61,6 +62,7 @@ public final class ColumnPipeline implements AutoCloseable {
     private boolean virtualComputeThreads;
     private ExperimentContext experiment = ExperimentContext.empty();
     private ColumnRunContext runContext = ColumnRunContext.empty();
+    private ColumnGraphContext graphContext = ColumnGraphContext.empty();
 
     private PipelinePlan plan;
     private List<String> planRequestedOutputs;
@@ -79,6 +81,7 @@ public final class ColumnPipeline implements AutoCloseable {
 
     public ColumnPipeline add(ColumnModule module) {
         Objects.requireNonNull(module, "module");
+        module.setGraphContext(graphContext);
         module.initialize();
         if (modulesByType.putIfAbsent(module.getClass(), module) != null) {
             throw new ColumnDefinitionException(
@@ -94,6 +97,9 @@ public final class ColumnPipeline implements AutoCloseable {
     public ColumnPipeline addAll(ColumnModule... modules) {
         Objects.requireNonNull(modules, "modules");
         for (ColumnModule module : modules) {
+            module.setGraphContext(graphContext);
+        }
+        for (ColumnModule module : modules) {
             add(module);
         }
         return this;
@@ -102,6 +108,9 @@ public final class ColumnPipeline implements AutoCloseable {
     /** Add a collection of modules in iteration order. */
     public ColumnPipeline addAll(Collection<? extends ColumnModule> modules) {
         Objects.requireNonNull(modules, "modules");
+        for (ColumnModule module : modules) {
+            module.setGraphContext(graphContext);
+        }
         for (ColumnModule module : modules) {
             add(module);
         }
@@ -115,16 +124,31 @@ public final class ColumnPipeline implements AutoCloseable {
      * injection use the optional {@code :spring} module instead.
      */
     public ColumnPipeline scan(String... packages) {
-        for (ColumnModule module : ColumnComponentScanner.scanModules(packages)) {
-            add(module);
-        }
-        return this;
+        return addAll(ColumnComponentScanner.scanModules(packages));
     }
 
     public ColumnPipeline setMonitor(Monitor monitor) {
         this.userMonitor = monitor;
         rebuildMonitor();
         return this;
+    }
+
+    /**
+     * Set the compile-time graph context. Configure it before adding modules;
+     * modules are initialized once with this context.
+     */
+    public ColumnPipeline setGraphContext(ColumnGraphContext graphContext) {
+        Objects.requireNonNull(graphContext, "graphContext");
+        if (!modules.isEmpty() && this.graphContext != graphContext) {
+            throw new ColumnDefinitionException(
+                    "ColumnPipeline: setGraphContext before adding modules");
+        }
+        this.graphContext = graphContext;
+        return this;
+    }
+
+    public ColumnGraphContext graphContext() {
+        return graphContext;
     }
 
     public ColumnPipeline setComputeWorkers(int workers) {
@@ -197,6 +221,19 @@ public final class ColumnPipeline implements AutoCloseable {
     }
 
     // ---- compile --------------------------------------------------------
+
+    /**
+     * Compose all added modules into the execution graph. Modules declare only
+     * their own subgraph with {@code build()}; this is the graph-building step.
+     */
+    public ColumnPipeline buildGraph() {
+        return compile();
+    }
+
+    /** Compose/prune the graph for the typed fetch request. */
+    public ColumnPipeline buildGraph(FetchStream requiredOutputs) {
+        return compile(requiredOutputs);
+    }
 
     /** Compile all module outputs and return this pipeline for fluent use. */
     public ColumnPipeline compile() {
