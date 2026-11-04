@@ -3,6 +3,7 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.ColumnExecutionException;
 import io.lark.column.context.ColumnRunContext;
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.tensor.Tensor;
@@ -80,7 +81,7 @@ public final class ColumnContext {
 
     private static void checkDtype(ColumnStream<?> stream, Tensor tensor) {
         if (tensor.dtype() != stream.dtype()) {
-            throw new IllegalArgumentException(
+            throw new ColumnExecutionException(
                     "Column '" + stream.name() + "' is declared as "
                             + stream.dtype() + " (" + stream.getClass().getSimpleName()
                             + ") but got " + tensor.dtype());

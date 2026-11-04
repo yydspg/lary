@@ -3,6 +3,7 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.ColumnFeedException;
 import io.lark.column.data.Row;
 
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public record FeedStream(ColumnStream<?>[] streams, List<Row> rows) {
         List<Row> rows = new ArrayList<>();
         for (FeedStream feed : feeds) {
             if (!names.equals(feed.names())) {
-                throw new IllegalArgumentException(
+                throw new ColumnFeedException(
                         "FeedStream.concat: column mismatch " + names
                                 + " vs " + feed.names());
             }

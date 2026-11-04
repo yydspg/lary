@@ -3,6 +3,8 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.ColumnDefinitionException;
+
 import java.io.IOException;
 import java.lang.reflect.Modifier;
 import java.net.JarURLConnection;
@@ -62,12 +64,12 @@ public final class ColumnComponentScanner {
                 continue;
             }
             if (!ColumnModule.class.isAssignableFrom(type)) {
-                throw new IllegalArgumentException(
+                throw new ColumnDefinitionException(
                         "@ColumnComponent class must extend ColumnModule: "
                                 + type.getName());
             }
             if (Modifier.isAbstract(type.getModifiers()) || type.isInterface()) {
-                throw new IllegalArgumentException(
+                throw new ColumnDefinitionException(
                         "@ColumnComponent class must be concrete: " + type.getName());
             }
             try {
@@ -75,7 +77,7 @@ public final class ColumnComponentScanner {
                 constructor.setAccessible(true);
                 modules.add((ColumnModule) constructor.newInstance());
             } catch (ReflectiveOperationException e) {
-                throw new IllegalArgumentException(
+                throw new ColumnDefinitionException(
                         "Cannot instantiate @ColumnComponent " + type.getName()
                                 + " (a no-argument constructor is required)", e);
             }
@@ -99,7 +101,7 @@ public final class ColumnComponentScanner {
                 }
             }
         } catch (IOException e) {
-            throw new IllegalStateException(
+            throw new ColumnDefinitionException(
                     "Failed to scan package '" + packageName + "'", e);
         }
     }
@@ -121,7 +123,7 @@ public final class ColumnComponentScanner {
                         });
             }
         } catch (IOException | URISyntaxException e) {
-            throw new IllegalStateException("Failed to scan directory " + url, e);
+            throw new ColumnDefinitionException("Failed to scan directory " + url, e);
         }
     }
 
@@ -145,7 +147,7 @@ public final class ColumnComponentScanner {
                 }
             }
         } catch (IOException e) {
-            throw new IllegalStateException("Failed to scan jar " + url, e);
+            throw new ColumnDefinitionException("Failed to scan jar " + url, e);
         }
     }
 

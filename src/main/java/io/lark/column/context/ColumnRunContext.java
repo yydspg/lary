@@ -3,6 +3,8 @@
 
 package io.lark.column.context;
 
+import io.lark.column.ColumnExecutionException;
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -75,7 +77,7 @@ public final class ColumnRunContext {
         Objects.requireNonNull(type, "type");
         Object value = values.get(type);
         if (value == null) {
-            throw new IllegalStateException(
+            throw new ColumnExecutionException(
                     "ColumnRunContext: missing value of type " + type.getName());
         }
         return type.cast(value);

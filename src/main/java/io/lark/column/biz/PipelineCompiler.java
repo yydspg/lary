@@ -3,6 +3,8 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.ColumnDefinitionException;
+import io.lark.column.ColumnFetchException;
 import io.lark.column.exec.ComputeGraph;
 import io.lark.column.op.OpSpec;
 
@@ -43,7 +45,7 @@ final class PipelineCompiler {
         for (ColumnModule module : moduleList) {
             ColumnModule previous = modulesByType.put(module.getClass(), module);
             if (previous != null && previous != module) {
-                throw new IllegalArgumentException(
+                throw new ColumnDefinitionException(
                         "ColumnPipeline: duplicate module type "
                                 + module.getClass().getName());
             }
@@ -57,7 +59,7 @@ final class PipelineCompiler {
                         feedDefinitions.putIfAbsent(input.name(), input);
                 if (previous != null
                         && !previous.definition().equals(input.definition())) {
-                    throw new IllegalArgumentException(
+                    throw new ColumnDefinitionException(
                             "ColumnPipeline: feed column '" + input.name()
                                     + "' declared with conflicting definitions");
                 }
@@ -76,14 +78,14 @@ final class PipelineCompiler {
             for (ColumnNode node : module.nodeView()) {
                 allNodes.add(node);
                 if (nodeModules.put(node, module) != null) {
-                    throw new IllegalArgumentException(
+                    throw new ColumnDefinitionException(
                             "ColumnPipeline: node added to multiple modules "
                                     + node.id());
                 }
                 for (ColumnStream<?> fetch : node.fetchView()) {
                     ColumnNode previous = producers.putIfAbsent(fetch.name(), node);
                     if (previous != null && previous != node) {
-                        throw new IllegalArgumentException(
+                        throw new ColumnDefinitionException(
                                 "ColumnPipeline: stream '" + fetch.name()
                                         + "' produced by both " + previous.id()
                                         + " and " + node.id());
@@ -99,7 +101,7 @@ final class PipelineCompiler {
                 ColumnNode producer = feed.producer().orElse(null);
                 if (producer != null) {
                     if (!nodeModules.containsKey(producer)) {
-                        throw new IllegalArgumentException(
+                        throw new ColumnDefinitionException(
                                 "ColumnPipeline: stream '" + feed.name()
                                         + "' of node " + node.id()
                                         + " has a producer outside this pipeline");
@@ -107,7 +109,7 @@ final class PipelineCompiler {
                     deps.get(node).add(producer);
                 } else {
                     if (!moduleInputs.containsKey(feed)) {
-                        throw new IllegalArgumentException(
+                        throw new ColumnDefinitionException(
                                 "ColumnPipeline: stream '" + feed.name()
                                         + "' of node " + node.id()
                                         + " is not declared as a module input");
@@ -122,7 +124,7 @@ final class PipelineCompiler {
                 ColumnStream<?> previous =
                         allOutputs.putIfAbsent(output.name(), output);
                 if (previous != null && previous != output) {
-                    throw new IllegalArgumentException(
+                    throw new ColumnDefinitionException(
                             "ColumnPipeline: duplicate module output stream '"
                                     + output.name() + "'");
                 }
@@ -189,7 +191,7 @@ final class PipelineCompiler {
         for (ColumnModule module : modules) {
             for (Class<? extends ColumnModule> dependency : module.dependencyView()) {
                 if (!modulesByType.containsKey(dependency)) {
-                    throw new IllegalArgumentException(
+                    throw new ColumnDefinitionException(
                             "ColumnPipeline: module " + module.getClass().getName()
                                     + " depends on missing module "
                                     + dependency.getName());
@@ -219,7 +221,7 @@ final class PipelineCompiler {
             }
         }
         if (visited != modules.size()) {
-            throw new IllegalStateException(
+            throw new ColumnDefinitionException(
                     "ColumnPipeline: module dependency cycle detected");
         }
     }
@@ -243,13 +245,13 @@ final class PipelineCompiler {
         for (String output : requiredOutputs) {
             ColumnStream<?> stream = allOutputs.get(output);
             if (stream == null) {
-                throw new IllegalArgumentException(
+                throw new ColumnFetchException(
                         "ColumnPipeline: unknown fetch output '" + output + "'");
             }
             ColumnNode producer = stream.producer().orElse(null);
             if (producer == null) {
                 if (!moduleInputs.containsKey(stream)) {
-                    throw new IllegalArgumentException(
+                    throw new ColumnFetchException(
                             "ColumnPipeline: fetch output '" + output
                                     + "' is not a module output or input");
                 }

@@ -264,7 +264,7 @@ class ExecutionGraphTest {
                 new OpSpec("neg", List.of("a"), List.of("b"))));
         graph.addDependency("b", "a");
         graph.addDependency("a", "b");
-        assertThrows(IllegalStateException.class, graph::finalizeGraph);
+        assertThrows(ColumnDefinitionException.class, graph::finalizeGraph);
     }
 
     @Test

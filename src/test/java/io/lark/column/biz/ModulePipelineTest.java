@@ -3,6 +3,10 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.ColumnDefinitionException;
+import io.lark.column.ColumnExecutionException;
+import io.lark.column.ColumnFeedException;
+import io.lark.column.ColumnFetchException;
 import io.lark.column.biz.op.AddOp;
 import io.lark.column.biz.op.ScaleOp;
 import io.lark.column.context.ColumnRunContext;
@@ -242,7 +246,7 @@ class ModulePipelineTest {
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
             pipeline.add(component).compile();
             int compiled = pipeline.compiledNodeCount();
-            assertThrows(IllegalArgumentException.class,
+            assertThrows(ColumnFetchException.class,
                     () -> pipeline.compile(List.of("missing_output")));
             assertEquals(compiled, pipeline.compiledNodeCount());
         }
@@ -271,7 +275,7 @@ class ModulePipelineTest {
     void dtypeMismatchFailsAtTheBusinessBoundary() {
         ColumnContext ctx = new ColumnContext(new TensorStore());
         ColumnStream<Long> stream = new ColumnStream<>(METRIC_VALUE, null);
-        assertThrows(IllegalArgumentException.class,
+        assertThrows(ColumnExecutionException.class,
                 () -> ctx.write(stream, Tensor.fromDoubles(1.0)));
     }
 
@@ -322,7 +326,7 @@ class ModulePipelineTest {
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
             pipeline.add(feature);
             pipeline.compile();
-            assertThrows(IllegalArgumentException.class, pipeline::compute);
+            assertThrows(ColumnFeedException.class, pipeline::compute);
         }
     }
 
@@ -330,7 +334,7 @@ class ModulePipelineTest {
     void moduleCycleIsRejected() {
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
             pipeline.add(new CycleA()).add(new CycleB());
-            assertThrows(IllegalStateException.class, pipeline::compile);
+            assertThrows(ColumnDefinitionException.class, pipeline::compile);
         }
     }
 
@@ -361,7 +365,7 @@ class ModulePipelineTest {
         try (ColumnPipeline pipeline = new ColumnPipeline()) {
             pipeline.addAll(new ThreeCycleA(), new ThreeCycleB(),
                     new ThreeCycleC());
-            assertThrows(IllegalStateException.class, pipeline::compile);
+            assertThrows(ColumnDefinitionException.class, pipeline::compile);
         }
     }
 
@@ -772,16 +776,16 @@ class ModulePipelineTest {
     void operatorClassNeedsANoArgConstructor() {
         MissingNoArgConstructorModule module =
                 new MissingNoArgConstructorModule();
-        IllegalArgumentException failure = assertThrows(
-                IllegalArgumentException.class, module::feedMap);
+        ColumnDefinitionException failure = assertThrows(
+                ColumnDefinitionException.class, module::feedMap);
         assertTrue(failure.getMessage().contains("no-arg constructor"));
     }
 
     @Test
     void operatorArityIsCheckedWhileBuildingTheGraph() {
         WrongArityModule module = new WrongArityModule();
-        IllegalArgumentException failure = assertThrows(
-                IllegalArgumentException.class, module::feedMap);
+        ColumnDefinitionException failure = assertThrows(
+                ColumnDefinitionException.class, module::feedMap);
         assertTrue(failure.getMessage().contains("requires 2 input(s), got 1"));
     }
 

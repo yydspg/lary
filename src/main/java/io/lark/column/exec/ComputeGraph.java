@@ -3,6 +3,8 @@
 
 package io.lark.column.exec;
 
+import io.lark.column.ColumnDefinitionException;
+import io.lark.column.ColumnExecutionException;
 import io.lark.column.tensor.TensorStore;
 import io.lark.column.tensor.TensorKernel;
 import io.lark.column.tensor.TensorKernels;
@@ -61,7 +63,7 @@ public final class ComputeGraph {
                                TensorKernel kernel) {
         Objects.requireNonNull(id, "id");
         if (byId.containsKey(id)) {
-            throw new IllegalArgumentException(
+            throw new ColumnDefinitionException(
                     "ComputeGraph: duplicate node id '" + id + "'");
         }
         ComputeNode node = new ComputeNode(id, module, op, kernel);
@@ -188,7 +190,7 @@ public final class ComputeGraph {
         }
 
         if (order.size() != nodes.size()) {
-            throw new IllegalStateException("ComputeGraph: dependency cycle detected");
+            throw new ColumnDefinitionException("ComputeGraph: dependency cycle detected");
         }
 
         topo = List.copyOf(order);
@@ -496,7 +498,7 @@ public final class ComputeGraph {
         private int indexOf(ComputeNode node) {
             Integer value = index.get(node);
             if (value == null) {
-                throw new IllegalStateException(
+                throw new ColumnDefinitionException(
                         "ComputeGraph: dependency outside this graph: " + node.id());
             }
             return value;
@@ -578,7 +580,7 @@ public final class ComputeGraph {
                 done.await();
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                throw new IllegalStateException(
+                throw new ColumnExecutionException(
                         "Interrupted while waiting for the compute graph", e);
             }
         }

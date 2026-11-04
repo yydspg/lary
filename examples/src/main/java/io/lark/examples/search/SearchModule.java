@@ -6,7 +6,6 @@ package io.lark.examples.search;
 import io.lark.column.biz.Column;
 import io.lark.column.biz.ColumnComponent;
 import io.lark.column.biz.ColumnModule;
-import io.lark.column.biz.ColumnOperator;
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.ColumnStream;
 import io.lark.column.biz.F;
@@ -19,12 +18,11 @@ import io.lark.column.biz.op.MulOp;
 import io.lark.column.biz.op.OneMinusOp;
 import io.lark.column.biz.op.RatioOp;
 import io.lark.column.biz.op.ScaleOp;
+import io.lark.column.biz.op.StackOp;
 import io.lark.column.biz.op.TopKOp;
 import io.lark.column.context.ColumnRunContext;
 import io.lark.column.data.Row;
 import io.lark.column.tensor.DType;
-import io.lark.column.tensor.Tensor;
-import io.lark.column.tensor.TensorShape;
 
 import java.util.List;
 import java.util.Map;
@@ -32,9 +30,6 @@ import java.util.Map;
 /**
  * The whole search graph in one module: schema, operators, formula, feed and
  * typed execution.
- *
- * <p>This is the only business graph class in the demo. The request/row model
- * lives in {@link SearchDemo}; the typed output lives in {@link SearchResult}.
  */
 @ColumnComponent
 public final class SearchModule extends ColumnModule {
@@ -82,8 +77,22 @@ public final class SearchModule extends ColumnModule {
             new Column<>("coupon_cost", DType.FLOAT64);
     private static final Column<Double> COUPON_ROI =
             new Column<>("couponroi", DType.FLOAT64);
+    private static final Column<Double> RETARGET_CLICK_SHARE =
+            new Column<>("retarget_click_share", DType.FLOAT64);
+    private static final Column<Double> RETARGET_COST_SHARE =
+            new Column<>("retarget_cost_share", DType.FLOAT64);
+    private static final Column<Double> RETARGET_ROI =
+            new Column<>("retarget_roi", DType.FLOAT64);
     private static final Column<Double> RETARGET_AD =
             new Column<>("retargetAd", DType.FLOAT64);
+    private static final Column<Double> ORDER_DELAY =
+            new Column<>("order_delay", DType.FLOAT64);
+    private static final Column<Double> GMV_DELAY =
+            new Column<>("gmv_delay", DType.FLOAT64);
+    private static final Column<Double> ORDER_ON_TIME =
+            new Column<>("order_on_time", DType.FLOAT64);
+    private static final Column<Double> GMV_ON_TIME =
+            new Column<>("gmv_on_time", DType.FLOAT64);
     private static final Column<Double> DELAY =
             new Column<>("delay", DType.FLOAT64);
     private static final Column<Double> RANKING_SCORE =
@@ -93,7 +102,7 @@ public final class SearchModule extends ColumnModule {
     private static final Column<Long> SELECTED =
             new Column<>("selected", DType.INT64);
 
-    // ---- streams (public: the demo reads them directly) ------------------
+    // ---- streams --------------------------------------------------------
 
     public ColumnStream<Long> pvId;
     public ColumnStream<Long> goodsId;
@@ -117,11 +126,11 @@ public final class SearchModule extends ColumnModule {
     public ColumnStream<Double> buyAgain;
     public ColumnStream<Double> rebuyLoss;
     public ColumnStream<Double> couponRoi;
+    public ColumnStream<Double> retargetAd;
+    public ColumnStream<Double> delay;
     public ColumnStream<Double> rankingScore;
     public ColumnStream<Double> adjustedScore;
     public ColumnStream<Long> selected;
-    public ColumnStream<Double> retargetAd;
-    public ColumnStream<Double> delay;
 
     private final int topK;
     private final int workers;
@@ -188,19 +197,37 @@ public final class SearchModule extends ColumnModule {
         ColumnStream<Double> couponCost = node(COUPON_COST,
                 new ScaleOp(100.0), couponCostFen);
         couponRoi = node(COUPON_ROI, RatioOp.class, gmv, couponCost);
-        retargetAd = node(RETARGET_AD, new RetargetAdOp(),
-                retargetClicks, clicks, retargetCostFen, gmvFen);
-        delay = node(DELAY, new DelayOp(),
-                delayedOrders, orders, delayedGmvFen, gmvFen);
 
-        // The only formula in the demo: rerank score with an experiment layer.
+        // Shaped tensors are still pure operator wiring: ratio/one-minus
+        // columns first, then one framework StackOp per output.
+        ColumnStream<Double> clickShare = node(RETARGET_CLICK_SHARE,
+                RatioOp.class, retargetClicks, clicks);
+        ColumnStream<Double> costShare = node(RETARGET_COST_SHARE,
+                RatioOp.class, retargetCostFen, gmvFen);
+        ColumnStream<Double> roi = node(RETARGET_ROI,
+                RatioOp.class, gmvFen, retargetCostFen);
+        retargetAd = node(RETARGET_AD, new StackOp(3),
+                clickShare, costShare, roi);
+
+        ColumnStream<Double> orderDelay = node(ORDER_DELAY,
+                RatioOp.class, delayedOrders, orders);
+        ColumnStream<Double> gmvDelay = node(GMV_DELAY,
+                RatioOp.class, delayedGmvFen, gmvFen);
+        ColumnStream<Double> orderOnTime = node(ORDER_ON_TIME,
+                OneMinusOp.class, orderDelay);
+        ColumnStream<Double> gmvOnTime = node(GMV_ON_TIME,
+                OneMinusOp.class, gmvDelay);
+        delay = node(DELAY, new StackOp(2, 2),
+                orderOnTime, orderDelay, gmvOnTime, gmvDelay);
+
         rankingScore = formula(RANKING_SCORE, rankingFormula());
         adjustedScore = node(ADJUSTED_SCORE, MulAddOp.class,
                 rankingScore, perturbation, originalScore);
         selected = node(SELECTED, new TopKOp(topK), adjustedScore, pvId);
 
-        output(pvId, goodsId, ctr, cvr, ctcvr, gmv, buyAgain, rebuyLoss, couponRoi,
-                rankingScore, adjustedScore, selected, retargetAd, delay);
+        output(pvId, goodsId, ctr, cvr, ctcvr, gmv, buyAgain, rebuyLoss,
+                couponRoi, retargetAd, delay, rankingScore, adjustedScore,
+                selected);
     }
 
     private NumExpr rankingFormula() {
@@ -224,7 +251,6 @@ public final class SearchModule extends ColumnModule {
 
     // ---- execution ------------------------------------------------------
 
-    /** Run one request with a fresh pipeline. */
     public SearchResult search(SearchDemo.SearchRequest request) {
         try (ColumnPipeline pipeline = new ColumnPipeline(workers)) {
             pipeline.add(this);
@@ -232,7 +258,6 @@ public final class SearchModule extends ColumnModule {
         }
     }
 
-    /** Run one request on a caller-owned pipeline (Spring uses this form). */
     public SearchResult search(ColumnPipeline pipeline,
                                SearchDemo.SearchRequest request) {
         pipeline.setExperiment(request.context().experiment())
@@ -248,17 +273,15 @@ public final class SearchModule extends ColumnModule {
                 .sorted((left, right) -> Double.compare(
                         right.adjustedScore(), left.adjustedScore()))
                 .toList();
-        List<SearchResult.RankedGoods> withRanks = new java.util.ArrayList<>(
-                ranked.size());
+        List<SearchResult.RankedGoods> withRanks =
+                new java.util.ArrayList<>(ranked.size());
         for (int i = 0; i < ranked.size(); i++) {
             SearchResult.RankedGoods goods = ranked.get(i);
             withRanks.add(new SearchResult.RankedGoods(
                     i + 1, goods.goodsId(), goods.adjustedScore()));
         }
 
-        return new SearchResult(
-                request.context(),
-                request.goods().size(),
+        return new SearchResult(request.context(), request.goods().size(),
                 withRanks,
                 pipeline.fetchTensor(retargetAd),
                 pipeline.fetchTensor(delay),
@@ -271,58 +294,5 @@ public final class SearchModule extends ColumnModule {
 
     public FeedStream feedStream(List<SearchDemo.SearchRow> rows) {
         return goodsFeed.map(rows);
-    }
-
-    // ---- domain operators ----------------------------------------------
-
-    private static final class RetargetAdOp implements ColumnOperator {
-
-        @Override
-        public int arity() {
-            return 4;
-        }
-
-        @Override
-        public Tensor apply(Tensor... inputs) {
-            Tensor clickShare = RatioOp.divide(inputs[0], inputs[1]);
-            Tensor costShare = RatioOp.divide(inputs[2], inputs[3]);
-            Tensor roi = RatioOp.divide(inputs[3], inputs[2]);
-            int rows = clickShare.size();
-            double[] click = clickShare.doubleData();
-            double[] cost = costShare.doubleData();
-            double[] returnOnAd = roi.doubleData();
-            double[] values = new double[rows * 3];
-            for (int i = 0; i < rows; i++) {
-                values[i * 3] = click[i];
-                values[i * 3 + 1] = cost[i];
-                values[i * 3 + 2] = returnOnAd[i];
-            }
-            return Tensor.fromDoubles(TensorShape.of(rows, 3), values);
-        }
-    }
-
-    private static final class DelayOp implements ColumnOperator {
-
-        @Override
-        public int arity() {
-            return 4;
-        }
-
-        @Override
-        public Tensor apply(Tensor... inputs) {
-            Tensor orderDelay = RatioOp.divide(inputs[0], inputs[1]);
-            Tensor gmvDelay = RatioOp.divide(inputs[2], inputs[3]);
-            int rows = orderDelay.size();
-            double[] order = orderDelay.doubleData();
-            double[] gmv = gmvDelay.doubleData();
-            double[] values = new double[rows * 4];
-            for (int i = 0; i < rows; i++) {
-                values[i * 4] = 1.0 - order[i];
-                values[i * 4 + 1] = order[i];
-                values[i * 4 + 2] = 1.0 - gmv[i];
-                values[i * 4 + 3] = gmv[i];
-            }
-            return Tensor.fromDoubles(TensorShape.of(rows, 2, 2), values);
-        }
     }
 }

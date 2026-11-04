@@ -3,6 +3,10 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.ColumnDefinitionException;
+import io.lark.column.ColumnExecutionException;
+import io.lark.column.ColumnFeedException;
+import io.lark.column.ColumnFetchException;
 import io.lark.column.context.ColumnRunContext;
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Cell;
@@ -77,7 +81,7 @@ public final class ColumnPipeline implements AutoCloseable {
         Objects.requireNonNull(module, "module");
         module.initialize();
         if (modulesByType.putIfAbsent(module.getClass(), module) != null) {
-            throw new IllegalArgumentException(
+            throw new ColumnDefinitionException(
                     "ColumnPipeline: duplicate module type " + module.getClass().getName());
         }
         modules.add(module);
@@ -313,7 +317,7 @@ public final class ColumnPipeline implements AutoCloseable {
     private void runCompiled() {
         PipelinePlan current = plan;
         if (current == null) {
-            throw new IllegalStateException("ColumnPipeline: compile first");
+            throw new ColumnExecutionException("ColumnPipeline: compile first");
         }
         coerceFeed(ctx.feed(), true);
         validateFeed(ctx.feed());
@@ -385,7 +389,7 @@ public final class ColumnPipeline implements AutoCloseable {
                 .filter(column -> !table.has(column))
                 .toList();
         if (!missing.isEmpty()) {
-            throw new IllegalArgumentException(
+            throw new ColumnFeedException(
                     "ColumnPipeline: missing feed column(s) " + missing
                             + "; required=" + current.requiredFeedColumns());
         }
@@ -439,7 +443,7 @@ public final class ColumnPipeline implements AutoCloseable {
     /** Fetch every compiled output as a typed tensor view. */
     public Map<String, Tensor> fetchTensors() {
         if (plan == null) {
-            throw new IllegalStateException("ColumnPipeline: compile first");
+            throw new ColumnExecutionException("ColumnPipeline: compile first");
         }
         return fetchTensors(plan.outputs());
     }
@@ -453,10 +457,10 @@ public final class ColumnPipeline implements AutoCloseable {
     public Map<String, Tensor> fetchTensors(List<String> names) {
         PipelinePlan current = plan;
         if (current == null) {
-            throw new IllegalStateException("ColumnPipeline: compile first");
+            throw new ColumnExecutionException("ColumnPipeline: compile first");
         }
         if (!current.canFetch(names)) {
-            throw new IllegalArgumentException(
+            throw new ColumnFetchException(
                     "ColumnPipeline: cannot fetch " + names
                             + "; compiled outputs=" + current.outputs());
         }
@@ -479,10 +483,10 @@ public final class ColumnPipeline implements AutoCloseable {
     private TensorTable fetchTable(List<String> names) {
         PipelinePlan current = plan;
         if (current == null) {
-            throw new IllegalStateException("ColumnPipeline: compile first");
+            throw new ColumnExecutionException("ColumnPipeline: compile first");
         }
         if (!current.canFetch(names)) {
-            throw new IllegalArgumentException(
+            throw new ColumnFetchException(
                     "ColumnPipeline: cannot fetch " + names
                             + "; compiled outputs=" + current.outputs());
         }
@@ -508,7 +512,7 @@ public final class ColumnPipeline implements AutoCloseable {
 
     public List<Row> fetch() {
         if (plan == null) {
-            throw new IllegalStateException("ColumnPipeline: compile first");
+            throw new ColumnExecutionException("ColumnPipeline: compile first");
         }
         return fetch(plan.outputs());
     }
@@ -536,7 +540,7 @@ public final class ColumnPipeline implements AutoCloseable {
     public double fetchScalar(String name) {
         PipelinePlan current = plan;
         if (current == null || !current.outputSet().contains(name)) {
-            throw new IllegalArgumentException(
+            throw new ColumnFetchException(
                     "ColumnPipeline: '" + name + "' is not a compiled output");
         }
         Map<String, String> shape = Map.of("rows", "1", "columns", "1");
@@ -632,7 +636,7 @@ public final class ColumnPipeline implements AutoCloseable {
     public <T extends ColumnModule> T module(Class<T> type) {
         ColumnModule module = modulesByType.get(type);
         if (module == null) {
-            throw new IllegalArgumentException(
+            throw new ColumnDefinitionException(
                     "ColumnPipeline: module not added: " + type.getName());
         }
         return type.cast(module);

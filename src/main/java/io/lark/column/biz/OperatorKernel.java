@@ -3,6 +3,7 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.ColumnExecutionException;
 import io.lark.column.tensor.DType;
 import io.lark.column.tensor.KernelContext;
 import io.lark.column.tensor.Tensor;
@@ -32,15 +33,31 @@ final class OperatorKernel implements TensorKernel {
         for (int i = 0; i < inputs.length; i++) {
             inputs[i] = ctx.input(i);
         }
-        Tensor result = operator.apply(
-                new ColumnOperatorContext(ctx.experiment(), ctx.runContext()),
-                inputs);
+        Tensor result;
+        try {
+            result = operator.apply(
+                    new ColumnOperatorContext(ctx.experiment(), ctx.runContext()),
+                    inputs);
+        } catch (ColumnExecutionException failure) {
+            throw failure;
+        } catch (RuntimeException failure) {
+            throw new ColumnExecutionException(
+                    "Column operator " + operator.operatorName()
+                            + " failed", failure);
+        }
         if (result == null) {
-            throw new IllegalStateException(
+            throw new ColumnExecutionException(
                     "Column operator " + operator.operatorName()
                             + " produced no output");
         }
-        ctx.output(result.dtype() == outputDtype
-                ? result : result.castTo(outputDtype));
+        try {
+            ctx.output(result.dtype() == outputDtype
+                    ? result : result.castTo(outputDtype));
+        } catch (RuntimeException failure) {
+            throw new ColumnExecutionException(
+                    "Column operator " + operator.operatorName()
+                            + " produced " + result.dtype()
+                            + ", expected " + outputDtype, failure);
+        }
     }
 }

@@ -3,6 +3,7 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.ColumnExecutionException;
 import io.lark.column.tensor.FallibleTensorKernel;
 import io.lark.column.tensor.KernelContext;
 import io.lark.column.tensor.Tensor;
@@ -47,11 +48,18 @@ final class OpNode<O> extends ModuleNode<O> {
         }
 
         Tensor[] result = new Tensor[1];
-        kernel.compute(new KernelContext(ctx.store(), inputs,
-                value -> result[0] = value, ctx.experiment(),
-                ctx.runContext()));
+        try {
+            kernel.compute(new KernelContext(ctx.store(), inputs,
+                    value -> result[0] = value, ctx.experiment(),
+                    ctx.runContext()));
+        } catch (ColumnExecutionException failure) {
+            throw failure;
+        } catch (RuntimeException failure) {
+            throw new ColumnExecutionException(
+                    "OpNode " + id() + " failed", failure);
+        }
         if (result[0] == null) {
-            throw new IllegalStateException(
+            throw new ColumnExecutionException(
                     "OpNode " + id() + ": kernel produced no output");
         }
         ctx.write(out(), result[0]);

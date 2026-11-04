@@ -3,6 +3,7 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.ColumnFeedException;
 import io.lark.column.data.Cell;
 import io.lark.column.data.Row;
 
@@ -80,7 +81,7 @@ public final class FeedMapping<T> {
 
         public FeedMapping<T> build() {
             if (streams.isEmpty()) {
-                throw new IllegalStateException(
+                throw new ColumnFeedException(
                         "FeedMapping.builder(): declare at least one column");
             }
             return new FeedMapping<>(
@@ -93,7 +94,7 @@ public final class FeedMapping<T> {
             return Cell.nil();
         }
         if (!(value instanceof Number number)) {
-            throw new IllegalArgumentException(
+            throw new ColumnFeedException(
                     "Feed column '" + stream.name()
                             + "' expects a number, got "
                             + value.getClass().getName());

@@ -3,6 +3,8 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.ColumnDefinitionException;
+
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -70,7 +72,7 @@ public abstract class ColumnModule {
         ColumnStream<?> existing = inputByName.get(column.name());
         if (existing != null) {
             if (!existing.definition().equals(column)) {
-                throw new IllegalArgumentException(
+                throw new ColumnDefinitionException(
                         "ColumnModule: input '" + column.name()
                                 + "' declared with conflicting definitions");
             }
@@ -132,7 +134,7 @@ public abstract class ColumnModule {
         Objects.requireNonNull(operator, "operator");
         int expected = operator.arity();
         if (expected >= 0 && expected != inputs.length) {
-            throw new IllegalArgumentException(
+            throw new ColumnDefinitionException(
                     "Column operator " + operator.operatorName()
                             + " requires " + expected + " input(s), got "
                             + inputs.length);
@@ -236,13 +238,13 @@ public abstract class ColumnModule {
                 continue;
             }
             if (!output.definition().equals(column)) {
-                throw new IllegalArgumentException(
+                throw new ColumnDefinitionException(
                         "ColumnModule " + getClass().getName() + ": output '"
                                 + column.name() + "' has a different definition");
             }
             return (ColumnStream<T>) output;
         }
-        throw new IllegalArgumentException(
+        throw new ColumnDefinitionException(
                 "ColumnModule " + getClass().getName() + ": output '"
                         + column.name() + "' is not published");
     }
@@ -325,7 +327,7 @@ public abstract class ColumnModule {
             Class<? extends ColumnOperator> type) {
         Objects.requireNonNull(type, "operator");
         if (type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
-            throw new IllegalArgumentException(
+            throw new ColumnDefinitionException(
                     "Column operator " + type.getName()
                             + " must be a concrete class");
         }
@@ -337,11 +339,11 @@ public abstract class ColumnModule {
             constructor.setAccessible(true);
             return constructor.newInstance();
         } catch (NoSuchMethodException failure) {
-            throw new IllegalArgumentException(message, failure);
+            throw new ColumnDefinitionException(message, failure);
         } catch (InvocationTargetException failure) {
-            throw new IllegalArgumentException(message, failure.getCause());
+            throw new ColumnDefinitionException(message, failure.getCause());
         } catch (ReflectiveOperationException failure) {
-            throw new IllegalArgumentException(message, failure);
+            throw new ColumnDefinitionException(message, failure);
         }
     }
 

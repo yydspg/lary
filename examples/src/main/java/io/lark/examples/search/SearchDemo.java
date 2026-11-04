@@ -12,10 +12,8 @@ import java.util.Random;
 
 /**
  * Search ranking demo: request data, deterministic sample rows and the CLI
- * entry point.
- *
- * <p>The graph itself lives in {@link SearchModule}; the typed result lives in
- * {@link SearchResult}. Run with {@code ./gradlew :examples:runSearch}.
+ * entry point. The graph lives in {@link SearchModule}; the result lives in
+ * {@link SearchResult}.
  */
 public final class SearchDemo {
 
@@ -35,7 +33,6 @@ public final class SearchDemo {
 
     // ---- request / row model --------------------------------------------
 
-    /** One search page-view request, including its experiment assignment. */
     public record SearchContext(long pvId, long userId, String query, int topK,
                                 ExperimentContext experiment) {
 
@@ -58,7 +55,6 @@ public final class SearchDemo {
         }
     }
 
-    /** One candidate goods row. */
     public record GoodsDO(long goodsId, long impressions, long clicks,
                           long orders, long gmvFen, long couponCostFen,
                           long buyAgainOrders, long delayedOrders,
@@ -101,7 +97,6 @@ public final class SearchDemo {
     public record SearchRow(long pvId, GoodsDO goods) {
     }
 
-    /** Bind a request's goods list to its PV id. */
     public static List<SearchRow> rows(SearchRequest request) {
         List<SearchRow> rows = new ArrayList<>(request.goods().size());
         for (GoodsDO goods : request.goods().goods()) {
@@ -129,23 +124,16 @@ public final class SearchDemo {
                 .build();
     }
 
-    /** Small hand-authored request for tests and printed metric checks. */
     public static SearchRequest sampleRequest() {
         SearchContext context = sampleContext();
         return new SearchRequest(context, new GoodsList(List.of(
-                goods(1, 1_000, 50, 5, 50_000, 1_000, 1, 1, 5_000, 20, 200,
-                        0.80, 10),
-                goods(2, 2_000, 100, 20, 300_000, 5_000, 4, 8, 60_000, 45, 800,
-                        0.90, 20),
-                goods(3, 500, 10, 1, 8_000, 0, 0, 0, 0, 5, 0,
-                        1.00, 30),
-                goods(4, 1_500, 120, 30, 600_000, 8_000, 10, 15, 90_000, 60, 1_200,
-                        0.85, 40),
-                goods(5, 800, 40, 8, 120_000, 2_000, 2, 4, 15_000, 18, 300,
-                        0.95, 50))));
+                goods(1, 1_000, 50, 5, 50_000, 1_000, 1, 1, 5_000, 20, 200, 0.80, 10),
+                goods(2, 2_000, 100, 20, 300_000, 5_000, 4, 8, 60_000, 45, 800, 0.90, 20),
+                goods(3, 500, 10, 1, 8_000, 0, 0, 0, 0, 5, 0, 1.00, 30),
+                goods(4, 1_500, 120, 30, 600_000, 8_000, 10, 15, 90_000, 60, 1_200, 0.85, 40),
+                goods(5, 800, 40, 8, 120_000, 2_000, 2, 4, 15_000, 18, 300, 0.95, 50))));
     }
 
-    /** Simulate one PV with deterministic candidate goods. */
     public static SearchRequest simulate(SearchContext context, int goodsCount) {
         if (goodsCount <= 0) {
             throw new IllegalArgumentException("goodsCount must be positive");
@@ -174,9 +162,9 @@ public final class SearchDemo {
             double perturbation = 0.80 + random.nextDouble() * 0.30;
             double originalScore = random.nextDouble() * 100.0;
             goods.add(goods(i + 1, impressions, clicks, orders, gmvFen,
-                    couponCostFen, buyAgainOrders, delayedOrders, delayedGmvFen,
-                    retargetClicks, retargetCostFen, perturbation,
-                    originalScore));
+                    couponCostFen, buyAgainOrders, delayedOrders,
+                    delayedGmvFen, retargetClicks, retargetCostFen,
+                    perturbation, originalScore));
         }
         return new SearchRequest(context, new GoodsList(goods));
     }
@@ -191,7 +179,8 @@ public final class SearchDemo {
                 result.candidateCount(), context.topK(),
                 context.experiment().variants());
 
-        System.out.printf("%5s %10s %16s%n", "rank", "goods_id", "adjusted_score");
+        System.out.printf("%5s %10s %16s%n",
+                "rank", "goods_id", "adjusted_score");
         for (SearchResult.RankedGoods goods : result.ranked()) {
             System.out.printf("%5d %10d %16.4f%n",
                     goods.rank(), goods.goodsId(), goods.adjustedScore());
