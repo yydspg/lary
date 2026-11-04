@@ -108,3 +108,10 @@ tasks.register<JavaExec>("runSearch") {
     classpath = sourceSets["main"].runtimeClasspath
     mainClass.set("io.lark.examples.search.SearchDemo")
 }
+
+tasks.register<JavaExec>("runRank") {
+    group = "application"
+    description = "Run the sequential slot-ranking demo."
+    classpath = sourceSets["main"].runtimeClasspath
+    mainClass.set("io.lark.examples.rank.SequentialRankDemo")
+}
