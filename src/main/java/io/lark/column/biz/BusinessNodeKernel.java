@@ -27,11 +27,13 @@ final class BusinessNodeKernel implements TensorKernel, FallibleTensorKernel {
 
     @Override
     public void compute(KernelContext ctx) {
-        node.compute(new ColumnContext(ctx.store(), ctx.experiment()));
+        node.compute(new ColumnContext(ctx.store(), ctx.experiment(),
+                ctx.runContext()));
     }
 
     @Override
     public boolean fallback(KernelContext ctx, Throwable error) {
-        return node.fallback(new ColumnContext(ctx.store(), ctx.experiment()), error);
+        return node.fallback(new ColumnContext(ctx.store(), ctx.experiment(),
+                ctx.runContext()), error);
     }
 }

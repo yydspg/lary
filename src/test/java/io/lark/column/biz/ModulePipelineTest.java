@@ -3,6 +3,9 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.op.AddOp;
+import io.lark.column.biz.op.ScaleOp;
+import io.lark.column.context.ColumnRunContext;
 import io.lark.column.data.Cell;
 import io.lark.column.tensor.DType;
 import io.lark.column.data.Row;
@@ -49,6 +52,16 @@ class ModulePipelineTest {
             new Column<>("consumer_out", DType.INT64);
     static final Column<Double> ZEROS =
             new Column<>("zeros", DType.FLOAT64);
+    static final Column<Long> OPERATOR_LEFT =
+            new Column<>("operator_left", DType.INT64);
+    static final Column<Long> OPERATOR_RIGHT =
+            new Column<>("operator_right", DType.INT64);
+    static final Column<Double> OPERATOR_SUM =
+            new Column<>("operator_sum", DType.FLOAT64);
+    static final Column<Double> OPERATOR_SCALED =
+            new Column<>("operator_scaled", DType.FLOAT64);
+    static final Column<Double> OPERATOR_WEIGHTED =
+            new Column<>("operator_weighted", DType.FLOAT64);
 
     // ---- nodes -----------------------------------------------------------
 
@@ -590,6 +603,150 @@ class ModulePipelineTest {
                 throw new IllegalStateException("first definition fails");
             }
         }
+    }
+
+    static final class OperatorModule extends ColumnModule {
+        ColumnStream<Long> left;
+        ColumnStream<Long> right;
+        ColumnStream<Double> sum;
+        ColumnStream<Double> scaled;
+
+        @Override
+        protected void buildGraph() {
+            left = feed(OPERATOR_LEFT);
+            right = feed(OPERATOR_RIGHT);
+            sum = node(OPERATOR_SUM, AddOp.class, left, right);
+            scaled = node(OPERATOR_SCALED, new ScaleOp(10.0), sum);
+            output(sum, scaled);
+        }
+    }
+
+    static final class WeightedAddOp implements ColumnOperator {
+
+        @Override
+        public int arity() {
+            return 2;
+        }
+
+        @Override
+        public Tensor apply(Tensor... inputs) {
+            throw new IllegalStateException("run context is required");
+        }
+
+        @Override
+        public Tensor apply(ColumnOperatorContext context, Tensor... inputs) {
+            double weight = context.runContext().require(Weights.class).value();
+            return Compute.addScalar(
+                    Compute.add(inputs[0], inputs[1]), weight);
+        }
+    }
+
+    record Weights(double value) {
+    }
+
+    static final class ContextModule extends ColumnModule {
+        ColumnStream<Long> left;
+        ColumnStream<Long> right;
+        ColumnStream<Double> weighted;
+
+        @Override
+        protected void buildGraph() {
+            left = feed(OPERATOR_LEFT);
+            right = feed(OPERATOR_RIGHT);
+            weighted = node(OPERATOR_WEIGHTED, new WeightedAddOp(),
+                    left, right);
+            output(weighted);
+        }
+    }
+
+    static final class ConfiguredOp implements ColumnOperator {
+
+        private final double delta;
+
+        ConfiguredOp(double delta) {
+            this.delta = delta;
+        }
+
+        @Override
+        public Tensor apply(Tensor... inputs) {
+            return Compute.addScalar(inputs[0], delta);
+        }
+    }
+
+    static final class MissingNoArgConstructorModule extends ColumnModule {
+        @Override
+        protected void buildGraph() {
+            node(OPERATOR_SUM, ConfiguredOp.class,
+                    feed(OPERATOR_LEFT), feed(OPERATOR_RIGHT));
+        }
+    }
+
+    static final class WrongArityModule extends ColumnModule {
+        @Override
+        protected void buildGraph() {
+            node(OPERATOR_SUM, AddOp.class, feed(OPERATOR_LEFT));
+        }
+    }
+
+    @Test
+    void operatorClassesDefineNodesWithoutComputeCode() {
+        OperatorModule module = new OperatorModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
+            pipeline.add(module)
+                    .compile(FetchStream.of(module.sum, module.scaled))
+                    .feed(Map.of(
+                            OPERATOR_LEFT.name(), List.of(Cell.of(1), Cell.of(2)),
+                            OPERATOR_RIGHT.name(), List.of(Cell.of(3), Cell.of(4))))
+                    .compute();
+
+            // add produces INT64, then the declared FLOAT64 output coerces it.
+            assertEquals(List.of(4.0, 6.0),
+                    doubles(pipeline.fetchTensor(module.sum)));
+            assertEquals(List.of(0.4, 0.6),
+                    doubles(pipeline.fetchTensor(module.scaled)));
+        }
+    }
+
+    @Test
+    void runContextReachesContextualOperators() {
+        ContextModule module = new ContextModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
+            pipeline.add(module);
+            pipeline.execute(
+                    FeedStream.of(new ColumnStream<?>[]{
+                                    module.left, module.right},
+                            List.of(Row.of(Cell.of(1), Cell.of(2)))),
+                    ColumnRunContext.of(new Weights(10.0)));
+
+            assertEquals(List.of(13.0),
+                    doubles(pipeline.fetchTensor(module.weighted)));
+        }
+    }
+
+    @Test
+    void operatorClassNeedsANoArgConstructor() {
+        MissingNoArgConstructorModule module =
+                new MissingNoArgConstructorModule();
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class, module::feedMap);
+        assertTrue(failure.getMessage().contains("no-arg constructor"));
+    }
+
+    @Test
+    void operatorArityIsCheckedWhileBuildingTheGraph() {
+        WrongArityModule module = new WrongArityModule();
+        IllegalArgumentException failure = assertThrows(
+                IllegalArgumentException.class, module::feedMap);
+        assertTrue(failure.getMessage().contains("requires 2 input(s), got 1"));
+    }
+
+    private static List<Double> doubles(Tensor tensor) {
+        double[] values = tensor.doubleData();
+        List<Double> result = new ArrayList<>(values.length);
+        for (double value : values) {
+            result.add(value);
+        }
+        return result;
     }
 
     private static List<Row> rows(int count) {

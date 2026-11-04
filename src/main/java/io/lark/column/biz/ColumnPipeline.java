@@ -3,6 +3,7 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.context.ColumnRunContext;
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Cell;
 import io.lark.column.tensor.FeedFetch;
@@ -55,6 +56,7 @@ public final class ColumnPipeline implements AutoCloseable {
             Runtime.getRuntime().availableProcessors());
     private boolean virtualComputeThreads;
     private ExperimentContext experiment = ExperimentContext.empty();
+    private ColumnRunContext runContext = ColumnRunContext.empty();
 
     private PipelinePlan plan;
     private List<String> planRequestedOutputs;
@@ -139,6 +141,25 @@ public final class ColumnPipeline implements AutoCloseable {
 
     public ExperimentContext experiment() {
         return experiment;
+    }
+
+    /**
+     * Install a typed business context for the next run. The graph definition
+     * stays context-free; custom operators read this through
+     * {@code ColumnOperatorContext.runContext()}.
+     */
+    public ColumnPipeline setRunContext(ColumnRunContext runContext) {
+        this.runContext = Objects.requireNonNull(runContext, "runContext");
+        return this;
+    }
+
+    /** Convenience: build a run context keyed by the runtime class of each value. */
+    public ColumnPipeline setRunContext(Object... values) {
+        return setRunContext(ColumnRunContext.of(values));
+    }
+
+    public ColumnRunContext runContext() {
+        return runContext;
     }
 
     /**
@@ -297,6 +318,7 @@ public final class ColumnPipeline implements AutoCloseable {
         coerceFeed(ctx.feed(), true);
         validateFeed(ctx.feed());
         ctx.setExperiment(experiment);
+        ctx.setRunContext(runContext);
         if (pool == null) {
             if (virtualComputeThreads) {
                 // Blocking nodes: one virtual thread per ready node. The ready
@@ -524,6 +546,48 @@ public final class ColumnPipeline implements AutoCloseable {
         ctx.endPhase();
         emitEnd("fetch.end", "fetch", ExecutionContext.RunPhase.FETCH, shape);
         return value;
+    }
+
+    /**
+     * Compile, feed and compute in one call, then leave the results available
+     * through the typed fetch methods. This is the normal run path for a graph
+     * whose outputs have different shapes:
+     *
+     * <pre>{@code
+     * try (ColumnPipeline pipeline = buildGraph()) {
+     *     pipeline.setExperiment(experiment)
+     *             .execute(feed, ColumnRunContext.of(request));
+     *     List<Row> ranked = pipeline.fetch(FetchStream.of(goodsId, selected));
+     * }
+     * }</pre>
+     */
+    public ColumnPipeline execute(FeedStream feedStream) {
+        return execute(feedStream, ColumnRunContext.empty());
+    }
+
+    public ColumnPipeline execute(FeedStream feedStream,
+                                  ColumnRunContext runContext) {
+        setRunContext(runContext);
+        compile();
+        feed(feedStream);
+        compute();
+        return this;
+    }
+
+    /** Compile/prune, feed and compute in one call. */
+    public ColumnPipeline execute(FeedStream feedStream,
+                                  FetchStream requiredOutputs) {
+        return execute(feedStream, requiredOutputs, ColumnRunContext.empty());
+    }
+
+    public ColumnPipeline execute(FeedStream feedStream,
+                                  FetchStream requiredOutputs,
+                                  ColumnRunContext runContext) {
+        setRunContext(runContext);
+        compile(requiredOutputs);
+        feed(feedStream);
+        compute();
+        return this;
     }
 
     /**

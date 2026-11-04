@@ -32,6 +32,12 @@ final class OpNode<O> extends ModuleNode<O> {
         this.kernel = op.kernel();
     }
 
+    OpNode(Column<O> output, ColumnOperator operator,
+           ColumnStream<?>... inputs) {
+        super(output, inputs);
+        this.kernel = new OperatorKernel(output.dtype(), operator);
+    }
+
     @Override
     public void compute(ColumnContext ctx) {
         ColumnStream<?>[] feeds = feedView();
@@ -42,7 +48,8 @@ final class OpNode<O> extends ModuleNode<O> {
 
         Tensor[] result = new Tensor[1];
         kernel.compute(new KernelContext(ctx.store(), inputs,
-                value -> result[0] = value, ctx.experiment()));
+                value -> result[0] = value, ctx.experiment(),
+                ctx.runContext()));
         if (result[0] == null) {
             throw new IllegalStateException(
                     "OpNode " + id() + ": kernel produced no output");
@@ -55,7 +62,7 @@ final class OpNode<O> extends ModuleNode<O> {
         if (kernel instanceof FallibleTensorKernel fallible) {
             return fallible.fallback(
                     new KernelContext(ctx.store(), new Tensor[0], null,
-                            ctx.experiment()), error);
+                            ctx.experiment(), ctx.runContext()), error);
         }
         return false;
     }

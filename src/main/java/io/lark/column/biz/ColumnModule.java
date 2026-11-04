@@ -3,6 +3,8 @@
 
 package io.lark.column.biz;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
@@ -22,13 +24,16 @@ import java.util.Objects;
  *     private ColumnStream<Long> clicks;
  *     private ColumnStream<Double> ctr;
  *
- *     @Override protected void define() {
+ *     @Override protected void buildGraph() {
  *         impressions = feed(Metrics.IMPRESSIONS);
  *         clicks = feed(Metrics.CLICKS);
- *         ctr = node(ColumnOps.ratio(Metrics.CTR), clicks, impressions);
+ *         ctr = node(Metrics.CTR, RatioOp.class, clicks, impressions);
  *         output(ctr);
  *     }
  * }</pre>
+ *
+ * <p>{@code buildGraph()} declares wiring only. The pipeline compiles the
+ * collected modules once, then handles feed, execution and fetch per run.
  *
  * <p>Nodes, inputs, outputs and dependencies are exposed as array snapshots;
  * their cardinality is fixed after module construction. Internal compiler and
@@ -94,6 +99,48 @@ public abstract class ColumnModule {
     }
 
     /**
+     * Define a node from a declarative operator class:
+     *
+     * <pre>{@code
+     * ctr = node(SearchMetrics.CTR, RatioOp.class, clicks, impressions);
+     * }</pre>
+     *
+     * <p>The class must have a no-arg constructor. Parameterized operators use
+     * the instance overload instead.
+     */
+    protected final <O> ColumnStream<O> node(Column<O> output,
+                                             Class<? extends ColumnOperator> operator,
+                                             ColumnStream<?>... inputs) {
+        return node(output, instantiate(operator), inputs);
+    }
+
+    /**
+     * Define a node from a declarative operator instance, for operators that
+     * carry configuration:
+     *
+     * <pre>{@code
+     * couponCost = node(SearchMetrics.COUPON_COST,
+     *         new ScaleOp(100.0), feed(SearchMetrics.COUPON_COST_FEN));
+     * }</pre>
+     *
+     * <p>The operator result is coerced to the declared output dtype.
+     */
+    protected final <O> ColumnStream<O> node(Column<O> output,
+                                             ColumnOperator operator,
+                                             ColumnStream<?>... inputs) {
+        Objects.requireNonNull(output, "output");
+        Objects.requireNonNull(operator, "operator");
+        int expected = operator.arity();
+        if (expected >= 0 && expected != inputs.length) {
+            throw new IllegalArgumentException(
+                    "Column operator " + operator.operatorName()
+                            + " requires " + expected + " input(s), got "
+                            + inputs.length);
+        }
+        return add(new OpNode<>(output, operator, inputs)).out();
+    }
+
+    /**
      * Register a typed formula node. The expression tree is columnar and can
      * branch on experiment assignments and row conditions without rebuilding
      * the graph.
@@ -154,14 +201,24 @@ public abstract class ColumnModule {
     }
 
     /**
-     * Define this module's node subgraph and feed/fetch streams.
+     * Build this module's graph: declare feeds, nodes and fetch outputs.
      *
-     * <p>Called once before compilation. A module creates nodes, wires them
-     * from module feeds or other node outputs, and declares its own outputs:
-     * this is the module's subgraph; the framework collects module subgraphs
-     * into the full execution graph.
+     * <p>Called once before compilation. This is the single graph-definition
+     * hook: a module creates nodes, wires them from feeds or other node
+     * outputs, and declares its own outputs. The framework collects module
+     * graphs, prunes, executes and exposes the fetch streams; modules never
+     * feed or execute themselves.
      */
-    protected abstract void define();
+    protected void buildGraph() {
+        define();
+    }
+
+    /**
+     * Legacy graph-definition hook. New modules override {@link #buildGraph()};
+     * this remains so existing modules keep working.
+     */
+    protected void define() {
+    }
 
     /**
      * Look up one of this module's published fetch outputs by schema definition.
@@ -236,7 +293,7 @@ public abstract class ColumnModule {
         int dependencyCount = dependencyBuilder.size();
         Map<String, ColumnStream<?>> inputsBefore = new LinkedHashMap<>(inputByName);
         try {
-            define();
+            buildGraph();
             initState = InitState.READY;
         } catch (Throwable failure) {
             // A failed definition must not leave partial nodes/streams behind:
@@ -261,6 +318,30 @@ public abstract class ColumnModule {
     private static <T> void truncate(List<T> list, int size) {
         if (list.size() > size) {
             list.subList(size, list.size()).clear();
+        }
+    }
+
+    private static ColumnOperator instantiate(
+            Class<? extends ColumnOperator> type) {
+        Objects.requireNonNull(type, "operator");
+        if (type.isInterface() || Modifier.isAbstract(type.getModifiers())) {
+            throw new IllegalArgumentException(
+                    "Column operator " + type.getName()
+                            + " must be a concrete class");
+        }
+        String message = "Column operator " + type.getName()
+                + " needs a public no-arg constructor; use the operator"
+                + " instance form for parameterized operators";
+        try {
+            var constructor = type.getDeclaredConstructor();
+            constructor.setAccessible(true);
+            return constructor.newInstance();
+        } catch (NoSuchMethodException failure) {
+            throw new IllegalArgumentException(message, failure);
+        } catch (InvocationTargetException failure) {
+            throw new IllegalArgumentException(message, failure.getCause());
+        } catch (ReflectiveOperationException failure) {
+            throw new IllegalArgumentException(message, failure);
         }
     }
 

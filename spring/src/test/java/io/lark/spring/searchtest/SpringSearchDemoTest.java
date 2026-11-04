@@ -4,24 +4,16 @@
 package io.lark.spring.searchtest;
 
 import io.lark.column.biz.ColumnModule;
-import io.lark.examples.search.SearchRankingOptions;
-import io.lark.examples.search.SearchRankingService;
+import io.lark.column.biz.ColumnPipeline;
+import io.lark.examples.search.SearchDemo;
+import io.lark.examples.search.SearchModule;
 import io.lark.examples.search.SearchResult;
-import io.lark.examples.search.data.SearchContext;
-import io.lark.examples.search.data.SearchRepository;
-import io.lark.examples.search.data.SearchRequest;
-import io.lark.examples.search.module.AdjustedScoreModule;
-import io.lark.examples.search.module.DelayModule;
-import io.lark.examples.search.module.RetargetAdModule;
-import io.lark.examples.search.module.SearchInputModule;
-import io.lark.examples.search.module.TopKModule;
 import io.lark.spring.ColumnPipelineFactory;
 import io.lark.spring.EnableLaryColumns;
 import io.lark.spring.LaryColumnAutoConfiguration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.AnnotationConfigApplicationContext;
-import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
 
@@ -31,17 +23,23 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class SpringSearchDemoTest {
 
     @Test
-    void discoversAllSearchModulesAndRunsTypedSearch() {
+    void discoversTheSearchModuleAndRunsTypedSearch() {
         try (AnnotationConfigApplicationContext context =
                      new AnnotationConfigApplicationContext(SearchConfig.class)) {
-            assertEquals(13,
+            assertEquals(1,
                     context.getBeanProvider(ColumnModule.class).stream().count());
 
-            SearchContext searchContext = SearchRepository.sampleContext();
-            SearchRequest request = SearchRepository.simulate(searchContext, 1_000);
-            SearchRankingService service =
-                    context.getBean(SearchRankingService.class);
-            SearchResult result = service.search(request);
+            SearchDemo.SearchContext searchContext = SearchDemo.sampleContext();
+            SearchDemo.SearchRequest request =
+                    SearchDemo.simulate(searchContext, 1_000);
+            SearchModule module = context.getBean(SearchModule.class);
+            ColumnPipelineFactory pipelines =
+                    context.getBean(ColumnPipelineFactory.class);
+
+            SearchResult result;
+            try (ColumnPipeline pipeline = pipelines.create()) {
+                result = module.search(pipeline, request);
+            }
 
             assertEquals(30, result.ranked().size());
             assertEquals(1, result.ranked().get(0).rank());
@@ -53,25 +51,8 @@ class SpringSearchDemoTest {
     }
 
     @Configuration(proxyBeanMethods = false)
-    @EnableLaryColumns(basePackages = "io.lark.examples.search.module")
+    @EnableLaryColumns(basePackages = "io.lark.examples.search")
     @Import(LaryColumnAutoConfiguration.class)
     static class SearchConfig {
-
-        @Bean
-        SearchRankingOptions searchRankingOptions() {
-            return new SearchRankingOptions(30);
-        }
-
-        @Bean
-        SearchRankingService searchRankingService(
-                ColumnPipelineFactory pipelines,
-                SearchInputModule inputs,
-                AdjustedScoreModule scores,
-                TopKModule topK,
-                RetargetAdModule retarget,
-                DelayModule delay) {
-            return new SearchRankingService(inputs, scores, topK, retarget, delay,
-                    pipelines::create);
-        }
     }
 }

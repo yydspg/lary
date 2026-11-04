@@ -3,6 +3,7 @@
 
 package io.lark.column.exec;
 
+import io.lark.column.context.ColumnRunContext;
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.tensor.Tensor;
 import io.lark.column.tensor.TensorStore;
@@ -131,37 +132,51 @@ public final class ComputeNode {
     }
 
     void execute(TensorStore store) {
-        execute(store, ExperimentContext.empty());
+        execute(store, ExperimentContext.empty(), ColumnRunContext.empty());
     }
 
     void execute(TensorStore store, ExperimentContext experiment) {
-        KernelContext ctx = context(store, experiment);
+        execute(store, experiment, ColumnRunContext.empty());
+    }
+
+    void execute(TensorStore store, ExperimentContext experiment,
+                 ColumnRunContext runContext) {
+        KernelContext ctx = context(store, experiment, runContext);
         kernel.compute(ctx);
     }
 
     boolean fallback(TensorStore store, Throwable failure) {
-        return fallback(store, failure, ExperimentContext.empty());
+        return fallback(store, failure, ExperimentContext.empty(),
+                ColumnRunContext.empty());
     }
 
     boolean fallback(TensorStore store, Throwable failure,
                      ExperimentContext experiment) {
+        return fallback(store, failure, experiment, ColumnRunContext.empty());
+    }
+
+    boolean fallback(TensorStore store, Throwable failure,
+                     ExperimentContext experiment,
+                     ColumnRunContext runContext) {
         if (kernel instanceof FallibleTensorKernel fallible) {
             return fallible.fallback(
-                    new KernelContext(store, new Tensor[0], null, experiment),
+                    new KernelContext(store, new Tensor[0], null, experiment,
+                            runContext),
                     failure);
         }
         return false;
     }
 
     private KernelContext context(TensorStore store,
-                                  ExperimentContext experiment) {
+                                  ExperimentContext experiment,
+                                  ColumnRunContext runContext) {
         Tensor[] inputs = new Tensor[op.inputs().size()];
         for (int i = 0; i < inputs.length; i++) {
             inputs[i] = store.get(op.inputs().get(i));
         }
         Consumer<Tensor> sink = op.outputs().isEmpty()
                 ? null : tensor -> store.set(op.outputs().get(0), tensor);
-        return new KernelContext(store, inputs, sink, experiment);
+        return new KernelContext(store, inputs, sink, experiment, runContext);
     }
 
     void setStatus(Status newStatus) {

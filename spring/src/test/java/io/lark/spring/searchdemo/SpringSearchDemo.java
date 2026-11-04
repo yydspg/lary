@@ -3,68 +3,42 @@
 
 package io.lark.spring.searchdemo;
 
-import io.lark.examples.search.SearchRankingOptions;
-import io.lark.examples.search.SearchRankingService;
+import io.lark.column.biz.ColumnPipeline;
+import io.lark.examples.search.SearchDemo;
+import io.lark.examples.search.SearchModule;
 import io.lark.examples.search.SearchResult;
-import io.lark.examples.search.SearchResultPrinter;
-import io.lark.examples.search.data.SearchContext;
-import io.lark.examples.search.data.SearchRepository;
-import io.lark.examples.search.data.SearchRequest;
-import io.lark.examples.search.module.AdjustedScoreModule;
-import io.lark.examples.search.module.DelayModule;
-import io.lark.examples.search.module.RetargetAdModule;
-import io.lark.examples.search.module.SearchInputModule;
-import io.lark.examples.search.module.TopKModule;
 import io.lark.spring.ColumnPipelineFactory;
 import io.lark.spring.EnableLaryColumns;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Bean;
 
 /**
  * The search demo running as a Spring Boot application.
  *
- * <p>All search modules are {@code @ColumnComponent}s. Spring discovers them,
- * resolves their constructor dependencies, and {@link ColumnPipelineFactory}
- * creates the graph on demand. There is no manual module list in this class.
- *
- * <p>Only runtime concerns remain explicit: the request rows and the business
- * facade. {@link SearchRankingService} hides row/column plumbing.
+ * <p>{@link SearchModule} is the only {@code @ColumnComponent}; Spring discovers
+ * it and {@link ColumnPipelineFactory} creates a fresh pipeline per request.
  *
  * <p>Run with {@code ./gradlew :spring:runSpringSearch}.
  */
 @SpringBootApplication(proxyBeanMethods = false)
-@EnableLaryColumns(basePackages = "io.lark.examples.search.module")
+@EnableLaryColumns(basePackages = "io.lark.examples.search")
 public class SpringSearchDemo {
 
-    @Bean
-    public SearchRankingOptions searchRankingOptions() {
-        return new SearchRankingOptions(30);
-    }
-
-    @Bean
-    public SearchRankingService searchRankingService(
-            ColumnPipelineFactory pipelines,
-            SearchInputModule inputs,
-            AdjustedScoreModule scores,
-            TopKModule topK,
-            RetargetAdModule retarget,
-            DelayModule delay) {
-        return new SearchRankingService(inputs, scores, topK, retarget, delay,
-                pipelines::create);
-    }
-
     public static void main(String[] args) {
-        SearchContext context = SearchRepository.sampleContext();
-        SearchRequest request = SearchRepository.simulate(context, 1_000);
+        SearchDemo.SearchContext context = SearchDemo.sampleContext();
+        SearchDemo.SearchRequest request =
+                SearchDemo.simulate(context, 1_000);
         try (ConfigurableApplicationContext spring =
                      SpringApplication.run(SpringSearchDemo.class, args)) {
-            SearchRankingService service =
-                    spring.getBean(SearchRankingService.class);
-            SearchResult result = service.search(request);
-            SearchResultPrinter.print(result);
+            SearchModule module = spring.getBean(SearchModule.class);
+            ColumnPipelineFactory pipelines =
+                    spring.getBean(ColumnPipelineFactory.class);
+            try (ColumnPipeline pipeline = pipelines.create()) {
+                SearchResult result = module.search(pipeline, request);
+                SearchDemo.print(result);
+            }
         }
     }
 }

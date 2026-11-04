@@ -3,30 +3,12 @@
 
 package io.lark.examples.search;
 
-import io.lark.column.data.Row;
-import io.lark.column.tensor.Tensor;
-import io.lark.column.tensor.TensorShape;
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.FetchStream;
 import io.lark.column.context.ExperimentContext;
-import io.lark.examples.search.data.GoodsDO;
-import io.lark.examples.search.data.SearchContext;
-import io.lark.examples.search.data.SearchFeed;
-import io.lark.examples.search.data.SearchRepository;
-import io.lark.examples.search.data.SearchRequest;
-import io.lark.examples.search.module.BuyAgainModule;
-import io.lark.examples.search.module.CouponRoiModule;
-import io.lark.examples.search.module.CtCvrModule;
-import io.lark.examples.search.module.CtrModule;
-import io.lark.examples.search.module.CvrModule;
-import io.lark.examples.search.module.DelayModule;
-import io.lark.examples.search.module.GmvModule;
-import io.lark.examples.search.module.RebuySameLossModule;
-import io.lark.examples.search.module.AdjustedScoreModule;
-import io.lark.examples.search.module.RankingScoreModule;
-import io.lark.examples.search.module.RetargetAdModule;
-import io.lark.examples.search.module.TopKModule;
-import io.lark.examples.search.module.SearchInputModule;
+import io.lark.column.data.Row;
+import io.lark.column.tensor.Tensor;
+import io.lark.column.tensor.TensorShape;
 import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
@@ -40,34 +22,24 @@ class SearchDemoTest {
 
     @Test
     void computesScalarAndShapedSearchMetrics() {
-        GoodsDO firstGoods = SearchRepository.sampleRequest().goods().goods().get(0);
+        SearchDemo.GoodsDO firstGoods =
+                SearchDemo.sampleRequest().goods().goods().get(0);
         assertEquals(0.05, firstGoods.ctr(), 1e-9);
         assertEquals(0.10, firstGoods.cvr(), 1e-9);
         assertEquals(500.0, firstGoods.gmv(), 1e-9);
         assertEquals(10.0, firstGoods.couponCost(), 1e-9);
 
-        SearchInputModule inputs = new SearchInputModule();
-        CtrModule ctr = new CtrModule();
-        CvrModule cvr = new CvrModule();
-        CtCvrModule ctcvr = new CtCvrModule(ctr, cvr);
-        GmvModule gmv = new GmvModule();
-        CouponRoiModule coupon = new CouponRoiModule(gmv);
-        BuyAgainModule buyAgain = new BuyAgainModule();
-        RebuySameLossModule rebuy = new RebuySameLossModule(buyAgain);
-        RetargetAdModule retarget = new RetargetAdModule();
-        DelayModule delay = new DelayModule();
-
+        SearchModule module = new SearchModule(30, 3);
         try (ColumnPipeline pipeline = new ColumnPipeline(3)) {
-            pipeline.addAll(inputs, ctr, cvr, ctcvr, gmv, coupon,
-                            buyAgain, rebuy, retarget, delay)
+            pipeline.add(module)
                     .compile()
-                    .feed(SearchFeed.sample(inputs))
+                    .feed(module.feedStream(SearchDemo.sampleRequest()))
                     .compute();
 
             List<Row> rows = pipeline.fetch(FetchStream.of(
-                    ctr.ctr(), cvr.cvr(), ctcvr.ctcvr(),
-                    buyAgain.buyagain(), rebuy.rebuySameLoss(),
-                    coupon.couponRoi(), gmv.gmv()));
+                    module.ctr, module.cvr, module.ctcvr,
+                    module.buyAgain, module.rebuyLoss,
+                    module.couponRoi, module.gmv));
 
             assertEquals(5, rows.size());
             assertEquals(0.05, rows.get(0).get(0).asDouble(), 1e-9);
@@ -77,67 +49,53 @@ class SearchDemoTest {
             assertEquals(0.80, rows.get(0).get(4).asDouble(), 1e-9);
             assertEquals(50.0, rows.get(0).get(5).asDouble(), 1e-9);
             assertEquals(500.0, rows.get(0).get(6).asDouble(), 1e-9);
-
-            // Zero coupon cost / zero retarget cost must degrade to zero.
             assertEquals(0.0, rows.get(2).get(5).asDouble(), 1e-9);
 
-            Tensor retargetTensor = pipeline.fetchTensor(retarget.retargetAd());
-            assertEquals(TensorShape.of(5, 3), retargetTensor.shape());
-            assertEquals(0.40, retargetTensor.getDouble(0), 1e-9);
-            assertEquals(0.004, retargetTensor.getDouble(1), 1e-9);
-            assertEquals(250.0, retargetTensor.getDouble(2), 1e-9);
-            assertEquals(0.0, retargetTensor.getDouble(2 * 3 + 2), 1e-9);
+            Tensor retarget = pipeline.fetchTensor(module.retargetAd);
+            assertEquals(TensorShape.of(5, 3), retarget.shape());
+            assertEquals(0.40, retarget.getDouble(0), 1e-9);
+            assertEquals(0.004, retarget.getDouble(1), 1e-9);
+            assertEquals(250.0, retarget.getDouble(2), 1e-9);
+            assertEquals(0.0, retarget.getDouble(2 * 3 + 2), 1e-9);
 
-            Tensor delayTensor = pipeline.fetchTensor(delay.delay());
-            assertEquals(TensorShape.of(5, 2, 2), delayTensor.shape());
-            assertEquals(0.80, delayTensor.getDouble(0), 1e-9);
-            assertEquals(0.20, delayTensor.getDouble(1), 1e-9);
-            assertEquals(0.90, delayTensor.getDouble(2), 1e-9);
-            assertEquals(0.10, delayTensor.getDouble(3), 1e-9);
-            assertEquals(1.0, delayTensor.getDouble(2 * 4), 1e-9);
+            Tensor delay = pipeline.fetchTensor(module.delay);
+            assertEquals(TensorShape.of(5, 2, 2), delay.shape());
+            assertEquals(0.80, delay.getDouble(0), 1e-9);
+            assertEquals(0.20, delay.getDouble(1), 1e-9);
+            assertEquals(0.90, delay.getDouble(2), 1e-9);
+            assertEquals(0.10, delay.getDouble(3), 1e-9);
+            assertEquals(1.0, delay.getDouble(2 * 4), 1e-9);
         }
     }
 
     @Test
     void selectsTopKPerPvFromSimulatedCandidates() {
-        SearchContext first = new SearchContext(101, 7, "red shoes", 30);
-        SearchContext second = new SearchContext(202, 7, "blue shoes", 30);
-        SearchRequest firstRequest = SearchRepository.simulate(first, 1_000);
-        SearchRequest secondRequest = SearchRepository.simulate(second, 1_000);
+        SearchDemo.SearchContext first =
+                new SearchDemo.SearchContext(101, 7, "red shoes", 30);
+        SearchDemo.SearchContext second =
+                new SearchDemo.SearchContext(202, 7, "blue shoes", 30);
+        SearchDemo.SearchRequest firstRequest = SearchDemo.simulate(first, 1_000);
+        SearchDemo.SearchRequest secondRequest = SearchDemo.simulate(second, 1_000);
 
         List<Row> feedRows = new ArrayList<>();
-        feedRows.addAll(SearchRepository.rows(firstRequest));
-        feedRows.addAll(SearchRepository.rows(secondRequest));
+        feedRows.addAll(SearchDemo.rows(firstRequest));
+        feedRows.addAll(SearchDemo.rows(secondRequest));
 
-        SearchInputModule inputs = new SearchInputModule();
-        CtrModule ctr = new CtrModule();
-        CvrModule cvr = new CvrModule();
-        GmvModule gmv = new GmvModule();
-        CouponRoiModule coupon = new CouponRoiModule(gmv);
-        BuyAgainModule buyAgain = new BuyAgainModule();
-        RebuySameLossModule rebuy = new RebuySameLossModule(buyAgain);
-        RankingScoreModule score = new RankingScoreModule(
-                ctr, cvr, gmv, coupon, rebuy);
-        AdjustedScoreModule adjusted = new AdjustedScoreModule(score);
-        TopKModule topK = new TopKModule(adjusted,
-                new SearchRankingOptions(first.topK()));
-
+        SearchModule module = new SearchModule(30, 4);
         try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
-            pipeline.addAll(inputs, ctr, cvr, gmv, coupon, buyAgain, rebuy,
-                            score, adjusted, topK)
+            pipeline.add(module)
                     .compile()
-                    .feed(SearchFeed.of(inputs, feedRows))
+                    .feed(module.feedStream(feedRows))
                     .compute();
 
             List<Row> ranked = pipeline.fetch(FetchStream.of(
-                    inputs.pvId(), inputs.goodsId(),
-                    adjusted.adjustedScore(), topK.selected()));
+                    module.pvId, module.goodsId,
+                    module.adjustedScore, module.selected));
 
             assertEquals(2_000, ranked.size());
-            long selected = ranked.stream()
+            assertEquals(60, ranked.stream()
                     .filter(row -> row.get(3).asLong() == 1L)
-                    .count();
-            assertEquals(60, selected);
+                    .count());
             for (long pv : List.of(first.pvId(), second.pvId())) {
                 List<Row> pvRows = ranked.stream()
                         .filter(row -> row.get(0).asLong() == pv)
@@ -171,16 +129,7 @@ class SearchDemoTest {
 
     @Test
     void experimentVariantChangesRerankFormula() {
-        SearchInputModule inputs = new SearchInputModule();
-        CtrModule ctr = new CtrModule();
-        CvrModule cvr = new CvrModule();
-        GmvModule gmv = new GmvModule();
-        CouponRoiModule coupon = new CouponRoiModule(gmv);
-        BuyAgainModule buyAgain = new BuyAgainModule();
-        RebuySameLossModule rebuy = new RebuySameLossModule(buyAgain);
-        RankingScoreModule ranking = new RankingScoreModule(
-                ctr, cvr, gmv, coupon, rebuy);
-
+        SearchModule module = new SearchModule(30, 2);
         ExperimentContext control = ExperimentContext.builder()
                 .variant("rerank", "control")
                 .build();
@@ -189,39 +138,38 @@ class SearchDemoTest {
                 .build();
 
         try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
-            pipeline.addAll(inputs, ctr, cvr, gmv, coupon, buyAgain, rebuy,
-                            ranking)
+            pipeline.add(module)
                     .setExperiment(control)
                     .compile()
-                    .feed(SearchFeed.sample(inputs))
+                    .feed(module.feedStream(SearchDemo.sampleRequest()))
                     .compute();
-            double controlScore = pipeline.fetch(FetchStream.of(ranking.score()))
-                    .get(0).get(0).asDouble();
+            double controlScore =
+                    pipeline.fetchTensor(module.rankingScore).getDouble(0);
 
             pipeline.setExperiment(boost).compute();
-            double boostScore = pipeline.fetch(FetchStream.of(ranking.score()))
-                    .get(0).get(0).asDouble();
+            double boostScore =
+                    pipeline.fetchTensor(module.rankingScore).getDouble(0);
 
             // Row 0 has GMV 500 and coupon ROI > 0, so coupon_boost adds
-            // exactly 500 * 0.02 before later adjusted-score stages.
+            // exactly 500 * 0.02.
             assertEquals(controlScore + 10.0, boostScore, 1e-9);
         }
     }
 
     @Test
     void serviceReturnsTypedRankedResult() {
-        SearchContext context = SearchRepository.sampleContext();
-        SearchRequest request = SearchRepository.simulate(context, 1_000);
+        SearchDemo.SearchContext context = SearchDemo.sampleContext();
+        SearchDemo.SearchRequest request =
+                SearchDemo.simulate(context, 1_000);
 
-        SearchRankingService service = SearchRankingService.create(
-                context.topK(), 4);
-        SearchResult result = service.search(request);
+        SearchResult result = new SearchModule(context.topK(), 4)
+                .search(request);
 
         assertEquals(context, result.context());
         assertEquals(1_000, result.candidateCount());
         assertEquals(30, result.ranked().size());
         for (int i = 0; i < result.ranked().size(); i++) {
-            RankedGoods goods = result.ranked().get(i);
+            SearchResult.RankedGoods goods = result.ranked().get(i);
             assertEquals(i + 1, goods.rank());
             if (i > 0) {
                 assertTrue(result.ranked().get(i - 1).adjustedScore()
