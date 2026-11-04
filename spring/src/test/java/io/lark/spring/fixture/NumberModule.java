@@ -9,7 +9,7 @@ import io.lark.column.biz.ColumnStream;
 
 /** Feed module with a no-argument constructor. */
 @ColumnComponent
-public final class NumberModule extends ColumnModule {
+public final class NumberModule extends ColumnModule<Object> {
 
     private ColumnStream<Long> left;
     private ColumnStream<Long> right;

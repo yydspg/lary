@@ -5,6 +5,7 @@ package io.lark.column.biz;
 
 import io.lark.column.ColumnDefinitionException;
 import io.lark.column.context.ColumnGraphContext;
+import io.lark.column.tensor.DType;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
@@ -14,6 +15,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.function.Function;
 
 /**
  * Business module: a group of nodes with typed external feed streams, fetch
@@ -22,21 +24,28 @@ import java.util.Objects;
  * <p>Inputs and outputs are typed column handles, not strings:
  *
  * <pre>{@code
- * final class FunnelMetricModule extends ColumnModule {
+ * final class FunnelMetricModule extends ColumnModule<Object> {
  *     private ColumnStream<Long> impressions;
  *     private ColumnStream<Long> clicks;
  *     private ColumnStream<Double> ctr;
  *
- *     @Override protected void build() {
+ *     @Override protected void buildFeeds(ColumnGraphContext context) {
  *         impressions = feed(Metrics.IMPRESSIONS);
  *         clicks = feed(Metrics.CLICKS);
+ *     }
+ *
+ *     @Override protected void buildNodes(ColumnGraphContext context) {
  *         ctr = node(Metrics.CTR, RatioOp.class, clicks, impressions);
+ *     }
+ *
+ *     @Override protected void buildFetches(ColumnGraphContext context) {
  *         output(ctr);
  *     }
  * }</pre>
  *
- * <p>{@code build()} declares wiring only. The pipeline compiles the
- * collected modules once, then handles feed, execution and fetch per run.
+ * <p>The three build phases are ordered: feeds, nodes, fetches. The pipeline
+ * compiles the collected modules once, then handles feed, execution and fetch
+ * per run.
  *
  * <p>Nodes, inputs, outputs and dependencies are exposed as array snapshots;
  * their cardinality is fixed after module construction. Internal compiler and
@@ -44,25 +53,29 @@ import java.util.Objects;
  * cached read-only name views; use `published(Column)` for typed
  * module-to-module wiring.
  */
-public abstract class ColumnModule {
+public abstract class ColumnModule<F> {
 
     private final String id = NodeIds.next(getClass());
     private final List<ColumnNode> nodeBuilder = new ArrayList<>();
     private final List<ColumnStream<?>> inputBuilder = new ArrayList<>();
     private final List<ColumnStream<?>> outputBuilder = new ArrayList<>();
-    private final List<Class<? extends ColumnModule>> dependencyBuilder = new ArrayList<>();
+    private final List<Class<? extends ColumnModule<?>>> dependencyBuilder =
+            new ArrayList<>();
     private final Map<String, ColumnStream<?>> inputByName = new LinkedHashMap<>();
+    private final Map<ColumnStream<?>, Function<Object, ?>> feedMappingGetters =
+            new LinkedHashMap<>();
 
     private enum InitState { NEW, INITIALIZING, READY }
 
     private ColumnNode[] nodes;
     private ColumnStream<?>[] inputs;
     private ColumnStream<?>[] outputs;
-    private Class<? extends ColumnModule>[] dependencies;
+    private Class<? extends ColumnModule<?>>[] dependencies;
     private InitState initState = InitState.NEW;
     private ColumnGraphContext graphContext = ColumnGraphContext.empty();
     private volatile Map<String, ColumnStream<?>> feedMap;
     private volatile Map<String, ColumnStream<?>> fetchMap;
+    private FeedMapping<Object> moduleFeedMapping;
 
     /**
      * Declare a typed external feed input. The column definition carries the
@@ -91,6 +104,62 @@ public abstract class ColumnModule {
     /** Declarative alias for {@link #input(Column)}. */
     protected final <T> ColumnStream<T> feed(Column<T> column) {
         return input(column);
+    }
+
+    /**
+     * Declare one feed column and its business-object getter in one call.
+     *
+     * <pre>{@code
+     * pvId = feed(PV_ID, SearchRow::pvId);
+     * gmvFen = feed(GMV_FEN, row -> row.goods().gmvFen());
+     * }</pre>
+     *
+     * <p>When all feeds are declared this way, the module exposes
+     * {@link #feedStream(List)} and the business never builds a separate
+     * {@link FeedMapping}.
+     */
+    @SuppressWarnings("unchecked")
+    protected final <V> ColumnStream<V> feed(
+            Column<V> column, Function<? super F, ? extends V> getter) {
+        Objects.requireNonNull(column, "column");
+        Objects.requireNonNull(getter, "getter");
+        ColumnStream<V> stream = feed(column);
+        feedMappingGetters.put(stream, value -> getter.apply((F) value));
+        moduleFeedMapping = null;
+        return stream;
+    }
+
+    /**
+     * Map a business object list to this module's feed columns. All feeds must
+     * have been declared with {@link #feed(Column, Function)}.
+     */
+    public final FeedStream feedStream(List<? extends F> rows) {
+        return moduleFeedMapping().map(rows);
+    }
+
+    private FeedMapping<Object> moduleFeedMapping() {
+        FeedMapping<Object> mapping = moduleFeedMapping;
+        if (mapping != null) {
+            return mapping;
+        }
+        if (feedMappingGetters.isEmpty()) {
+            throw new ColumnDefinitionException(
+                    "ColumnModule " + getClass().getName()
+                            + ": no feed mapping declared; use"
+                            + " feed(Column, getter)");
+        }
+        if (feedMappingGetters.size() != inputBuilder.size()) {
+            throw new ColumnDefinitionException(
+                    "ColumnModule " + getClass().getName()
+                            + ": feed mapping covers "
+                            + feedMappingGetters.size() + " of "
+                            + inputBuilder.size() + " feed columns");
+        }
+        mapping = FeedMapping.of(
+                new ArrayList<>(feedMappingGetters.keySet()),
+                new ArrayList<>(feedMappingGetters.values()));
+        moduleFeedMapping = mapping;
+        return mapping;
     }
 
     /**
@@ -145,6 +214,47 @@ public abstract class ColumnModule {
     }
 
     /**
+     * Anonymous double node: the output column is generated internally and is
+     * not part of the module schema.
+     *
+     * <pre>{@code
+     * var couponCost = node(new ScaleOp(100.0), couponCostFen);
+     * var score = node(MulOp.class, baseScore, couponCost);
+     * }</pre>
+     */
+    protected final ColumnStream<Double> node(ColumnOperator operator,
+                                              ColumnStream<?>... inputs) {
+        return node(DType.FLOAT64, operator, inputs);
+    }
+
+    /** Anonymous double node from an operator class. */
+    protected final ColumnStream<Double> node(
+            Class<? extends ColumnOperator> operator,
+            ColumnStream<?>... inputs) {
+        return node(DType.FLOAT64, instantiate(operator), inputs);
+    }
+
+    /** Anonymous INT64 node. */
+    protected final ColumnStream<Long> nodeLong(ColumnOperator operator,
+                                                ColumnStream<?>... inputs) {
+        return node(DType.INT64, operator, inputs);
+    }
+
+    /** Anonymous INT64 node from an operator class. */
+    protected final ColumnStream<Long> nodeLong(
+            Class<? extends ColumnOperator> operator,
+            ColumnStream<?>... inputs) {
+        return node(DType.INT64, instantiate(operator), inputs);
+    }
+
+    /** Anonymous node with an explicit dtype. */
+    protected final <O> ColumnStream<O> node(DType dtype,
+                                             ColumnOperator operator,
+                                             ColumnStream<?>... inputs) {
+        return node(ColumnModule.<O>anonymous(dtype), operator, inputs);
+    }
+
+    /**
      * Register a typed formula node. The expression tree is columnar and can
      * branch on experiment assignments and row conditions without rebuilding
      * the graph.
@@ -152,6 +262,17 @@ public abstract class ColumnModule {
     protected final <O> ColumnStream<O> formula(Column<O> output,
                                                 Expr<O> expression) {
         return add(new FormulaNode<>(output, expression)).out();
+    }
+
+    /** Anonymous formula node; dtype comes from the expression. */
+    protected final <O> ColumnStream<O> formula(Expr<O> expression) {
+        return formula(ColumnModule.<O>anonymous(expression.dtype()), expression);
+    }
+
+    @SuppressWarnings("unchecked")
+    private static <O> Column<O> anonymous(DType dtype) {
+        return (Column<O>) new Column<Object>(
+                "_anon_" + NodeIds.next("anonymous"), dtype);
     }
 
     /** Register a business node inside this module. */
@@ -197,8 +318,9 @@ public abstract class ColumnModule {
 
     /** Class-reference dependencies on other modules (ordering, no data flow). */
     @SafeVarargs
-    protected final void dependsOn(Class<? extends ColumnModule>... modules) {
-        for (Class<? extends ColumnModule> module : modules) {
+    protected final void dependsOn(
+            Class<? extends ColumnModule<?>>... modules) {
+        for (Class<? extends ColumnModule<?>> module : modules) {
             dependencyBuilder.add(Objects.requireNonNull(module, "module"));
         }
         dependencies = null;
@@ -214,7 +336,28 @@ public abstract class ColumnModule {
      * feed or execute themselves.
      */
     protected void build() {
+        buildFeeds(graphContext);
+        buildNodes(graphContext);
+        buildFetches(graphContext);
         define();
+    }
+
+    /**
+     * Phase 1: declare external feed streams. Runs before nodes and fetches.
+     */
+    protected void buildFeeds(ColumnGraphContext context) {
+    }
+
+    /**
+     * Phase 2: declare computation nodes. Runs after feeds and before fetches.
+     */
+    protected void buildNodes(ColumnGraphContext context) {
+    }
+
+    /**
+     * Phase 3: declare fetch outputs. Runs after nodes.
+     */
+    protected void buildFetches(ColumnGraphContext context) {
     }
 
     /**
@@ -314,6 +457,8 @@ public abstract class ColumnModule {
         int outputCount = outputBuilder.size();
         int dependencyCount = dependencyBuilder.size();
         Map<String, ColumnStream<?>> inputsBefore = new LinkedHashMap<>(inputByName);
+        Map<ColumnStream<?>, Function<Object, ?>> feedMappingBefore =
+                new LinkedHashMap<>(feedMappingGetters);
         try {
             build(graphContext);
             initState = InitState.READY;
@@ -326,6 +471,9 @@ public abstract class ColumnModule {
             truncate(dependencyBuilder, dependencyCount);
             inputByName.clear();
             inputByName.putAll(inputsBefore);
+            feedMappingGetters.clear();
+            feedMappingGetters.putAll(feedMappingBefore);
+            moduleFeedMapping = null;
             nodes = null;
             inputs = null;
             outputs = null;
@@ -403,7 +551,7 @@ public abstract class ColumnModule {
 
     /** Snapshot of module dependency classes. */
     @SuppressWarnings("unchecked")
-    public final Class<? extends ColumnModule>[] dependencies() {
+    public final Class<? extends ColumnModule<?>>[] dependencies() {
         return dependencyView().clone();
     }
 
@@ -428,8 +576,8 @@ public abstract class ColumnModule {
         return outputs;
     }
 
-    @SuppressWarnings("unchecked")
-    final Class<? extends ColumnModule>[] dependencyView() {
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    final Class<? extends ColumnModule<?>>[] dependencyView() {
         if (dependencies == null) {
             dependencies = dependencyBuilder.toArray(Class[]::new);
         }

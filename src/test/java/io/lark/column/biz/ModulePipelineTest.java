@@ -8,8 +8,14 @@ import io.lark.column.ColumnExecutionException;
 import io.lark.column.ColumnFeedException;
 import io.lark.column.ColumnFetchException;
 import io.lark.column.biz.op.AddOp;
+import io.lark.column.biz.op.ExperimentScaleOp;
+import io.lark.column.biz.op.MulScalarOp;
+import io.lark.column.biz.op.MulOp;
+import io.lark.column.biz.op.ParamOp;
+import io.lark.column.biz.op.VariantSwitchOp;
 import io.lark.column.biz.op.ScaleOp;
 import io.lark.column.context.ColumnRunContext;
+import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Cell;
 import io.lark.column.tensor.DType;
 import io.lark.column.data.Row;
@@ -70,6 +76,12 @@ class ModulePipelineTest {
             new Column<>("trade_price", DType.INT64);
     static final Column<Double> TRADE_RATE =
             new Column<>("trade_rate", DType.FLOAT64);
+    static final Column<Double> ANON_BASE =
+            new Column<>("anon_base", DType.FLOAT64);
+    static final Column<Double> ANON_LOW =
+            new Column<>("anon_low", DType.FLOAT64);
+    static final Column<Double> ANON_HIGH =
+            new Column<>("anon_high", DType.FLOAT64);
 
     // ---- nodes -----------------------------------------------------------
 
@@ -143,7 +155,7 @@ class ModulePipelineTest {
 
     // ---- modules ---------------------------------------------------------
 
-    static final class FeatureModule extends ColumnModule {
+    static final class FeatureModule extends ColumnModule<Object> {
         ColumnStream<Long> metricValue;
         PlusNode<Long> source;
         ConsumerNode<Long> consumer;
@@ -161,7 +173,7 @@ class ModulePipelineTest {
         }
     }
 
-    static final class PruneModule extends ColumnModule {
+    static final class PruneModule extends ColumnModule<Object> {
         ColumnStream<Long> metricValue;
         PlusNode<Long> used;
         PlusNode<Long> unused;
@@ -338,14 +350,14 @@ class ModulePipelineTest {
         }
     }
 
-    static final class CycleA extends ColumnModule {
+    static final class CycleA extends ColumnModule<Object> {
         @Override
         protected void define() {
             dependsOn(CycleB.class);
         }
     }
 
-    static final class CycleB extends ColumnModule {
+    static final class CycleB extends ColumnModule<Object> {
         @Override
         protected void define() {
             dependsOn(CycleA.class);
@@ -369,40 +381,40 @@ class ModulePipelineTest {
         }
     }
 
-    static final class MultiA extends ColumnModule {
+    static final class MultiA extends ColumnModule<Object> {
         @Override
         protected void define() {
         }
     }
 
-    static final class MultiB extends ColumnModule {
+    static final class MultiB extends ColumnModule<Object> {
         @Override
         protected void define() {
         }
     }
 
-    static final class MultiJoin extends ColumnModule {
+    static final class MultiJoin extends ColumnModule<Object> {
         @Override
         protected void define() {
             dependsOn(MultiA.class, MultiB.class);
         }
     }
 
-    static final class ThreeCycleA extends ColumnModule {
+    static final class ThreeCycleA extends ColumnModule<Object> {
         @Override
         protected void define() {
             dependsOn(ThreeCycleB.class);
         }
     }
 
-    static final class ThreeCycleB extends ColumnModule {
+    static final class ThreeCycleB extends ColumnModule<Object> {
         @Override
         protected void define() {
             dependsOn(ThreeCycleC.class);
         }
     }
 
-    static final class ThreeCycleC extends ColumnModule {
+    static final class ThreeCycleC extends ColumnModule<Object> {
         @Override
         protected void define() {
             dependsOn(ThreeCycleA.class);
@@ -518,7 +530,7 @@ class ModulePipelineTest {
     }
 
     @ColumnComponent
-    public static final class ComponentModule extends ColumnModule {
+    public static final class ComponentModule extends ColumnModule<Object> {
         ColumnStream<Long> metricValue;
         PlusNode<Long> source;
         TimesTenNode li;
@@ -553,7 +565,7 @@ class ModulePipelineTest {
         }
     }
 
-    static final class ProducerModule extends ColumnModule {
+    static final class ProducerModule extends ColumnModule<Object> {
         ColumnStream<Long> metricValue;
         PlusNode<Long> produced;
 
@@ -569,7 +581,7 @@ class ModulePipelineTest {
         }
     }
 
-    static final class ConsumerModule extends ColumnModule {
+    static final class ConsumerModule extends ColumnModule<Object> {
         private final ProducerModule producer;
         ConsumerNode<Long> node;
 
@@ -590,7 +602,7 @@ class ModulePipelineTest {
         }
     }
 
-    static final class ZeroModule extends ColumnModule {
+    static final class ZeroModule extends ColumnModule<Object> {
         ZerosNode<Double> zeros;
 
         @Override
@@ -600,7 +612,7 @@ class ModulePipelineTest {
         }
     }
 
-    static final class FlakyModule extends ColumnModule {
+    static final class FlakyModule extends ColumnModule<Object> {
         int attempts;
 
         @Override
@@ -613,7 +625,7 @@ class ModulePipelineTest {
         }
     }
 
-    static final class OperatorModule extends ColumnModule {
+    static final class OperatorModule extends ColumnModule<Object> {
         ColumnStream<Long> left;
         ColumnStream<Long> right;
         ColumnStream<Double> sum;
@@ -652,7 +664,7 @@ class ModulePipelineTest {
     record Weights(double value) {
     }
 
-    static final class ContextModule extends ColumnModule {
+    static final class ContextModule extends ColumnModule<Object> {
         ColumnStream<Long> left;
         ColumnStream<Long> right;
         ColumnStream<Double> weighted;
@@ -681,7 +693,7 @@ class ModulePipelineTest {
         }
     }
 
-    static final class MissingNoArgConstructorModule extends ColumnModule {
+    static final class MissingNoArgConstructorModule extends ColumnModule<Object> {
         @Override
         protected void build() {
             node(OPERATOR_SUM, ConfiguredOp.class,
@@ -689,14 +701,14 @@ class ModulePipelineTest {
         }
     }
 
-    static final class WrongArityModule extends ColumnModule {
+    static final class WrongArityModule extends ColumnModule<Object> {
         @Override
         protected void build() {
             node(OPERATOR_SUM, AddOp.class, feed(OPERATOR_LEFT));
         }
     }
 
-    static final class TradeModule extends ColumnModule {
+    static final class TradeModule extends ColumnModule<Object> {
         ColumnStream<Long> price;
         ColumnStream<Double> rate;
 
@@ -734,6 +746,77 @@ class ModulePipelineTest {
             assertEquals(List.of(0.5, 1.5),
                     pipeline.fetch(FetchStream.of(module.rate)).stream()
                             .map(row -> row.get(0).asDouble()).toList());
+        }
+    }
+
+    static final class AnonymousModule extends ColumnModule<Object> {
+        ColumnStream<Double> base;
+        ColumnStream<Double> low;
+        ColumnStream<Double> high;
+        ColumnStream<Double> scaled;
+        ColumnStream<Double> switched;
+        ColumnStream<Double> formulaResult;
+        ColumnStream<Double> reassigned;
+
+        @Override
+        protected void build() {
+            base = feed(ANON_BASE);
+            low = feed(ANON_LOW);
+            high = feed(ANON_HIGH);
+
+            // Anonymous parameter source, annotation-free intermediates.
+            var weight = node(new ParamOp("rank.w", 2.0));
+            scaled = node(MulOp.class, base, weight);
+            switched = node(new VariantSwitchOp("rank", "on"), low, high);
+            formulaResult = formula(F.add(F.col(base), F.val(1.0)));
+
+            // Reassign a stream: each node consumes the previous handle.
+            reassigned = node(new MulScalarOp(2.0), base);
+            reassigned = node(
+                    new ExperimentScaleOp("rank.self_w", 1.0), reassigned);
+
+            output(scaled, switched, formulaResult, reassigned);
+        }
+    }
+
+    @Test
+    void anonymousNodesAndExperimentOperatorsWork() {
+        AnonymousModule module = new AnonymousModule();
+        try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
+            pipeline.add(module)
+                    .compile(FetchStream.of(module.scaled, module.switched,
+                            module.formulaResult, module.reassigned))
+                    .setExperiment(ExperimentContext.builder()
+                            .param("rank.w", 3.0)
+                            .param("rank.self_w", 5.0)
+                            .variant("rank", "on")
+                            .build())
+                    .feed(FeedStream.of(new ColumnStream<?>[]{
+                                    module.base, module.low, module.high},
+                            List.of(
+                                    Row.of(Cell.of(1.0), Cell.of(10.0), Cell.of(100.0)),
+                                    Row.of(Cell.of(2.0), Cell.of(20.0), Cell.of(200.0)))))
+                    .compute();
+
+            assertEquals(List.of(3.0, 6.0),
+                    doubles(pipeline.fetchTensor(module.scaled)));
+            assertEquals(List.of(100.0, 200.0),
+                    doubles(pipeline.fetchTensor(module.switched)));
+            assertEquals(List.of(2.0, 3.0),
+                    doubles(pipeline.fetchTensor(module.formulaResult)));
+            assertEquals(List.of(10.0, 20.0),
+                    doubles(pipeline.fetchTensor(module.reassigned)));
+
+            pipeline.setExperiment(ExperimentContext.builder()
+                            .param("rank.w", 2.0)
+                            .variant("rank", "off")
+                            .build())
+                    .compute();
+
+            assertEquals(List.of(2.0, 4.0),
+                    doubles(pipeline.fetchTensor(module.scaled)));
+            assertEquals(List.of(10.0, 20.0),
+                    doubles(pipeline.fetchTensor(module.switched)));
         }
     }
 

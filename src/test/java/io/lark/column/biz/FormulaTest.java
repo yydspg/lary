@@ -20,7 +20,7 @@ class FormulaTest {
     static final Column<Double> SCORE = new Column<>("score", DType.FLOAT64);
     static final Column<Long> FLAG = new Column<>("flag", DType.INT64);
 
-    static final class ConfigModule extends ColumnModule {
+    static final class ConfigModule extends ColumnModule<Object> {
         ColumnStream<Long> raw;
         ColumnStream<Double> score;
 
@@ -38,7 +38,7 @@ class FormulaTest {
         }
     }
 
-    static final class FormulaModule extends ColumnModule {
+    static final class FormulaModule extends ColumnModule<Object> {
         ColumnStream<Long> raw;
         ColumnStream<Double> score;
         ColumnStream<Long> flag;

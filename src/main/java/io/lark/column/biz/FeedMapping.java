@@ -45,6 +45,13 @@ public final class FeedMapping<T> {
         return new Builder<>();
     }
 
+    /** Internal factory used when a module declares feeds with getters. */
+    static FeedMapping<Object> of(List<ColumnStream<?>> streams,
+                                  List<Function<Object, ?>> getters) {
+        return new FeedMapping<>(
+                streams.toArray(ColumnStream<?>[]::new), getters);
+    }
+
     /** Map a business list to a feed stream in declaration order. */
     public FeedStream map(List<? extends T> rows) {
         Objects.requireNonNull(rows, "rows");

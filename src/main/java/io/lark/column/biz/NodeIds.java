@@ -20,4 +20,8 @@ final class NodeIds {
         }
         return simple + "#" + SEQUENCE.incrementAndGet();
     }
+
+    static String next(String prefix) {
+        return prefix + "#" + SEQUENCE.incrementAndGet();
+    }
 }

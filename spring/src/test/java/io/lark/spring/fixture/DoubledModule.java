@@ -9,7 +9,7 @@ import io.lark.column.biz.ColumnStream;
 
 /** Module that needs constructor injection of another module. */
 @ColumnComponent
-public final class DoubledModule extends ColumnModule {
+public final class DoubledModule extends ColumnModule<Object> {
 
     private final NumberModule numbers;
     private DoubleNode doubled;

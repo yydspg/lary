@@ -228,7 +228,7 @@ public final class SequentialRankDemo {
     }
 
     /** Small column subgraph executed for the whole list and for each slot. */
-    static final class ScoreModule extends ColumnModule {
+    static final class ScoreModule extends ColumnModule<Object> {
 
         static final Column<Double> CTR = new Column<>("ctr", DType.FLOAT64);
         static final Column<Double> CVR = new Column<>("cvr", DType.FLOAT64);
