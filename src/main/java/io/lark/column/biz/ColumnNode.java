@@ -3,6 +3,9 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.schema.Column;
+import io.lark.column.biz.schema.NodeSchema;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;

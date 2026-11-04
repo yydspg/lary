@@ -3,7 +3,7 @@
 
 package io.lark.spring.fixture;
 
-import io.lark.column.biz.ColumnComponent;
+import io.lark.column.biz.component.ColumnComponent;
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnStream;
 

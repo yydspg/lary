@@ -3,17 +3,25 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.component.ColumnComponent;
+import io.lark.column.biz.flow.FeedStream;
+import io.lark.column.biz.flow.FetchStream;
+import io.lark.column.biz.operator.ColumnOperator;
+import io.lark.column.biz.operator.ColumnOperatorContext;
+import io.lark.column.biz.schema.Column;
+import io.lark.column.biz.schema.NodeSchema;
+
 import io.lark.column.ColumnDefinitionException;
 import io.lark.column.ColumnExecutionException;
 import io.lark.column.ColumnFeedException;
 import io.lark.column.ColumnFetchException;
-import io.lark.column.biz.op.AddOp;
-import io.lark.column.biz.op.ExperimentScaleOp;
-import io.lark.column.biz.op.MulScalarOp;
-import io.lark.column.biz.op.MulOp;
-import io.lark.column.biz.op.ParamOp;
-import io.lark.column.biz.op.VariantSwitchOp;
-import io.lark.column.biz.op.ScaleOp;
+import io.lark.column.biz.operator.AddOp;
+import io.lark.column.biz.operator.ExperimentScaleOp;
+import io.lark.column.biz.operator.MulScalarOp;
+import io.lark.column.biz.operator.MulOp;
+import io.lark.column.biz.operator.ParamOp;
+import io.lark.column.biz.operator.VariantSwitchOp;
+import io.lark.column.biz.operator.ScaleOp;
 import io.lark.column.context.ColumnGraphContext;
 import io.lark.column.context.ColumnRunContext;
 import io.lark.column.context.ExperimentContext;
@@ -755,7 +763,6 @@ class ModulePipelineTest {
         ColumnStream<Double> high;
         ColumnStream<Double> scaled;
         ColumnStream<Double> switched;
-        ColumnStream<Double> formulaResult;
         ColumnStream<Double> reassigned;
 
         @Override
@@ -768,14 +775,12 @@ class ModulePipelineTest {
             var weight = node(new ParamOp("rank.w", 2.0));
             scaled = node(MulOp.class, base, weight);
             switched = node(new VariantSwitchOp("rank", "on"), low, high);
-            formulaResult = formula(F.add(F.col(base), F.val(1.0)));
-
             // Reassign a stream: each node consumes the previous handle.
             reassigned = node(new MulScalarOp(2.0), base);
             reassigned = node(
                     new ExperimentScaleOp("rank.self_w", 1.0), reassigned);
 
-            output(scaled, switched, formulaResult, reassigned);
+            output(scaled, switched, reassigned);
         }
     }
 
@@ -785,7 +790,7 @@ class ModulePipelineTest {
         try (ColumnPipeline pipeline = new ColumnPipeline(2)) {
             pipeline.add(module)
                     .compile(FetchStream.of(module.scaled, module.switched,
-                            module.formulaResult, module.reassigned))
+                            module.reassigned))
                     .setExperiment(ExperimentContext.builder()
                             .param("rank.w", 3.0)
                             .param("rank.self_w", 5.0)
@@ -802,8 +807,6 @@ class ModulePipelineTest {
                     doubles(pipeline.fetchTensor(module.scaled)));
             assertEquals(List.of(100.0, 200.0),
                     doubles(pipeline.fetchTensor(module.switched)));
-            assertEquals(List.of(2.0, 3.0),
-                    doubles(pipeline.fetchTensor(module.formulaResult)));
             assertEquals(List.of(10.0, 20.0),
                     doubles(pipeline.fetchTensor(module.reassigned)));
 

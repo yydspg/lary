@@ -45,14 +45,14 @@
 1. **DAG**：`load_request` 与 `load_config` 并行执行，`validate` 依赖两者，
    产出类型化的 `Prepared`。`StatsCollector` 记录每个节点的耗时和状态。
 2. **列式计算**：`SearchModule` 从原始行计算 CTR/CVR/GMV/优惠券/重定向/延迟
-   指标，执行实验感知公式和 `score * perturbation + originalScore`，最后用
+   指标，执行实验感知业务节点和 `score * perturbation + originalScore`，最后用
    `TopKOp` 按 `pv_id` 选出 top-k。
 3. **排序**：`SequentialRanker` 和 `BeamSearchRanker` 在选中的候选上填充最终
    slate，应用品类间隔、品牌配额和预算准入规则。两者都使用
    `IndexedSlotScorer`，候选对象不移动，每个 slot 不分配中间候选列表。
 
 ```java
-FullRankingDemo.Result result = FullRankingDemo.run(300);
+DemoResult result = FullRankingDemo.run(300);
 
 result.prepared().dagStats();    // DAG 阶段耗时与状态
 result.column().selectedCount(); // PV top-k 选中的数量
@@ -121,7 +121,7 @@ Tensor                                      数据容器（扁平数组 + shape�
 `OpTensor` / `TensorOps` 作为兼容 API 保留。
 
 声明式 `OpNode` 在 `PipelineCompiler` 中直接绑定 `TensorKernel`，避免业务
-`ColumnContext` 和额外 `KernelContext` 的中转；只有自定义节点和公式节点走
+`ColumnContext` 和额外 `KernelContext` 的中转；只有自定义节点走
 `BusinessNodeKernel`。
 
 ## 业务节点定义
@@ -159,8 +159,8 @@ var ctcvr = node(SearchSchema.CTCVR.doubleColumn(), MulOp.class, ctr, cvr);
 5. 选中列回取为行，再映射为类型化 `SearchResult.RankedGoods`。
 
 ```java
-SearchDemo.SearchContext context = SearchDemo.sampleContext();
-SearchDemo.SearchRequest request = SearchDemo.simulate(context, 1_000);
+SearchContext context = SearchDemo.sampleContext();
+SearchRequest request = SearchDemo.simulate(context, 1_000);
 
 SearchResult result = new SearchModule(context.topK(), 4).search(request);
 for (SearchResult.RankedGoods goods : result.ranked()) {
@@ -198,44 +198,42 @@ class App {
 | `adjusted_score` | `ranking_score * perturbation + original_score` | 1 维 |
 | `selected` | 按 `pv_id` 分组的 top-k 标记 | 1 维 INT64 |
 
-### 复杂公式与实验编排
+### 实验感知的业务节点
 
-`ModuleNode<O>` 是带泛型的单输出节点基类。模块可以直接声明公式节点，
-`FormulaNode` 会自动收集公式引用到的列，因此 graph 依赖仍然自动建立：
+`ModuleNode<O>` 是带泛型的单输出节点基类。需要多个输入、行级条件或实验参数的
+业务规则应该写在业务节点里，而不是 operator 里：
 
 ```java
-NumExpr control = F.sum(
-        F.weighted(F.col(ctr), "rerank.ctr_w", 100.0),
-        F.weighted(F.col(cvr), "rerank.cvr_w", 50.0),
-        F.weighted(F.col(gmv), "rerank.gmv_w", 0.01));
-
-NumExpr couponBoost = F.when(
-        F.and(
-                F.variant("rerank", "coupon_boost"),
-                F.gt(F.col(couponRoi), F.val(0.0))),
-        F.weighted(F.col(gmv), "rerank.coupon_boost_w", 0.02),
-        F.val(0.0));
-
-score = formula(SearchSchema.RANKING_SCORE.doubleColumn(),
-        F.chooseVariant("rerank",
-                Map.of("control", control,
-                        "coupon_boost", control.add(couponBoost)),
-                control));
+public final class RankingScoreNode extends ModuleNode<Double> {
+    @Override
+    public void compute(ColumnContext ctx) {
+        ExperimentContext experiment = ctx.experiment();
+        Tensor score = Compute.mulScalar(ctx.read(ctr),
+                experiment.param("rerank.ctr_w", 100.0));
+        score = Compute.add(score, Compute.mulScalar(ctx.read(cvr),
+                experiment.param("rerank.cvr_w", 50.0)));
+        score = Compute.add(score, Compute.mulScalar(ctx.read(gmv),
+                experiment.param("rerank.gmv_w", 0.01)));
+        ctx.write(out(), score);
+    }
+}
 ```
 
 每个请求通过 `ExperimentContext` 携带实验层和参数，
-`ColumnPipeline.setExperiment(...)` 将其传给所有公式节点。`F.param(...)`
-控制系数，`F.variant(...)` 控制实验层，`F.when(...)` 控制行级条件，
-`F.caseWhen(...)` 支持多分支，`F.chooseVariant(...)` 选择整段公式。分支切换
-不需要重新构图。
+`ColumnPipeline.setExperiment(...)` 将其通过 `ColumnContext` 传给节点。权重或
+变体变化不需要重新构图。
 
-需要配置化时使用 `FormulaConfig.of(map)`；它接受 JSON/YAML 友好的树结构，
-再绑定到类型化列。应用可以用 Jackson、SnakeYAML 或自己的配置加载器反序列化
-同样的结构。
+Operator 保持小而通用：`AddOp`、`SubOp`、`MulOp`、`DivOp`、`RatioOp`、
+`ScaleOp`、`MulAddOp`、`OneMinusOp`、`StackOp`、`TopKOp`，以及实验修饰
+`ExperimentScaleOp` / `VariantSwitchOp` / `ParamOp`。条件、多输入或领域相关的
+打分逻辑放在业务节点中，例如搜索 demo 的 `RankingScoreNode`、排序 demo 的
+`BaseScoreNode` / `PenaltyScoreNode`。
 
-边界：这一层解决行级打分/资格公式；PV 聚合、模型推理和跨行窗口仍然应使用
-自定义 `ModuleNode`。如果实验需要完全不同的图拓扑，用 `ExperimentPipelines`
-为每个变体注册 pipeline supplier，再按请求路由到对应的新 pipeline。
+列式计算引擎不再提供公式/表达式 DSL。应用如果需要外部配置，应加载自己的配置，
+在启动时选择节点/算子接线或参数；根库不携带表达式树解释器。
+
+如果实验需要完全不同的图拓扑，用 `ExperimentPipelines` 为每个变体注册
+pipeline supplier，再按请求路由到对应的新 pipeline。
 
 ## 性能设计
 
@@ -273,13 +271,18 @@ lary/
 │     ├─ compute/   Compute / VectorOps / Simd
 │     ├─ op/        OpSpec + 兼容 OpTensor/TensorOps
 │     ├─ exec/      ComputeNode / ComputeGraph
-│     ├─ biz/       ModuleNode / Formula / Module / Pipeline / Operators
+│     ├─ biz/       ModuleNode / Module / Pipeline
+│     │  ├─ schema/     Column / NodeSchema
+│     │  ├─ operator/   通用 operator
+│     │  ├─ flow/       FeedStream / FetchStream
+│     │  ├─ component/  @ColumnComponent + scanner
+│     │  └─ experiment/ ExperimentPipelines
 │     └─ monitor/   RunStats / ColumnStatsCollector
 ├─ examples/
 │  └─ src/main/java/io/lark/examples/
-│     ├─ search/    类型化搜索 schema、模块和结果
+│     ├─ search/    搜索 model / schema / module / node / result
 │     ├─ rank/      排序示例
-│     └─ demo/      完整链路 demo + 基准
+│     └─ demo/      完整链路 demo + 基准（model/dag/column/rank）
 └─ spring/          可选 Spring Boot 集成
 ```
 

@@ -3,6 +3,8 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.schema.Column;
+
 import io.lark.column.ColumnExecutionException;
 import io.lark.column.context.ColumnRunContext;
 import io.lark.column.context.ExperimentContext;

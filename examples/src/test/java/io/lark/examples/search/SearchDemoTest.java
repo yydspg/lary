@@ -3,8 +3,15 @@
 
 package io.lark.examples.search;
 
+import io.lark.examples.search.model.GoodsDO;
+import io.lark.examples.search.model.SearchContext;
+import io.lark.examples.search.model.SearchRequest;
+import io.lark.examples.search.module.SearchModule;
+import io.lark.examples.search.result.SearchResult;
+import io.lark.examples.search.schema.SearchSchema;
+
 import io.lark.column.biz.ColumnPipeline;
-import io.lark.column.biz.FeedStream;
+import io.lark.column.biz.flow.FeedStream;
 import io.lark.column.context.ColumnGraphContext;
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.data.Row;
@@ -22,7 +29,7 @@ class SearchDemoTest {
 
     @Test
     void computesScalarAndShapedSearchMetrics() {
-        SearchDemo.GoodsDO firstGoods =
+        GoodsDO firstGoods =
                 SearchDemo.sampleRequest().goods().goods().get(0);
         assertEquals(0.05, firstGoods.ctr(), 1e-9);
         assertEquals(0.10, firstGoods.cvr(), 1e-9);
@@ -76,12 +83,12 @@ class SearchDemoTest {
 
     @Test
     void selectsTopKPerPvFromSimulatedCandidates() {
-        SearchDemo.SearchContext first =
-                new SearchDemo.SearchContext(101, 7, "red shoes", 30);
-        SearchDemo.SearchContext second =
-                new SearchDemo.SearchContext(202, 7, "blue shoes", 30);
-        SearchDemo.SearchRequest firstRequest = SearchDemo.simulate(first, 1_000);
-        SearchDemo.SearchRequest secondRequest = SearchDemo.simulate(second, 1_000);
+        SearchContext first =
+                new SearchContext(101, 7, "red shoes", 30);
+        SearchContext second =
+                new SearchContext(202, 7, "blue shoes", 30);
+        SearchRequest firstRequest = SearchDemo.simulate(first, 1_000);
+        SearchRequest secondRequest = SearchDemo.simulate(second, 1_000);
 
         SearchModule module = new SearchModule(30, 4);
         try (ColumnPipeline pipeline = new ColumnPipeline(4)) {
@@ -134,7 +141,7 @@ class SearchDemoTest {
     }
 
     @Test
-    void experimentVariantChangesRerankFormula() {
+    void experimentVariantChangesRerankScore() {
         SearchModule module = new SearchModule(30, 2);
         ExperimentContext control = ExperimentContext.builder()
                 .variant("rerank", "control")
@@ -164,7 +171,7 @@ class SearchDemoTest {
 
     @Test
     void graphContextCanCustomizeTheModuleBuild() {
-        SearchDemo.SearchRequest request =
+        SearchRequest request =
                 SearchDemo.simulate(SearchDemo.sampleContext(), 100);
         SearchModule module = new SearchModule(30, 4);
         ColumnGraphContext graphContext = ColumnGraphContext.of(
@@ -178,8 +185,8 @@ class SearchDemoTest {
 
     @Test
     void serviceReturnsTypedRankedResult() {
-        SearchDemo.SearchContext context = SearchDemo.sampleContext();
-        SearchDemo.SearchRequest request =
+        SearchContext context = SearchDemo.sampleContext();
+        SearchRequest request =
                 SearchDemo.simulate(context, 1_000);
 
         SearchResult result = new SearchModule(context.topK(), 4)

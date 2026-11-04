@@ -11,10 +11,10 @@ import java.util.Objects;
 /**
  * Per-run experiment assignments and parameters.
  *
- * <p>Search systems need to vary formulas by request/page-view without
+ * <p>Search systems need to vary business scoring by request/page-view without
  * rebuilding a graph. A pipeline can install an {@code ExperimentContext}
- * before {@code compute()}; formula nodes read it at evaluation time through
- * {@code F.variant(...)} and {@code F.param(...)}.
+ * before {@code compute()}; business nodes read it at evaluation time through
+ * {@code ColumnContext.experiment()}.
  */
 public final class ExperimentContext {
 

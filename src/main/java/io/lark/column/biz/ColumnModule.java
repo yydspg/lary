@@ -3,6 +3,10 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.flow.FeedStream;
+import io.lark.column.biz.operator.ColumnOperator;
+import io.lark.column.biz.schema.Column;
+
 import io.lark.column.ColumnDefinitionException;
 import io.lark.column.context.ColumnGraphContext;
 import io.lark.column.tensor.DType;
@@ -302,27 +306,6 @@ public abstract class ColumnModule<F> {
         ColumnStream<O> stream = node(output, operator, inputs);
         nodeRegistry.registerDefinition(key, stream);
         return stream;
-    }
-
-    /**
-     * Register a typed formula node. The expression tree is columnar and can
-     * branch on experiment assignments and row conditions without rebuilding
-     * the graph.
-     */
-    protected final <O> ColumnStream<O> formula(Column<O> output,
-                                                Expr<O> expression) {
-        ColumnStream<?> existing = nodeRegistry.output(output.name());
-        if (existing != null) {
-            return cast(existing, output);
-        }
-        ColumnStream<O> stream = add(new FormulaNode<>(output, expression)).out();
-        nodeRegistry.registerOutput(stream);
-        return stream;
-    }
-
-    /** Anonymous formula node; dtype comes from the expression. */
-    protected final <O> ColumnStream<O> formula(Expr<O> expression) {
-        return formula(ColumnModule.<O>anonymous(expression.dtype()), expression);
     }
 
     @SuppressWarnings("unchecked")

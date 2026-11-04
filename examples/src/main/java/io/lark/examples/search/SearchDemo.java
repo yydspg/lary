@@ -5,15 +5,22 @@ package io.lark.examples.search;
 
 import io.lark.column.context.ExperimentContext;
 import io.lark.column.tensor.Tensor;
+import io.lark.examples.search.model.GoodsDO;
+import io.lark.examples.search.model.GoodsList;
+import io.lark.examples.search.model.SearchContext;
+import io.lark.examples.search.model.SearchRequest;
+import io.lark.examples.search.model.SearchRow;
+import io.lark.examples.search.module.SearchModule;
+import io.lark.examples.search.result.SearchResult;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 /**
- * Search ranking demo: request data, deterministic sample rows and the CLI
- * entry point. The graph lives in {@link SearchModule}; the result lives in
- * {@link SearchResult}.
+ * Search ranking demo CLI, sample data and output. The request model lives in
+ * {@code search.model}, the graph in {@code search.module}, and the typed
+ * result in {@link SearchResult}.
  */
 public final class SearchDemo {
 
@@ -31,72 +38,7 @@ public final class SearchDemo {
         print(result);
     }
 
-    // ---- request / row model --------------------------------------------
-
-    public record SearchContext(long pvId, long userId, String query, int topK,
-                                ExperimentContext experiment) {
-
-        public SearchContext {
-            if (pvId < 0) {
-                throw new IllegalArgumentException("pvId must be non-negative");
-            }
-            if (query == null || query.isBlank()) {
-                throw new IllegalArgumentException("query must not be blank");
-            }
-            if (topK <= 0) {
-                throw new IllegalArgumentException("topK must be positive");
-            }
-            experiment = experiment == null
-                    ? ExperimentContext.empty() : experiment;
-        }
-
-        public SearchContext(long pvId, long userId, String query, int topK) {
-            this(pvId, userId, query, topK, ExperimentContext.empty());
-        }
-    }
-
-    public record GoodsDO(long goodsId, long impressions, long clicks,
-                          long orders, long gmvFen, long couponCostFen,
-                          long buyAgainOrders, long delayedOrders,
-                          long delayedGmvFen, long retargetClicks,
-                          long retargetCostFen, double perturbation,
-                          double originalScore) {
-
-        public double ctr() {
-            return impressions == 0 ? 0.0 : (double) clicks / impressions;
-        }
-
-        public double cvr() {
-            return clicks == 0 ? 0.0 : (double) orders / clicks;
-        }
-
-        public double gmv() {
-            return gmvFen / 100.0;
-        }
-
-        public double couponCost() {
-            return couponCostFen / 100.0;
-        }
-    }
-
-    public record GoodsList(List<GoodsDO> goods) {
-
-        public GoodsList {
-            goods = List.copyOf(goods);
-        }
-
-        public int size() {
-            return goods.size();
-        }
-    }
-
-    public record SearchRequest(SearchContext context, GoodsList goods) {
-    }
-
-    /** One goods row plus the request/PV it belongs to. */
-    public record SearchRow(long pvId, GoodsDO goods) {
-    }
-
+    /** Flatten one request into typed per-row feeds. */
     public static List<SearchRow> rows(SearchRequest request) {
         List<SearchRow> rows = new ArrayList<>(request.goods().size());
         for (GoodsDO goods : request.goods().goods()) {

@@ -40,7 +40,12 @@ lary/
 │     ├─ compute/   Compute / VectorOps / Simd
 │     ├─ op/        OpSpec + legacy OpTensor/TensorOps
 │     ├─ exec/      ComputeNode / ComputeGraph
-│     ├─ biz/       ModuleNode / Formula / Module / Pipeline
+│     ├─ biz/       module/node/pipeline engine
+│     │  ├─ schema/     Column<T> / NodeSchema
+│     │  ├─ operator/   ColumnOperator + simple generic operators
+│     │  ├─ flow/       FeedStream / FetchStream
+│     │  ├─ component/  @ColumnComponent + scanner
+│     │  └─ experiment/ ExperimentPipelines
 │     ├─ backend/   backend registry
 │     └─ monitor/   RunStats / ColumnStatsCollector
 ├─ src/test/java/io/lark/
@@ -54,14 +59,20 @@ lary/
 │     ├─ SimplePipeline.java     # DAG Node tour
 │     ├─ OpPipeline.java         # Op / Aspect tour
 │     ├─ rank/                   # greedy / beam / backtracking demo
-│     ├─ search/                 # typed search schema + module + demo
-│     │  ├─ SearchDemo.java      # request model, rows and CLI
-│     │  ├─ SearchSchema.java    # Column<T> definitions
-│     │  ├─ SearchModule.java    # feeds, operators, formula, PV top-k
-│     │  └─ SearchResult.java    # typed result records
+│     ├─ search/                 # typed search demo
+│     │  ├─ SearchDemo.java      # sample data and CLI
+│     │  ├─ model/               # request / goods / row records
+│     │  ├─ schema/              # Column<T> definitions
+│     │  ├─ module/              # feeds, operators, PV top-k
+│     │  ├─ node/                # business score node
+│     │  └─ result/              # typed result records
 │     └─ demo/                   # complete end-to-end demo + benchmark
 │        ├─ FullRankingDemo.java
-│        └─ FullRankingBenchmark.java
+│        ├─ FullRankingBenchmark.java
+│        ├─ model/               # shared stage records
+│        ├─ dag/                 # Node-layer request loader
+│        ├─ column/              # column scoring + top-k stage
+│        └─ rank/                # greedy / beam ranking stage
 └─ spring/                       # optional Spring Boot integration
    ├─ build.gradle.kts
    └─ src/main/java/io/lark/spring/
@@ -144,8 +155,8 @@ layers and prints every stage's statistics and output:
    reports per-node timing through `StatsCollector`.
 2. **Column (`ColumnModule`)** — `SearchModule` feeds raw request rows, computes
    CTR/CVR/GMV/coupon/retarget/delay columns, applies the experiment-aware
-   `F` formula, applies `score * perturbation + originalScore`, and selects the
-   top-k goods per `pv_id` with `TopKOp`.
+   `RankingScoreNode`, applies `score * perturbation + originalScore`, and
+   selects the top-k goods per `pv_id` with `TopKOp`.
 3. **Ranking (`rank`)** — greedy `SequentialRanker` and
    `BeamSearchRanker` fill the final slate from the column-selected candidates
    with category gap, brand quota and budget admissions. Both use
@@ -153,7 +164,7 @@ layers and prints every stage's statistics and output:
    candidate list is allocated per slot.
 
 ```java
-FullRankingDemo.Result result = FullRankingDemo.run(300);
+DemoResult result = FullRankingDemo.run(300);
 
 result.prepared().dagStats();       // Node-stage timing + statuses
 result.column().selectedCount();    // PV top-k selection size
@@ -233,8 +244,8 @@ See `examples/README.md` for the full demo layout.
    `SearchResult.RankedGoods` items.
 
 ```java
-SearchDemo.SearchContext context = SearchDemo.sampleContext();
-SearchDemo.SearchRequest request = SearchDemo.simulate(context, 1_000);
+SearchContext context = SearchDemo.sampleContext();
+SearchRequest request = SearchDemo.simulate(context, 1_000);
 
 SearchResult result = new SearchModule(context.topK(), 4).search(request);
 for (SearchResult.RankedGoods goods : result.ranked()) {
@@ -244,7 +255,7 @@ for (SearchResult.RankedGoods goods : result.ranked()) {
 ```
 
 `SearchModule` is a single `@ColumnComponent` module that declares every feed,
-node, formula and output. With Spring, `@EnableLaryColumns` discovers it and
+node, score node and output. With Spring, `@EnableLaryColumns` discovers it and
 `ColumnPipelineFactory` supplies a fresh mutable pipeline per request; the
 application does not hand-assemble module lists:
 
@@ -261,7 +272,7 @@ The Spring demo obtains the module and factory and calls
 
 The graph outputs are ordinary typed columns:
 
-| Output | Formula | Shape |
+| Output | Calculation | Shape |
 |---|---|---|
 | `ctr` | `clicks / impressions` | 1-D |
 | `cvr` | `orders / clicks` | 1-D |
@@ -286,64 +297,62 @@ The demo prints the selected top-30 goods with their adjusted scores, then
 fetches the retargeting and delay tensors with `fetchTensor(...)` so their
 shapes and row-major values are visible.
 
-### Formula and experiment orchestration
+### Experiment-aware business nodes
 
-`ModuleNode<O>` is the typed single-output node base. A module can declare a
-formula node directly; `FormulaNode` collects its column inputs, so the graph
-dependency wiring stays automatic:
-
-```java
-NumExpr control = F.sum(
-        F.weighted(F.col(ctr), "rerank.ctr_w", 100.0),
-        F.weighted(F.col(cvr), "rerank.cvr_w", 50.0),
-        F.weighted(F.col(gmv), "rerank.gmv_w", 0.01));
-
-NumExpr couponBoost = F.when(
-        F.and(
-                F.variant("rerank", "coupon_boost"),
-                F.gt(F.col(couponRoi), F.val(0.0))),
-        F.weighted(F.col(gmv), "rerank.coupon_boost_w", 0.02),
-        F.val(0.0));
-
-score = formula(SearchSchema.RANKING_SCORE.doubleColumn(),
-        F.chooseVariant("rerank",
-                Map.of("control", control,
-                        "coupon_boost", control.add(couponBoost)),
-                control));
-```
-
-`ExperimentContext` is installed per request (`SearchContext` carries it in
-the demo), and `ColumnPipeline.setExperiment(...)` exposes it to every formula
-node. `F.param(...)` changes coefficients, `F.variant(...)` selects an
-experiment layer, `F.when(...)` gates by row features, `F.caseWhen(...)` covers
-multi-branch rules, and `F.chooseVariant(...)` selects a whole formula branch.
-Expressions are typed (`NumExpr`, `BoolExpr`) and evaluated with columnar
-compute primitives; branches do not rebuild the graph.
-
-For configuration-driven formulas, `FormulaConfig.of(map)` accepts a
-JSON/YAML-friendly tree and compiles it against typed column handles. The
-demo keeps the formula in `SearchModule.rankingFormula(...)`; applications that
-need external configuration can deserialize the same tree with Jackson,
-SnakeYAML or their own loader and compile it at startup:
+`ModuleNode<O>` is the typed single-output node base. Business rules that need
+several inputs, row conditions or experiment parameters belong in a node, not
+in an operator:
 
 ```java
-FormulaConfig config = FormulaConfig.of(Map.of(
-        "op", "sum",
-        "terms", List.of(
-                Map.of("op", "weighted", "column", "ctr",
-                        "key", "rerank.ctr_w", "default", 100.0),
-                Map.of("op", "weighted", "column", "cvr",
-                        "key", "rerank.cvr_w", "default", 50.0))));
+public final class RankingScoreNode extends ModuleNode<Double> {
+    private final ColumnStream<Double> ctr;
+    private final ColumnStream<Double> cvr;
+    private final ColumnStream<Double> gmv;
 
-NumExpr score = config.compileNum(Map.of("ctr", ctr, "cvr", cvr));
+    public RankingScoreNode(Column<Double> output,
+                            ColumnStream<Double> ctr,
+                            ColumnStream<Double> cvr,
+                            ColumnStream<Double> gmv) {
+        super(output, ctr, cvr, gmv);
+        this.ctr = ctr;
+        this.cvr = cvr;
+        this.gmv = gmv;
+    }
+
+    @Override
+    public void compute(ColumnContext ctx) {
+        ExperimentContext experiment = ctx.experiment();
+        Tensor score = Compute.mulScalar(ctx.read(ctr),
+                experiment.param("rerank.ctr_w", 100.0));
+        score = Compute.add(score, Compute.mulScalar(ctx.read(cvr),
+                experiment.param("rerank.cvr_w", 50.0)));
+        score = Compute.add(score, Compute.mulScalar(ctx.read(gmv),
+                experiment.param("rerank.gmv_w", 0.01)));
+        ctx.write(out(), score);
+    }
+}
 ```
 
-Limits are explicit: this layer is for row-level score/eligibility formulas.
-PV-level aggregation, model inference and cross-row windows still belong in
-custom `ModuleNode`s. For a genuinely different graph topology, register one
-pipeline supplier per variant with `ExperimentPipelines` and route the request
-to the matching fresh pipeline. `ColumnNode` remains for legacy multi-output
-nodes; new single-output business nodes should extend `ModuleNode<O>`.
+`ExperimentContext` is installed per request (`SearchContext` carries it in the
+demo), and `ColumnPipeline.setExperiment(...)` exposes it through
+`ColumnContext`. The graph is not rebuilt when weights or variants change.
+
+Operators stay small and generic: `AddOp`, `SubOp`, `MulOp`, `DivOp`,
+`RatioOp`, `ScaleOp`, `MulAddOp`, `OneMinusOp`, `StackOp`, `TopKOp`, and the
+experiment modifiers `ExperimentScaleOp` / `VariantSwitchOp` / `ParamOp`.
+Conditional, multi-input or domain-specific scoring logic lives in a business
+node such as `SearchModule`'s `RankingScoreNode` or the ranking demo's
+`BaseScoreNode` / `PenaltyScoreNode`.
+
+There is intentionally no formula/expression DSL in the column engine. If an
+application needs external configuration, it loads its own configuration and
+chooses the node/operator wiring or parameters at startup; the root library
+does not carry an expression tree interpreter.
+
+For a genuinely different graph topology, register one pipeline supplier per
+variant with `ExperimentPipelines` and route the request to the matching fresh
+pipeline. `ColumnNode` remains for legacy multi-output nodes; new single-output
+business nodes should extend `ModuleNode<O>`.
 
 ## DAG quick start
 
@@ -493,8 +502,7 @@ include `AddOp`, `SubOp`, `MulOp`, `DivOp`, `RatioOp`, `MulAddOp`,
 `StackOp` and `TopKOp`; `TopKOp` groups by a PV/group column and emits INT64
 selection flags.
 
-For custom formulas or aggregations, implement `ColumnOperator`; `OpNode` and
-`TensorKernel` remain internal framework details. The `UnaryNode` /
+For custom business logic, extend `ModuleNode<O>` / `ColumnNode`; generic operators remain small and reusable, and `OpNode` / `TensorKernel` stay internal framework details. The `UnaryNode` /
 `BinaryNode` / custom `ColumnNode` extension API is still supported for
 advanced nodes, and `ModuleNode<O>` is the typed single-output base.
 
@@ -652,7 +660,7 @@ All three schedulers now cache their structural plan:
   therefore complete exactly once without a per-node `CompletableFuture`
   chain.
 - Declarative `OpNode`s bind their `TensorKernel` directly in
-  `PipelineCompiler`; only custom/formula nodes pay for the business
+  `PipelineCompiler`; only custom nodes pay for the business
   `ColumnContext` adapter. This removes two context allocations per operator
   node and one array round-trip per run.
 
@@ -923,7 +931,7 @@ graph.addNode("sum", "module", spec, kernel);
 
 Business modules compile to an `OpSpec("business", ...)` plus either the
 declarative `OperatorKernel` (for `OpNode`) or `BusinessNodeKernel` (for
-custom/formula nodes); the rest of the pipeline never sees business-node
+custom nodes); the rest of the pipeline never sees business-node
 internals. `OpTensor` / `TensorOps` are kept for source compatibility and are
 marked legacy in the source documentation.
 
@@ -939,7 +947,7 @@ marked legacy in the source documentation.
 | `io.lark.column.compute` | `Compute`, `VectorOps`, `Simd` |
 | `io.lark.column.op` | `OpSpec` graph descriptor; legacy `OpTensor`, `OpContext`, `TensorOps`, `ZerosTensor` and typed compatibility ops (`FloatAddTensor`, …) |
 | `io.lark.column.exec` | `ComputeNode` (binds `OpSpec` + `TensorKernel`), `ComputeGraph`, `ExecutionContext` — scheduling layer |
-| `io.lark.column.biz` | typed business API: `Column<T>`, `ColumnStream<T>`, `ColumnOperator` + declarative operators (`biz/op/*`), `ModuleNode<O>` / `FormulaNode` / `F` / `FormulaConfig` (typed formulas, external config and experiments), `ColumnNode`, `UnaryNode` / `BinaryNode` / `SourceNode` / `ZerosNode` (advanced), `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `PipelineCompiler` / `PipelinePlan`, `FeedStream`, `FetchStream`, `ColumnComponent`, `ColumnComponentScanner` |
+| `io.lark.column.biz` | typed business API: `Column<T>` / `ColumnStream<T>` (`biz/schema`), `ColumnOperator` + generic operators (`biz/operator`), `FeedStream` / `FetchStream` (`biz/flow`), `@ColumnComponent` + scanner (`biz/component`), `ExperimentPipelines` (`biz/experiment`), `ModuleNode<O>` / `ColumnNode` / `UnaryNode` / `BinaryNode` / `SourceNode` / `ZerosNode`, `ColumnContext`, `ColumnModule`, `ColumnPipeline`, `PipelineCompiler` / `PipelinePlan` |
 | `io.lark.column.context` | `ExperimentContext` (per-run variants and parameters) |
 | `io.lark.column.backend` | `Backend`, `CpuBackend`, `BackendFactory` |
 | `io.lark.column.monitor` | `RunStats`, `ColumnStatsCollector` |

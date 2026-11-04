@@ -3,6 +3,7 @@
 
 package io.lark.examples.demo;
 
+import io.lark.examples.demo.model.DemoResult;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -13,7 +14,7 @@ class FullRankingDemoTest {
 
     @Test
     void completePipelineRunsEndToEnd() {
-        FullRankingDemo.Result result = FullRankingDemo.run(120);
+        DemoResult result = FullRankingDemo.run(120);
 
         assertEquals(120, result.prepared().request().goods().size());
         assertEquals(3, result.prepared().dagStats().nodes().size());
@@ -42,7 +43,7 @@ class FullRankingDemoTest {
 
     @Test
     void smallRequestSelectsEveryCandidate() {
-        FullRankingDemo.Result result = FullRankingDemo.run(7);
+        DemoResult result = FullRankingDemo.run(7);
 
         assertEquals(7, result.column().selectedCount());
         assertEquals(7, result.column().candidates().size());

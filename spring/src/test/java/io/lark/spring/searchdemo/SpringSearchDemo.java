@@ -3,10 +3,13 @@
 
 package io.lark.spring.searchdemo;
 
+import io.lark.examples.search.model.SearchContext;
+import io.lark.examples.search.model.SearchRequest;
+
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.examples.search.SearchDemo;
-import io.lark.examples.search.SearchModule;
-import io.lark.examples.search.SearchResult;
+import io.lark.examples.search.module.SearchModule;
+import io.lark.examples.search.result.SearchResult;
 import io.lark.spring.ColumnPipelineFactory;
 import io.lark.spring.EnableLaryColumns;
 
@@ -27,8 +30,8 @@ import org.springframework.context.ConfigurableApplicationContext;
 public class SpringSearchDemo {
 
     public static void main(String[] args) {
-        SearchDemo.SearchContext context = SearchDemo.sampleContext();
-        SearchDemo.SearchRequest request =
+        SearchContext context = SearchDemo.sampleContext();
+        SearchRequest request =
                 SearchDemo.simulate(context, 1_000);
         try (ConfigurableApplicationContext spring =
                      SpringApplication.run(SpringSearchDemo.class, args)) {

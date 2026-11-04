@@ -3,6 +3,8 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.flow.FeedStream;
+
 import io.lark.column.ColumnFeedException;
 import io.lark.column.data.Cell;
 import io.lark.column.data.Row;
@@ -27,25 +29,28 @@ final class FeedMapping<T> {
     }
 
     private final ColumnStream<?>[] streams;
-    private final List<Value<? super T>> getters;
-    private final Value<? super T>[] getterArray;
+    private final Value<? super T>[] getters;
     private final boolean[] floating;
 
     @SuppressWarnings("unchecked")
     private FeedMapping(ColumnStream<?>[] streams,
-                        List<Value<? super T>> getters) {
+                        List<? extends Value<? super T>> getters) {
         this.streams = streams;
-        this.getters = List.copyOf(getters);
-        this.getterArray = this.getters.toArray(new Value[0]);
+        this.getters = getters.toArray(new Value[0]);
         this.floating = new boolean[streams.length];
         for (int i = 0; i < streams.length; i++) {
             floating[i] = streams[i].dtype().isFloat();
         }
     }
 
-    /** Internal factory used when a module declares feeds with getters. */
-    static FeedMapping<Object> of(List<ColumnStream<?>> streams,
-                                  List<Value<Object>> getters) {
+    /**
+     * Internal factory used when a module declares feeds with getters.
+     *
+     * <p>The getter list is read with a wildcard so callers do not need an
+     * unchecked cast merely to pass a typed list.
+     */
+    static <T> FeedMapping<T> of(List<ColumnStream<?>> streams,
+                                 List<? extends Value<? super T>> getters) {
         return new FeedMapping<>(
                 streams.toArray(ColumnStream<?>[]::new), getters);
     }
@@ -57,7 +62,7 @@ final class FeedMapping<T> {
         for (T value : rows) {
             Cell[] cells = new Cell[streams.length];
             for (int i = 0; i < cells.length; i++) {
-                Value<? super T> getter = getterArray[i];
+                Value<? super T> getter = getters[i];
                 cells[i] = floating[i]
                         ? Cell.of(getter.doubleValue(value))
                         : Cell.of(getter.longValue(value));
@@ -74,7 +79,7 @@ final class FeedMapping<T> {
         Map<String, Tensor> result = new LinkedHashMap<>(streams.length * 2);
         for (int column = 0; column < streams.length; column++) {
             ColumnStream<?> stream = streams[column];
-            Value<? super T> getter = getterArray[column];
+            Value<? super T> getter = getters[column];
             if (floating[column]) {
                 double[] values = new double[count];
                 int row = 0;

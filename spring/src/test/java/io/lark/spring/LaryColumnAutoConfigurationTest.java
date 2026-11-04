@@ -8,8 +8,8 @@ import io.lark.column.data.Row;
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.column.biz.ColumnStream;
-import io.lark.column.biz.FeedStream;
-import io.lark.column.biz.FetchStream;
+import io.lark.column.biz.flow.FeedStream;
+import io.lark.column.biz.flow.FetchStream;
 import io.lark.spring.fixture.DoubledModule;
 import io.lark.spring.fixture.NumberModule;
 

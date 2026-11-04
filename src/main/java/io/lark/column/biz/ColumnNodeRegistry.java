@@ -3,6 +3,8 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.schema.Column;
+
 import io.lark.column.ColumnDefinitionException;
 import io.lark.column.tensor.DType;
 

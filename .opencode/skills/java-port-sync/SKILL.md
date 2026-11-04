@@ -82,11 +82,11 @@ test. Tests are the behavioral contract.
 | Column ready-queue scheduler (Java-first) | `exec/ComputeGraph.java` `Plan` (cached indegrees, reverse adjacency, roots, output names, module indexes) + dependency counters; fixed platform pool sized by `ColumnPipeline.computeWorkers`, optional virtual compute threads for blocking nodes |
 | `context/execution_context.h` | `exec/ExecutionContext.java` |
 | Business Node / Module / Stream (Java-first) | `biz/ModuleNode.java` (typed single output), `biz/ColumnNode.java` (legacy multi-output), `ColumnContext.java`, `ColumnStream.java`, `ColumnModule.java`, `ColumnPipeline.java`, `PipelineCompiler.java`, `PipelinePlan.java`, `BusinessNodeKernel.java`; declarative `OpNode` binds its `OperatorKernel` directly in the compiler |
-| Typed column schema (Java-first) | `biz/Column.java` (`Column<T>` value definitions), `biz/ColumnStream.java` (graph handles); schema constants e.g. `SearchSchema.COUPON_ROI` |
-| Typed node bases (Java-first) | `biz/NodeSchema.java`, `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`, `FormulaNode.java`; new single-output nodes extend `ModuleNode<O>` |
-| Formula DSL / experiment control (Java-first) | `biz/Expr.java`, `NumExpr.java`, `BoolExpr.java`, `F.java`, `FormulaNode.java`, `FormulaConfig.java` (map/JSON/YAML-friendly external tree), `ExperimentPipelines.java` (graph-topology variant routing); `context/ExperimentContext.java`; pipeline/context plumbing |
-| Feed / fetch boundaries | `biz/FeedStream.java`, `biz/FetchStream.java` (both hold `ColumnStream<?>[]`) |
-| Dependency-free components | `biz/ColumnComponent.java`, `biz/ColumnComponentScanner.java` (on modules; no-arg constructors only) |
+| Typed column schema (Java-first) | `biz/schema/Column.java` (`Column<T>` value definitions), `biz/schema/NodeSchema.java`, `biz/ColumnStream.java` (graph handles); schema constants e.g. `SearchSchema.COUPON_ROI` |
+| Typed node bases (Java-first) | `biz/schema/NodeSchema.java`, `biz/UnaryNode.java`, `BinaryNode.java`, `SourceNode.java`, `ZerosNode.java`; new single-output business nodes extend `ModuleNode<O>` |
+| Experiment control (Java-first) | `context/ExperimentContext.java`; `biz/operator/ExperimentScaleOp.java`, `VariantSwitchOp.java`, `ParamOp.java` (simple generic modifiers); `biz/experiment/ExperimentPipelines.java` (graph-topology variant routing); pipeline/context plumbing. **No formula/expression DSL**: multi-input, conditional and domain scoring logic belongs in a business `ModuleNode`/`ColumnNode` |
+| Feed / fetch boundaries | `biz/flow/FeedStream.java`, `biz/flow/FetchStream.java` (both hold `ColumnStream<?>[]`) |
+| Dependency-free components | `biz/component/ColumnComponent.java`, `biz/component/ColumnComponentScanner.java` (on modules; no-arg constructors only) |
 | Spring Boot integration (optional `:spring`) | `spring/src/main/java/io/lark/spring/`: `EnableLaryColumns.java`, `ColumnComponentRegistrar.java`, `LaryColumnAutoConfiguration.java`, `ColumnPipelineFactory.java`; auto-config imports file under `META-INF/spring` |
 | C++ `biz::Module` / `SubGraph` / DSL / `Pipeline` | **intentionally removed in Java**; replaced by `ColumnModule` + `ModuleNode`/`ColumnNode` + `ColumnStream` |
 | `backend/backend.h`, `backend.cpp` | `backend/Backend.java`, `CpuBackend.java`, `BackendFactory.java` |
@@ -94,13 +94,13 @@ test. Tests are the behavioral contract.
 | `tests/test_column.cpp` | `TensorComputeTest.java` |
 | Tensor-op / kernel coverage | `OpTensorTest.java`, `ExecutionGraphTest.java` (separated `OpSpec` + `TensorKernel` path) |
 | Module / stream / pruning / component coverage | `ModulePipelineTest.java` |
-| Formula / experiment coverage | `FormulaTest.java`; search demo experiment variant test in `SearchDemoTest.java` |
+| Experiment / business-node coverage | search demo experiment variant test in `SearchDemoTest.java`; `FullRankingDemoTest.java`; `ModulePipelineTest` anonymous/experiment operator coverage |
 | `tests/test_engine.cpp` | `ExecutionGraphTest.java` |
 | DAG demos | `examples/src/main/java/io/lark/examples/SimplePipeline.java`, `OpPipeline.java` (`:examples:runSimple`, `:examples:runOp`) |
 | Ranking framework (Java-first) | `rank/SequentialRanker.java` (greedy), `rank/BeamSearchRanker.java`, `rank/BacktrackingRanker.java`, `rank/RadixSorter.java`, `rank/RankingContext.java`, `rank/SlotAdmission.java`, `rank/IndexedSlotScorer.java`; tests `SequentialRankerTest.java`, `BeamSearchRankerTest.java` |
 | Rank demo | `examples/src/main/java/io/lark/examples/rank/SequentialRankDemo.java` (`:examples:runRank`) |
-| Tensor-aware search demo | `examples/src/main/java/io/lark/examples/search/**` (`:examples:runSearch`), `SearchDemo` request/rows, `SearchSchema` enum, one `@ColumnComponent` `SearchModule` with feeds/operators/formula/PV `TopKOp`, typed `SearchResult.RankedGoods`; 2-D/3-D outputs |
-| End-to-end demo | `examples/src/main/java/io/lark/examples/demo/FullRankingDemo.java` (`:examples:runFullDemo`): Node DAG request loading, column metrics + PV top-k, greedy and beam ranking over the selected goods |
+| Tensor-aware search demo | `examples/src/main/java/io/lark/examples/search/**` (`:examples:runSearch`), split into `model/`, `schema/`, `module/`, `node/`, `result/`; one `@ColumnComponent` `SearchModule` with feeds/operators/PV `TopKOp`; business `RankingScoreNode`; typed `SearchResult.RankedGoods`; 2-D/3-D outputs |
+| End-to-end demo | `examples/src/main/java/io/lark/examples/demo/**` (`:examples:runFullDemo`), split into `model/`, `dag/`, `column/`, `rank/`: Node DAG request loading, column metrics + PV top-k, greedy and beam ranking over the selected goods |
 | Warmed-up benchmark | `examples/src/main/java/io/lark/examples/demo/FullRankingBenchmark.java` (`:examples:runFullBenchmark`), median/p95 for DAG, column, ranking and total after warm-up |
 | Search demo test | `examples/src/test/java/io/lark/examples/search/SearchDemoTest.java`, hand-authored metrics, two simulated PVs with 1,000 goods each, and typed `SearchResult` |
 | Full demo test | `examples/src/test/java/io/lark/examples/demo/FullRankingDemoTest.java`, end-to-end DAG + column + ranking assertions |
@@ -208,7 +208,7 @@ test. Tests are the behavioral contract.
   module indexes; repeated runs reuse it and reserve outputs with one
   `store.ensureNames(plan.outputs())` call.
 - Declarative `OpNode`s bind their `OperatorKernel` directly in
-  `PipelineCompiler`; custom/formula nodes use `BusinessNodeKernel`. Keep this
+  `PipelineCompiler`; custom nodes use `BusinessNodeKernel`. Keep this
   split so the hot operator path does not allocate a business `ColumnContext`
   and a second `KernelContext` per node.
 - Rank demos and performance-sensitive scorers use `IndexedSlotScorer`: the
@@ -283,7 +283,7 @@ test. Tests are the behavioral contract.
   lookup keys, not columnar inputs.
 - The tensor-aware search demo models a request as `SearchContext` +
   `GoodsList`/`GoodsDO`, feeds the rows through `SearchModule`, computes the
-  metric columns, applies the experiment formula, and selects the top-k goods
+  metric columns, applies the experiment-aware business score node, and selects the top-k goods
   per `PV_ID`. Selection uses `TopKOp`, which groups scores by the PV column and
   emits a stable INT64 flag per row; selected columns are fetched back into
   `Row`s. `SearchDemoTest` covers one hand-authored request and two simulated
@@ -299,22 +299,19 @@ test. Tests are the behavioral contract.
   `BeamSearchRanker` over the selected candidates. `FullRankingDemoTest` checks
   the end-to-end path; `FullRankingBenchmark` reports warmed-up DAG/column/
   ranking/total median and p95.
-- Complex scoring uses typed formula trees, not long operator chains:
-  `ModuleNode<O>` + `FormulaNode`; `F` composes columns, experiment parameters
-  (`F.param`), variants (`F.variant`), row gates (`F.when`), multi-branch
-  (`F.caseWhen`) and whole-formula variants (`F.chooseVariant`). Formula inputs
-  are collected into graph dependencies; formula branches do not rebuild the
-  graph. `ExperimentContext` is per run and reaches formula nodes through
+- Operators are only for the simplest generic compute rules (`AddOp`, `SubOp`,
+  `MulOp`, `DivOp`, `RatioOp`, `ScaleOp`, `MulAddOp`, `OneMinusOp`, `StackOp`,
+  `TopKOp`, plus `ExperimentScaleOp` / `VariantSwitchOp` / `ParamOp`). Do not
+  put business logic, row conditions, multi-input scoring or domain rules in an
+  operator. Put them in a business `ModuleNode<O>` / `ColumnNode`.
+- There is intentionally no formula/expression DSL in the column engine.
+  `ExperimentContext` is per run and reaches business nodes through
   `ColumnPipeline.setExperiment`, `ExecutionContext`, `KernelContext` and
-  `ColumnContext`. `FormulaConfig` keeps the same tree JSON/YAML-friendly and
-  compiles it against typed columns; configuration loaders belong to the
-  application layer, not the root library. `ExperimentPipelines` is only for
-  genuinely different graph topology: it routes to a fresh registered pipeline;
-  it does not make formula branches lazy or rebuild a graph per request.
-- Formula expression limits: row-level score/eligibility expressions only.
-  PV aggregates, windows, model inference and different graph topology remain
-  custom `ModuleNode`/module variants. Do not fake graph-level experiment
-  rewiring with `F`.
+  `ColumnContext`; nodes read weights/variants and compute directly. External
+  configuration belongs to the application layer, not the root library.
+  `ExperimentPipelines` is only for genuinely different graph topology: it
+  routes to a fresh registered pipeline; it does not rebuild a graph per
+  request.
 - `@ColumnComponent` marks modules; `ColumnPipeline.scan(package)` discovers
   them without a Spring dependency. That core scanner requires a no-arg
   constructor.
@@ -403,8 +400,10 @@ in `~/.gradle/gradle.properties`.
 - [ ] Tensor shape/arithmetic changes cover broadcasting, commutativity of
       add/mul, three-input `mul_add`/`fma`, 1-D/2-D/3-D shapes and zero-tensor
       ops/nodes.
-- [ ] Formula/experiment changes cover `ModuleNode<O>`, `FormulaNode`, `F`
-      conditions/variants/parameters, and document the row-level formula limits.
+- [ ] Business scoring changes keep complex/conditional logic in
+      `ModuleNode<O>` / `ColumnNode`, not in `ColumnOperator`; experiment weights
+      and variants are read from `ColumnContext.experiment()`.
+- [ ] No formula/expression DSL is reintroduced into the column engine.
 - [ ] Repeated-run/timing changes are checked with
       `:examples:runFullBenchmark`, not a single `RunStats` sample.
 - [ ] Scheduler changes keep cached plans valid across repeated runs and still

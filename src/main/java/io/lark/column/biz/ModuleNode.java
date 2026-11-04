@@ -3,6 +3,8 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.schema.Column;
+
 /**
  * Typed single-output business node.
  *

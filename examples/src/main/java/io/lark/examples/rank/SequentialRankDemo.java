@@ -3,13 +3,15 @@
 
 package io.lark.examples.rank;
 
-import io.lark.column.biz.Column;
+
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnPipeline;
+import io.lark.column.biz.schema.Column;
 import io.lark.column.context.ColumnGraphContext;
-import io.lark.column.biz.F;
 import io.lark.column.tensor.DType;
 import io.lark.column.tensor.Tensor;
+import io.lark.examples.rank.node.BaseScoreNode;
+import io.lark.examples.rank.node.PenaltyScoreNode;
 import io.lark.rank.BeamSearchRanker;
 import io.lark.rank.RankedSlot;
 import io.lark.rank.RankingResult;
@@ -270,17 +272,10 @@ public final class SequentialRankDemo {
             var categoryPenalty = required(CATEGORY_PENALTY);
             var brandPenalty = required(BRAND_PENALTY);
 
-            formula(BASE_SCORE, F.sum(
-                    F.weighted(F.col(ctr), "rank.ctr_w", 100.0),
-                    F.weighted(F.col(cvr), "rank.cvr_w", 50.0),
-                    F.weighted(F.col(gmv), "rank.gmv_w", 0.01),
-                    F.weighted(F.col(quality), "rank.quality_w", 2.0),
-                    F.neg(F.weighted(F.col(price), "rank.price_w", 0.001))));
-
-            formula(UPDATED_SCORE, F.sum(
-                    F.col(base),
-                    F.neg(F.col(categoryPenalty)),
-                    F.neg(F.col(brandPenalty))));
+            node(new BaseScoreNode(BASE_SCORE, ctr, cvr, gmv, quality,
+                    price));
+            node(new PenaltyScoreNode(UPDATED_SCORE, base,
+                    categoryPenalty, brandPenalty));
         }
 
         @Override

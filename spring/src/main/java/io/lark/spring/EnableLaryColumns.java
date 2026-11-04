@@ -3,7 +3,7 @@
 
 package io.lark.spring;
 
-import io.lark.column.biz.ColumnComponent;
+import io.lark.column.biz.component.ColumnComponent;
 
 import java.lang.annotation.Documented;
 import java.lang.annotation.ElementType;

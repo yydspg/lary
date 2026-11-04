@@ -3,6 +3,8 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.schema.NodeSchema;
+
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 

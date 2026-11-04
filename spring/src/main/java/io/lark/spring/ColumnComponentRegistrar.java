@@ -3,7 +3,7 @@
 
 package io.lark.spring;
 
-import io.lark.column.biz.ColumnComponent;
+import io.lark.column.biz.component.ColumnComponent;
 import io.lark.column.biz.ColumnModule;
 
 import java.util.LinkedHashSet;

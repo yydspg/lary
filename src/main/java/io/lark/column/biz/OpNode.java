@@ -3,6 +3,9 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.operator.ColumnOperator;
+import io.lark.column.biz.schema.Column;
+
 import io.lark.column.ColumnExecutionException;
 import io.lark.column.tensor.FallibleTensorKernel;
 import io.lark.column.tensor.KernelContext;

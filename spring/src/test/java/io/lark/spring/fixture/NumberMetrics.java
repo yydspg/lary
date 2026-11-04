@@ -4,7 +4,7 @@
 package io.lark.spring.fixture;
 
 import io.lark.column.tensor.DType;
-import io.lark.column.biz.Column;
+import io.lark.column.biz.schema.Column;
 
 /** Minimal schema for the Spring integration tests. */
 public final class NumberMetrics {

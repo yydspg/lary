@@ -3,6 +3,9 @@
 
 package io.lark.column.biz;
 
+import io.lark.column.biz.schema.Column;
+import io.lark.column.biz.schema.NodeSchema;
+
 import io.lark.column.tensor.Tensor;
 import io.lark.column.tensor.TensorShape;
 

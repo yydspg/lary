@@ -3,11 +3,14 @@
 
 package io.lark.spring.searchtest;
 
+import io.lark.examples.search.model.SearchContext;
+import io.lark.examples.search.model.SearchRequest;
+
 import io.lark.column.biz.ColumnModule;
 import io.lark.column.biz.ColumnPipeline;
 import io.lark.examples.search.SearchDemo;
-import io.lark.examples.search.SearchModule;
-import io.lark.examples.search.SearchResult;
+import io.lark.examples.search.module.SearchModule;
+import io.lark.examples.search.result.SearchResult;
 import io.lark.spring.ColumnPipelineFactory;
 import io.lark.spring.EnableLaryColumns;
 import io.lark.spring.LaryColumnAutoConfiguration;
@@ -29,8 +32,8 @@ class SpringSearchDemoTest {
             assertEquals(1,
                     context.getBeanProvider(ColumnModule.class).stream().count());
 
-            SearchDemo.SearchContext searchContext = SearchDemo.sampleContext();
-            SearchDemo.SearchRequest request =
+            SearchContext searchContext = SearchDemo.sampleContext();
+            SearchRequest request =
                     SearchDemo.simulate(searchContext, 1_000);
             SearchModule module = context.getBean(SearchModule.class);
             ColumnPipelineFactory pipelines =

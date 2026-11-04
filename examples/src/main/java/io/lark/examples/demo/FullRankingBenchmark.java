@@ -3,6 +3,8 @@
 
 package io.lark.examples.demo;
 
+import io.lark.examples.demo.model.DemoResult;
+
 import java.util.Arrays;
 import java.util.Locale;
 
@@ -51,7 +53,7 @@ public final class FullRankingBenchmark {
 
         for (int i = 0; i < iterations; i++) {
             long start = System.nanoTime();
-            FullRankingDemo.Result result = FullRankingDemo.run(candidates);
+            DemoResult result = FullRankingDemo.run(candidates);
             total[i] = System.nanoTime() - start;
             dag[i] = result.prepared().dagStats().totalElapsedNanos();
             column[i] = result.column().stats().totalElapsedNanos();

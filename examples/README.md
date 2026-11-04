@@ -22,14 +22,21 @@ io.lark.examples/
 ├─ SimplePipeline.java        DAG Node tour
 ├─ OpPipeline.java            DAG Op / Aspect tour
 ├─ rank/                      sequential, beam and backtracking rankers
-├─ search/                    typed search schema, module and result facade
-│  ├─ SearchDemo.java         request model, deterministic rows and CLI
-│  ├─ SearchSchema.java       Column<T> definitions
-│  ├─ SearchModule.java       feeds, operators, formula, PV top-k
-│  └─ SearchResult.java       typed result records
+│  └─ node/                   business score / penalty nodes
+├─ search/                    typed search demo
+│  ├─ SearchDemo.java         deterministic sample data and CLI
+│  ├─ model/                  SearchContext / GoodsDO / SearchRequest ...
+│  ├─ schema/                 Column<T> definitions
+│  ├─ module/                 feeds, operators, PV top-k
+│  ├─ node/                   RankingScoreNode (business score rule)
+│  └─ result/                 typed result records
 └─ demo/
-   ├─ FullRankingDemo.java    complete request -> metrics -> top-k -> slate
-   └─ FullRankingBenchmark.java
+   ├─ FullRankingDemo.java    composition + output
+   ├─ FullRankingBenchmark.java
+   ├─ model/                  shared stage records
+   ├─ dag/                    Node-layer request loader
+   ├─ column/                 column scoring + top-k stage
+   └─ rank/                   greedy / beam ranking stage
 ```
 
 `SearchModule` declares all feeds with `feed(Column<T>, getter)`, so
@@ -42,7 +49,7 @@ simulated PVs with 1,000 goods each.
 1. a `Node` DAG loads the request and ranking config in parallel and validates
    the request;
 2. the column graph computes CTR/CVR/GMV/coupon/retarget/delay metrics, applies
-   the experiment-aware formula and selects top-k per PV;
+   the experiment-aware business score node and selects top-k per PV;
 3. greedy and beam-search rankers fill the final slate with category, brand and
    budget admissions.
 

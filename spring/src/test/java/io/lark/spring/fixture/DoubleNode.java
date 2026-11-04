@@ -6,7 +6,7 @@ package io.lark.spring.fixture;
 import io.lark.column.tensor.Tensor;
 import io.lark.column.biz.ColumnContext;
 import io.lark.column.biz.ColumnStream;
-import io.lark.column.biz.NodeSchema;
+import io.lark.column.biz.schema.NodeSchema;
 import io.lark.column.biz.UnaryNode;
 import io.lark.column.compute.Compute;
 
